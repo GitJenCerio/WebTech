@@ -1,0 +1,27 @@
+import { NextResponse } from 'next/server';
+import { listNailTechs, listActiveNailTechs } from '@/lib/services/nailTechService';
+
+// Mark this route as dynamic to prevent static analysis during build
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const activeOnly = searchParams.get('activeOnly') === 'true';
+    
+    const nailTechs = activeOnly ? await listActiveNailTechs() : await listNailTechs();
+    
+    // OPTIMIZED: Nail techs change very infrequently, cache for 5 minutes
+    // This significantly reduces Firestore reads since nail techs are loaded on every page
+    return NextResponse.json({ nailTechs }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=300',
+      },
+    });
+  } catch (error: any) {
+    console.error('Error listing nail techs:', error);
+    return NextResponse.json({ error: error.message || 'Failed to list nail techs' }, { status: 500 });
+  }
+}
+
