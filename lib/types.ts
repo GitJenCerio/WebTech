@@ -1,6 +1,6 @@
 export type SlotStatus = 'available' | 'blocked' | 'pending' | 'confirmed';
-export type BookingStatus = 'pending_form' | 'pending_payment' | 'confirmed' | 'cancelled';
-export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'refunded' | 'forfeited';
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
+export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'refunded';
 export type ServiceType = 'manicure' | 'pedicure' | 'mani_pedi' | 'home_service_2slots' | 'home_service_3slots';
 export type NailTechRole = 'Owner' | 'Junior Tech' | 'Senior Tech';
 export type ServiceAvailability = 'Studio only' | 'Home service only' | 'Studio and Home Service';
@@ -88,9 +88,6 @@ export interface Booking {
   serviceType?: ServiceType;
   clientType?: 'new' | 'repeat';
   serviceLocation?: 'homebased_studio' | 'home_service';
-  // Assistant / commission (e.g. sister who helped with the booking)
-  assistantName?: string; // e.g. 'Sister'
-  assistantCommissionRate?: number; // e.g. 0.1 for 10%
   customerData?: Record<string, string>; // Keep for backward compatibility and form data
   customerDataOrder?: string[]; // Preserves the exact order of fields from the form
   formResponseId?: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import Script from 'next/script';
@@ -16,6 +16,16 @@ export default function AdminLoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const authError = searchParams.get('error');
+  const oauthErrorMessage =
+    authError === 'OAuthSignin' ? 'Google sign-in could not be started. Check GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET.' :
+    authError === 'OAuthCallback' ? 'Google sign-in failed during callback. Check NEXTAUTH_URL and Google OAuth redirect URI.' :
+    authError === 'Configuration' ? 'Auth is not configured. Check NEXTAUTH_SECRET / NEXTAUTH_URL and provider env vars.' :
+    authError === 'AccessDenied' ? 'Access denied. This account is not authorized. Only pre-approved users can access the admin panel. Please contact an administrator to add your account.' :
+    authError ? `Sign-in error: ${authError}` :
+    '';
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -47,6 +57,24 @@ export default function AdminLoginPage() {
     setError('');
 
     try {
+      const result = await signIn('google', {
+        callbackUrl: '/admin/overview',
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError(oauthErrorMessage || 'Failed to sign in with Google. Please try again.');
+        setGoogleLoading(false);
+        return;
+      }
+
+      if (result?.url) {
+        router.push(result.url);
+        router.refresh();
+        return;
+      }
+
+      // Fallback: if NextAuth returns no URL, let it handle redirect behavior
       await signIn('google', { callbackUrl: '/admin/overview' });
     } catch (error: any) {
       setError('Failed to sign in with Google. Please try again.');
@@ -122,10 +150,10 @@ export default function AdminLoginPage() {
                       </div>
                     </div>
 
-                    {error && (
+                    {(error || oauthErrorMessage) && (
                       <div className="alert alert-danger d-flex align-items-center mb-4" role="alert">
                         <i className="bi bi-exclamation-circle me-2"></i>
-                        <div>{error}</div>
+                        <div>{error || oauthErrorMessage}</div>
                       </div>
                     )}
 
@@ -162,28 +190,34 @@ export default function AdminLoginPage() {
 
                   <button
                     type="button"
-                    className="btn btn-outline-secondary w-100"
+                    className="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center"
                     onClick={handleGoogleSignIn}
                     disabled={loading || googleLoading}
+                    style={{
+                      gap: '0.5rem',
+                      padding: '0.75rem',
+                      fontWeight: '500',
+                    }}
                   >
                     {googleLoading ? (
                       <>
                         <span
-                          className="spinner-border spinner-border-sm me-2"
+                          className="spinner-border spinner-border-sm"
                           role="status"
                           aria-hidden="true"
+                          style={{ width: '1rem', height: '1rem' }}
                         ></span>
-                        Signing in...
+                        <span>Signing in...</span>
                       </>
                     ) : (
                       <>
                         <svg
-                          className="me-2"
-                          width="18"
-                          height="18"
+                          width="20"
+                          height="20"
                           viewBox="0 0 24 24"
                           fill="none"
                           xmlns="http://www.w3.org/2000/svg"
+                          style={{ flexShrink: 0 }}
                         >
                           <path
                             fill="#4285F4"
@@ -202,7 +236,7 @@ export default function AdminLoginPage() {
                             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                           />
                         </svg>
-                        Sign in with Google
+                        <span>Sign in with Google</span>
                       </>
                     )}
                   </button>

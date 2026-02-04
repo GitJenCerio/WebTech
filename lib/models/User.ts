@@ -6,6 +6,9 @@ export interface IUser extends Document {
   name?: string;
   image?: string; // For Google OAuth profile picture
   emailVerified?: boolean;
+  role?: 'admin' | 'staff'; // User role
+  assignedNailTechId?: string; // For staff members - assigned nail tech ID
+  status?: 'active' | 'inactive'; // User status
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +20,9 @@ const UserSchema = new Schema<IUser>(
     name: { type: String },
     image: { type: String },
     emailVerified: { type: Boolean, default: false },
+    role: { type: String, enum: ['admin', 'staff'], default: 'admin' },
+    assignedNailTechId: { type: String },
+    status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   },
   { timestamps: true }
 );

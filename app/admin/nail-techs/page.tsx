@@ -1,62 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import DataTable from '@/components/admin/DataTable';
 import Pagination from '@/components/admin/Pagination';
 import ActionDropdown from '@/components/admin/ActionDropdown';
 import Badge from '@/components/admin/Badge';
+import type { NailTech as NailTechType, ServiceAvailability } from '@/lib/types';
 
-interface NailTech {
-  id: string;
+type NailTechFormState = {
   name: string;
-  role: 'Owner' | 'Senior Tech' | 'Junior Tech';
-  email: string;
-  phone: string;
-  discount: number; // Percentage (e.g., 15 for 15%)
-  commissionRate: number; // Percentage (e.g., 40 for 40%)
-  serviceAvailability: 'Studio only' | 'Home service only' | 'Studio and Home Service';
-  status: 'Active' | 'Inactive';
-}
+  role: NailTechType['role'];
+  serviceAvailability: ServiceAvailability;
+  discount: string;
+  commissionRate: string;
+  workingDays: string[];
+  status: NailTechType['status'];
+};
+
+const DEFAULT_FORM_STATE: NailTechFormState = {
+  name: '',
+  role: 'Junior Tech',
+  serviceAvailability: 'Studio only',
+  discount: '',
+  commissionRate: '',
+  workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+  status: 'Active',
+};
 
 export default function NailTechsPage() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [nailTechs, setNailTechs] = useState<NailTechType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<NailTechFormState>(DEFAULT_FORM_STATE);
 
-  // Mock data
-  const nailTechs: NailTech[] = [
-    {
-      id: '1',
-      name: 'Jhen',
-      role: 'Owner',
-      email: 'jhen@glammednailsbyjhen.com',
-      phone: '+63 912 345 6789',
-      discount: 15,
-      commissionRate: 40,
-      serviceAvailability: 'Studio and Home Service',
-      status: 'Active',
-    },
-    {
-      id: '2',
-      name: 'Maria Santos',
-      role: 'Senior Tech',
-      email: 'maria@glammednailsbyjhen.com',
-      phone: '+63 912 345 6790',
-      discount: 10,
-      commissionRate: 50,
-      serviceAvailability: 'Studio only',
-      status: 'Active',
-    },
-    {
-      id: '3',
-      name: 'Anna Cruz',
-      role: 'Junior Tech',
-      email: 'anna@glammednailsbyjhen.com',
-      phone: '+63 912 345 6791',
-      discount: 5,
-      commissionRate: 60,
-      serviceAvailability: 'Studio and Home Service',
-      status: 'Active',
-    },
-  ];
+  useEffect(() => {
+    async function loadNailTechs() {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch('/api/nail-techs');
+        if (!res.ok) {
+          throw new Error('Failed to load nail techs');
+        }
+        const data = await res.json();
+        setNailTechs(data.nailTechs || []);
+      } catch (err: any) {
+        console.error('Error loading nail techs', err);
+        setError(err.message || 'Failed to load nail techs');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadNailTechs();
+  }, []);
 
   const getRoleBadge = (role: string) => {
     if (role === 'Owner') {
@@ -79,48 +79,52 @@ export default function NailTechsPage() {
     {
       key: 'name',
       header: 'Name',
-      render: (item: NailTech) => (
+      render: (item: NailTechType) => (
         <div>
-          <div className="fw-semibold">{item.name}</div>
-          <small className="text-muted">{item.email}</small>
+          <div className="fw-semibold">Ms. {item.name}</div>
+          <small className="text-muted">{item.role}</small>
         </div>
       ),
     },
     {
       key: 'role',
       header: 'Role',
-      render: (item: NailTech) => getRoleBadge(item.role),
+      render: (item: NailTechType) => getRoleBadge(item.role),
     },
     {
       key: 'discount',
       header: 'Discount',
-      render: (item: NailTech) => (
-        <span className="fw-semibold">{item.discount}%</span>
+      render: (item: NailTechType) => (
+        <span className="fw-semibold">
+          {item.discount != null ? `${item.discount}%` : '—'}
+        </span>
       ),
     },
     {
       key: 'commissionRate',
       header: 'Commission',
-      render: (item: NailTech) => (
-        <span className="fw-semibold">{item.commissionRate}%</span>
+      render: (item: NailTechType) => (
+        <span className="fw-semibold">
+          {item.commissionRate != null ? `${Math.round(item.commissionRate * 100)}%` : '—'}
+        </span>
       ),
     },
     {
       key: 'serviceAvailability',
       header: 'Service Availability',
-      render: (item: NailTech) => (
+      render: (item: NailTechType) => (
         <small className="text-muted">{item.serviceAvailability}</small>
       ),
     },
     {
       key: 'status',
       header: 'Status',
-      render: (item: NailTech) => getStatusBadge(item.status),
+      render: (item: NailTechType) => getStatusBadge(item.status),
     },
     {
       key: 'actions',
       header: 'Actions',
-      render: (item: NailTech) => (
+      render: (item: NailTechType) => (
         <ActionDropdown
           actions={[
             { label: 'View', icon: 'bi-eye' },
@@ -138,24 +142,99 @@ export default function NailTechsPage() {
     },
   ];
 
+  const handleOpenAdd = () => {
+    setForm(DEFAULT_FORM_STATE);
+    setShowAddModal(true);
+  };
+
+  const handleChange = (field: keyof NailTechFormState, value: any) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleToggleWorkingDay = (day: string) => {
+    setForm((prev) => ({
+      ...prev,
+      workingDays: prev.workingDays.includes(day)
+        ? prev.workingDays.filter((d) => d !== day)
+        : [...prev.workingDays, day],
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const discountNumber = form.discount ? Number(form.discount) : undefined;
+      const commissionNumber = form.commissionRate ? Number(form.commissionRate) / 100 : undefined;
+
+      const res = await fetch('/api/nail-techs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          role: form.role,
+          serviceAvailability: form.serviceAvailability,
+          workingDays: form.workingDays,
+          discount: isNaN(discountNumber as number) ? undefined : discountNumber,
+          commissionRate: isNaN(commissionNumber as number) ? undefined : commissionNumber,
+          status: form.status,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to create nail tech');
+      }
+
+      const data = await res.json();
+      setNailTechs((prev) => [...prev, data.nailTech].sort((a, b) => a.name.localeCompare(b.name)));
+      setShowAddModal(false);
+      setForm(DEFAULT_FORM_STATE);
+    } catch (err: any) {
+      console.error('Error creating nail tech', err);
+      setError(err.message || 'Failed to create nail tech');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
           Nail Tech Management
         </h4>
-        <button className="btn btn-dark">
+        <button className="btn btn-dark" onClick={handleOpenAdd}>
           <i className="bi bi-person-plus me-2"></i>Add Nail Tech
         </button>
       </div>
 
-      <DataTable
-        title="Nail Technicians"
-        columns={columns}
-        data={nailTechs}
-        keyExtractor={(item) => item.id}
-        emptyMessage="No nail technicians found"
-      />
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-muted">Loading nail technicians...</div>
+      ) : (
+        <DataTable
+          title="Nail Technicians"
+          columns={columns}
+          data={nailTechs}
+          keyExtractor={(item) => item.id}
+          emptyMessage="No nail technicians found"
+        />
+      )}
 
       <div className="mt-3">
         <Pagination
@@ -164,6 +243,222 @@ export default function NailTechsPage() {
           onPageChange={setCurrentPage}
         />
       </div>
+
+      {showAddModal && (
+        <Fragment>
+          <div 
+            className="modal-backdrop fade show" 
+            onClick={() => !saving && setShowAddModal(false)}
+            style={{ zIndex: 1050 }}
+          ></div>
+          <div 
+            className="modal fade show d-block" 
+            tabIndex={-1} 
+            role="dialog"
+            style={{ zIndex: 1055 }}
+          >
+            <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
+              <div className="modal-content" style={{ borderRadius: '12px', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
+                <div className="modal-header" style={{ borderBottom: '1px solid #e0e0e0', padding: '1.25rem 1.5rem' }}>
+                  <h5 className="modal-title" style={{ fontWeight: 600, color: '#212529', fontSize: '1.25rem' }}>
+                    Add Nail Technician
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    aria-label="Close"
+                    onClick={() => !saving && setShowAddModal(false)}
+                    disabled={saving}
+                    style={{ opacity: saving ? 0.5 : 1 }}
+                  ></button>
+                </div>
+                <form onSubmit={handleSubmit}>
+                  <div className="modal-body" style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        Name <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={form.name}
+                        onChange={(e) => handleChange('name', e.target.value)}
+                        required
+                        placeholder="e.g. Jhen"
+                        disabled={saving}
+                        style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                      />
+                    </div>
+
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        Role <span className="text-danger">*</span>
+                      </label>
+                      <select
+                        className="form-select"
+                        value={form.role}
+                        onChange={(e) => handleChange('role', e.target.value as NailTechType['role'])}
+                        disabled={saving}
+                        style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                      >
+                        <option value="Owner">Owner</option>
+                        <option value="Senior Tech">Senior Tech</option>
+                        <option value="Junior Tech">Junior Tech</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                      Service Availability <span className="text-danger">*</span>
+                    </label>
+                    <select
+                      className="form-select"
+                      value={form.serviceAvailability}
+                      onChange={(e) => handleChange('serviceAvailability', e.target.value as ServiceAvailability)}
+                      disabled={saving}
+                      style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                    >
+                      <option value="Studio only">Studio only</option>
+                      <option value="Home service only">Home service only</option>
+                      <option value="Studio and Home Service">Studio and Home Service</option>
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                      Working Days <span className="text-danger">*</span>
+                    </label>
+                    <div className="d-flex flex-wrap gap-2">
+                      {allDays.map((day) => (
+                        <button
+                          key={day}
+                          type="button"
+                          className={`btn btn-sm ${form.workingDays.includes(day) ? 'btn-dark' : 'btn-outline-secondary'}`}
+                          onClick={() => handleToggleWorkingDay(day)}
+                          disabled={saving}
+                          style={{ 
+                            borderRadius: '8px',
+                            fontWeight: 500,
+                            transition: 'all 0.2s ease',
+                            minWidth: '60px'
+                          }}
+                        >
+                          {day.slice(0, 3)}
+                        </button>
+                      ))}
+                    </div>
+                    <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.5rem' }}>
+                      Select all days this technician is available
+                    </small>
+                  </div>
+
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        Discount (%)
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        min={0}
+                        max={100}
+                        value={form.discount}
+                        onChange={(e) => handleChange('discount', e.target.value)}
+                        placeholder="e.g. 15"
+                        disabled={saving}
+                        style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                      />
+                      <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.25rem' }}>
+                        Optional: Discount percentage for all services
+                      </small>
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        Commission (%)
+                      </label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        min={0}
+                        max={100}
+                        value={form.commissionRate}
+                        onChange={(e) => handleChange('commissionRate', e.target.value)}
+                        placeholder="e.g. 40"
+                        disabled={saving}
+                        style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                      />
+                      <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.25rem' }}>
+                        Optional: Commission rate (0-100)
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                      Status <span className="text-danger">*</span>
+                    </label>
+                    <select
+                      className="form-select"
+                      value={form.status}
+                      onChange={(e) => handleChange('status', e.target.value as NailTechType['status'])}
+                      disabled={saving}
+                      style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer" style={{ borderTop: '1px solid #e0e0e0', padding: '1rem 1.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => !saving && setShowAddModal(false)}
+                    disabled={saving}
+                    style={{ 
+                      borderRadius: '8px',
+                      fontWeight: 500,
+                      padding: '0.5rem 1rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn btn-dark" 
+                    disabled={saving || !form.name.trim()}
+                    style={{ 
+                      borderRadius: '8px',
+                      fontWeight: 500,
+                      padding: '0.5rem 1rem',
+                      backgroundColor: saving || !form.name.trim() ? '#6c757d' : '#212529',
+                      borderColor: saving || !form.name.trim() ? '#6c757d' : '#212529',
+                      transition: 'all 0.2s ease',
+                      boxShadow: saving || !form.name.trim() ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    {saving ? (
+                      <Fragment>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Saving...
+                      </Fragment>
+                    ) : (
+                      <Fragment>
+                        <i className="bi bi-check-circle me-2"></i>
+                        Save Nail Tech
+                      </Fragment>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          </div>
+        </Fragment>
+      )}
     </div>
   );
 }

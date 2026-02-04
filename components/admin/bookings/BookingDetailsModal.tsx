@@ -32,11 +32,21 @@ export default function BookingDetailsModal({
   return (
     <div
       className={`modal fade ${show ? 'show' : ''}`}
-      style={{ display: show ? 'block' : 'none' }}
+      style={{ 
+        display: show ? 'flex' : 'none',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1055
+      }}
       tabIndex={-1}
       role="dialog"
     >
-      <div className="modal-dialog modal-dialog-centered" role="document">
+      <div className="modal-dialog modal-dialog-centered" style={{ margin: '1rem auto', position: 'relative' }} role="document">
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">Booking Details</h5>

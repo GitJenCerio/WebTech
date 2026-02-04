@@ -1,116 +1,137 @@
 import { NextResponse } from 'next/server';
-import { confirmBooking, getBookingById, updateBookingStatus, saveInvoice, updatePaymentStatus, updateDepositAmount, rescheduleBooking, getBookingFormUrl, splitRescheduleBooking, updateServiceType } from '@/lib/services/bookingService';
-import type { Invoice, PaymentStatus, ServiceType } from '@/lib/types';
+import { 
+  getBookingById, 
+  getBookingByCode,
+  confirmBooking, 
+  cancelBooking,
+  updateBookingPayment,
+  markBookingAsCompleted
+} from '@/lib/services/bookingService';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
 
+/**
+ * GET /api/bookings/[id]
+ * Get booking by ID or booking code
+ */
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const url = new URL(request.url);
-  const action = url.searchParams.get('action');
-  
-  // If action is 'formUrl', return the form URL instead of the booking
-  if (action === 'formUrl') {
-    try {
-      const formUrl = await getBookingFormUrl(params.id);
-      return NextResponse.json({ formUrl });
-    } catch (error: any) {
-      console.error('Error getting form URL:', error);
-      return NextResponse.json({ error: error.message ?? 'Failed to get form URL' }, { status: 500 });
+  try {
+    // Try as MongoDB ID first, then as booking code
+    let booking = await getBookingById(params.id);
+    
+    if (!booking) {
+      booking = await getBookingByCode(params.id);
     }
+
+    if (!booking) {
+      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      booking: {
+        id: booking._id.toString(),
+        bookingCode: booking.bookingCode,
+        customerId: booking.customerId,
+        nailTechId: booking.nailTechId,
+        slotIds: booking.slotIds,
+        service: booking.service,
+        status: booking.status,
+        paymentStatus: booking.paymentStatus,
+        pricing: booking.pricing,
+        payment: booking.payment,
+        completedAt: booking.completedAt?.toISOString() || null,
+        createdAt: booking.createdAt.toISOString(),
+        updatedAt: booking.updatedAt.toISOString(),
+      }
+    });
+  } catch (error: any) {
+    console.error('Error getting booking:', error);
+    return NextResponse.json({ 
+      error: error.message || 'Failed to get booking' 
+    }, { status: 500 });
   }
-  
-  const booking = await getBookingById(params.id);
-  if (!booking) {
-    return NextResponse.json({ error: 'Booking not found.' }, { status: 404 });
-  }
-  return NextResponse.json({ booking });
 }
 
+/**
+ * PATCH /api/bookings/[id]
+ * Update booking (confirm, cancel, update payment)
+ */
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const body = await request.json();
+  try {
+    const body = await request.json();
+    const { action } = body;
 
-  if (body?.action === 'confirm') {
-    const depositAmount = body.depositAmount !== undefined && body.depositAmount !== null ? Number(body.depositAmount) : undefined;
-    const depositPaymentMethod: 'PNB' | 'CASH' | 'GCASH' | undefined = body.depositPaymentMethod;
-    await confirmBooking(params.id, depositAmount, depositPaymentMethod);
-    return NextResponse.json({ success: true });
-  }
-
-  if (body?.action === 'cancel') {
-    const releaseSlot = body.releaseSlot !== false; // Default to true if not specified
-    await updateBookingStatus(params.id, 'cancelled', releaseSlot);
-    return NextResponse.json({ success: true });
-  }
-
-  if (body?.action === 'save_invoice') {
-    const invoice: Invoice = body.invoice;
-    if (!invoice) {
-      return NextResponse.json({ error: 'Invoice data required.' }, { status: 400 });
+    if (action === 'confirm') {
+      // Confirm booking (requires deposit or full payment)
+      const booking = await confirmBooking(params.id);
+      return NextResponse.json({
+        booking: {
+          id: booking._id.toString(),
+          bookingCode: booking.bookingCode,
+          status: booking.status,
+          paymentStatus: booking.paymentStatus,
+        }
+      });
     }
-    await saveInvoice(params.id, invoice);
-    return NextResponse.json({ success: true });
-  }
 
-  if (body?.action === 'update_payment') {
-    const paymentStatus: PaymentStatus = body.paymentStatus;
-    const paidAmount: number | undefined = body.paidAmount;
-    const tipAmount: number | undefined = body.tipAmount;
-    const paidPaymentMethod: 'PNB' | 'CASH' | 'GCASH' | undefined = body.paidPaymentMethod;
-    if (!paymentStatus) {
-      return NextResponse.json({ error: 'Payment status required.' }, { status: 400 });
+    if (action === 'cancel') {
+      // Cancel booking (admin override available)
+      const adminOverride = body.adminOverride === true;
+      const booking = await cancelBooking(params.id, adminOverride);
+      return NextResponse.json({
+        booking: {
+          id: booking._id.toString(),
+          bookingCode: booking.bookingCode,
+          status: booking.status,
+        }
+      });
     }
-    await updatePaymentStatus(params.id, paymentStatus, paidAmount, tipAmount, paidPaymentMethod);
-    return NextResponse.json({ success: true });
-  }
 
-  if (body?.action === 'update_deposit') {
-    const depositAmount = body.depositAmount !== undefined ? Number(body.depositAmount) : undefined;
-    const depositPaymentMethod: 'PNB' | 'CASH' | 'GCASH' | undefined = body.depositPaymentMethod;
-    if (depositAmount === undefined || isNaN(depositAmount)) {
-      return NextResponse.json({ error: 'Valid deposit amount required.' }, { status: 400 });
+    if (action === 'update_payment') {
+      // Update payment amounts
+      const paidAmount = typeof body.paidAmount === 'number' ? body.paidAmount : 0;
+      const tipAmount = typeof body.tipAmount === 'number' ? body.tipAmount : 0;
+      const method = body.method; // 'PNB' | 'CASH' | 'GCASH'
+
+      if (paidAmount < 0 || tipAmount < 0) {
+        return NextResponse.json({ 
+          error: 'Payment amounts must be non-negative' 
+        }, { status: 400 });
+      }
+
+      const booking = await updateBookingPayment(params.id, paidAmount, tipAmount, method);
+      return NextResponse.json({
+        booking: {
+          id: booking._id.toString(),
+          bookingCode: booking.bookingCode,
+          paymentStatus: booking.paymentStatus,
+          pricing: booking.pricing,
+          payment: booking.payment,
+        }
+      });
     }
-    await updateDepositAmount(params.id, depositAmount, depositPaymentMethod);
-    return NextResponse.json({ success: true });
-  }
 
-  if (body?.action === 'reschedule') {
-    const { newSlotId, linkedSlotIds } = body;
-    if (!newSlotId) {
-      return NextResponse.json({ error: 'New slot ID required.' }, { status: 400 });
+    if (action === 'mark_completed') {
+      // Mark booking as completed (admin-only)
+      const booking = await markBookingAsCompleted(params.id);
+      return NextResponse.json({
+        booking: {
+          id: booking._id.toString(),
+          bookingCode: booking.bookingCode,
+          status: booking.status,
+          completedAt: booking.completedAt?.toISOString() || null,
+        }
+      });
     }
-    await rescheduleBooking(params.id, newSlotId, linkedSlotIds);
-    return NextResponse.json({ success: true });
-  }
 
-  if (body?.action === 'split_reschedule') {
-    const { slot1Id, slot2Id, nailTech1Id, nailTech2Id } = body;
-    if (!slot1Id || !slot2Id || !nailTech1Id || !nailTech2Id) {
-      return NextResponse.json({ error: 'All slot IDs and nail tech IDs are required.' }, { status: 400 });
-    }
-    await splitRescheduleBooking(params.id, slot1Id, slot2Id, nailTech1Id, nailTech2Id);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      error: 'Invalid action. Supported actions: confirm, cancel, update_payment, mark_completed' 
+    }, { status: 400 });
+  } catch (error: any) {
+    console.error('Error updating booking:', error);
+    return NextResponse.json({ 
+      error: error.message || 'Failed to update booking' 
+    }, { status: 400 });
   }
-
-  if (body?.action === 'update_service_type') {
-    const newServiceType: ServiceType = body.serviceType;
-    if (!newServiceType) {
-      return NextResponse.json({ error: 'Service type is required.' }, { status: 400 });
-    }
-    try {
-      await updateServiceType(params.id, newServiceType);
-      return NextResponse.json({ success: true });
-    } catch (error: any) {
-      console.error('Error updating service type:', error);
-      return NextResponse.json({ error: error.message ?? 'Failed to update service type' }, { status: 500 });
-    }
-  }
-
-  if (!body?.status) {
-    return NextResponse.json({ error: 'No status provided.' }, { status: 400 });
-  }
-
-  await updateBookingStatus(params.id, body.status);
-  return NextResponse.json({ success: true });
 }
-

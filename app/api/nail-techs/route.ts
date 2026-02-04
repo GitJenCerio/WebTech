@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { listNailTechs, listActiveNailTechs } from '@/lib/services/nailTechService';
+import { listNailTechs, listActiveNailTechs, createNailTech } from '@/lib/services/nailTechService';
+import type { NailTechInput } from '@/lib/types';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -22,6 +23,40 @@ export async function GET(request: Request) {
   } catch (error: any) {
     console.error('Error listing nail techs:', error);
     return NextResponse.json({ error: error.message || 'Failed to list nail techs' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    const payload: NailTechInput = {
+      name: String(body.name || '').trim(),
+      role: body.role,
+      serviceAvailability: body.serviceAvailability,
+      workingDays: Array.isArray(body.workingDays) ? body.workingDays : [],
+      discount: typeof body.discount === 'number' ? body.discount : undefined,
+      commissionRate: typeof body.commissionRate === 'number' ? body.commissionRate : undefined,
+      status: body.status || 'Active',
+    };
+
+    if (!payload.name) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+
+    if (!payload.role) {
+      return NextResponse.json({ error: 'Role is required' }, { status: 400 });
+    }
+
+    if (!payload.serviceAvailability) {
+      return NextResponse.json({ error: 'Service availability is required' }, { status: 400 });
+    }
+
+    const nailTech = await createNailTech(payload);
+    return NextResponse.json({ nailTech }, { status: 201 });
+  } catch (error: any) {
+    console.error('Error creating nail tech:', error);
+    return NextResponse.json({ error: error.message || 'Failed to create nail tech' }, { status: 400 });
   }
 }
 

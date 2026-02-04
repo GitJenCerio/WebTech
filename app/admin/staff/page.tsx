@@ -1,59 +1,102 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DataTable from '@/components/admin/DataTable';
 import Pagination from '@/components/admin/Pagination';
 import ActionDropdown from '@/components/admin/ActionDropdown';
 import Badge from '@/components/admin/Badge';
 import StatusBadge, { BookingStatus } from '@/components/admin/StatusBadge';
+import AddUserModal from '@/components/admin/AddUserModal';
+import EditUserModal from '@/components/admin/EditUserModal';
 
 interface Staff {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Staff' | 'Nail Tech';
-  assignedNailTechId?: string;
+  role: 'admin' | 'staff';
+  assignedNailTechId?: string | null;
   assignedNailTechName?: string;
   status: 'active' | 'inactive';
+  authMethod?: 'google' | 'password';
+  emailVerified?: boolean;
 }
 
 export default function StaffPage() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Staff | null>(null);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [nailTechs, setNailTechs] = useState<Array<{ id: string; name: string }>>([]);
 
-  // Mock data
-  const staff: Staff[] = [
-    {
-      id: '1',
-      name: 'Juliana Adams',
-      email: 'juliana@glammednailsbyjhen.com',
-      role: 'Admin',
-      status: 'active',
-    },
-    {
-      id: '2',
-      name: 'Sarah Williams',
-      email: 'sarah@glammednailsbyjhen.com',
-      role: 'Staff',
-      assignedNailTechId: '1',
-      assignedNailTechName: 'Jhen',
-      status: 'active',
-    },
-    {
-      id: '3',
-      name: 'Lisa Brown',
-      email: 'lisa@glammednailsbyjhen.com',
-      role: 'Staff',
-      assignedNailTechId: '2',
-      assignedNailTechName: 'Maria Santos',
-      status: 'active',
-    },
-  ];
+  // Fetch users from database
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Fetch both users and nail techs in parallel
+      const [usersResponse, nailTechsResponse] = await Promise.all([
+        fetch('/api/users'),
+        fetch('/api/nail-techs?activeOnly=true')
+      ]);
+
+      const usersData = await usersResponse.json();
+      const nailTechsData = await nailTechsResponse.json();
+
+      if (!usersResponse.ok) {
+        throw new Error(usersData.error || 'Failed to fetch users');
+      }
+
+      // Update nail techs if fetched successfully
+      if (nailTechsResponse.ok && nailTechsData.nailTechs) {
+        setNailTechs(nailTechsData.nailTechs);
+      }
+
+      // Map database users to Staff interface
+      const techs = nailTechsResponse.ok && nailTechsData.nailTechs ? nailTechsData.nailTechs : nailTechs;
+      const mappedStaff: Staff[] = usersData.users.map((user: any) => {
+        // Find assigned nail tech name
+        const assignedNailTech = techs.find((tech: any) => tech.id === user.assignedNailTechId);
+        
+        return {
+          id: user.id,
+          name: user.name || user.email.split('@')[0],
+          email: user.email,
+          role: (user.role || 'admin') as 'admin' | 'staff',
+          assignedNailTechId: user.assignedNailTechId || null,
+          assignedNailTechName: assignedNailTech?.name,
+          status: (user.status || 'active') as 'active' | 'inactive',
+          authMethod: user.authMethod,
+          emailVerified: user.emailVerified,
+        };
+      });
+
+      setStaff(mappedStaff);
+    } catch (err: any) {
+      console.error('Error fetching users:', err);
+      setError(err.message || 'Failed to load users');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getRoleBadge = (role: string) => {
-    if (role === 'Admin') {
-      return <Badge variant="vip">{role}</Badge>;
+    if (role === 'admin') {
+      return <Badge variant="vip">Admin</Badge>;
     }
-    return <Badge variant="regular">{role}</Badge>;
+    return <Badge variant="regular">Staff</Badge>;
+  };
+
+  const handleEdit = (user: Staff) => {
+    setSelectedUser(user);
+    setShowEditUserModal(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -88,13 +131,33 @@ export default function StaffPage() {
               </small>
             </div>
           )}
+          <div className="mt-1">
+            <small className="text-muted">
+              {item.authMethod === 'google' ? (
+                <span><i className="bi bi-google me-1"></i>Google OAuth</span>
+              ) : (
+                <span><i className="bi bi-envelope me-1"></i>Email/Password</span>
+              )}
+            </small>
+          </div>
         </div>
       ),
     },
     {
       key: 'status',
       header: 'Status',
-      render: (item: Staff) => getStatusBadge(item.status),
+      render: (item: Staff) => (
+        <div>
+          {getStatusBadge(item.status)}
+          {item.emailVerified && (
+            <div className="mt-1">
+              <small className="text-success">
+                <i className="bi bi-check-circle me-1"></i>Verified
+              </small>
+            </div>
+          )}
+        </div>
+      ),
     },
     {
       key: 'actions',
@@ -102,8 +165,12 @@ export default function StaffPage() {
       render: (item: Staff) => (
         <ActionDropdown
           actions={[
-            { label: 'Edit', icon: 'bi-pencil' },
-            { label: 'Reset Password', icon: 'bi-key' },
+            { 
+              label: 'Edit', 
+              icon: 'bi-pencil',
+              onClick: () => handleEdit(item)
+            },
+            ...(item.authMethod === 'password' ? [{ label: 'Reset Password', icon: 'bi-key' }] : []),
             {
               label: item.status === 'active' ? 'Disable' : 'Enable',
               icon: item.status === 'active' ? 'bi-x-circle' : 'bi-check-circle',
@@ -115,15 +182,87 @@ export default function StaffPage() {
     },
   ];
 
+  if (loading) {
+    return (
+      <div>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
+            Staff / Users
+          </h4>
+          <button 
+            className="btn btn-dark"
+            onClick={() => setShowAddUserModal(true)}
+          >
+            <i className="bi bi-person-plus me-2"></i>Add User
+          </button>
+        </div>
+        <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '300px' }}>
+          <div className="text-center">
+            <div className="spinner-border text-dark" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-3 text-muted">Loading users...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
+            Staff / Users
+          </h4>
+          <button 
+            className="btn btn-dark"
+            onClick={() => setShowAddUserModal(true)}
+          >
+            <i className="bi bi-person-plus me-2"></i>Add User
+          </button>
+        </div>
+        <div className="alert alert-danger d-flex align-items-center" role="alert">
+          <i className="bi bi-exclamation-circle me-2"></i>
+          <div>
+            <strong>Error loading users:</strong> {error}
+            <button 
+              className="btn btn-sm btn-outline-danger ms-3"
+              onClick={fetchUsers}
+            >
+              <i className="bi bi-arrow-clockwise me-1"></i>Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
           Staff / Users
+          <span className="text-muted ms-2" style={{ fontSize: '0.875rem', fontWeight: 400 }}>
+            ({staff.length} {staff.length === 1 ? 'user' : 'users'})
+          </span>
         </h4>
-        <button className="btn btn-dark">
-          <i className="bi bi-person-plus me-2"></i>Add User
-        </button>
+        <div className="d-flex gap-2">
+          <button 
+            className="btn btn-outline-secondary"
+            onClick={fetchUsers}
+            disabled={loading}
+            title="Refresh users list"
+          >
+            <i className="bi bi-arrow-clockwise"></i>
+          </button>
+          <button 
+            className="btn btn-dark"
+            onClick={() => setShowAddUserModal(true)}
+          >
+            <i className="bi bi-person-plus me-2"></i>Add User
+          </button>
+        </div>
       </div>
 
       <DataTable
@@ -141,6 +280,30 @@ export default function StaffPage() {
           onPageChange={setCurrentPage}
         />
       </div>
+
+      {/* Add User Modal */}
+      <AddUserModal
+        show={showAddUserModal}
+        onHide={() => setShowAddUserModal(false)}
+        onUserAdded={() => {
+          // Refetch users after adding
+          fetchUsers();
+        }}
+      />
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        show={showEditUserModal}
+        onHide={() => {
+          setShowEditUserModal(false);
+          setSelectedUser(null);
+        }}
+        onUserUpdated={() => {
+          // Refetch users after updating
+          fetchUsers();
+        }}
+        user={selectedUser}
+      />
     </div>
   );
 }

@@ -52,25 +52,59 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === 'google') {
+        // Validate user email exists
+        if (!user.email) {
+          console.error('Google sign-in failed: No email provided');
+          return false;
+        }
+
         try {
           await connectDB();
           const existingUser = await User.findOne({ email: user.email });
 
+          // RESTRICTED ACCESS: Only allow sign-in if user already exists in database
           if (!existingUser) {
-            await User.create({
-              email: user.email,
-              name: user.name,
-              image: user.image,
-              emailVerified: true,
-            });
-          } else if (!existingUser.emailVerified) {
-            // Update email verification status if logging in with Google
-            existingUser.emailVerified = true;
-            if (user.image) existingUser.image = user.image;
-            await existingUser.save();
+            console.warn(`🚫 Access denied: User ${user.email} is not authorized. User must be added to the database first.`);
+            return false; // Deny access - user must be pre-approved
           }
-        } catch (error) {
-          console.error('Error creating/updating user:', error);
+
+          // User exists - update their profile information
+          if (!existingUser.emailVerified) {
+            existingUser.emailVerified = true;
+          }
+          if (user.image && user.image !== existingUser.image) {
+            existingUser.image = user.image;
+          }
+          if (user.name && user.name !== existingUser.name) {
+            existingUser.name = user.name;
+          }
+          await existingUser.save();
+          console.log(`✅ Authorized user signed in via Google: ${user.email}`);
+        } catch (error: any) {
+          console.error('❌ Error in Google sign-in callback:', error);
+          console.error('Error details:', {
+            message: error.message,
+            name: error.name,
+            code: error.code,
+            email: user.email,
+          });
+          
+          // Check for MongoDB connection errors
+          const isConnectionError = 
+            error.message?.includes('connection') || 
+            error.message?.includes('timeout') ||
+            error.message?.includes('MongooseServerSelectionError') ||
+            error.message?.includes('whitelist') ||
+            error.name === 'MongooseServerSelectionError';
+          
+          if (isConnectionError) {
+            console.error('❌ Database connection issue - cannot verify user authorization');
+            // Deny access if we can't verify the user exists
+            return false;
+          }
+          
+          // For other errors, deny access to be safe
+          console.error('❌ Error verifying user authorization');
           return false;
         }
       }

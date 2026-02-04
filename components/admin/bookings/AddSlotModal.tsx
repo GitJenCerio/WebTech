@@ -154,7 +154,17 @@ export default function AddSlotModal({
     <>
       <div
         className={`modal fade ${show ? 'show' : ''}`}
-        style={{ display: show ? 'block' : 'none', zIndex: 1055 }}
+        style={{ 
+          display: show ? 'flex' : 'none', 
+          zIndex: 1055,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
         tabIndex={-1}
         role="dialog"
         onClick={(e) => {
@@ -163,7 +173,7 @@ export default function AddSlotModal({
           }
         }}
       >
-        <div className="modal-dialog modal-dialog-centered modal-lg" role="document" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-dialog modal-dialog-centered modal-lg" style={{ margin: '1rem auto', position: 'relative' }} role="document" onClick={(e) => e.stopPropagation()}>
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">Add Slots (Bulk)</h5>

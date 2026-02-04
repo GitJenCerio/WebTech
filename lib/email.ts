@@ -32,7 +32,7 @@ export async function sendInviteEmail(params: SendInviteEmailParams): Promise<{ 
       const result = await resend.emails.send({
         from: fromEmail,
         to: email,
-        subject: `Welcome to ${process.env.NEXT_PUBLIC_APP_NAME || 'Glammed Nails'} - Set Your Password`,
+        subject: `Welcome to ${process.env.NEXT_PUBLIC_APP_NAME || 'Glammed Nails'} - Admin Access`,
         html: getInviteEmailTemplate(displayName, resetLink, role),
       });
 
@@ -56,17 +56,20 @@ export async function sendInviteEmail(params: SendInviteEmailParams): Promise<{ 
 
   // Fallback: Log the link (for development)
   console.log('\n📧 ============================================');
-  console.log('📧 INVITATION EMAIL (Development Mode)');
+  console.log('📧 INVITATION EMAIL (Development Mode - Email Service Not Configured)');
   console.log('📧 ============================================');
   console.log(`To: ${email}`);
-  console.log(`Subject: Welcome to ${process.env.NEXT_PUBLIC_APP_NAME || 'Glammed Nails'} - Set Your Password`);
+  console.log(`Subject: Welcome to ${process.env.NEXT_PUBLIC_APP_NAME || 'Glammed Nails'} - Admin Access`);
   console.log(`\nHello ${displayName},\n`);
   console.log(`You have been invited to join ${process.env.NEXT_PUBLIC_APP_NAME || 'Glammed Nails'} as a ${role || 'user'}.`);
-  console.log(`\nPlease click the link below to set your password:\n`);
-  console.log(`${resetLink}\n`);
+  console.log(`\n⚠️  EMAIL SERVICE NOT CONFIGURED`);
+  console.log(`\nPlease share this invitation link with the user:\n`);
+  console.log(`🔗 ${resetLink}\n`);
+  console.log(`\nTo enable email sending, add RESEND_API_KEY to your .env.local file.`);
+  console.log(`Get your API key at: https://resend.com/api-keys`);
   console.log('📧 ============================================\n');
 
-  return { success: true };
+  return { success: true, error: 'Email service not configured - link logged to console' };
 }
 
 /**
@@ -96,13 +99,13 @@ function getInviteEmailTemplate(displayName: string, resetLink: string, role?: s
         </p>
         
         <p style="font-size: 16px;">
-          To get started, please click the button below to set your password:
+          To get started, please click the button below to sign in with your Google account:
         </p>
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${resetLink}" 
              style="display: inline-block; background: #667eea; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
-            Set Your Password
+            Sign In with Google
           </a>
         </div>
         
@@ -114,7 +117,7 @@ function getInviteEmailTemplate(displayName: string, resetLink: string, role?: s
         </p>
         
         <p style="font-size: 14px; color: #666; margin-top: 30px;">
-          This link will expire in 7 days. If you didn't request this invitation, you can safely ignore this email.
+          You can sign in using the same Google account (${email}) that received this invitation. If you didn't request this invitation, you can safely ignore this email.
         </p>
         
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">

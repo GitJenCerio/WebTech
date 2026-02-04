@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { path: '/admin/overview', label: 'Overview', icon: 'bi-grid-3x3-gap' },
   { path: '/admin/bookings', label: 'Bookings & Slots', icon: 'bi-calendar-check' },
   { path: '/admin/finance', label: 'Finance', icon: 'bi-cash-stack' },
+  { path: '/admin/quotation', label: 'Quotation', icon: 'bi-calculator' },
   { path: '/admin/clients', label: 'Clients', icon: 'bi-people' },
   { path: '/admin/nail-techs', label: 'Nail Techs', icon: 'bi-scissors' },
   { path: '/admin/staff', label: 'Staff / Users', icon: 'bi-person-gear' },
