@@ -172,40 +172,121 @@ export async function backupCustomer(customer: Customer, operation: 'create' | '
 /**
  * Backup a Booking to Google Sheets
  */
-export async function backupBooking(booking: Booking, operation: 'create' | 'update' = 'create'): Promise<void> {
+type BookingBackupInput =
+  | Booking
+  | {
+      _id?: { toString?: () => string } | string;
+      id?: string;
+      bookingCode?: string;
+      bookingId?: string;
+      slotId?: string;
+      slotIds?: string[];
+      pairedSlotId?: string | null;
+      linkedSlotIds?: string[];
+      customerId: string;
+      nailTechId: string;
+      status: string;
+      serviceType?: string;
+      clientType?: string;
+      serviceLocation?: string;
+      service?: {
+        type?: string;
+        clientType?: string;
+        location?: string;
+      };
+      formResponseId?: string;
+      dateChanged?: boolean;
+      timeChanged?: boolean;
+      validationWarnings?: string[];
+      paymentStatus?: string;
+      paidAmount?: number;
+      depositAmount?: number;
+      tipAmount?: number;
+      pricing?: {
+        paidAmount?: number;
+        depositRequired?: number;
+        tipAmount?: number;
+      };
+      depositDate?: string;
+      paidDate?: string;
+      tipDate?: string;
+      payment?: {
+        depositPaidAt?: Date;
+        fullyPaidAt?: Date;
+        method?: 'PNB' | 'CASH' | 'GCASH';
+      };
+      depositPaymentMethod?: 'PNB' | 'CASH' | 'GCASH';
+      paidPaymentMethod?: 'PNB' | 'CASH' | 'GCASH';
+      createdAt: string | Date;
+      updatedAt: string | Date;
+    };
+
+function normalizeId(id: unknown): string {
+  if (!id) return '';
+  if (typeof id === 'string') return id;
+  if (typeof (id as any).toString === 'function') return (id as any).toString();
+  return '';
+}
+
+function normalizeDate(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
+}
+
+export async function backupBooking(booking: BookingBackupInput, operation: 'create' | 'update' = 'create'): Promise<void> {
+  const id = booking.id || normalizeId(booking._id);
+  const bookingIdentifier = booking.bookingId || booking.bookingCode || '';
+  const primarySlotId = booking.slotId || booking.slotIds?.[0] || '';
+  const linkedSlotIds =
+    booking.linkedSlotIds && booking.linkedSlotIds.length > 0
+      ? booking.linkedSlotIds
+      : (booking.slotIds || []).slice(1);
+  const serviceType = booking.serviceType || booking.service?.type || '';
+  const clientType = booking.clientType || booking.service?.clientType || '';
+  const serviceLocation = booking.serviceLocation || booking.service?.location || '';
+  const paidAmount = booking.paidAmount ?? booking.pricing?.paidAmount ?? 0;
+  const depositAmount = booking.depositAmount ?? booking.pricing?.depositRequired ?? 0;
+  const tipAmount = booking.tipAmount ?? booking.pricing?.tipAmount ?? 0;
+  const depositDate = booking.depositDate || normalizeDate(booking.payment?.depositPaidAt);
+  const paidDate = booking.paidDate || normalizeDate(booking.payment?.fullyPaidAt);
+  const depositPaymentMethod = booking.depositPaymentMethod || booking.payment?.method || '';
+  const paidPaymentMethod = booking.paidPaymentMethod || booking.payment?.method || '';
+
   const values = [
-    booking.id,
-    booking.bookingId,
-    booking.slotId,
+    id,
+    bookingIdentifier,
+    primarySlotId,
     booking.pairedSlotId || '',
-    (booking.linkedSlotIds || []).join(','),
+    linkedSlotIds.join(','),
     booking.customerId,
     booking.nailTechId,
     booking.status,
-    booking.serviceType || '',
-    booking.clientType || '',
-    booking.serviceLocation || '',
+    serviceType,
+    clientType,
+    serviceLocation,
     booking.formResponseId || '',
     booking.dateChanged ? 'Yes' : 'No',
     booking.timeChanged ? 'Yes' : 'No',
     (booking.validationWarnings || []).join(';'),
     booking.paymentStatus || '',
-    booking.paidAmount || 0,
-    booking.depositAmount || 0,
-    booking.tipAmount || 0,
-    booking.depositDate || '',
-    booking.paidDate || '',
+    paidAmount,
+    depositAmount,
+    tipAmount,
+    depositDate,
+    paidDate,
     booking.tipDate || '',
-    booking.depositPaymentMethod || '',
-    booking.paidPaymentMethod || '',
-    booking.createdAt,
-    booking.updatedAt,
+    depositPaymentMethod,
+    paidPaymentMethod,
+    normalizeDate(booking.createdAt),
+    normalizeDate(booking.updatedAt),
   ];
 
   if (operation === 'create') {
     await appendRow('Bookings', values);
   } else {
-    await updateRow('Bookings', booking.id, values);
+    await updateRow('Bookings', id, values);
   }
 }
 

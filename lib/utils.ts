@@ -1,9 +1,17 @@
 /**
  * Converts 24-hour time format (HH:mm) to 12-hour format with AM/PM
- * @param time24 - Time in 24-hour format (e.g., "14:30", "09:00")
+ * Safely handles input that might already be in 12-hour format
+ * @param time24 - Time in 24-hour format (e.g., "14:30", "09:00") or already 12-hour (e.g., "2:30 PM")
  * @returns Time in 12-hour format (e.g., "2:30 PM", "9:00 AM")
  */
 export function formatTime12Hour(time24: string): string {
+  if (!time24) return '';
+  
+  // If already contains AM/PM, return as-is (avoid double formatting)
+  if (time24.toUpperCase().includes('AM') || time24.toUpperCase().includes('PM')) {
+    return time24;
+  }
+  
   const [hours, minutes] = time24.split(':');
   const hour = parseInt(hours, 10);
   const ampm = hour >= 12 ? 'PM' : 'AM';

@@ -66,7 +66,7 @@
 
 ## 🎨 2. BRANDING & DESIGN SYSTEM
 
-### Brand Identity: GLAMMED NAILS BY JHEN
+### Brand Identity: glammednailsbyjhen
 
 **Design Philosophy:** Sophisticated monochrome luxury - Black & White minimalism with bold framed accents
 

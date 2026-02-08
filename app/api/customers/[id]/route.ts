@@ -49,3 +49,31 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    const connectDB = (await import('@/lib/mongodb')).default;
+    const Customer = (await import('@/lib/models/Customer')).default;
+    const Booking = (await import('@/lib/models/Booking')).default;
+
+    await connectDB();
+    const customer = await Customer.findById(params.id);
+    if (!customer) {
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+    }
+
+    // Check for active bookings
+    const activeBookings = await Booking.countDocuments({
+      customerId: params.id,
+      status: { $in: ['pending', 'confirmed'] },
+    });
+    if (activeBookings > 0) {
+      return NextResponse.json({ error: 'Cannot delete customer with active bookings' }, { status: 400 });
+    }
+
+    await Customer.findByIdAndDelete(params.id);
+    return NextResponse.json({ message: 'Customer deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting customer:', error);
+    return NextResponse.json({ error: error.message || 'Failed to delete customer' }, { status: 500 });
+  }
+}

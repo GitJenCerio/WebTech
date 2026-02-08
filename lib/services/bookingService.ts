@@ -1,39 +1,47 @@
 import connectDB from '../mongodb';
 import Booking, { IBooking } from '../models/Booking';
+import BookingCounter from '../models/BookingCounter';
 import Slot from '../models/Slot';
 import Customer from '../models/Customer';
 import type { BookingStatus, PaymentStatus, ServiceType } from '../types';
 
 /**
- * Generate a unique booking code in format GN-XXXXXX
+ * Get Manila-local date key in YYYYMMDD format
+ */
+function getManilaDateKey(date: Date = new Date()): string {
+  const formatted = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+
+  return formatted.replace(/-/g, '');
+}
+
+/**
+ * Generate a unique booking code in format GN-YYYYMMDDNNN
+ * Uses an atomic per-day counter to avoid race conditions.
  */
 async function generateBookingCode(): Promise<string> {
-  // Find the highest existing booking code
-  const lastBooking = await Booking.findOne({})
-    .sort({ bookingCode: -1 })
-    .limit(1)
-    .lean();
+  const dateKey = getManilaDateKey();
 
-  let nextNumber = 1;
-  if (lastBooking?.bookingCode) {
-    // Extract number from format GN-XXXXXX
-    const match = lastBooking.bookingCode.match(/GN-(\d+)/);
-    if (match) {
-      nextNumber = parseInt(match[1], 10) + 1;
+  const counter = await BookingCounter.findOneAndUpdate(
+    { dateKey },
+    {
+      $inc: { seq: 1 },
+      $setOnInsert: { dateKey },
+    },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
     }
-  }
+  );
 
-  // Format as GN-XXXXXX (6 digits, zero-padded)
-  const code = `GN-${String(nextNumber).padStart(6, '0')}`;
-  
-  // Double-check uniqueness (race condition protection)
-  const exists = await Booking.findOne({ bookingCode: code });
-  if (exists) {
-    // If collision, try next number
-    return generateBookingCode();
-  }
-  
-  return code;
+  const sequence = counter?.seq ?? 1;
+  const sequencePadded = String(sequence).padStart(3, '0');
+  return `GN-${dateKey}${sequencePadded}`;
 }
 
 /**

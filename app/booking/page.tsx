@@ -1,13 +1,18 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import { IoClose } from 'react-icons/io5';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import ClientTypeSelectionModal from '@/components/booking/ClientTypeSelectionModal';
+import ServiceTypeSelectionModal from '@/components/booking/ServiceTypeSelectionModal';
+import NailTechSelectionModal from '@/components/booking/NailTechSelectionModal';
+import BookingFormModal from '@/components/booking/BookingFormModal';
+import SlotConfirmationModal from '@/components/booking/SlotConfirmationModal';
+import BookingSuccessModal from '@/components/booking/BookingSuccessModal';
 import type { Slot, BlockedDate, ServiceType, NailTech } from '@/lib/types';
 import { getNextSlotTime, SLOT_TIMES } from '@/lib/constants/slots';
 import { formatTime12Hour } from '@/lib/utils';
@@ -118,356 +123,18 @@ function canSlotAccommodateService(
 type ClientType = 'new' | 'repeat';
 type ServiceLocation = 'homebased_studio' | 'home_service';
 
-interface SlotModalProps {
-  slot: Slot | null;
-  serviceType: ServiceType;
-  onServiceChange: (value: ServiceType) => void;
-  serviceOptions: { value: ServiceType; label: string }[];
-  linkedSlots: Slot[];
-  serviceMessage: string | null;
-  clientType: ClientType;
-  onClientTypeChange: (value: ClientType) => void;
-  repeatClientEmail: string;
-  onRepeatClientEmailChange: (value: string) => void;
-  repeatClientName: string | null;
-  onRepeatClientNameChange: (value: string | null) => void;
-  repeatClientError: string | null;
-  setRepeatClientError: (value: string | null) => void;
-  isCheckingCustomer: boolean;
-  setIsCheckingCustomer: (value: boolean) => void;
-  serviceLocation: ServiceLocation;
-  onServiceLocationChange: (value: ServiceLocation) => void;
-  squeezeFeeAcknowledged: boolean;
-  onSqueezeFeeAcknowledgedChange: (value: boolean) => void;
-  socialMediaName: string;
-  onSocialMediaNameChange: (value: string) => void;
-  disableProceed: boolean;
-  hasConfirmedNoRecord: boolean;
-  onResetNoRecord: () => void;
-  onNoRecordFound: (searchedValue: string) => void;
-  onRecordFound: (customerName: string) => void;
-  onClose: () => void;
-  onProceed: () => void;
-}
-
-function SlotModal({
-  slot,
-  serviceType,
-  onServiceChange,
-  serviceOptions,
-  linkedSlots,
-  serviceMessage,
-  clientType,
-  onClientTypeChange,
-  repeatClientEmail,
-  onRepeatClientEmailChange,
-  repeatClientName,
-  onRepeatClientNameChange,
-  repeatClientError,
-  setRepeatClientError,
-  isCheckingCustomer,
-  setIsCheckingCustomer,
-  serviceLocation,
-  onServiceLocationChange,
-  squeezeFeeAcknowledged,
-  onSqueezeFeeAcknowledgedChange,
-  socialMediaName,
-  onSocialMediaNameChange,
-  disableProceed,
-  hasConfirmedNoRecord,
-  onResetNoRecord,
-  onNoRecordFound,
-  onRecordFound,
-  isBooking,
-  onClose,
-  onProceed,
-}: SlotModalProps & { isBooking?: boolean }) {
-  if (!slot) return null;
-
-  const requiredSlots = getRequiredSlotCount(serviceType);
-  const requiresMultipleSlots = requiredSlots > 1;
-  const missingLinkedSlots = requiresMultipleSlots && linkedSlots.length !== requiredSlots - 1;
-  const hasSqueezeFee = slot.slotType === 'with_squeeze_fee';
-  const isHomeService = serviceLocation === 'home_service';
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-slate-100 border-2 border-slate-300 rounded-lg max-w-md w-full p-4 sm:p-6 md:p-8 shadow-xl shadow-slate-900/20 my-4 max-h-[90vh] overflow-y-auto relative"
-      >
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onClose();
-          }}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 rounded-full hover:bg-slate-200 active:bg-slate-300 transition-colors touch-manipulation z-10"
-          aria-label="Close"
-          type="button"
-        >
-          <IoClose className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" />
-        </button>
-        <h3 className="text-xl sm:text-2xl font-heading font-semibold mb-3 sm:mb-4 pr-8 sm:pr-10">Book This Slot</h3>
-        <div className="space-y-2.5 sm:space-y-3 mb-4 sm:mb-6">
-          <div>
-            <p className="text-sm sm:text-base">
-              <span className="text-gray-600">Date:</span>{' '}
-              <span className="font-bold text-black">{format(new Date(slot.date), 'EEEE, MMMM d, yyyy')}</span>
-            </p>
-          </div>
-          <div>
-            <p className="text-sm sm:text-base">
-              <span className="text-gray-600">Time:</span>{' '}
-              {requiresMultipleSlots && linkedSlots.length > 0 ? (
-                <>
-                  <span className="font-bold text-black">
-                    {formatTime12Hour(slot.time)}
-                    {linkedSlots.map((linkedSlot) => (
-                      <span key={linkedSlot.id}> → {formatTime12Hour(linkedSlot.time)}</span>
-                    ))}
-                  </span>
-                  <span className="text-[10px] sm:text-xs text-slate-500 block mt-1">
-                    This booking will use {requiredSlots} consecutive time slots: <strong>{formatTime12Hour(slot.time)}</strong>
-                    {linkedSlots.map((linkedSlot) => (
-                      <span key={linkedSlot.id}> and <strong>{formatTime12Hour(linkedSlot.time)}</strong></span>
-                    ))}
-                  </span>
-                </>
-              ) : (
-                <span className="font-bold text-black">{formatTime12Hour(slot.time)}</span>
-              )}
-            </p>
-          </div>
-          {serviceLocation && (
-            <div>
-              <p className="text-sm sm:text-base">
-                <span className="text-gray-600">Service Location:</span>{' '}
-                <span className="font-bold text-black">
-                  {serviceLocation === 'homebased_studio' ? 'Home Studio' : 'Home Service (+₱1,000)'}
-                </span>
-              </p>
-            </div>
-          )}
-          <div>
-            <span className="text-sm sm:text-base text-gray-600">Service:</span>
-            <select
-              value={serviceType}
-              onChange={(e) => onServiceChange(e.target.value as ServiceType)}
-              className="mt-1 w-full rounded-xl sm:rounded-2xl border-2 border-slate-300 bg-white px-3 py-3 sm:py-2 text-base sm:text-base touch-manipulation"
-            >
-              {serviceOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <span className="text-sm sm:text-base text-gray-600">Client Type:</span>
-            <select
-              value={clientType}
-              onChange={(e) => {
-                onClientTypeChange(e.target.value as ClientType);
-                if (e.target.value === 'new') {
-                  onRepeatClientNameChange(null);
-                  onRepeatClientEmailChange('');
-                  onSocialMediaNameChange('');
-                  onResetNoRecord();
-                }
-              }}
-              className="mt-1 w-full rounded-xl sm:rounded-2xl border-2 border-slate-300 bg-white px-3 py-3 sm:py-2 text-base sm:text-base touch-manipulation"
-            >
-              <option value="new">New Client</option>
-              <option value="repeat">Repeat Client</option>
-            </select>
-          </div>
-          {clientType === 'repeat' && (
-            <div>
-              <label className="text-sm sm:text-base text-gray-600 mb-1 block">
-                Enter your email address or contact number to find your account
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={repeatClientEmail}
-                  onChange={(e) => {
-                    onRepeatClientEmailChange(e.target.value);
-                    onRepeatClientNameChange(null);
-                    setRepeatClientError(null);
-                    onResetNoRecord(); // Reset when user types
-                  }}
-                  placeholder="Email or contact number"
-                  className="flex-1 mt-1 w-full rounded-xl sm:rounded-2xl border-2 border-slate-300 bg-white px-3 py-3 sm:py-2 text-base sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-slate-400"
-                />
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const inputValue = repeatClientEmail.trim();
-                    if (!inputValue) {
-                      return;
-                    }
-                    
-                    setIsCheckingCustomer(true);
-                    setRepeatClientError(null);
-                    
-                    // Determine if it's an email or phone
-                    const isEmail = inputValue.includes('@');
-                    const searchParams = isEmail 
-                      ? `email=${encodeURIComponent(inputValue)}`
-                      : `phone=${encodeURIComponent(inputValue)}`;
-                    
-                    try {
-                      const res = await fetch(`/api/customers/find?${searchParams}`);
-                      if (res.ok) {
-                        const data = await res.json();
-                        if (data.found && data.customer?.name) {
-                          onRepeatClientNameChange(data.customer.name);
-                          setRepeatClientError(null);
-                          onResetNoRecord();
-                          onRecordFound(data.customer.name);
-                          setIsCheckingCustomer(false);
-                        } else {
-                          // Customer not found - show modal after checking completes
-                          setIsCheckingCustomer(false);
-                          onNoRecordFound(inputValue);
-                        }
-                      } else {
-                        // Error checking - show modal after checking completes
-                        setIsCheckingCustomer(false);
-                        onNoRecordFound(inputValue);
-                      }
-                    } catch (error) {
-                      console.error('Error finding customer:', error);
-                      // Error occurred - show modal after checking completes
-                      setIsCheckingCustomer(false);
-                      onNoRecordFound(inputValue);
-                    }
-                  }}
-                  disabled={!repeatClientEmail.trim() || isCheckingCustomer}
-                  className="mt-1 px-4 py-3 sm:py-2 text-base sm:text-base font-semibold text-white bg-slate-900 rounded-xl sm:rounded-2xl hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed touch-manipulation focus:outline-none focus:ring-2 focus:ring-slate-400 min-w-[100px]"
-                >
-                  {isCheckingCustomer ? 'Checking...' : 'Confirm'}
-                </button>
-              </div>
-              
-              {repeatClientName && (
-                <div className="mt-2 rounded-xl sm:rounded-2xl border-2 border-emerald-200 bg-emerald-50 px-3 sm:px-4 py-2.5">
-                  <p className="text-[10px] sm:text-xs text-emerald-700 font-medium flex items-center gap-1.5">
-                    <span className="text-emerald-600">✓</span>
-                    Welcome back, <span className="font-semibold">{repeatClientName}</span>!
-                  </p>
-                </div>
-              )}
-              
-              
-              {!repeatClientName && !repeatClientError && repeatClientEmail.trim() && (
-                <p className="mt-1.5 text-[10px] sm:text-xs text-slate-600">
-                  Click &quot;Confirm&quot; to verify your account.
-                </p>
-              )}
-              
-              {!repeatClientEmail.trim() && (
-                <p className="mt-1.5 text-[10px] sm:text-xs text-slate-600">
-                  We&apos;ll auto-fill your information if we find your previous booking records.
-                </p>
-              )}
-            </div>
-          )}
-          {(clientType === 'new' || (clientType === 'repeat' && !repeatClientName && hasConfirmedNoRecord)) && (
-            <div>
-              <label className="text-sm sm:text-base text-gray-600 mb-1 block">
-                Facebook or Instagram Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={socialMediaName}
-                onChange={(e) => onSocialMediaNameChange(e.target.value)}
-                placeholder="Enter your FB or IG name"
-                className="mt-1 w-full rounded-xl sm:rounded-2xl border-2 border-slate-300 bg-white px-3 py-3 sm:py-2 text-base sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-slate-400"
-                required
-              />
-              {clientType === 'repeat' && !repeatClientName && hasConfirmedNoRecord && (
-                <p className="mt-1.5 text-[10px] sm:text-xs text-slate-600">
-                  No existing record found. Please provide your Facebook or Instagram name to proceed.
-                </p>
-              )}
-            </div>
-          )}
-          {requiresMultipleSlots && missingLinkedSlots && serviceMessage && (serviceMessage.includes('requires') || serviceMessage.includes('consecutive')) && (
-            <div className="rounded-2xl border-2 border-rose-400 bg-rose-200 px-4 py-3 text-sm text-rose-800">
-              <p>This service requires <strong>{requiredSlots} consecutive slots</strong>. Please select a different time or date where {requiredSlots} consecutive slots are available.</p>
-            </div>
-          )}
-          {serviceMessage && !missingLinkedSlots && !(serviceMessage.includes('requires') && serviceMessage.includes('consecutive') && serviceMessage.includes('Please select')) && (
-            <div className="rounded-xl sm:rounded-2xl border-2 border-blue-400 bg-blue-100 px-3 sm:px-4 py-2.5 sm:py-3">
-              <p className="text-xs sm:text-sm font-semibold text-blue-900 mb-1">📅 Slot Information</p>
-              <p className="text-[10px] sm:text-xs text-blue-900 leading-relaxed">
-                {serviceMessage}
-              </p>
-              {requiresMultipleSlots && linkedSlots.length > 0 && (
-                <p className="text-[10px] sm:text-xs text-blue-800 mt-2 italic">
-                  This booking will use these consecutive time slots: <strong>{formatTime12Hour(slot.time)}</strong>
-                  {linkedSlots.map((linkedSlot) => (
-                    <span key={linkedSlot.id}> → <strong>{formatTime12Hour(linkedSlot.time)}</strong></span>
-                  ))}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {hasSqueezeFee && (
-          <div className="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl border-2 border-purple-400 bg-purple-200 px-3 sm:px-4 py-2.5 sm:py-3">
-            <p className="text-xs sm:text-sm font-semibold text-purple-900 mb-2">⚠️ Squeeze-in Fee</p>
-            <p className="text-[10px] sm:text-xs text-purple-900 leading-relaxed mb-3">
-              This slot has a squeeze-in fee of ₱500. This is an additional charge on top of the regular service fee.
-            </p>
-            <label className="flex items-start gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={squeezeFeeAcknowledged}
-                onChange={(e) => onSqueezeFeeAcknowledgedChange(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded border-2 border-purple-600 text-purple-600 focus:ring-purple-500 focus:ring-2"
-              />
-              <span className="text-[10px] sm:text-xs text-purple-900 font-medium">
-                I understand and agree to pay the ₱500 squeeze-in fee for this slot.
-              </span>
-            </label>
-          </div>
-        )}
-
-        <div className="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl border-2 border-amber-400 bg-amber-200 px-3 sm:px-4 py-2.5 sm:py-3">
-          <p className="text-xs sm:text-sm font-semibold text-amber-900 mb-1">Deposit Required</p>
-          <p className="text-[10px] sm:text-xs text-amber-900 leading-relaxed">
-            ₱500 deposit upon booking is required to reserve your slot, it is consumable and non-refundable. (NO DEPOSIT, NO APPOINTMENT)
-          </p>
-        </div>
-
-        <div>
-          <button
-            onClick={onProceed}
-            disabled={disableProceed}
-            className="w-full px-4 py-3 sm:py-2 bg-black text-white font-medium border-2 border-white shadow-[0_0_0_2px_#000000] hover:bg-white hover:text-black hover:border hover:border-black hover:shadow-[0_0_0_2px_#ffffff,0_0_0_3px_#000000] active:scale-[0.98] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60 touch-manipulation text-sm sm:text-base"
-          >
-            {isBooking ? 'Reserving Slot...' : 'Proceed to Booking Form'}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
 export default function BookingPage() {
   // Booking flow state
   const [showClientTypeModal, setShowClientTypeModal] = useState(true);
+  const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
+  const [showNailTechModal, setShowNailTechModal] = useState(false);
   const [clientInfo, setClientInfo] = useState<{
     clientType: ClientType;
-    contactNumber?: string;
-    socialMediaName?: string;
+    serviceLocation: ServiceLocation;
     customerId?: string;
     customerName?: string;
+    contactNumber?: string;
+    socialMediaName?: string;
   } | null>(null);
 
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -483,10 +150,14 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [selectedService, setSelectedService] = useState<ServiceType>('manicure');
-  const [serviceLocation, setServiceLocation] = useState<ServiceLocation>('homebased_studio');
   const [linkedSlots, setLinkedSlots] = useState<Slot[]>([]);
   const [serviceMessage, setServiceMessage] = useState<string | null>(null);
   const [squeezeFeeAcknowledged, setSqueezeFeeAcknowledged] = useState(false);
+  const [showBookingFormModal, setShowBookingFormModal] = useState(false);
+  const [showSlotConfirmModal, setShowSlotConfirmModal] = useState(false);
+  const [showBookingSuccessModal, setShowBookingSuccessModal] = useState(false);
+  const [latestBookingCode, setLatestBookingCode] = useState('');
+  const [bookingSuccessNote, setBookingSuccessNote] = useState<string | null>(null);
   const serviceOptions = clientInfo ? SERVICE_OPTIONS[clientInfo.serviceLocation] : SERVICE_OPTIONS.homebased_studio;
 
   useEffect(() => {
@@ -684,12 +355,11 @@ export default function BookingPage() {
 
   const availableSlotsForDate = useMemo(
     () => {
-      const today = format(new Date(), 'yyyy-MM-dd');
       return slots.filter(
         (slot) =>
           slot.date === selectedDate &&
-          slot.date >= today &&
           slot.status === 'available' &&
+          !slot.isHidden &&
           !blockedDates.some(
             (block) => slot.date >= block.startDate && slot.date <= block.endDate
           )
@@ -709,51 +379,11 @@ export default function BookingPage() {
     [availableSlotsForDate, selectedService, slots, blockedDates],
   );
 
+
   // Find dates with no available slots (for calendar styling)
-  const noAvailableSlotsDates = useMemo(() => {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const datesWithNoSlots: string[] = [];
-    
-    // Check all dates in the current month view
-    const start = startOfMonth(currentMonth);
-    const end = endOfMonth(currentMonth);
-    const allDatesInMonth = eachDayOfInterval({ start, end });
-    
-    allDatesInMonth.forEach((date) => {
-      const isoDate = format(date, 'yyyy-MM-dd');
-      if (isoDate < today) return; // Skip past dates
-      
-      // Check if date is blocked
-      const isBlocked = blockedDates.some(
-        (block) => isoDate >= block.startDate && isoDate <= block.endDate
-      );
-      if (isBlocked) return; // Skip blocked dates
-      
-      // Check if there are any available slots for this date
-      const hasAvailableSlots = slots.some(
-        (slot) =>
-          slot.date === isoDate &&
-          slot.date >= today &&
-          slot.status === 'available' &&
-          !slot.isHidden
-      );
-      
-      if (!hasAvailableSlots) {
-        datesWithNoSlots.push(isoDate);
-      }
-    });
-    
-    return datesWithNoSlots;
-  }, [slots, blockedDates, currentMonth]);
 
   const handleSelectSlot = useCallback((slot: Slot) => {
     if (slot.status !== 'available') return;
-    setSelectedService('manicure');
-    setClientType('new');
-    setRepeatClientEmail('');
-    setRepeatClientName(null);
-    setSocialMediaName('');
-    setServiceLocation('homebased_studio');
     setLinkedSlots([]);
     setServiceMessage(null);
     setSqueezeFeeAcknowledged(false);
@@ -788,39 +418,183 @@ export default function BookingPage() {
     }
   }, [selectedDate]);
 
-  const requiredSlots = getRequiredSlotCount(selectedService);
+  // Determine available days based on required consecutive slots for selected service
+  const requiredSlots = getRequiredSlotCount(selectedService, clientInfo?.serviceLocation);
+  
+  // Filter calendar dates to show only those with enough consecutive available slots
+  const availableDatesForService = useMemo(() => {
+    if (!clientInfo) return new Set<string>();
+    
+    const available = new Set<string>();
+    const dateGroups: Record<string, Slot[]> = {};
+    
+    // Group slots by date
+    slots.forEach((slot) => {
+      if (!slot.isHidden && slot.status === 'available') {
+        const dateKey = slot.date;
+        if (!dateGroups[dateKey]) dateGroups[dateKey] = [];
+        dateGroups[dateKey].push(slot);
+      }
+    });
+    
+    // Check each date for consecutive available slots
+    Object.entries(dateGroups).forEach(([dateKey, dateSlots]) => {
+      if (canSlotAccommodateService(dateSlots[0], selectedService, slots, blockedDates)) {
+        available.add(dateKey);
+      }
+    });
+    
+    return available;
+  }, [slots, blockedDates, selectedService, clientInfo]);
+
+  // Dates that don't have enough consecutive slots for the selected service
+  const noAvailableSlotsDates = useMemo(() => {
+    if (!clientInfo) return [];
+    
+    const allDates = new Set<string>();
+    slots.forEach((slot) => {
+      allDates.add(slot.date);
+    });
+    
+    return Array.from(allDates).filter((date) => !availableDatesForService.has(date));
+  }, [slots, availableDatesForService, clientInfo]);
+
   const hasSqueezeFee = selectedSlot?.slotType === 'with_squeeze_fee';
   const missingLinkedSlots = requiredSlots > 1 && linkedSlots.length !== requiredSlots - 1;
   const disableProceed =
     !selectedSlot ||
     !clientInfo ||
+    !selectedNailTechId ||
+    !selectedService ||
+    !clientInfo.serviceLocation ||
     missingLinkedSlots ||
     (hasSqueezeFee && !squeezeFeeAcknowledged) ||
     isBooking;
 
 
-  async function handleProceedToBooking() {
-    if (!selectedSlot || isBooking || !clientInfo) return; // Prevent multiple simultaneous bookings
+  function handleSelectSlotAndOpenForm(slot: Slot) {
+    if (slot.status !== 'available') return;
+    setLinkedSlots([]);
+    setServiceMessage(null);
+    setSqueezeFeeAcknowledged(false);
+    setSelectedSlot(slot);
+    // Show slot confirmation modal first
+    setShowSlotConfirmModal(true);
+  }
+
+  async function uploadBookingPhoto(
+    bookingId: string,
+    photoType: 'currentState' | 'inspiration',
+    file: File
+  ) {
+    const photoData = new FormData();
+    photoData.set('photoType', photoType);
+    photoData.set('file', file);
+
+    const photoResponse = await fetch(`/api/bookings/${bookingId}/photos`, {
+      method: 'POST',
+      body: photoData,
+    });
+
+    if (!photoResponse.ok) {
+      const photoError = await photoResponse.json().catch(() => ({ error: 'Failed to upload photo' }));
+      throw new Error(photoError.error || 'Failed to upload photo');
+    }
+  }
+
+  async function uploadBookingPhotos(bookingId: string, formData: {
+    currentNailPicture?: File;
+    inspoPictures: File[];
+  }) {
+    const uploads: Promise<void>[] = [];
+
+    if (formData.currentNailPicture) {
+      uploads.push(uploadBookingPhoto(bookingId, 'currentState', formData.currentNailPicture));
+    }
+
+    const inspoFiles = (formData.inspoPictures || []).slice(0, 3);
+    for (const inspoFile of inspoFiles) {
+      uploads.push(uploadBookingPhoto(bookingId, 'inspiration', inspoFile));
+    }
+
+    if (uploads.length === 0) return;
+    await Promise.all(uploads);
+  }
+
+  async function handleCompleteBooking(formData: {
+    name: string;
+    email: string;
+    contactNumber: string;
+    socialMediaName: string;
+    howDidYouFindUs: string;
+    howDidYouFindUsOther?: string;
+    currentNailPicture?: File;
+    inspoPictures: File[];
+    hasRussianManicure: string;
+    hasGelOverlay: string;
+    hasSoftgelExtensions: string;
+    allergies: string;
+    nailConcerns: string;
+    nailDamageHistory: string;
+    services: string[];
+    inspoDescription: string;
+    waiverAccepted: string;
+    rulesAccepted: boolean;
+  }) {
+    if (!selectedSlot || isBooking || !clientInfo) return;
     
     setIsBooking(true);
     try {
-      // Optimized: don't pre-refresh (extra network hop). The server will validate availability atomically.
       const requiredSlots = getRequiredSlotCount(selectedService, clientInfo.serviceLocation);
       const linkedSlotIds = linkedSlots.map((slot) => slot.id);
 
       if (requiredSlots > 1 && linkedSlotIds.length !== requiredSlots - 1) {
-        // Client-side validation (should already be enforced by UI)
         setLinkedSlots([]);
-        return;
+        throw new Error('Invalid slot selection');
       }
 
-      // Build slotIds array (selected slot + linked slots)
-      const slotIds = [selectedSlot.id, ...linkedSlotIds];
+      let customerId = clientInfo.customerId;
 
-      // Calculate pricing (simplified - you may want to fetch from a pricing service)
-      // For now, using placeholder values - adjust based on your pricing logic
-      const basePrice = 1500; // Example base price
-      const depositRequired = 500; // Example deposit
+      // Create customer if no existing customer ID (new client or repeat-not-found)
+      if (!customerId) {
+        const customerResponse = await fetch('/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.contactNumber,
+            socialMediaName: formData.socialMediaName,
+            howDidYouFindUs: formData.howDidYouFindUs,
+            howDidYouFindUsOther: formData.howDidYouFindUsOther,
+            nailHistory: {
+              hasRussianManicure: formData.hasRussianManicure === 'yes',
+              hasGelOverlay: formData.hasGelOverlay === 'yes',
+              hasSoftgelExtensions: formData.hasSoftgelExtensions === 'yes',
+            },
+            healthInfo: {
+              allergies: formData.allergies,
+              nailConcerns: formData.nailConcerns,
+              nailDamageHistory: formData.nailDamageHistory,
+            },
+            preferredServices: formData.services,
+            inspoDescription: formData.inspoDescription,
+            waiverAccepted: formData.waiverAccepted === 'accept',
+          }),
+        });
+
+        if (!customerResponse.ok) {
+          const errorData = await customerResponse.json().catch(() => ({ error: 'Failed to create customer' }));
+          throw new Error(errorData.error || 'Failed to create customer account');
+        }
+
+        const customerData = await customerResponse.json();
+        customerId = customerData.customer._id || customerData.customer.id;
+      }
+
+      const slotIds = [selectedSlot.id, ...linkedSlotIds];
+      const basePrice = 1500;
+      const depositRequired = 500;
       const total = basePrice + (clientInfo.serviceLocation === 'home_service' ? 1000 : 0);
 
       const response = await fetch('/api/bookings', {
@@ -828,7 +602,8 @@ export default function BookingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slotIds,
-          customerId: clientInfo.customerId || '', // Will need to create customer first if new
+          customerId,
+          customerEmail: formData.email,
           nailTechId: selectedNailTechId || '',
           service: {
             type: selectedService,
@@ -845,7 +620,6 @@ export default function BookingPage() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         const errorMessage = errorData.error || 'Slot is no longer available.';
-        // Check if it's a race condition (slot already booked)
         if (errorMessage.includes('no longer available') || errorMessage.includes('not available')) {
           throw new Error('This slot was just booked by another customer. Please select a different time slot.');
         }
@@ -853,24 +627,38 @@ export default function BookingPage() {
       }
 
       const data = await response.json();
-      
-      // Show success message
-      alert(`Booking confirmed! Your booking code is: ${data.booking.bookingCode}\n\nPlease complete your deposit payment to finalize your appointment.`);
-      
-      // Reset state and reload
+
+      let photoUploadWarning: string | null = null;
+      const bookingId = data?.booking?.id;
+      if (bookingId) {
+        try {
+          await uploadBookingPhotos(bookingId, {
+            currentNailPicture: formData.currentNailPicture,
+            inspoPictures: formData.inspoPictures,
+          });
+        } catch (photoError) {
+          console.error('Booking created but photo upload failed:', photoError);
+          photoUploadWarning =
+            'Your booking was saved, but some nail photos were not uploaded. You can upload them again later.';
+        }
+      }
+
+      // Reset and reload
+      setShowBookingFormModal(false);
+      setShowSlotConfirmModal(false);
       setSelectedSlot(null);
       setLinkedSlots([]);
       setSelectedNailTechId(null);
       setClientInfo(null);
-      await loadData();
+      setShowClientTypeModal(true);
+      
+      setLatestBookingCode(data.booking.bookingCode || '');
+      setBookingSuccessNote(photoUploadWarning);
+      setShowBookingSuccessModal(true);
     } catch (error: any) {
       console.error('Error creating booking:', error);
-      alert(error.message || 'This slot is no longer available. Please pick another slot.');
-      // Only refresh on failure (keeps success path fast)
-      await loadData();
-      // Reset selection to allow user to pick a new slot
-      setSelectedSlot(null);
-      setLinkedSlots([]);
+      // Re-throw for modal to handle and display
+      throw error;
     } finally {
       setIsBooking(false);
     }
@@ -893,18 +681,18 @@ export default function BookingPage() {
           {/* Nail Tech Selection - Now shown in modal */}
           {selectedNailTechId && (
             <div className="mb-6 sm:mb-8 max-w-4xl mx-auto px-2 sm:px-4">
-              <div className="rounded-xl sm:rounded-2xl border-2 border-slate-300 bg-slate-50 px-4 sm:px-5 py-3 sm:py-4">
+              <div className="rounded-xl border-2 px-5 py-4" style={{ borderColor: '#212529', backgroundColor: '#f8f9fa' }}>
                 {(() => {
                   const selectedTech = nailTechs.find(t => t.id === selectedNailTechId);
                   if (!selectedTech) return null;
                   const hasDiscount = selectedTech.discount !== undefined && selectedTech.discount !== null && selectedTech.discount > 0;
                   return (
                     <div className="space-y-1">
-                      <p className="text-xs sm:text-sm text-slate-600">
-                        Viewing calendar for: <strong>Ms. {selectedTech.name}</strong>
+                      <p className="text-sm" style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}>
+                        Viewing calendar for: <strong style={{ fontFamily: "'Lato', sans-serif" }}>Ms. {selectedTech.name}</strong>
                       </p>
                       {hasDiscount && (
-                        <p className="text-xs sm:text-sm font-semibold text-green-600">
+                        <p className="text-sm font-semibold text-green-600" style={{ fontFamily: "'Lato', sans-serif" }}>
                           🎉 Special Offer: {selectedTech.discount}% discount on all services!
                         </p>
                       )}
@@ -915,7 +703,8 @@ export default function BookingPage() {
                           setLinkedSlots([]);
                           setServiceMessage(null);
                         }}
-                        className="text-xs sm:text-sm text-slate-600 hover:text-slate-900 underline mt-2"
+                        className="text-sm hover:opacity-75 underline mt-2 transition-opacity"
+                        style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
                       >
                         Change nail technician
                       </button>
@@ -925,24 +714,6 @@ export default function BookingPage() {
               </div>
             </div>
           )}
-
-          {/* Slot Requirements Notice */}
-          <div className="mb-6 sm:mb-8 md:mb-12 max-w-4xl mx-auto px-2 sm:px-4">
-            <div className="rounded-xl sm:rounded-2xl border-2 border-blue-300 bg-blue-50 px-4 sm:px-5 py-3 sm:py-4">
-              <h3 className="text-xs sm:text-base font-semibold text-blue-900 mb-2 sm:mb-3 flex items-center gap-2">
-                <span>Slot Requirements by Service</span>
-              </h3>
-              <div className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-sm text-blue-800">
-                <p><strong>Mani + Pedi:</strong> 2 consecutive slots required</p>
-                <p><strong>Home Service:</strong> Requires Mani + Pedi or 2 pax within Manila and 3 pax if outside Manila</p>
-                <div className="mt-2.5 pt-2.5 border-t border-blue-200">
-                  <p className="text-[9px] sm:text-xs font-medium italic text-blue-900">
-                    <strong>Important:</strong> For services requiring multiple slots, select the <strong>first</strong> slot of the consecutive sequence. The system will automatically book the required consecutive slots for you. If you have special cases like 3 or more pax, please send us a message.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {!selectedNailTechId ? null : loading ? (
             <div className="flex justify-center items-center h-96">
@@ -954,15 +725,13 @@ export default function BookingPage() {
           ) : (
             <>
               <div className="max-w-4xl mx-auto px-2 sm:px-4">
-                <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1.8fr,1fr]">
-                  <div id="booking-calendar" className="scroll-mt-24">
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-[1.8fr,1fr]">
+                  <div id="booking-calendar" className="scroll-mt-24 order-2 lg:order-1">
                     {(() => {
-                      const today = format(new Date(), 'yyyy-MM-dd');
-                      const futureSlots = slots.filter((slot) => slot.date >= today);
                       return (
                         <CalendarGrid
                           referenceDate={currentMonth}
-                          slots={futureSlots.filter((slot) => slot.status === 'available')}
+                          slots={slots}
                           blockedDates={blockedDates}
                           selectedDate={selectedDate}
                           onSelectDate={setSelectedDate}
@@ -977,74 +746,96 @@ export default function BookingPage() {
 
                   <section 
                     ref={slotsSectionRef}
-                    className="rounded-2xl sm:rounded-3xl border-2 border-slate-300 bg-slate-100 p-4 sm:p-6 shadow-md shadow-slate-900/10 scroll-mt-24"
+                    className="rounded-xl border-2 p-3 sm:p-4 lg:p-6 shadow-sm scroll-mt-24 order-1 lg:order-2 flex flex-col"
+                    style={{ borderColor: '#212529', backgroundColor: '#f8f9fa' }}
                   >
                   <header className="mb-3 sm:mb-4">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-slate-500">Available slots</p>
+                      <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em]" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>Available slots</p>
                       <button
                         type="button"
                         onClick={() => loadData(true)}
                         disabled={loading}
-                        className="text-[10px] sm:text-xs text-slate-600 hover:text-slate-900 underline disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="text-[10px] sm:text-xs underline disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        style={{ color: '#495057', fontFamily: "'Lato', sans-serif" }}
                         title="Refresh slots"
                       >
                         {loading ? 'Refreshing...' : 'Refresh'}
                       </button>
                     </div>
-                    <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-900">
-                      {format(new Date(selectedDate), 'EEEE, MMM d')}
+                    <h2 className="text-base sm:text-lg lg:text-xl font-semibold break-words" style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}>
+                      {format(parseISO(selectedDate), 'EEEE, MMM d')}
                     </h2>
-                    <p className="text-xs sm:text-sm text-slate-600">
-                      Tap a time to reserve it instantly.
+                    <p className="text-xs sm:text-sm" style={{ color: '#495057', fontFamily: "'Lato', sans-serif" }}>
+                      Tap a time to reserve it.
                     </p>
                     {clientInfo && selectedService && getRequiredSlotCount(selectedService, clientInfo.serviceLocation) > 1 && (
-                      <p className="text-[10px] sm:text-xs text-amber-700 mt-1">
-                        For {getRequiredSlotCount(selectedService, clientInfo.serviceLocation)}-slot services, select the <strong>first</strong> slot of the consecutive sequence (e.g., if you need 2 slots at 8:00 AM and 10:30 AM, select 8:00 AM).
+                      <p className="text-[10px] sm:text-xs mt-1 leading-relaxed" style={{ color: '#856404', fontFamily: "'Lato', sans-serif" }}>
+                        Select the <strong>first</strong> slot for {getRequiredSlotCount(selectedService, clientInfo.serviceLocation)}-slot services.
                       </p>
                     )}
                   </header>
 
-                  <div className="space-y-3">
-                    {availableSlotsForDate.length === 0 && (
-                      <div className="rounded-2xl border-2 border-dashed border-red-300 bg-red-50 p-4 text-sm">
-                        <p className="text-red-700 font-semibold">
-                          No available slots for this day.
-                        </p>
-                        <p className="text-red-600 mt-2">
-                          Please try selecting a different date.
-                        </p>
-                      </div>
-                    )}
-                    {availableSlotsForDate.map((slot) => (
-                      <button
-                        key={slot.id}
-                        type="button"
-                        onClick={() => handleSelectSlot(slot)}
-                        className="w-full rounded-xl sm:rounded-2xl border-2 border-emerald-400 bg-emerald-200 px-3 sm:px-4 py-3 sm:py-3.5 text-left transition-all hover:border-emerald-600 hover:bg-emerald-300 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500 touch-manipulation"
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-emerald-700 font-semibold">Available</p>
-                          {slot.slotType === 'with_squeeze_fee' && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold bg-purple-200 text-purple-900 border border-purple-300">
-                              ₱500 Squeeze-in Fee
-                            </span>
-                          )}
+                  <div className="space-y-2 sm:space-y-3 max-h-[60vh] lg:max-h-[calc(100vh-300px)] overflow-y-auto">
+                    {(() => {
+                      const slotsToDisplay = requiredSlots === 1 ? availableSlotsForDate : compatibleSlotsForDate;
+                      return slotsToDisplay.length === 0 ? (
+                        <div className="rounded-xl border-2 border-dashed p-3 sm:p-4 text-sm" style={{ borderColor: '#f5c6cb', backgroundColor: '#f8d7da', fontFamily: "'Lato', sans-serif" }}>
+                          <p className="font-semibold text-sm" style={{ color: '#721c24' }}>
+                            No available slots for this day.
+                          </p>
+                          <p className="mt-1 text-xs sm:text-sm" style={{ color: '#721c24' }}>
+                            Please select a different date.
+                          </p>
                         </div>
-                        <p className="text-base sm:text-lg font-semibold text-emerald-900">{formatTime12Hour(slot.time)}</p>
-                        {slot.notes && <p className="text-xs sm:text-sm text-emerald-800 mt-0.5">{slot.notes}</p>}
-                      </button>
-                    ))}
+                      ) : null;
+                    })()}
+                    {(() => {
+                      const slotsToDisplay = requiredSlots === 1 ? availableSlotsForDate : compatibleSlotsForDate;
+                      // Sort slots chronologically by time
+                      const sortedSlots = [...slotsToDisplay].sort((a, b) => a.time.localeCompare(b.time));
+                      return sortedSlots.map((slot) => (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          onClick={() => handleSelectSlotAndOpenForm(slot)}
+                          className="w-full rounded-lg sm:rounded-xl border-2 px-3 sm:px-4 py-2.5 sm:py-3 text-left transition-all active:scale-[0.98] focus:outline-none focus:ring-2 touch-manipulation"
+                          style={{ 
+                            borderColor: '#c3e6cb',
+                            backgroundColor: '#d4edda',
+                            fontFamily: "'Lato', sans-serif"
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#28a745';
+                            e.currentTarget.style.backgroundColor = '#c3e6cb';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = '#c3e6cb';
+                            e.currentTarget.style.backgroundColor = '#d4edda';
+                          }}
+                        >
+                          {slot.slotType === 'with_squeeze_fee' && (
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-1">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold self-start sm:self-auto" style={{ backgroundColor: '#e2d5f3', color: '#6f42c1', border: '1px solid #c5a7e8', fontFamily: "'Lato', sans-serif" }}>
+                                ₱500 Squeeze-in Fee
+                              </span>
+                            </div>
+                          )}
+                          <p className="text-base sm:text-lg font-semibold" style={{ color: '#155724', fontFamily: "'Lato', sans-serif" }}>{formatTime12Hour(slot.time)}</p>
+                          {slot.notes && <p className="text-xs sm:text-sm mt-0.5" style={{ color: '#155724', fontFamily: "'Lato', sans-serif" }}>{slot.notes}</p>}
+                        </button>
+                      ));
+                    })()}
                   </div>
                 </section>
                 </div>
               </div>
 
-              <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-gray-600 px-2 sm:px-4">
+              <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm px-2 sm:px-4" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>
                 {error ? (
-                  <p className="text-red-600">{error}</p>
+                  <p style={{ color: '#721c24' }}>{error}</p>
                 ) : (
-                  <p>Green cards are open slots. Pink dates are blocked.</p>
+                  <p>Green cards are open slots. Available times will be shown after selecting a date.</p>
                 )}
               </div>
             </>
@@ -1061,145 +852,86 @@ export default function BookingPage() {
         onContinue={(data) => {
           setClientInfo(data);
           setShowClientTypeModal(false);
+          setShowServiceTypeModal(true);
         }}
       />
 
-      {/* Nail Tech Selection Modal - Shows after client info is collected */}
-      {!showClientTypeModal && clientInfo && !selectedNailTechId && !loadingNailTechs && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-slate-100 border-2 border-slate-300 rounded-lg max-w-sm w-full p-4 sm:p-5 shadow-xl shadow-slate-900/20 my-4 max-h-[90vh] overflow-y-auto relative"
-          >
-            <h3 className="text-base sm:text-lg font-heading font-semibold mb-2 sm:mb-3 pr-8 sm:pr-10">
-              Select Your Nail Technician
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 mb-3 sm:mb-4">
-              Available technicians for {clientInfo.serviceLocation === 'homebased_studio' ? 'Home Studio' : 'Home Service'}:
-            </p>
-            
-            {(() => {
-              // Filter nail techs based on service location
-              const availableTechs = nailTechs.filter((tech) => {
-                if (clientInfo.serviceLocation === 'homebased_studio') {
-                  return tech.serviceAvailability === 'Studio only' || tech.serviceAvailability === 'Studio and Home Service';
-                } else {
-                  return tech.serviceAvailability === 'Home service only' || tech.serviceAvailability === 'Studio and Home Service';
-                }
-              });
+      {/* Service Type Selection Modal - Shows after client type */}
+      <ServiceTypeSelectionModal
+        isOpen={showServiceTypeModal}
+        serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
+        selectedService={selectedService}
+        onContinue={(serviceType) => {
+          setSelectedService(serviceType);
+          setShowServiceTypeModal(false);
+          setShowNailTechModal(true);
+        }}
+        onBack={() => {
+          setShowServiceTypeModal(false);
+          setShowClientTypeModal(true);
+          setClientInfo(null);
+        }}
+      />
 
-              return availableTechs.length > 0 ? (
-                <div className="space-y-2 sm:space-y-3">
-                  <select
-                    value={selectedNailTechId || ''}
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        setSelectedNailTechId(e.target.value);
-                        setSelectedSlot(null);
-                        setLinkedSlots([]);
-                        setServiceMessage(null);
-                      }
-                    }}
-                    className="w-full rounded-lg sm:rounded-xl border-2 border-slate-300 bg-white px-2.5 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs touch-manipulation focus:outline-none focus:ring-2 focus:ring-slate-400"
-                  >
-                    <option value="">-- Please select a nail technician --</option>
-                    {availableTechs.map((tech) => (
-                      <option key={tech.id} value={tech.id}>
-                        Ms. {tech.name} ({tech.role}){tech.discount != null && tech.discount > 0 ? ` - ${tech.discount}% OFF` : ''}
-                      </option>
-                    ))}
-                  </select>
-                
-                {selectedNailTechId && (() => {
-                  const selectedTech = nailTechs.find(t => t.id === selectedNailTechId);
-                  if (!selectedTech) return null;
-                  const hasDiscount = selectedTech.discount !== undefined && selectedTech.discount !== null && selectedTech.discount > 0;
-                  return (
-                    <div className="mt-2 space-y-2">
-                      <div className="rounded-lg sm:rounded-xl border-2 border-green-300 bg-green-50 px-2.5 sm:px-3 py-2 sm:py-2.5">
-                        <p className="text-xs text-green-900 font-medium">
-                          Selected: <strong>Ms. {selectedTech.name}</strong>
-                        </p>
-                        {hasDiscount && (
-                          <p className="text-xs font-semibold text-green-700 mt-1">
-                            🎉 Special Offer: {selectedTech.discount}% discount on all services!
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (selectedNailTechId) {
-                            // Modal will close automatically when selectedNailTechId is set
-                          }
-                        }}
-                        className="w-full px-3 sm:px-4 py-2 bg-black text-white font-medium border-2 border-white shadow-[0_0_0_2px_#000000] hover:bg-white hover:text-black hover:border hover:border-black hover:shadow-[0_0_0_2px_#ffffff,0_0_0_3px_#000000] active:scale-[0.98] transition-all duration-300 touch-manipulation text-xs sm:text-sm"
-                      >
-                        Continue to Calendar
-                      </button>
-                    </div>
-                  );
-                })()}
-                </div>
-              ) : (
-                <div className="rounded-lg sm:rounded-xl border-2 border-red-300 bg-red-50 px-3 sm:px-4 py-2.5 sm:py-3">
-                  <p className="text-xs sm:text-sm text-red-800">
-                    No nail technicians available for {clientInfo.serviceLocation === 'homebased_studio' ? 'Home Studio' : 'Home Service'} at the moment. Please try again later.
-                  </p>
-                </div>
-              );
-            })()}
-          </motion.div>
-        </div>
-      )}
+      {/* Nail Tech Selection Modal - Shows after service type is selected */}
+      <NailTechSelectionModal
+        isOpen={showNailTechModal}
+        nailTechs={nailTechs}
+        selectedNailTechId={selectedNailTechId}
+        serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
+        onContinue={(techId) => {
+          setSelectedNailTechId(techId);
+          setSelectedSlot(null);
+          setLinkedSlots([]);
+          setServiceMessage(null);
+          setShowNailTechModal(false);
+        }}
+        onBack={() => {
+          setShowNailTechModal(false);
+          setShowServiceTypeModal(true);
+        }}
+      />
 
-      {/* Simplified Slot Modal - Only service selection and booking confirmation */}
-      {selectedSlot && clientInfo && (
-        <SlotModal
-          slot={selectedSlot}
-          serviceType={selectedService}
-          onServiceChange={setSelectedService}
-          serviceOptions={serviceOptions}
-          linkedSlots={linkedSlots}
-          serviceMessage={serviceMessage}
-          clientType={clientInfo.clientType}
-          onClientTypeChange={() => {}} // Not changeable at this stage
-          repeatClientEmail={clientInfo.contactNumber || ''}
-          onRepeatClientEmailChange={() => {}} // Not changeable
-          repeatClientName={clientInfo.customerName || null}
-          onRepeatClientNameChange={() => {}} // Not changeable
-          repeatClientError={null}
-          setRepeatClientError={() => {}} // Not used
-          isCheckingCustomer={false}
-          setIsCheckingCustomer={() => {}} // Not used
-          serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
-          onServiceLocationChange={() => {}} // Not changeable at this stage
-          squeezeFeeAcknowledged={squeezeFeeAcknowledged}
-          onSqueezeFeeAcknowledgedChange={setSqueezeFeeAcknowledged}
-          socialMediaName={clientInfo.socialMediaName || ''}
-          onSocialMediaNameChange={() => {}} // Not changeable
-          disableProceed={disableProceed}
-          hasConfirmedNoRecord={false}
-          onResetNoRecord={() => {}} // Not used
-          onNoRecordFound={() => {}} // Not used
-          onRecordFound={() => {}} // Not used
-          isBooking={isBooking}
-          onClose={() => {
-            setSelectedSlot(null);
-            if (clientInfo) {
-              const options = SERVICE_OPTIONS[clientInfo.serviceLocation];
-              setSelectedService(options[0].value);
-            } else {
-              setSelectedService('manicure');
-            }
-            setLinkedSlots([]);
-            setServiceMessage(null);
-            setSqueezeFeeAcknowledged(false);
-          }}
-          onProceed={handleProceedToBooking}
-        />
-      )}
+      {/* Slot Confirmation Modal - Shows after slot selection */}
+      <SlotConfirmationModal
+        isOpen={showSlotConfirmModal}
+        slotDate={selectedSlot?.date || ''}
+        slotTime={selectedSlot?.time || ''}
+        slotType={selectedSlot?.slotType}
+        linkedSlotTimes={linkedSlots.map(s => s.time)}
+        serviceName={serviceOptions.find(o => o.value === selectedService)?.label}
+        onConfirm={() => {
+          setShowSlotConfirmModal(false);
+          setShowBookingFormModal(true);
+        }}
+        onBack={() => {
+          setShowSlotConfirmModal(false);
+          setSelectedSlot(null);
+          setLinkedSlots([]);
+        }}
+      />
 
+      {/* Booking Form Modal - Collect customer info */}
+      <BookingFormModal
+        isOpen={showBookingFormModal}
+        clientType={clientInfo?.clientType || 'new'}
+        clientName={clientInfo?.customerName}
+        clientContactNumber={clientInfo?.contactNumber}
+        clientSocialMediaName={clientInfo?.socialMediaName}
+        onClose={() => setShowBookingFormModal(false)}
+        onSubmit={handleCompleteBooking}
+        isSubmitting={isBooking}
+      />
+      
+      <BookingSuccessModal
+        isOpen={showBookingSuccessModal}
+        bookingCode={latestBookingCode}
+        uploadWarning={bookingSuccessNote}
+        onClose={() => {
+          setShowBookingSuccessModal(false);
+          setBookingSuccessNote(null);
+        }}
+      />
 
       <Footer />
     </main>

@@ -66,6 +66,19 @@ export function CalendarGrid({
     });
   };
 
+  const getSlotCounts = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const dateSlots = slotsByDate.get(dateStr) || [];
+    const visibleSlots = dateSlots.filter((slot) => !slot.isHidden);
+    
+    return {
+      available: visibleSlots.filter((slot) => slot.status === 'available').length,
+      booked: visibleSlots.filter((slot) => slot.status === 'booked').length,
+      pending: visibleSlots.filter((slot) => slot.status === 'pending').length,
+      total: visibleSlots.length,
+    };
+  };
+
   const getSlotStatus = (date: Date): 'available' | 'booked' | 'blocked' | 'none' => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
@@ -74,11 +87,13 @@ export function CalendarGrid({
     }
 
     const dateSlots = slotsByDate.get(dateStr) || [];
-    if (dateSlots.length === 0) {
+    const visibleSlots = dateSlots.filter((slot) => !slot.isHidden);
+    
+    if (visibleSlots.length === 0) {
       return 'none';
     }
 
-    const hasAvailable = dateSlots.some((slot) => slot.status === 'available');
+    const hasAvailable = visibleSlots.some((slot) => slot.status === 'available');
     if (hasAvailable) {
       return 'available';
     }
@@ -113,22 +128,25 @@ export function CalendarGrid({
   const todayStr = format(today, 'yyyy-MM-dd');
 
   return (
-    <div className="rounded-2xl border-2 border-slate-300 bg-white p-4 sm:p-6 shadow-md">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wider text-slate-400 mb-1">Calendar</p>
-          <h2 className="text-xl font-semibold text-slate-900">
+    <div className="rounded-xl border-2 bg-white p-3 sm:p-4 lg:p-6 shadow-sm" style={{ borderColor: '#212529', fontFamily: "'Lato', sans-serif" }}>
+      <div className="mb-3 sm:mb-4 flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] sm:text-xs uppercase tracking-wider mb-1" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>Calendar</p>
+          <h2 className="text-base sm:text-lg lg:text-xl font-semibold break-words" style={{ color: '#212529', fontFamily: "'Playfair Display', serif" }}>
             {format(referenceDate, 'MMMM yyyy')}
           </h2>
           {nailTechName && (
-            <p className="text-sm text-slate-600 mt-1">{nailTechName}</p>
+            <p className="text-xs sm:text-sm mt-1 break-words" style={{ color: '#495057', fontFamily: "'Lato', sans-serif" }}>{nailTechName}</p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1 sm:gap-2 ml-2">
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="rounded-lg p-2 hover:bg-slate-100 transition-colors"
+            className="rounded-lg p-2 sm:p-2.5 text-xl sm:text-2xl font-bold transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+            style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             aria-label="Previous month"
           >
             ‹
@@ -136,7 +154,10 @@ export function CalendarGrid({
           <button
             type="button"
             onClick={handleNextMonth}
-            className="rounded-lg p-2 hover:bg-slate-100 transition-colors"
+            className="rounded-lg p-2 sm:p-2.5 text-xl sm:text-2xl font-bold transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+            style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             aria-label="Next month"
           >
             ›
@@ -146,7 +167,7 @@ export function CalendarGrid({
 
       <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="text-center text-xs font-semibold text-slate-600 py-2">
+          <div key={day} className="text-center text-[10px] sm:text-xs font-semibold py-1.5 sm:py-2" style={{ color: '#495057', fontFamily: "'Lato', sans-serif" }}>
             {day}
           </div>
         ))}
@@ -157,43 +178,44 @@ export function CalendarGrid({
           const isToday = isSameDay(date, today);
           const isSelected = dateStr === selectedDate;
           const status = getSlotStatus(date);
+          const slotCounts = getSlotCounts(date);
           const isPast = disablePastDates && date < today && !isToday;
           const hasNoSlots = noAvailableSlotsDates.includes(dateStr);
 
-          let bgColor = 'bg-white';
-          let textColor = 'text-slate-700';
-          let borderColor = 'border-slate-200';
+          let bgColorStyle = '#ffffff';
+          let textColorStyle = '#495057';
+          let borderColorStyle = '#dee2e6';
 
           if (!isCurrentMonth) {
-            textColor = 'text-slate-300';
+            textColorStyle = '#adb5bd';
           } else if (isPast) {
-            textColor = 'text-slate-300';
-            bgColor = 'bg-slate-50';
+            textColorStyle = '#adb5bd';
+            bgColorStyle = '#f8f9fa';
           } else if (status === 'blocked') {
-            bgColor = 'bg-red-50';
-            textColor = 'text-red-700';
-            borderColor = 'border-red-200';
+            bgColorStyle = '#f8d7da';
+            textColorStyle = '#721c24';
+            borderColorStyle = '#f5c6cb';
           } else if (status === 'booked') {
-            bgColor = 'bg-yellow-50';
-            textColor = 'text-yellow-700';
-            borderColor = 'border-yellow-200';
+            bgColorStyle = '#fff3cd';
+            textColorStyle = '#856404';
+            borderColorStyle = '#ffeaa7';
           } else if (status === 'available') {
-            bgColor = 'bg-green-50';
-            textColor = 'text-green-700';
-            borderColor = 'border-green-200';
+            bgColorStyle = '#d4edda';
+            textColorStyle = '#155724';
+            borderColorStyle = '#c3e6cb';
           } else if (hasNoSlots) {
-            bgColor = 'bg-slate-50';
-            textColor = 'text-slate-400';
+            bgColorStyle = '#f8f9fa';
+            textColorStyle = '#6c757d';
           }
 
           if (isSelected) {
-            borderColor = 'border-black border-2';
-            bgColor = isCurrentMonth ? 'bg-black text-white' : bgColor;
-            textColor = isCurrentMonth && isSelected ? 'text-white' : textColor;
+            borderColorStyle = '#212529';
+            bgColorStyle = isCurrentMonth ? '#212529' : bgColorStyle;
+            textColorStyle = isCurrentMonth && isSelected ? '#ffffff' : textColorStyle;
           }
 
           if (isToday && !isSelected) {
-            borderColor = 'border-blue-400 border-2';
+            borderColorStyle = '#495057';
           }
 
           return (
@@ -203,24 +225,42 @@ export function CalendarGrid({
               onClick={() => handleDateClick(date)}
               disabled={isPast && disablePastDates}
               className={`
-                aspect-square rounded-lg border-2 p-1 sm:p-2 text-xs sm:text-sm font-medium
-                transition-all hover:scale-105
-                ${bgColor} ${textColor} ${borderColor}
+                aspect-square rounded-lg border-2 p-2 sm:p-2.5 text-[11px] sm:text-xs lg:text-sm font-medium
+                transition-all active:scale-95 touch-manipulation
+                min-h-[44px] sm:min-h-[48px]
                 ${!isCurrentMonth ? 'opacity-50' : ''}
-                ${isPast && disablePastDates ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
+                ${isPast && disablePastDates ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-105'}
               `}
+              style={{
+                backgroundColor: bgColorStyle,
+                color: textColorStyle,
+                borderColor: borderColorStyle,
+                fontFamily: "'Lato', sans-serif"
+              }}
             >
-              <div className="flex flex-col items-center justify-center h-full">
-                <span>{format(date, 'd')}</span>
-                {status === 'available' && (
-                  <span className="text-[8px] sm:text-[10px] mt-0.5">Available</span>
-                )}
-                {status === 'booked' && (
-                  <span className="text-[8px] sm:text-[10px] mt-0.5">Booked</span>
-                )}
-                {status === 'blocked' && (
-                  <span className="text-[8px] sm:text-[10px] mt-0.5">Blocked</span>
-                )}
+              <div className="flex flex-col items-center justify-center h-full gap-0.5">
+                <span className="font-semibold">{format(date, 'd')}</span>
+                {status === 'blocked' ? (
+                  <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight">Blocked</span>
+                ) : slotCounts.total > 0 ? (
+                  <div className="flex flex-col items-center gap-0.5">
+                    {slotCounts.available > 0 && (
+                      <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#28a745' }}>
+                        {slotCounts.available}
+                      </span>
+                    )}
+                    {slotCounts.booked > 0 && (
+                      <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#212529' }}>
+                        {slotCounts.booked}
+                      </span>
+                    )}
+                    {slotCounts.pending > 0 && (
+                      <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#007bff' }}>
+                        {slotCounts.pending}
+                      </span>
+                    )}
+                  </div>
+                ) : null}
               </div>
             </button>
           );

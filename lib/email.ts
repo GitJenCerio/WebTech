@@ -6,6 +6,7 @@
  */
 
 import { Resend } from 'resend';
+import { createUploadProofToken } from '@/lib/uploadProofToken';
 
 interface SendInviteEmailParams {
   email: string;
@@ -129,4 +130,95 @@ function getInviteEmailTemplate(displayName: string, resetLink: string, role?: s
     </body>
     </html>
   `;
+}
+
+export async function sendBookingConfirmationEmail(booking: any, customer: any) {
+  try {
+    if (!customer?.email) {
+      console.warn(`Booking confirmation email skipped for ${booking?.bookingCode || 'unknown'}: missing customer email`);
+      return { emailSent: false, error: 'Missing customer email' };
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      console.log('Resend not configured - skipping booking confirmation email');
+      return { emailSent: false };
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const bookingId = booking._id?.toString?.() || booking.id;
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'https://www.glammednailsbyjhen.com';
+    const uploadProofToken = bookingId ? createUploadProofToken(bookingId) : '';
+    const uploadProofLink = uploadProofToken ? `${baseUrl}/booking/upload-proof?token=${encodeURIComponent(uploadProofToken)}` : '';
+    const depositRequired = booking.pricing?.depositRequired ?? 0;
+
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'Glammed Nails <noreply@glammednailsbyjhen.com>',
+      to: customer.email,
+      subject: `Booking Confirmed - ${booking.bookingCode}`,
+      html: `
+        <div style="font-family: 'Lato', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #212529;">Booking Confirmation</h1>
+          <p>Hi ${customer.name},</p>
+          <p>Your booking has been received!</p>
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr><td style="padding: 8px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">Booking Code</td><td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">${booking.bookingCode}</td></tr>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">Status</td><td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">${booking.status}</td></tr>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">Total</td><td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">₱${booking.pricing?.total?.toLocaleString() || '0'}</td></tr>
+            <tr><td style="padding: 8px; border-bottom: 1px solid #e0e0e0; font-weight: 600;">Deposit due</td><td style="padding: 8px; border-bottom: 1px solid #e0e0e0;">₱${depositRequired.toLocaleString()}</td></tr>
+          </table>
+          <p><strong>Payment methods:</strong> GCash or PNB Bank Transfer</p>
+          ${uploadProofLink ? `
+          <p style="margin-top: 20px;">After paying the deposit, you can upload your proof of payment here:</p>
+          <p style="margin: 16px 0;">
+            <a href="${uploadProofLink}" style="display: inline-block; background: #212529; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">Upload proof of payment</a>
+          </p>
+          <p style="color: #6c757d; font-size: 13px;">This link is valid for 14 days. You can also upload proof later from this email.</p>
+          ` : ''}
+          <p style="color: #6c757d; font-size: 14px; margin-top: 24px;">Thank you for choosing Glammed Nails by Jhen!</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error('Email send error:', error);
+      return { emailSent: false, error: error.message };
+    }
+    return { emailSent: true, id: data?.id };
+  } catch (error: any) {
+    console.error('Booking confirmation email failed:', error);
+    return { emailSent: false, error: error.message };
+  }
+}
+
+export async function sendPaymentReminderEmail(booking: any, customer: any) {
+  try {
+    if (!process.env.RESEND_API_KEY || !customer.email) {
+      return { emailSent: false };
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'Glammed Nails <noreply@glammednailsbyjhen.com>',
+      to: customer.email,
+      subject: `Payment Reminder - ${booking.bookingCode}`,
+      html: `
+        <div style="font-family: 'Lato', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #212529;">Payment Reminder</h1>
+          <p>Hi ${customer.name},</p>
+          <p>This is a reminder for your upcoming appointment.</p>
+          <p><strong>Booking Code:</strong> ${booking.bookingCode}</p>
+          <p><strong>Amount Due:</strong> ₱${(booking.pricing?.total - (booking.pricing?.paidAmount || 0))?.toLocaleString() || '0'}</p>
+          <p><strong>Payment Methods:</strong> GCash or PNB Bank Transfer</p>
+          <p style="color: #6c757d; font-size: 14px;">Please complete your payment to confirm your booking.</p>
+        </div>
+      `,
+    });
+
+    if (error) return { emailSent: false, error: error.message };
+    return { emailSent: true, id: data?.id };
+  } catch (error: any) {
+    console.error('Payment reminder email failed:', error);
+    return { emailSent: false, error: error.message };
+  }
 }

@@ -30,7 +30,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ customer: null, found: false });
     }
 
-    return NextResponse.json({ customer, found: true });
+    // Normalize so frontend always gets id (Mongoose uses _id, Firebase may use id)
+    const raw = typeof (customer as any).toObject === 'function' ? (customer as any).toObject() : customer;
+    const id = (raw as any)._id?.toString?.() ?? (raw as any).id;
+    return NextResponse.json({ customer: { ...raw, id }, found: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message ?? 'Unable to find customer.' }, { status: 500 });
   }

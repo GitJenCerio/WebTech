@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createBooking, listBookings, type CreateBookingInput } from '@/lib/services/bookingService';
 import type { BookingStatus, PaymentStatus } from '@/lib/types';
+import { sendBookingConfirmationEmail } from '@/lib/email';
+import { backupBooking } from '@/lib/services/googleSheetsBackup';
+import Customer from '@/lib/models/Customer';
+import { createUploadProofToken } from '@/lib/uploadProofToken';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -17,7 +21,8 @@ export async function POST(request: Request) {
       customerId, 
       nailTechId, 
       service, 
-      pricing 
+      pricing,
+      customerEmail,
     } = body;
 
     // Validate required fields
@@ -60,9 +65,44 @@ export async function POST(request: Request) {
       },
     };
 
+    const normalizedCustomerEmail =
+      typeof customerEmail === 'string' ? customerEmail.trim().toLowerCase() : '';
+
     const booking = await createBooking(input);
-    
-    return NextResponse.json({ 
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || '';
+    const uploadProofToken = createUploadProofToken(booking._id.toString());
+    const uploadProofPath = `/booking/upload-proof?token=${encodeURIComponent(uploadProofToken)}`;
+    const uploadProofLink = baseUrl ? `${baseUrl}${uploadProofPath}` : uploadProofPath;
+
+    // Send confirmation email and backup to Google Sheets (non-blocking)
+    Customer.findById(customerId)
+      .then(customer => {
+        if (customer) {
+          const emailToUse = customer.email || normalizedCustomerEmail;
+          if (!emailToUse) {
+            console.warn(`Skipping booking confirmation email for ${booking.bookingCode}: no customer email`);
+            return;
+          }
+
+          if (!customer.email && normalizedCustomerEmail) {
+            customer.email = normalizedCustomerEmail;
+            customer.save().catch(err =>
+              console.error('Failed to save customer fallback email:', err)
+            );
+          }
+
+          sendBookingConfirmationEmail(booking, { ...customer.toObject(), email: emailToUse }).catch(err =>
+            console.error('Failed to send booking confirmation email:', err)
+          );
+        }
+      })
+      .catch(err => console.error('Failed to fetch customer for email:', err));
+
+    backupBooking(booking, 'create').catch(err =>
+      console.error('Failed to backup booking to Google Sheets:', err)
+    );
+
+    return NextResponse.json({
       booking: {
         id: booking._id.toString(),
         bookingCode: booking.bookingCode,
@@ -77,7 +117,8 @@ export async function POST(request: Request) {
         completedAt: booking.completedAt?.toISOString() || null,
         createdAt: booking.createdAt.toISOString(),
         updatedAt: booking.updatedAt.toISOString(),
-      }
+      },
+      uploadProofLink: uploadProofLink || undefined,
     }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating booking:', error);

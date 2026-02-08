@@ -83,3 +83,36 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  try {
+    await connectDB();
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Handle both Promise and direct params (for Next.js 14+ compatibility)
+    const resolvedParams = params instanceof Promise ? await params : params;
+    const userId = resolvedParams.id;
+
+    // Prevent deleting last active admin
+    const activeAdmins = await User.countDocuments({ role: 'admin', status: 'active' });
+    const user = await User.findById(userId);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    if (user.role === 'admin' && activeAdmins <= 1) {
+      return NextResponse.json({ error: 'Cannot delete the last active admin' }, { status: 400 });
+    }
+
+    // Soft delete
+    await User.findByIdAndUpdate(userId, { status: 'inactive' });
+    return NextResponse.json({ message: 'User deactivated successfully' });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Failed to delete user' }, { status: 500 });
+  }
+}

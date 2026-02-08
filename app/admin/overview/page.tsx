@@ -5,6 +5,7 @@ import StatCard from '@/components/admin/StatCard';
 import DataTable from '@/components/admin/DataTable';
 import ChartPlaceholder from '@/components/admin/ChartPlaceholder';
 import StatusBadge from '@/components/admin/StatusBadge';
+import { Card } from '@/components/ui';
 import Link from 'next/link';
 
 interface TodayBooking {
@@ -15,8 +16,13 @@ interface TodayBooking {
   status: 'booked' | 'completed' | 'cancelled';
 }
 
+/**
+ * Admin Overview/Dashboard Page
+ * Mobile-first responsive design with monochrome luxury branding
+ * Displays key metrics, charts, and today's appointments
+ */
 export default function OverviewPage() {
-  // Mock data
+  // Mock data - will be replaced with real API data
   const todayBookings: TodayBooking[] = [
     {
       id: '1',
@@ -76,137 +82,112 @@ export default function OverviewPage() {
   ];
 
   return (
-    <div>
-      <h4 className="mb-4" style={{ fontWeight: 600, color: '#212529' }}>
-        Overview
-      </h4>
-
-      {/* Stat Cards */}
-      <div className="row g-4 mb-4">
-        <div className="col-12 col-sm-6 col-lg-3">
-          <StatCard
-            title="Today's Appointments"
-            value={todayBookings.length}
-            subtext={`${todayBookings.filter((b) => b.status === 'booked').length} upcoming`}
-            icon="bi-calendar-check"
-            iconBgColor="#e9ecef"
-          />
-        </div>
-        <div className="col-12 col-sm-6 col-lg-3">
-          <StatCard
-            title="Available Slots Today"
-            value="3"
-            subtext="Out of 8 total slots"
-            icon="bi-clock"
-            iconBgColor="#e9ecef"
-          />
-        </div>
-        <div className="col-12 col-sm-6 col-lg-3">
-          <StatCard
-            title="Completed Today"
-            value="2"
-            subtext="This morning"
-            icon="bi-check-circle"
-            iconBgColor="#212529"
-            darkBackground={true}
-          />
-        </div>
-        <div className="col-12 col-sm-6 col-lg-3">
-          <StatCard
-            title="Estimated Income Today"
-            value="₱12,500"
-            subtext="From completed & booked"
-            icon="bi-cash-stack"
-            iconBgColor="#e9ecef"
-          />
-        </div>
+    <div className="container-mobile">
+      {/* Page Header */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-gray-dark">
+          Overview
+        </h1>
+        <p className="text-sm text-gray-medium mt-1">
+          Dashboard summary and today's activities
+        </p>
       </div>
 
-      {/* Charts Row */}
-      <div className="row g-4 mb-4">
-        <div className="col-12 col-lg-8">
-          <div className="card" style={{ borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.08)' }}>
-            <div
-              className="card-header"
-              style={{
-                backgroundColor: '#ffffff',
-                borderBottom: '1px solid #e0e0e0',
-                padding: '1.25rem 1.5rem',
-              }}
-            >
-              <h5 className="mb-0" style={{ fontWeight: 600 }}>
+      {/* Stat Cards - Mobile-first responsive grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 sm:mb-8">
+        <StatCard
+          title="Today's Appointments"
+          value={todayBookings.length}
+          subtext={`${todayBookings.filter((b) => b.status === 'booked').length} upcoming`}
+          icon="bi-calendar-check"
+          variant="light"
+        />
+        <StatCard
+          title="Available Slots Today"
+          value="3"
+          subtext="Out of 8 total slots"
+          icon="bi-clock"
+          variant="light"
+        />
+        <StatCard
+          title="Completed Today"
+          value="2"
+          subtext="This morning"
+          icon="bi-check-circle"
+          variant="dark"
+        />
+        <StatCard
+          title="Estimated Income Today"
+          value="₱12,500"
+          subtext="From completed & booked"
+          icon="bi-cash-stack"
+          variant="light"
+        />
+      </div>
+
+      {/* Charts Row - Mobile stacks, desktop side-by-side */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 sm:mb-8">
+        {/* Weekly Appointments Chart - Takes 2/3 on desktop */}
+        <div className="lg:col-span-2">
+          <Card hover>
+            <Card.Header>
+              <h5 className="text-lg font-semibold text-gray-dark">
                 Weekly Appointments
               </h5>
-            </div>
-            <div className="card-body">
+            </Card.Header>
+            <Card.Body>
               <ChartPlaceholder type="bar" title="Weekly appointments chart" />
-            </div>
-          </div>
+            </Card.Body>
+          </Card>
         </div>
-        <div className="col-12 col-lg-4">
-          <div className="card" style={{ borderRadius: '12px', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.08)' }}>
-            <div
-              className="card-header"
-              style={{
-                backgroundColor: '#ffffff',
-                borderBottom: '1px solid #e0e0e0',
-                padding: '1.25rem 1.5rem',
-              }}
-            >
-              <h5 className="mb-0" style={{ fontWeight: 600 }}>
+        
+        {/* Slot Utilization - Takes 1/3 on desktop */}
+        <div className="lg:col-span-1">
+          <Card hover>
+            <Card.Header>
+              <h5 className="text-lg font-semibold text-gray-dark">
                 Slot Utilization Today
               </h5>
-            </div>
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <div className="d-flex align-items-center gap-2">
-                  <div
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      backgroundColor: '#212529',
-                      borderRadius: '2px',
-                    }}
-                  ></div>
-                  <span style={{ fontSize: '0.875rem', color: '#495057' }}>
-                    Booked: 5
-                  </span>
+            </Card.Header>
+            <Card.Body>
+              <div className="flex justify-between items-center mb-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-black rounded-sm"></div>
+                  <span className="text-gray-dark">Booked: 5</span>
                 </div>
-                <div className="d-flex align-items-center gap-2">
-                  <div
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      backgroundColor: '#e0e0e0',
-                      borderRadius: '2px',
-                    }}
-                  ></div>
-                  <span style={{ fontSize: '0.875rem', color: '#495057' }}>
-                    Available: 3
-                  </span>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-gray-lighter rounded-sm"></div>
+                  <span className="text-gray-dark">Available: 3</span>
                 </div>
               </div>
               <ChartPlaceholder type="pie" height="200px" />
-            </div>
-          </div>
+            </Card.Body>
+          </Card>
         </div>
       </div>
 
       {/* Today's Appointments Table */}
-      <div className="card data-table-card">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Today&apos;s Appointments</h5>
-          <Link href="/admin/bookings" className="btn btn-sm btn-outline-secondary">
-            View All
-          </Link>
-        </div>
+      <Card>
+        <Card.Header>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h5 className="text-lg font-semibold text-gray-dark">
+              Today&apos;s Appointments
+            </h5>
+            <Link 
+              href="/admin/bookings" 
+              className="btn-brand-secondary text-sm px-4 py-2 inline-flex items-center justify-center"
+            >
+              View All
+            </Link>
+          </div>
+        </Card.Header>
         <DataTable
           columns={columns}
           data={todayBookings.slice(0, 5)}
           keyExtractor={(item) => item.id}
           emptyMessage="No appointments today"
         />
-      </div>
+      </Card>
     </div>
   );
 }

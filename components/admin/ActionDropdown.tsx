@@ -14,7 +14,7 @@ interface ActionDropdownProps {
 
 export default function ActionDropdown({ actions, buttonClassName = '' }: ActionDropdownProps) {
   return (
-    <div className="dropdown">
+    <div className="dropdown" style={{ position: 'relative', zIndex: 1000 }}>
       <button
         className={`btn btn-sm btn-outline-secondary dropdown-toggle ${buttonClassName}`}
         type="button"
@@ -27,8 +27,12 @@ export default function ActionDropdown({ actions, buttonClassName = '' }: Action
         {actions.map((action, index) => (
           <li key={index}>
             <button
+              type="button"
               className={`dropdown-item ${action.variant === 'danger' ? 'text-danger' : ''}`}
-              onClick={action.onClick}
+              onClick={(e) => {
+                e.preventDefault();
+                action.onClick?.();
+              }}
             >
               <i className={`bi ${action.icon} me-2`}></i>
               {action.label}

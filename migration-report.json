@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-02-08T13:25:36.599Z",
+  "mode": "LIVE",
+  "configuration": {
+    "firebaseCollection": "customers",
+    "mongodbCollection": "customers",
+    "batchSize": 100
+  },
+  "summary": {
+    "total": 338,
+    "processed": 338,
+    "successful": 338,
+    "failed": 0,
+    "skipped": 0,
+    "duration": "50.74s",
+    "rate": "6.66 docs/s"
+  },
+  "results": {
+    "successful": 338,
+    "failed": 0,
+    "skipped": 0,
+    "failedDocuments": [],
+    "skippedDocuments": []
+  },
+  "validation": {
+    "firebaseCount": 338,
+    "mongoCount": 338,
+    "difference": 0,
+    "status": "PASS"
+  },
+  "dryRunSamples": []
+}

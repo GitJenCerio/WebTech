@@ -43,8 +43,9 @@ export default function AdminLoginPage() {
         setError('Invalid email or password. Please try again.');
         setLoading(false);
       } else {
-        router.push('/admin/overview');
-        router.refresh();
+        // Full page redirect so session cookie is read and layout sees authenticated state
+        window.location.href = '/admin/overview';
+        return;
       }
     } catch (error: any) {
       setError(error.message || 'Failed to sign in. Please try again.');
@@ -69,12 +70,11 @@ export default function AdminLoginPage() {
       }
 
       if (result?.url) {
-        router.push(result.url);
-        router.refresh();
+        window.location.href = result.url;
         return;
       }
 
-      // Fallback: if NextAuth returns no URL, let it handle redirect behavior
+      // Fallback: let NextAuth handle redirect
       await signIn('google', { callbackUrl: '/admin/overview' });
     } catch (error: any) {
       setError('Failed to sign in with Google. Please try again.');

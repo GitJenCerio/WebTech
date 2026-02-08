@@ -1,0 +1,18 @@
+# Add these lines to your .gitignore file to keep sensitive migration files secure
+# Copy and paste the content below into your existing .gitignore
+
+# Firebase Service Account Key (if using JSON file method)
+serviceAccountKey.json
+
+# Migration Scripts Environment Variables (IMPORTANT - Contains Firebase credentials!)
+scripts/.env
+
+# Migration Output Files
+scripts/migration-report.json
+scripts/migration-errors.log
+scripts/migration-backup.json
+scripts/migration-checkpoint.json
+
+# General pattern for any migration artifacts
+migration-*.json
+migration-*.log

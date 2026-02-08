@@ -43,6 +43,14 @@ export default function QuotationPage() {
   
   const quotationRef = useRef<HTMLDivElement>(null);
 
+  // New state for saved quotations
+  const [savedQuotations, setSavedQuotations] = useState<any[]>([]);
+  const [quotationsLoading, setQuotationsLoading] = useState(false);
+  const [showSavedQuotations, setShowSavedQuotations] = useState(false);
+  const [savingQuotation, setSavingQuotation] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [currentQuotationId, setCurrentQuotationId] = useState<string | null>(null);
+
   useEffect(() => {
     async function fetchPricing() {
       try {
@@ -72,6 +80,134 @@ export default function QuotationPage() {
 
     fetchPricing();
   }, []);
+
+  // Fetch saved quotations
+  useEffect(() => {
+    if (showSavedQuotations) {
+      fetchSavedQuotations();
+    }
+  }, [showSavedQuotations]);
+
+  async function fetchSavedQuotations() {
+    try {
+      setQuotationsLoading(true);
+      const response = await fetch('/api/quotations');
+      if (!response.ok) throw new Error('Failed to load quotations');
+      
+      const data = await response.json();
+      setSavedQuotations(data.quotations || []);
+    } catch (err: any) {
+      console.error('Error loading quotations:', err);
+    } finally {
+      setQuotationsLoading(false);
+    }
+  }
+
+  async function handleSaveQuotation() {
+    if (lineItems.length === 0) {
+      alert('Please add at least one service before saving.');
+      return;
+    }
+
+    if (!clientName.trim()) {
+      alert('Please enter a client name.');
+      return;
+    }
+
+    try {
+      setSavingQuotation(true);
+      setSaveError(null);
+
+      const payload = {
+        customerName: clientName.trim(),
+        items: lineItems.map(item => ({
+          description: item.serviceName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.total,
+        })),
+        subtotal,
+        totalAmount: estimatedTotal,
+        ...(currentQuotationId && { id: currentQuotationId }),
+      };
+
+      const url = currentQuotationId 
+        ? `/api/quotations/${currentQuotationId}`
+        : '/api/quotations';
+      
+      const method = currentQuotationId ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save quotation');
+      }
+
+      const data = await response.json();
+      setCurrentQuotationId(data.quotation._id || data.quotation.id);
+      
+      alert(currentQuotationId ? 'Quotation updated successfully!' : 'Quotation saved successfully!');
+      
+      // Refresh saved quotations if viewing them
+      if (showSavedQuotations) {
+        fetchSavedQuotations();
+      }
+    } catch (err: any) {
+      console.error('Error saving quotation:', err);
+      setSaveError(err.message);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setSavingQuotation(false);
+    }
+  }
+
+  async function handleLoadQuotation(quotation: any) {
+    setClientName(quotation.customerName);
+    setLineItems(quotation.items.map((item: any) => ({
+      serviceName: item.description,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      total: item.total,
+      location: '',
+      notes: '',
+    })));
+    setCurrentQuotationId(quotation._id || quotation.id);
+    setShowSavedQuotations(false);
+  }
+
+  async function handleDeleteQuotation(id: string) {
+    if (!confirm('Are you sure you want to delete this quotation?')) return;
+
+    try {
+      const response = await fetch(`/api/quotations/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete quotation');
+
+      alert('Quotation deleted successfully!');
+      fetchSavedQuotations();
+      
+      if (currentQuotationId === id) {
+        handleNewQuotation();
+      }
+    } catch (err: any) {
+      console.error('Error deleting quotation:', err);
+      alert(`Error: ${err.message}`);
+    }
+  }
+
+  function handleNewQuotation() {
+    setLineItems([]);
+    setClientName('');
+    setCurrentQuotationId(null);
+    setShowSavedQuotations(false);
+  }
 
   const handleAddService = () => {
     if (!selectedService) return;
@@ -183,29 +319,154 @@ export default function QuotationPage() {
         <h4 className="mb-0" style={{ fontWeight: 600, color: '#212529' }}>
           Quotation Calculator
         </h4>
-        {lineItems.length > 0 && (
-          <div className="btn-group btn-group-sm">
-            <button
-              className="btn btn-dark"
-              onClick={() => handleDownloadQuotation('png')}
-              disabled={isGenerating}
-            >
-              {isGenerating ? 'Generating...' : 'Download PNG'}
-            </button>
-            <button
-              className="btn btn-outline-dark"
-              onClick={() => handleDownloadQuotation('jpeg')}
-              disabled={isGenerating}
-            >
-              {isGenerating ? 'Generating...' : 'Download JPEG'}
-            </button>
-          </div>
-        )}
+        <div className="d-flex flex-wrap gap-2">
+          <button
+            className="btn btn-outline-dark btn-sm"
+            onClick={() => setShowSavedQuotations(!showSavedQuotations)}
+          >
+            <i className={`bi bi-${showSavedQuotations ? 'calculator' : 'folder'} me-2`}></i>
+            {showSavedQuotations ? 'New Quotation' : 'Saved Quotations'}
+          </button>
+          {!showSavedQuotations && lineItems.length > 0 && (
+            <>
+              <button
+                className="btn btn-success btn-sm"
+                onClick={handleSaveQuotation}
+                disabled={savingQuotation || !clientName.trim()}
+              >
+                {savingQuotation ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-save me-2"></i>
+                    {currentQuotationId ? 'Update' : 'Save'} Quotation
+                  </>
+                )}
+              </button>
+              <div className="btn-group btn-group-sm">
+                <button
+                  className="btn btn-dark"
+                  onClick={() => handleDownloadQuotation('png')}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? 'Generating...' : 'Download PNG'}
+                </button>
+                <button
+                  className="btn btn-outline-dark"
+                  onClick={() => handleDownloadQuotation('jpeg')}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? 'Generating...' : 'Download JPEG'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="alert alert-info mb-3 mb-md-4" role="alert">
-        <strong>Disclaimer:</strong> This quotation is for estimation only and is not a confirmed booking or invoice.
-      </div>
+      {showSavedQuotations ? (
+        // Saved Quotations List View
+        <div className="card shadow-sm">
+          <div className="card-header bg-white border-bottom">
+            <h5 className="mb-0" style={{ fontWeight: 600, fontSize: '1rem' }}>Saved Quotations</h5>
+          </div>
+          <div className="card-body">
+            {quotationsLoading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-dark" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-2 text-muted">Loading saved quotations...</p>
+              </div>
+            ) : savedQuotations.length === 0 ? (
+              <div className="text-center py-5">
+                <i className="bi bi-folder-x display-4 text-muted"></i>
+                <p className="mt-3 text-muted">No saved quotations found.</p>
+                <button 
+                  className="btn btn-dark btn-sm" 
+                  onClick={handleNewQuotation}
+                >
+                  <i className="bi bi-plus-circle me-2"></i>
+                  Create New Quotation
+                </button>
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Quotation #</th>
+                      <th>Customer Name</th>
+                      <th>Items</th>
+                      <th>Total Amount</th>
+                      <th>Created</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {savedQuotations.map((quotation) => (
+                      <tr key={quotation._id || quotation.id}>
+                        <td>
+                          <code className="text-dark">{quotation.quotationNumber}</code>
+                        </td>
+                        <td className="fw-semibold">{quotation.customerName}</td>
+                        <td>{quotation.items?.length || 0} item(s)</td>
+                        <td className="fw-semibold">
+                          ₱{(quotation.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td>
+                          {new Date(quotation.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td>
+                          <span className={`badge ${
+                            quotation.status === 'accepted' ? 'bg-success' :
+                            quotation.status === 'sent' ? 'bg-primary' :
+                            quotation.status === 'expired' ? 'bg-danger' :
+                            'bg-secondary'
+                          }`}>
+                            {quotation.status || 'draft'}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="btn-group btn-group-sm">
+                            <button
+                              className="btn btn-outline-dark"
+                              onClick={() => handleLoadQuotation(quotation)}
+                              title="Load quotation"
+                            >
+                              <i className="bi bi-box-arrow-up-right"></i>
+                            </button>
+                            <button
+                              className="btn btn-outline-danger"
+                              onClick={() => handleDeleteQuotation(quotation._id || quotation.id)}
+                              title="Delete quotation"
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        // Original quotation calculator view
+        <>
+          <div className="alert alert-info mb-3 mb-md-4" role="alert">
+            <strong>Disclaimer:</strong> This quotation is for estimation only and is not a confirmed booking or invoice.
+          </div>
 
       {error && (
         <div className="alert alert-danger" role="alert">
@@ -501,6 +762,8 @@ export default function QuotationPage() {
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

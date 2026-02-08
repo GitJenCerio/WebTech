@@ -11,6 +11,7 @@ interface Slot {
   nailTechRole?: string;
   clientName?: string;
   service?: string;
+  isHidden?: boolean;
 }
 
 interface SlotListProps {
@@ -60,6 +61,7 @@ export default function SlotList({
                 nailTechRole={slot.nailTechRole}
                 clientName={slot.clientName}
                 service={slot.service}
+                isHidden={slot.isHidden}
                 onView={() => onView?.(slot)}
                 onEdit={() => onEdit?.(slot)}
                 onCancel={() => onCancel?.(slot)}
