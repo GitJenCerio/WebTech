@@ -307,7 +307,11 @@ export async function confirmBooking(bookingId: string): Promise<IBooking> {
  * - Releases slots (sets status back to 'available')
  * - Only allowed if booking is not already confirmed (or admin override)
  */
-export async function cancelBooking(bookingId: string, adminOverride: boolean = false): Promise<IBooking> {
+export async function cancelBooking(
+  bookingId: string,
+  adminOverride: boolean = false,
+  reason?: string
+): Promise<IBooking> {
   await connectDB();
 
   const booking = await Booking.findById(bookingId);
@@ -331,12 +335,15 @@ export async function cancelBooking(bookingId: string, adminOverride: boolean = 
 
   // Cancel booking
   booking.status = 'cancelled';
+  if (reason) {
+    booking.statusReason = reason.trim();
+  }
   await booking.save();
 
-  // Release slots (only if they were pending)
+  // Release slots if they were pending or confirmed
   const slots = await Slot.find({ _id: { $in: booking.slotIds } });
   for (const slot of slots) {
-    if (slot.status === 'pending') {
+    if (slot.status === 'pending' || slot.status === 'confirmed') {
       slot.status = 'available';
       await slot.save();
     }
@@ -373,6 +380,78 @@ export async function markBookingAsCompleted(bookingId: string): Promise<IBookin
   // Set completion timestamp
   booking.completedAt = new Date();
   await booking.save();
+
+  return booking;
+}
+
+/**
+ * Mark booking as no-show (admin-only)
+ * - Only allowed when status = confirmed and booking is not completed
+ * - Sets status to no_show
+ */
+export async function markBookingAsNoShow(bookingId: string, reason?: string): Promise<IBooking> {
+  await connectDB();
+
+  const booking = await Booking.findById(bookingId);
+  if (!booking) {
+    throw new Error('Booking not found');
+  }
+
+  if (booking.status === 'cancelled' || booking.status === 'no_show') {
+    return booking;
+  }
+
+  if (isBookingCompleted(booking)) {
+    throw new Error('Cannot mark a completed booking as no-show');
+  }
+
+  if (booking.status !== 'confirmed') {
+    throw new Error('Can only mark confirmed bookings as no-show');
+  }
+
+  booking.status = 'no_show';
+  if (reason) {
+    booking.statusReason = reason.trim();
+  }
+  await booking.save();
+
+  // Free up pending/confirmed slots when a client no-shows
+  await releaseSlots(booking.slotIds);
+
+  return booking;
+}
+
+/**
+ * Mark booking as rescheduled (admin-only)
+ * - Sets current booking as cancelled with a reschedule reason
+ * - Releases related slots so new slot can be chosen
+ */
+export async function markBookingAsRescheduled(bookingId: string, reason: string): Promise<IBooking> {
+  await connectDB();
+
+  const booking = await Booking.findById(bookingId);
+  if (!booking) {
+    throw new Error('Booking not found');
+  }
+
+  if (isBookingCompleted(booking)) {
+    throw new Error('Cannot reschedule a completed booking');
+  }
+
+  if (booking.status === 'cancelled') {
+    return booking;
+  }
+
+  const reasonText = reason?.trim();
+  if (!reasonText) {
+    throw new Error('Reason is required for reschedule');
+  }
+
+  booking.status = 'cancelled';
+  booking.statusReason = `Rescheduled: ${reasonText}`;
+  await booking.save();
+
+  await releaseSlots(booking.slotIds);
 
   return booking;
 }

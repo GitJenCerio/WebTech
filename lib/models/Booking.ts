@@ -11,7 +11,7 @@ export interface IBooking extends Document {
     location: 'homebased_studio' | 'home_service';
     clientType: 'new' | 'repeat';
   };
-  status: BookingStatus; // 'pending' | 'confirmed' | 'cancelled'
+  status: BookingStatus; // 'pending' | 'confirmed' | 'cancelled' | 'no_show'
   paymentStatus: PaymentStatus; // 'unpaid' | 'partial' | 'paid' | 'refunded'
   pricing: {
     total: number; // Total price
@@ -39,6 +39,7 @@ export interface IBooking extends Document {
     }>;
   };
   completedAt: Date | null; // When appointment was completed (admin-only, settable once)
+  statusReason?: string; // Reason for admin status actions (cancel/no_show/reschedule)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -83,7 +84,7 @@ const BookingSchema = new Schema<IBooking>(
     status: {
       type: String,
       required: true,
-      enum: ['pending', 'confirmed', 'cancelled'],
+      enum: ['pending', 'confirmed', 'cancelled', 'no_show'],
       default: 'pending',
     },
     paymentStatus: {
@@ -121,6 +122,10 @@ const BookingSchema = new Schema<IBooking>(
       type: Date,
       default: null,
       index: true, // Index for querying completed appointments
+    },
+    statusReason: {
+      type: String,
+      default: '',
     },
   },
   { timestamps: true }

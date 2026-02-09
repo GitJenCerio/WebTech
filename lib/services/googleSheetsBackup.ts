@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import type { Slot, Customer, Booking, NailTech } from '@/lib/types';
 
 const sheets = google.sheets('v4');
+const SHEET_RANGE = 'A:ZZ';
 
 function getAuthClient() {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -59,7 +60,7 @@ async function appendRow(sheetName: string, values: any[]): Promise<void> {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${sheetName}!A:Z`,
+      range: `${sheetName}!${SHEET_RANGE}`,
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       auth,
@@ -89,7 +90,7 @@ async function updateRow(sheetName: string, id: string, values: any[]): Promise<
     // Get all rows to find the one with matching ID
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:Z`,
+      range: `${sheetName}!${SHEET_RANGE}`,
       auth,
     });
 
@@ -107,7 +108,7 @@ async function updateRow(sheetName: string, id: string, values: any[]): Promise<
     // Update the row (rowIndex + 1 because Sheets is 1-indexed, +1 for header)
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `${sheetName}!A${rowIndex + 2}:Z${rowIndex + 2}`,
+      range: `${sheetName}!A${rowIndex + 2}:ZZ${rowIndex + 2}`,
       valueInputOption: 'RAW',
       auth,
       requestBody: {
@@ -214,7 +215,14 @@ type BookingBackupInput =
         depositPaidAt?: Date;
         fullyPaidAt?: Date;
         method?: 'PNB' | 'CASH' | 'GCASH';
+        paymentProofUrl?: string;
+        paymentProofPublicId?: string;
       };
+      clientPhotos?: {
+        inspiration?: Array<{ url?: string; publicId?: string }>;
+        currentState?: Array<{ url?: string; publicId?: string }>;
+      };
+      completedAt?: string | Date | null;
       depositPaymentMethod?: 'PNB' | 'CASH' | 'GCASH';
       paidPaymentMethod?: 'PNB' | 'CASH' | 'GCASH';
       createdAt: string | Date;
@@ -253,6 +261,17 @@ export async function backupBooking(booking: BookingBackupInput, operation: 'cre
   const paidDate = booking.paidDate || normalizeDate(booking.payment?.fullyPaidAt);
   const depositPaymentMethod = booking.depositPaymentMethod || booking.payment?.method || '';
   const paidPaymentMethod = booking.paidPaymentMethod || booking.payment?.method || '';
+  const paymentProofUrl = booking.payment?.paymentProofUrl || '';
+  const paymentProofPublicId = booking.payment?.paymentProofPublicId || '';
+  const inspirationPhotoUrls = (booking.clientPhotos?.inspiration || [])
+    .map((photo) => photo?.url || '')
+    .filter(Boolean)
+    .join(',');
+  const currentPhotoUrls = (booking.clientPhotos?.currentState || [])
+    .map((photo) => photo?.url || '')
+    .filter(Boolean)
+    .join(',');
+  const completedAt = normalizeDate(booking.completedAt);
 
   const values = [
     id,
@@ -281,6 +300,11 @@ export async function backupBooking(booking: BookingBackupInput, operation: 'cre
     paidPaymentMethod,
     normalizeDate(booking.createdAt),
     normalizeDate(booking.updatedAt),
+    paymentProofUrl,
+    paymentProofPublicId,
+    inspirationPhotoUrls,
+    currentPhotoUrls,
+    completedAt,
   ];
 
   if (operation === 'create') {
@@ -364,7 +388,7 @@ export async function initializeSheets(): Promise<void> {
     const headers = {
       Slots: ['ID', 'Date', 'Time', 'Status', 'Slot Type', 'Notes', 'Is Hidden', 'Nail Tech ID', 'Created At', 'Updated At'],
       Customers: ['ID', 'Name', 'First Name', 'Last Name', 'Email', 'Phone', 'Social Media Name', 'Referral Source', 'Is Repeat Client', 'Notes', 'Created At', 'Updated At'],
-      Bookings: ['ID', 'Booking ID', 'Slot ID', 'Paired Slot ID', 'Linked Slot IDs', 'Customer ID', 'Nail Tech ID', 'Status', 'Service Type', 'Client Type', 'Service Location', 'Assistant Name', 'Assistant Commission Rate', 'Form Response ID', 'Date Changed', 'Time Changed', 'Validation Warnings', 'Payment Status', 'Paid Amount', 'Deposit Amount', 'Tip Amount', 'Deposit Date', 'Paid Date', 'Tip Date', 'Deposit Payment Method', 'Paid Payment Method', 'Created At', 'Updated At'],
+      Bookings: ['ID', 'Booking ID', 'Slot ID', 'Paired Slot ID', 'Linked Slot IDs', 'Customer ID', 'Nail Tech ID', 'Status', 'Service Type', 'Client Type', 'Service Location', 'Assistant Name', 'Assistant Commission Rate', 'Form Response ID', 'Date Changed', 'Time Changed', 'Validation Warnings', 'Payment Status', 'Paid Amount', 'Deposit Amount', 'Tip Amount', 'Deposit Date', 'Paid Date', 'Tip Date', 'Deposit Payment Method', 'Paid Payment Method', 'Created At', 'Updated At', 'Payment Proof URL', 'Payment Proof Public ID', 'Inspiration Photo URLs', 'Current Nail Photo URLs', 'Completed At'],
       NailTechs: ['ID', 'Name', 'Role', 'Service Availability', 'Working Days', 'Discount', 'Commission Rate', 'Status', 'Created At', 'Updated At'],
       Users: ['ID', 'Name', 'Email', 'Role', 'Assigned Nail Tech ID', 'Is Active', 'Last Login', 'Created At', 'Updated At'],
     };
@@ -382,7 +406,7 @@ export async function initializeSheets(): Promise<void> {
         // Sheet exists, update headers
         await sheets.spreadsheets.values.update({
           spreadsheetId,
-          range: `${sheetName}!A1:Z1`,
+          range: `${sheetName}!A1:ZZ1`,
           valueInputOption: 'RAW',
           auth,
           requestBody: {

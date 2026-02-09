@@ -9,6 +9,10 @@ export type BookingStatus =
   | 'COMPLETED' 
   | 'CANCELLED' 
   | 'NO_SHOW'
+  | 'pending'
+  | 'confirmed'
+  | 'no_show'
+  | 'blocked'
   | 'available' 
   | 'booked' 
   | 'completed' 
@@ -33,8 +37,12 @@ export default function StatusBadge({ status, className = '' }: StatusBadgeProps
     COMPLETED: { label: 'Completed', variant: 'completed' },
     CANCELLED: { label: 'Cancelled', variant: 'cancelled' },
     NO_SHOW: { label: 'No Show', variant: 'no-show' },
+    pending: { label: 'Pending Payment', variant: 'pending' },
+    confirmed: { label: 'Confirmed', variant: 'confirmed' },
+    no_show: { label: 'No Show', variant: 'no-show' },
+    blocked: { label: 'Blocked', variant: 'default' },
     // Legacy status support
-    available: { label: 'Available', variant: 'confirmed' },
+    available: { label: 'Available', variant: 'available' },
     booked: { label: 'Booked', variant: 'pending' },
     completed: { label: 'Completed', variant: 'completed' },
     cancelled: { label: 'Cancelled', variant: 'cancelled' },

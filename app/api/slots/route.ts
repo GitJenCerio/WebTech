@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Slot from '@/lib/models/Slot';
 import NailTech from '@/lib/models/NailTech';
+import Booking from '@/lib/models/Booking';
+import Customer from '@/lib/models/Customer';
 
 export async function POST(request: Request) {
   try {
@@ -75,7 +77,52 @@ export async function GET(request: Request) {
     }
 
     const slots = await Slot.find(query).sort({ date: 1, time: 1 }).lean();
-    return NextResponse.json({ slots });
+
+    // Enrich slots with active booking details for admin workflows
+    const slotIds = slots.map((slot: any) => String(slot._id));
+    const bookings = slotIds.length
+      ? await Booking.find({
+          slotIds: { $in: slotIds },
+          status: { $in: ['pending', 'confirmed', 'no_show'] },
+        })
+          .sort({ createdAt: -1 })
+          .lean()
+      : [];
+
+    const customerIds = Array.from(new Set(bookings.map((booking: any) => booking.customerId).filter(Boolean)));
+    const customers = customerIds.length
+      ? await Customer.find({ _id: { $in: customerIds } }).select('_id name').lean()
+      : [];
+    const customerNameById = new Map(customers.map((customer: any) => [String(customer._id), customer.name]));
+
+    const bookingBySlotId = new Map<string, any>();
+    for (const booking of bookings as any[]) {
+      for (const slotId of booking.slotIds || []) {
+        const slotKey = String(slotId);
+        if (!bookingBySlotId.has(slotKey)) {
+          bookingBySlotId.set(slotKey, {
+            id: String(booking._id),
+            bookingCode: booking.bookingCode,
+            customerId: booking.customerId,
+            customerName: customerNameById.get(String(booking.customerId)) || 'Unknown Client',
+            slotIds: booking.slotIds || [],
+            service: booking.service,
+            status: booking.status,
+            paymentStatus: booking.paymentStatus,
+            pricing: booking.pricing,
+            payment: booking.payment,
+            completedAt: booking.completedAt || null,
+          });
+        }
+      }
+    }
+
+    const enrichedSlots = slots.map((slot: any) => ({
+      ...slot,
+      booking: bookingBySlotId.get(String(slot._id)) || null,
+    }));
+
+    return NextResponse.json({ slots: enrichedSlots });
   } catch (error: any) {
     console.error('Error fetching slots:', error);
     return NextResponse.json({ error: error.message || 'Failed to fetch slots' }, { status: 500 });

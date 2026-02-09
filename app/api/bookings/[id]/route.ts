@@ -5,8 +5,11 @@ import {
   confirmBooking, 
   cancelBooking,
   updateBookingPayment,
-  markBookingAsCompleted
+  markBookingAsCompleted,
+  markBookingAsNoShow,
+  markBookingAsRescheduled
 } from '@/lib/services/bookingService';
+import { backupBooking } from '@/lib/services/googleSheetsBackup';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -60,11 +63,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
     const body = await request.json();
-    const { action } = body;
+    const { action, reason } = body;
 
     if (action === 'confirm') {
       // Confirm booking (requires deposit or full payment)
       const booking = await confirmBooking(params.id);
+      backupBooking(booking, 'update').catch(err =>
+        console.error('Failed to backup booking update to Google Sheets:', err)
+      );
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -78,7 +84,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (action === 'cancel') {
       // Cancel booking (admin override available)
       const adminOverride = body.adminOverride === true;
-      const booking = await cancelBooking(params.id, adminOverride);
+      if (adminOverride && (!reason || !String(reason).trim())) {
+        return NextResponse.json({ error: 'Reason is required when cancelling a booking' }, { status: 400 });
+      }
+      const booking = await cancelBooking(params.id, adminOverride, reason);
+      backupBooking(booking, 'update').catch(err =>
+        console.error('Failed to backup booking update to Google Sheets:', err)
+      );
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -101,6 +113,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       }
 
       const booking = await updateBookingPayment(params.id, paidAmount, tipAmount, method);
+      backupBooking(booking, 'update').catch(err =>
+        console.error('Failed to backup booking update to Google Sheets:', err)
+      );
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -115,6 +130,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (action === 'mark_completed') {
       // Mark booking as completed (admin-only)
       const booking = await markBookingAsCompleted(params.id);
+      backupBooking(booking, 'update').catch(err =>
+        console.error('Failed to backup booking update to Google Sheets:', err)
+      );
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -125,8 +143,44 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       });
     }
 
+    if (action === 'reschedule') {
+      if (!reason || !String(reason).trim()) {
+        return NextResponse.json({ error: 'Reason is required when rescheduling a booking' }, { status: 400 });
+      }
+      const booking = await markBookingAsRescheduled(params.id, reason);
+      backupBooking(booking, 'update').catch(err =>
+        console.error('Failed to backup booking update to Google Sheets:', err)
+      );
+      return NextResponse.json({
+        booking: {
+          id: booking._id.toString(),
+          bookingCode: booking.bookingCode,
+          status: booking.status,
+          statusReason: booking.statusReason,
+        }
+      });
+    }
+
+    if (action === 'mark_no_show') {
+      // Mark booking as no-show (admin-only)
+      if (!reason || !String(reason).trim()) {
+        return NextResponse.json({ error: 'Reason is required when marking no-show' }, { status: 400 });
+      }
+      const booking = await markBookingAsNoShow(params.id, reason);
+      backupBooking(booking, 'update').catch(err =>
+        console.error('Failed to backup booking update to Google Sheets:', err)
+      );
+      return NextResponse.json({
+        booking: {
+          id: booking._id.toString(),
+          bookingCode: booking.bookingCode,
+          status: booking.status,
+        }
+      });
+    }
+
     return NextResponse.json({ 
-      error: 'Invalid action. Supported actions: confirm, cancel, update_payment, mark_completed' 
+      error: 'Invalid action. Supported actions: confirm, cancel, reschedule, update_payment, mark_completed, mark_no_show' 
     }, { status: 400 });
   } catch (error: any) {
     console.error('Error updating booking:', error);

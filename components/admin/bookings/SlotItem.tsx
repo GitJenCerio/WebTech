@@ -28,6 +28,8 @@ export default function SlotItem({
   onEdit,
   onCancel,
 }: SlotItemProps) {
+  const canDeleteSlot = ['available', 'cancelled', 'CANCELLED', 'no_show', 'NO_SHOW'].includes(status);
+
   return (
     <div className={`card mb-2 ${isHidden ? 'border-warning' : ''}`}>
       <div className="card-body py-2">
@@ -54,7 +56,7 @@ export default function SlotItem({
           </div>
           {/* Show action buttons for both booked and available slots */}
           <div className="d-flex gap-2">
-            {status === 'booked' && onView && (
+            {['booked', 'pending', 'PENDING_PAYMENT', 'confirmed', 'CONFIRMED', 'no_show', 'NO_SHOW'].includes(status) && onView && (
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary"
@@ -74,7 +76,7 @@ export default function SlotItem({
                 <Pencil size={16} />
               </button>
             )}
-            {(onCancel) && (
+            {canDeleteSlot && onCancel && (
               <button
                 type="button"
                 className="btn btn-sm btn-outline-dark"

@@ -1,5 +1,5 @@
 export type SlotStatus = 'available' | 'blocked' | 'pending' | 'confirmed';
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'no_show';
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'refunded';
 export type ServiceType = 'manicure' | 'pedicure' | 'mani_pedi' | 'home_service_2slots' | 'home_service_3slots';
 export type NailTechRole = 'Owner' | 'Junior Tech' | 'Senior Tech';
@@ -94,6 +94,7 @@ export interface Booking {
   dateChanged?: boolean;
   timeChanged?: boolean;
   validationWarnings?: string[];
+  statusReason?: string;
   invoice?: Invoice;
   paymentStatus?: PaymentStatus;
   paidAmount?: number;

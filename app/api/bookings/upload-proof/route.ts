@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import Booking from '@/lib/models/Booking';
 import { uploadImage, deleteImage } from '@/lib/cloudinary';
 import { verifyUploadProofToken } from '@/lib/uploadProofToken';
+import { backupBooking } from '@/lib/services/googleSheetsBackup';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,6 +85,9 @@ export async function POST(request: Request) {
       paymentProofPublicId: result.public_id,
     };
     await booking.save();
+    backupBooking(booking, 'update').catch(err =>
+      console.error('Failed to backup booking update to Google Sheets:', err)
+    );
 
     return NextResponse.json({
       url: result.secure_url,
