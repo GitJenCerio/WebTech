@@ -95,10 +95,7 @@ export async function GET(request: Request) {
       })));
     }
 
-    // For now, return empty blocked dates (no BlockedDate model yet)
-    const blockedDates: any[] = [];
-    
-    return NextResponse.json({ slots, blockedDates }, {
+    return NextResponse.json({ slots }, {
       headers: {
         'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
         'CDN-Cache-Control': 'public, s-maxage=30',

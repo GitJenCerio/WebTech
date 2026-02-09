@@ -91,9 +91,21 @@ export async function GET(request: Request) {
 
     const customerIds = Array.from(new Set(bookings.map((booking: any) => booking.customerId).filter(Boolean)));
     const customers = customerIds.length
-      ? await Customer.find({ _id: { $in: customerIds } }).select('_id name').lean()
+      ? await Customer.find({ _id: { $in: customerIds } })
+          .select('_id name email phone socialMediaName')
+          .lean()
       : [];
-    const customerNameById = new Map(customers.map((customer: any) => [String(customer._id), customer.name]));
+    const customerById = new Map(
+      customers.map((customer: any) => [
+        String(customer._id),
+        {
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          socialMediaName: customer.socialMediaName,
+        },
+      ])
+    );
 
     const bookingBySlotId = new Map<string, any>();
     for (const booking of bookings as any[]) {
@@ -104,11 +116,16 @@ export async function GET(request: Request) {
             id: String(booking._id),
             bookingCode: booking.bookingCode,
             customerId: booking.customerId,
-            customerName: customerNameById.get(String(booking.customerId)) || 'Unknown Client',
+            customerName: customerById.get(String(booking.customerId))?.name || 'Unknown Client',
+            customerEmail: customerById.get(String(booking.customerId))?.email || '',
+            customerPhone: customerById.get(String(booking.customerId))?.phone || '',
+            customerSocialMediaName: customerById.get(String(booking.customerId))?.socialMediaName || '',
             slotIds: booking.slotIds || [],
             service: booking.service,
             status: booking.status,
             paymentStatus: booking.paymentStatus,
+            clientNotes: booking.clientNotes || '',
+            adminNotes: booking.adminNotes || '',
             pricing: booking.pricing,
             payment: booking.payment,
             completedAt: booking.completedAt || null,

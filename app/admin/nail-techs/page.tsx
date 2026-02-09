@@ -35,6 +35,8 @@ export default function NailTechsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<NailTechFormState>(DEFAULT_FORM_STATE);
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
+  const [selectedTechId, setSelectedTechId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadNailTechs() {
@@ -127,14 +129,21 @@ export default function NailTechsPage() {
       render: (item: NailTechType) => (
         <ActionDropdown
           actions={[
-            { label: 'View', icon: 'bi-eye' },
-            { label: 'Edit', icon: 'bi-pencil' },
-            { label: 'View Slots', icon: 'bi-calendar-check' },
-            { label: 'View Bookings', icon: 'bi-file-text' },
+            { label: 'View', icon: 'bi-eye', onClick: () => handleOpenView(item) },
+            { label: 'Edit', icon: 'bi-pencil', onClick: () => handleOpenEdit(item) },
+            { label: 'View Slots', icon: 'bi-calendar-check', onClick: () => handleViewSlots(item) },
+            { label: 'View Bookings', icon: 'bi-file-text', onClick: () => handleViewBookings(item) },
             {
               label: item.status === 'Active' ? 'Deactivate' : 'Activate',
               icon: item.status === 'Active' ? 'bi-x-circle' : 'bi-check-circle',
               variant: item.status === 'Active' ? 'danger' : 'default',
+              onClick: () => handleToggleStatus(item),
+            },
+            {
+              label: 'Delete',
+              icon: 'bi-trash',
+              variant: 'danger',
+              onClick: () => handleDeleteTech(item),
             },
           ]}
         />
@@ -144,7 +153,47 @@ export default function NailTechsPage() {
 
   const handleOpenAdd = () => {
     setForm(DEFAULT_FORM_STATE);
+    setModalMode('add');
+    setSelectedTechId(null);
     setShowAddModal(true);
+  };
+
+  const handleOpenEdit = (tech: NailTechType) => {
+    setForm({
+      name: tech.name,
+      role: tech.role,
+      serviceAvailability: tech.serviceAvailability,
+      discount: tech.discount != null ? String(tech.discount) : '',
+      commissionRate: tech.commissionRate != null ? String(Math.round(tech.commissionRate * 100)) : '',
+      workingDays: tech.workingDays || [],
+      status: tech.status,
+    });
+    setModalMode('edit');
+    setSelectedTechId(tech.id);
+    setShowAddModal(true);
+  };
+
+  const handleOpenView = (tech: NailTechType) => {
+    setForm({
+      name: tech.name,
+      role: tech.role,
+      serviceAvailability: tech.serviceAvailability,
+      discount: tech.discount != null ? String(tech.discount) : '',
+      commissionRate: tech.commissionRate != null ? String(Math.round(tech.commissionRate * 100)) : '',
+      workingDays: tech.workingDays || [],
+      status: tech.status,
+    });
+    setModalMode('view');
+    setSelectedTechId(tech.id);
+    setShowAddModal(true);
+  };
+
+  const handleViewSlots = (tech: NailTechType) => {
+    window.location.href = `/admin/bookings?techId=${encodeURIComponent(tech.id)}`;
+  };
+
+  const handleViewBookings = (tech: NailTechType) => {
+    window.location.href = `/admin/bookings?techId=${encodeURIComponent(tech.id)}`;
   };
 
   const handleChange = (field: keyof NailTechFormState, value: any) => {
@@ -174,8 +223,12 @@ export default function NailTechsPage() {
       const discountNumber = form.discount ? Number(form.discount) : undefined;
       const commissionNumber = form.commissionRate ? Number(form.commissionRate) / 100 : undefined;
 
-      const res = await fetch('/api/nail-techs', {
-        method: 'POST',
+      const isEdit = modalMode === 'edit' && selectedTechId;
+      const url = isEdit ? `/api/nail-techs/${selectedTechId}` : '/api/nail-techs';
+      const method = isEdit ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: form.name.trim(),
@@ -194,12 +247,70 @@ export default function NailTechsPage() {
       }
 
       const data = await res.json();
-      setNailTechs((prev) => [...prev, data.nailTech].sort((a, b) => a.name.localeCompare(b.name)));
+      if (isEdit) {
+        setNailTechs((prev) =>
+          prev
+            .map((tech) => (tech.id === data.nailTech.id ? data.nailTech : tech))
+            .sort((a, b) => a.name.localeCompare(b.name))
+        );
+      } else {
+        setNailTechs((prev) => [...prev, data.nailTech].sort((a, b) => a.name.localeCompare(b.name)));
+      }
       setShowAddModal(false);
       setForm(DEFAULT_FORM_STATE);
     } catch (err: any) {
-      console.error('Error creating nail tech', err);
-      setError(err.message || 'Failed to create nail tech');
+      console.error('Error saving nail tech', err);
+      setError(err.message || 'Failed to save nail tech');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleStatus = async (tech: NailTechType) => {
+    try {
+      setSaving(true);
+      setError(null);
+      const nextStatus = tech.status === 'Active' ? 'Inactive' : 'Active';
+      const res = await fetch(`/api/nail-techs/${tech.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to update status');
+      }
+      const data = await res.json();
+      setNailTechs((prev) =>
+        prev.map((t) => (t.id === data.nailTech.id ? data.nailTech : t))
+      );
+    } catch (err: any) {
+      console.error('Error updating status', err);
+      setError(err.message || 'Failed to update status');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteTech = async (tech: NailTechType) => {
+    if (!confirm(`Are you sure you want to delete ${tech.name}?`)) return;
+    try {
+      setSaving(true);
+      setError(null);
+      const res = await fetch(`/api/nail-techs/${tech.id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to delete nail tech');
+      }
+      // DELETE is a soft delete (sets status to Inactive)
+      setNailTechs((prev) =>
+        prev.map((t) => (t.id === tech.id ? { ...t, status: 'Inactive' } : t))
+      );
+    } catch (err: any) {
+      console.error('Error deleting nail tech', err);
+      setError(err.message || 'Failed to delete nail tech');
     } finally {
       setSaving(false);
     }
@@ -261,7 +372,7 @@ export default function NailTechsPage() {
               <div className="modal-content" style={{ borderRadius: '12px', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
                 <div className="modal-header" style={{ borderBottom: '1px solid #e0e0e0', padding: '1.25rem 1.5rem' }}>
                   <h5 className="modal-title" style={{ fontWeight: 600, color: '#212529', fontSize: '1.25rem' }}>
-                    Add Nail Technician
+                    {modalMode === 'add' ? 'Add Nail Technician' : modalMode === 'edit' ? 'Edit Nail Technician' : 'View Nail Technician'}
                   </h5>
                   <button
                     type="button"
@@ -286,7 +397,7 @@ export default function NailTechsPage() {
                         onChange={(e) => handleChange('name', e.target.value)}
                         required
                         placeholder="e.g. Jhen"
-                        disabled={saving}
+                        disabled={saving || modalMode === 'view'}
                         style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
                       />
                     </div>
@@ -299,7 +410,7 @@ export default function NailTechsPage() {
                         className="form-select"
                         value={form.role}
                         onChange={(e) => handleChange('role', e.target.value as NailTechType['role'])}
-                        disabled={saving}
+                        disabled={saving || modalMode === 'view'}
                         style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
                       >
                         <option value="Owner">Owner</option>
@@ -317,7 +428,7 @@ export default function NailTechsPage() {
                       className="form-select"
                       value={form.serviceAvailability}
                       onChange={(e) => handleChange('serviceAvailability', e.target.value as ServiceAvailability)}
-                      disabled={saving}
+                      disabled={saving || modalMode === 'view'}
                       style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
                     >
                       <option value="Studio only">Studio only</option>
@@ -337,7 +448,7 @@ export default function NailTechsPage() {
                           type="button"
                           className={`btn btn-sm ${form.workingDays.includes(day) ? 'btn-dark' : 'btn-outline-secondary'}`}
                           onClick={() => handleToggleWorkingDay(day)}
-                          disabled={saving}
+                          disabled={saving || modalMode === 'view'}
                           style={{ 
                             borderRadius: '8px',
                             fontWeight: 500,
@@ -367,7 +478,7 @@ export default function NailTechsPage() {
                         value={form.discount}
                         onChange={(e) => handleChange('discount', e.target.value)}
                         placeholder="e.g. 15"
-                        disabled={saving}
+                        disabled={saving || modalMode === 'view'}
                         style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
                       />
                       <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.25rem' }}>
@@ -386,7 +497,7 @@ export default function NailTechsPage() {
                         value={form.commissionRate}
                         onChange={(e) => handleChange('commissionRate', e.target.value)}
                         placeholder="e.g. 40"
-                        disabled={saving}
+                        disabled={saving || modalMode === 'view'}
                         style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
                       />
                       <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.25rem' }}>
@@ -403,7 +514,7 @@ export default function NailTechsPage() {
                       className="form-select"
                       value={form.status}
                       onChange={(e) => handleChange('status', e.target.value as NailTechType['status'])}
-                      disabled={saving}
+                      disabled={saving || modalMode === 'view'}
                       style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
                     >
                       <option value="Active">Active</option>
@@ -426,32 +537,34 @@ export default function NailTechsPage() {
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
-                    className="btn btn-dark" 
-                    disabled={saving || !form.name.trim()}
-                    style={{ 
-                      borderRadius: '8px',
-                      fontWeight: 500,
-                      padding: '0.5rem 1rem',
-                      backgroundColor: saving || !form.name.trim() ? '#6c757d' : '#212529',
-                      borderColor: saving || !form.name.trim() ? '#6c757d' : '#212529',
-                      transition: 'all 0.2s ease',
-                      boxShadow: saving || !form.name.trim() ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    {saving ? (
-                      <Fragment>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Saving...
-                      </Fragment>
-                    ) : (
-                      <Fragment>
-                        <i className="bi bi-check-circle me-2"></i>
-                        Save Nail Tech
-                      </Fragment>
-                    )}
-                  </button>
+                  {modalMode !== 'view' && (
+                    <button 
+                      type="submit" 
+                      className="btn btn-dark" 
+                      disabled={saving || !form.name.trim()}
+                      style={{ 
+                        borderRadius: '8px',
+                        fontWeight: 500,
+                        padding: '0.5rem 1rem',
+                        backgroundColor: saving || !form.name.trim() ? '#6c757d' : '#212529',
+                        borderColor: saving || !form.name.trim() ? '#6c757d' : '#212529',
+                        transition: 'all 0.2s ease',
+                        boxShadow: saving || !form.name.trim() ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.1)'
+                      }}
+                    >
+                      {saving ? (
+                        <Fragment>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Saving...
+                        </Fragment>
+                      ) : (
+                        <Fragment>
+                          <i className="bi bi-check-circle me-2"></i>
+                          Save Nail Tech
+                        </Fragment>
+                      )}
+                    </button>
+                  )}
                 </div>
               </form>
             </div>

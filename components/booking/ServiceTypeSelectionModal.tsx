@@ -7,7 +7,7 @@ import type { ServiceType } from '@/lib/types';
 type ServiceLocation = 'homebased_studio' | 'home_service';
 
 interface ServiceOption {
-  value: ServiceType;
+  value: ServiceType | string;
   label: string;
   description: string;
   slots: number;
@@ -46,6 +46,13 @@ export default function ServiceTypeSelectionModal({
 
   const services = servicesByLocation[serviceLocation];
 
+  const normalizeServiceValue = (value: ServiceType | string): ServiceType | null => {
+    if (value === 'Russian Manicure') return 'manicure';
+    if (value === 'Russian Manicure w/o Extensions') return 'manicure';
+    if (value === 'Russian Manicure w/ Extensions') return 'manicure';
+    return (value as ServiceType) || null;
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
       <motion.div
@@ -71,7 +78,12 @@ export default function ServiceTypeSelectionModal({
           {services.map((service) => (
             <button
               key={service.value}
-              onClick={() => onContinue(service.value)}
+              onClick={() => {
+                const normalized = normalizeServiceValue(service.value);
+                if (normalized) {
+                  onContinue(normalized);
+                }
+              }}
               className={`w-full text-left rounded-lg border-2 p-4 transition-all active:scale-[0.98] touch-manipulation ${
                 selectedService === service.value
                   ? 'border-black bg-black text-white'

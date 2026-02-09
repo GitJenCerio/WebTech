@@ -18,6 +18,7 @@ export interface IBooking extends Document {
     depositRequired: number; // Required deposit amount
     paidAmount: number; // Amount paid so far
     tipAmount: number; // Tip amount (optional)
+    discountAmount?: number; // Discount amount (optional)
   };
   payment: {
     method?: 'PNB' | 'CASH' | 'GCASH'; // Payment method
@@ -26,6 +27,8 @@ export interface IBooking extends Document {
     paymentProofUrl?: string; // Cloudinary URL for payment proof
     paymentProofPublicId?: string; // Cloudinary public ID for deletion
   };
+  clientNotes?: string;
+  adminNotes?: string;
   clientPhotos?: {
     inspiration: Array<{
       url: string;
@@ -39,6 +42,12 @@ export interface IBooking extends Document {
     }>;
   };
   completedAt: Date | null; // When appointment was completed (admin-only, settable once)
+  confirmedAt?: Date | null; // When booking was confirmed
+  invoice?: {
+    quotationId?: string;
+    total?: number;
+    createdAt?: Date;
+  };
   statusReason?: string; // Reason for admin status actions (cancel/no_show/reschedule)
   createdAt: Date;
   updatedAt: Date;
@@ -98,6 +107,7 @@ const BookingSchema = new Schema<IBooking>(
       depositRequired: { type: Number, required: true, default: 0 },
       paidAmount: { type: Number, required: true, default: 0 },
       tipAmount: { type: Number, required: true, default: 0 },
+      discountAmount: { type: Number, default: 0 },
     },
     payment: {
       method: { type: String, enum: ['PNB', 'CASH', 'GCASH'] },
@@ -106,6 +116,8 @@ const BookingSchema = new Schema<IBooking>(
       paymentProofUrl: { type: String },
       paymentProofPublicId: { type: String },
     },
+    clientNotes: { type: String, default: '' },
+    adminNotes: { type: String, default: '' },
     clientPhotos: {
       inspiration: [{
         url: { type: String },
@@ -122,6 +134,16 @@ const BookingSchema = new Schema<IBooking>(
       type: Date,
       default: null,
       index: true, // Index for querying completed appointments
+    },
+    confirmedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+    invoice: {
+      quotationId: { type: String },
+      total: { type: Number },
+      createdAt: { type: Date },
     },
     statusReason: {
       type: String,

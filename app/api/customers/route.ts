@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Customer from '@/lib/models/Customer';
-import Booking from '@/lib/models/Booking';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,14 +44,6 @@ export async function GET(request: Request) {
     }
 
     const customers = await Customer.find(query).sort({ name: 1 }).lean().exec();
-    const customerIds = customers.map((c) => String(c._id));
-
-    const visitCounts = await Booking.aggregate([
-      { $match: { customerId: { $in: customerIds } } },
-      { $group: { _id: '$customerId', count: { $sum: 1 } } },
-    ]).exec();
-
-    const countMap = new Map(visitCounts.map((r) => [String(r._id), r.count]));
 
     const list = customers.map((c) => ({
       id: String(c._id),
@@ -63,9 +54,22 @@ export async function GET(request: Request) {
       phone: c.phone,
       socialMediaName: c.socialMediaName,
       referralSource: c.referralSource,
+      referralSourceOther: c.referralSourceOther,
       isRepeatClient: c.isRepeatClient,
+      clientType: c.clientType,
+      totalBookings: c.totalBookings ?? 0,
+      completedBookings: c.completedBookings ?? 0,
+      totalSpent: c.totalSpent ?? 0,
+      totalTips: c.totalTips ?? 0,
+      totalDiscounts: c.totalDiscounts ?? 0,
+      lastVisit: c.lastVisit ?? null,
       notes: c.notes,
-      totalVisits: countMap.get(String(c._id)) ?? 0,
+      nailHistory: c.nailHistory,
+      healthInfo: c.healthInfo,
+      inspoDescription: c.inspoDescription,
+      waiverAccepted: c.waiverAccepted,
+      isActive: c.isActive ?? true,
+      totalVisits: c.totalBookings ?? 0,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
     }));
@@ -108,8 +112,23 @@ export async function POST(request: Request) {
       email: body.email?.toLowerCase().trim(),
       phone: body.phone?.trim(),
       socialMediaName: body.socialMediaName?.trim(),
-      referralSource: body.referralSource?.trim(),
+      referralSource: body.referralSource?.trim() || body.howDidYouFindUs?.trim(),
+      referralSourceOther: body.referralSourceOther?.trim() || body.howDidYouFindUsOther?.trim(),
+      clientType: body.clientType?.toUpperCase() === 'REPEAT' ? 'REPEAT' : 'NEW',
+      totalBookings: 0,
+      completedBookings: 0,
+      totalSpent: 0,
+      totalTips: 0,
+      totalDiscounts: 0,
+      lastVisit: null,
       notes: body.notes?.trim(),
+      nailHistory: body.nailHistory,
+      healthInfo: body.healthInfo,
+      inspoDescription: body.inspoDescription?.trim(),
+      waiverAccepted: typeof body.waiverAccepted === 'boolean'
+        ? body.waiverAccepted
+        : body.waiverAccepted === 'accept',
+      isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
     });
 
     return NextResponse.json({ customer }, { status: 201 });

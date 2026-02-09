@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getCustomerById, updateCustomer, getBookingsByCustomer, calculateCustomerLifetimeValue } from '@/lib/services/customerService';
+import connectDB from '@/lib/mongodb';
+import Customer from '@/lib/models/Customer';
+import Booking from '@/lib/models/Booking';
 import type { CustomerInput } from '@/lib/types';
 
 // Mark this route as dynamic to prevent static analysis during build
@@ -7,18 +9,62 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   try {
-    const customer = await getCustomerById(params.id);
+    await connectDB();
+    const customer = await Customer.findById(params.id).lean();
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found.' }, { status: 404 });
     }
 
-    // Get related data
-    const bookings = await getBookingsByCustomer(params.id);
-    const lifetimeValue = await calculateCustomerLifetimeValue(params.id);
+    const bookings = await Booking.find({ customerId: params.id }).sort({ createdAt: -1 }).lean();
+    const lifetimeValue = bookings.reduce((total, booking: any) => {
+      const totalAmount = booking.pricing?.total || 0;
+      const tipAmount = booking.pricing?.tipAmount || 0;
+      return total + totalAmount + tipAmount;
+    }, 0);
 
     return NextResponse.json({ 
-      customer, 
-      bookings,
+      customer: {
+        id: String(customer._id),
+        name: customer.name,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        email: customer.email,
+        phone: customer.phone,
+        socialMediaName: customer.socialMediaName,
+        referralSource: customer.referralSource,
+        referralSourceOther: customer.referralSourceOther,
+        isRepeatClient: customer.isRepeatClient,
+        clientType: customer.clientType,
+        totalBookings: customer.totalBookings ?? 0,
+        completedBookings: customer.completedBookings ?? 0,
+        totalSpent: customer.totalSpent ?? 0,
+        totalTips: customer.totalTips ?? 0,
+        totalDiscounts: customer.totalDiscounts ?? 0,
+        lastVisit: customer.lastVisit ?? null,
+        notes: customer.notes,
+        nailHistory: customer.nailHistory,
+        healthInfo: customer.healthInfo,
+        inspoDescription: customer.inspoDescription,
+        waiverAccepted: customer.waiverAccepted,
+        isActive: customer.isActive ?? true,
+        createdAt: customer.createdAt,
+        updatedAt: customer.updatedAt,
+      },
+      bookings: bookings.map((booking: any) => ({
+        id: String(booking._id),
+        bookingCode: booking.bookingCode,
+        slotIds: booking.slotIds,
+        nailTechId: booking.nailTechId,
+        service: booking.service,
+        status: booking.status,
+        paymentStatus: booking.paymentStatus,
+        pricing: booking.pricing,
+        payment: booking.payment,
+        completedAt: booking.completedAt || null,
+        confirmedAt: booking.confirmedAt || null,
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
+      })),
       lifetimeValue,
       bookingCount: bookings.length,
     });
@@ -30,7 +76,22 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
     const body = await request.json();
-    const { name, firstName, lastName, email, phone, socialMediaName, referralSource, notes } = body ?? {};
+    const {
+      name,
+      firstName,
+      lastName,
+      email,
+      phone,
+      socialMediaName,
+      referralSource,
+      referralSourceOther,
+      notes,
+      nailHistory,
+      healthInfo,
+      inspoDescription,
+      waiverAccepted,
+      isActive,
+    } = body ?? {};
 
     const updates: Partial<CustomerInput> = {};
     if (name !== undefined) updates.name = name;
@@ -40,10 +101,48 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (phone !== undefined) updates.phone = phone;
     if (socialMediaName !== undefined) updates.socialMediaName = socialMediaName;
     if (referralSource !== undefined) updates.referralSource = referralSource;
+    if (referralSourceOther !== undefined) updates.referralSourceOther = referralSourceOther;
     if (notes !== undefined) updates.notes = notes;
+    if (nailHistory !== undefined) updates.nailHistory = nailHistory;
+    if (healthInfo !== undefined) updates.healthInfo = healthInfo;
+    if (inspoDescription !== undefined) updates.inspoDescription = inspoDescription;
+    if (waiverAccepted !== undefined) updates.waiverAccepted = waiverAccepted;
+    if (isActive !== undefined) updates.isActive = isActive;
 
-    const customer = await updateCustomer(params.id, updates);
-    return NextResponse.json({ customer });
+    await connectDB();
+    const customer = await Customer.findByIdAndUpdate(params.id, updates, { new: true }).lean();
+    if (!customer) {
+      return NextResponse.json({ error: 'Customer not found.' }, { status: 404 });
+    }
+    return NextResponse.json({
+      customer: {
+        id: String(customer._id),
+        name: customer.name,
+        firstName: customer.firstName,
+        lastName: customer.lastName,
+        email: customer.email,
+        phone: customer.phone,
+        socialMediaName: customer.socialMediaName,
+        referralSource: customer.referralSource,
+        referralSourceOther: customer.referralSourceOther,
+        isRepeatClient: customer.isRepeatClient,
+        clientType: customer.clientType,
+        totalBookings: customer.totalBookings ?? 0,
+        completedBookings: customer.completedBookings ?? 0,
+        totalSpent: customer.totalSpent ?? 0,
+        totalTips: customer.totalTips ?? 0,
+        totalDiscounts: customer.totalDiscounts ?? 0,
+        lastVisit: customer.lastVisit ?? null,
+        notes: customer.notes,
+        nailHistory: customer.nailHistory,
+        healthInfo: customer.healthInfo,
+        inspoDescription: customer.inspoDescription,
+        waiverAccepted: customer.waiverAccepted,
+        isActive: customer.isActive ?? true,
+        createdAt: customer.createdAt,
+        updatedAt: customer.updatedAt,
+      }
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message ?? 'Unable to update customer.' }, { status: 400 });
   }
@@ -51,10 +150,6 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const connectDB = (await import('@/lib/mongodb')).default;
-    const Customer = (await import('@/lib/models/Customer')).default;
-    const Booking = (await import('@/lib/models/Booking')).default;
-
     await connectDB();
     const customer = await Customer.findById(params.id);
     if (!customer) {

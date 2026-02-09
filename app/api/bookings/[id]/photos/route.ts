@@ -48,9 +48,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
       const photo = { url: result.secure_url, publicId: result.public_id, uploadedAt: new Date() };
       booking.clientPhotos[photoType as 'inspiration' | 'currentState'].push(photo);
       await booking.save();
-      backupBooking(booking, 'update').catch(err =>
-        console.error('Failed to backup booking update to Google Sheets:', err)
-      );
+      if (booking.confirmedAt) {
+        backupBooking(booking, 'update').catch(err =>
+          console.error('Failed to backup booking update to Google Sheets:', err)
+        );
+      }
 
       return NextResponse.json({ success: true, message: 'Photo uploaded', photo });
     }
@@ -70,9 +72,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     booking.clientPhotos[photoType as 'inspiration' | 'currentState'].push({ url, publicId, uploadedAt: new Date() });
     await booking.save();
-    backupBooking(booking, 'update').catch(err =>
-      console.error('Failed to backup booking update to Google Sheets:', err)
-    );
+    if (booking.confirmedAt) {
+      backupBooking(booking, 'update').catch(err =>
+        console.error('Failed to backup booking update to Google Sheets:', err)
+      );
+    }
 
     return NextResponse.json({ success: true, message: 'Photo added' });
   } catch (error: any) {
@@ -97,9 +101,11 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       (p: any) => p.publicId !== publicId
     );
     await booking.save();
-    backupBooking(booking, 'update').catch(err =>
-      console.error('Failed to backup booking update to Google Sheets:', err)
-    );
+    if (booking.confirmedAt) {
+      backupBooking(booking, 'update').catch(err =>
+        console.error('Failed to backup booking update to Google Sheets:', err)
+      );
+    }
 
     // Delete from Cloudinary
     await deleteImage(publicId).catch(console.error);

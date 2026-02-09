@@ -6,10 +6,14 @@ interface Slot {
   id: string;
   time: string;
   status: BookingStatus;
+  slotType?: 'regular' | 'with_squeeze_fee' | null;
   nailTechId?: string;
   nailTechName?: string;
   nailTechRole?: string;
   clientName?: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  clientSocialMediaName?: string;
   service?: string;
   isHidden?: boolean;
 }
@@ -57,9 +61,13 @@ export default function SlotList({
                 key={slot.id}
                 time={slot.time}
                 status={slot.status}
+                slotType={slot.slotType}
                 nailTechName={slot.nailTechName}
                 nailTechRole={slot.nailTechRole}
                 clientName={slot.clientName}
+                clientEmail={slot.clientEmail}
+                clientPhone={slot.clientPhone}
+                clientSocialMediaName={slot.clientSocialMediaName}
                 service={slot.service}
                 isHidden={slot.isHidden}
                 onView={() => onView?.(slot)}

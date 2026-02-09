@@ -1,14 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, parseISO } from 'date-fns';
-import type { Slot, BlockedDate } from '@/lib/types';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay } from 'date-fns';
+import type { Slot } from '@/lib/types';
 
 interface CalendarGridProps {
   referenceDate: Date;
   slots: Slot[];
   bookings?: Array<{ slotId: string; status: string }>;
-  blockedDates?: BlockedDate[];
   selectedDate: string;
   onSelectDate: (date: string) => void;
   onChangeMonth: (date: Date) => void;
@@ -21,7 +20,6 @@ export function CalendarGrid({
   referenceDate,
   slots,
   bookings = [],
-  blockedDates = [],
   selectedDate,
   onSelectDate,
   onChangeMonth,
@@ -48,24 +46,6 @@ export function CalendarGrid({
     return map;
   }, [slots]);
 
-  const isDateBlocked = (date: Date): boolean => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return blockedDates.some((block) => {
-      if (block.scope === 'single') {
-        return block.startDate === dateStr;
-      }
-      if (block.scope === 'range') {
-        return dateStr >= block.startDate && dateStr <= block.endDate;
-      }
-      if (block.scope === 'month') {
-        const blockMonth = block.startDate.substring(0, 7);
-        const dateMonth = dateStr.substring(0, 7);
-        return blockMonth === dateMonth;
-      }
-      return false;
-    });
-  };
-
   const getSlotCounts = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const dateSlots = slotsByDate.get(dateStr) || [];
@@ -82,10 +62,6 @@ export function CalendarGrid({
   const getSlotStatus = (date: Date): 'available' | 'booked' | 'blocked' | 'none' => {
     const dateStr = format(date, 'yyyy-MM-dd');
     
-    if (isDateBlocked(date)) {
-      return 'blocked';
-    }
-
     const dateSlots = slotsByDate.get(dateStr) || [];
     const visibleSlots = dateSlots.filter((slot) => !slot.isHidden);
     

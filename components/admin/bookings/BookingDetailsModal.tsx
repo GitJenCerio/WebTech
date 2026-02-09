@@ -7,12 +7,17 @@ interface BookingDetailsModalProps {
   booking: {
     id?: string;
     bookingCode?: string;
+    customerId?: string;
     date: string;
     time: string;
     clientName: string;
+    clientEmail?: string;
+    clientPhone?: string;
+    clientSocialMediaName?: string;
     service: string;
     status: BookingStatus;
     notes?: string;
+    adminNotes?: string;
     paymentStatus?: string;
     slotCount?: number;
     reservationAmount?: number;
@@ -23,8 +28,13 @@ interface BookingDetailsModalProps {
   onCancel?: () => void;
   onReschedule?: () => void;
   onMarkNoShow?: () => void;
+  onCreateInvoice?: () => void;
   onVerifyPaymentProof?: () => void;
   isVerifyingPaymentProof?: boolean;
+  onAdminNotesChange?: (value: string) => void;
+  onSaveNotes?: () => void;
+  adminNotesDraft?: string;
+  onViewClient?: () => void;
 }
 
 export default function BookingDetailsModal({
@@ -35,13 +45,24 @@ export default function BookingDetailsModal({
   onCancel,
   onReschedule,
   onMarkNoShow,
+  onCreateInvoice,
   onVerifyPaymentProof,
   isVerifyingPaymentProof = false,
+  onAdminNotesChange,
+  onSaveNotes,
+  adminNotesDraft = '',
+  onViewClient,
 }: BookingDetailsModalProps) {
   if (!show || !booking) return null;
 
   const isPendingPayment = ['booked', 'PENDING_PAYMENT', 'pending'].includes(booking.status);
   const canVerify = Boolean(booking.paymentProofUrl && onVerifyPaymentProof);
+  const paymentStatusLabel = booking.paymentStatus?.toLowerCase() === 'paid'
+    ? 'Paid'
+    : booking.paymentStatus?.toLowerCase() === 'partial'
+      ? 'Partial'
+      : 'Unpaid';
+  const contactValue = booking.clientPhone || booking.clientEmail || '-';
 
   return (
     <div
@@ -72,7 +93,7 @@ export default function BookingDetailsModal({
 
       <div
         className="modal-dialog modal-dialog-centered"
-        style={{ margin: '0.5rem auto', position: 'relative', zIndex: 1, width: 'min(96vw, 680px)' }}
+        style={{ margin: '0.5rem auto', position: 'relative', zIndex: 1, width: 'min(96vw, 640px)' }}
         role="document"
       >
         <div className="modal-content">
@@ -86,38 +107,41 @@ export default function BookingDetailsModal({
             ></button>
           </div>
 
-          <div className="modal-body p-3" style={{ fontSize: '0.92rem' }}>
+          <div className="modal-body p-3" style={{ fontSize: '0.92rem', maxHeight: '70vh', overflowY: 'auto' }}>
             <div className="mb-2 p-2 border rounded bg-light">
-              <div className="d-flex flex-column gap-1">
-                {booking.bookingCode ? <div><strong>Booking Code:</strong> {booking.bookingCode}</div> : null}
-                <div><strong>Client:</strong> {booking.clientName}</div>
-                <div><strong>Date:</strong> {booking.date}</div>
-                <div><strong>Time:</strong> {booking.time}</div>
-              </div>
-            </div>
-
-            <div className="mb-2 p-2 border rounded bg-light">
-              <div className="d-flex flex-wrap gap-3">
-                <span><strong>Service:</strong> {booking.service}</span>
-                {booking.paymentStatus && booking.paymentStatus.toLowerCase() !== 'unpaid' ? (
-                  <span><strong>Payment:</strong> {booking.paymentStatus}</span>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="mb-2 d-flex align-items-center gap-2 flex-wrap">
-              <span className="fw-semibold">Status:</span>
-              <StatusBadge status={booking.status} />
-            </div>
-
-            {booking.reservationAmount ? (
-              <div className="mb-2">
-                <label className="form-label fw-semibold mb-1">Reservation Fee</label>
-                <div>
-                  PHP 500 x {booking.slotCount || 1} slot{(booking.slotCount || 1) > 1 ? 's' : ''} = PHP {booking.reservationAmount.toLocaleString()}
+              <div className="d-flex justify-content-between align-items-start gap-2">
+                <div className="d-flex flex-column gap-1">
+                  {booking.bookingCode ? <div><strong>Booking Code:</strong> {booking.bookingCode}</div> : null}
+                  <div><strong>Date:</strong> {booking.date}</div>
+                  <div><strong>Time:</strong> {booking.time}</div>
+                  <div><strong>Client:</strong> {booking.clientName}</div>
+                  {booking.clientSocialMediaName ? (
+                    <div><strong>Social:</strong> {booking.clientSocialMediaName}</div>
+                  ) : null}
+                  <div><strong>Contact:</strong> {contactValue}</div>
+                  <div><strong>Service:</strong> {booking.service}</div>
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                    <span><strong>Reservation Fee:</strong></span>
+                    <span className={`badge ${paymentStatusLabel === 'Paid' ? 'bg-success' : paymentStatusLabel === 'Partial' ? 'bg-warning text-dark' : 'bg-secondary'}`}>
+                      {paymentStatusLabel === 'Paid' || paymentStatusLabel === 'Partial' ? 'Paid' : 'Unpaid'}
+                    </span>
+                  </div>
                 </div>
+                {onViewClient && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-dark btn-sm"
+                    onClick={onViewClient}
+                    disabled={!booking.customerId}
+                    title="View client profile"
+                    aria-label="View client profile"
+                  >
+                    <i className="bi bi-person-lines-fill"></i>
+                  </button>
+                )}
               </div>
-            ) : null}
+            </div>
+
 
             {booking.paymentProofUrl && (
               <div className="mb-2">
@@ -143,10 +167,32 @@ export default function BookingDetailsModal({
 
             {booking.notes && (
               <div className="mb-2">
-                <label className="form-label fw-semibold mb-1">Notes</label>
+                <label className="form-label fw-semibold mb-1">Client Notes</label>
                 <div className="text-muted">{booking.notes}</div>
               </div>
             )}
+
+            <div className="mb-2">
+              <label className="form-label fw-semibold mb-1">Admin Notes</label>
+              <textarea
+                className="form-control"
+                rows={3}
+                value={adminNotesDraft}
+                onChange={(e) => onAdminNotesChange?.(e.target.value)}
+                placeholder="Add internal notes..."
+              />
+              <small className="text-muted">Visible to admins only.</small>
+              <div className="mt-2">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-dark"
+                  onClick={onSaveNotes}
+                  disabled={!onSaveNotes}
+                >
+                  Save Notes
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="modal-footer py-2 px-3">
@@ -177,6 +223,14 @@ export default function BookingDetailsModal({
             ) : (
               ['CONFIRMED', 'confirmed'].includes(booking.status) && (
                 <>
+                  <button
+                    type="button"
+                    className="btn btn-outline-dark"
+                    onClick={onCreateInvoice}
+                    disabled={!onCreateInvoice}
+                  >
+                    <i className="bi bi-receipt me-2"></i>Create Invoice
+                  </button>
                   <button
                     type="button"
                     className="btn btn-outline-secondary"

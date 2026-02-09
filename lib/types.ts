@@ -1,7 +1,7 @@
 export type SlotStatus = 'available' | 'blocked' | 'pending' | 'confirmed';
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'no_show';
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'refunded';
-export type ServiceType = 'manicure' | 'pedicure' | 'mani_pedi' | 'home_service_2slots' | 'home_service_3slots';
+export type ServiceType = 'Russian Manicure' | 'Russian Pedicure' | 'Russian Mani + Pedi' | 'Russian Manicure for 2' | 'Russian Pedicure for 2' | 'Russian Mani + Pedi for 1' | 'Russian Mani + Pedi for 2';
 export type NailTechRole = 'Owner' | 'Junior Tech' | 'Senior Tech';
 export type ServiceAvailability = 'Studio only' | 'Home service only' | 'Studio and Home Service';
 export type NailTechStatus = 'Active' | 'Inactive';
@@ -51,16 +51,6 @@ export interface Slot {
   updatedAt: string;
 }
 
-export interface BlockedDate {
-  id: string;
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
-  reason?: string | null;
-  scope: 'single' | 'range' | 'month';
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Customer {
   id: string;
   name: string;
@@ -70,8 +60,29 @@ export interface Customer {
   phone?: string;
   socialMediaName?: string; // FB name / Instagram name
   referralSource?: string; // How did you find out about glammednails
+  referralSourceOther?: string;
   isRepeatClient?: boolean; // Mark customers imported from old sheets as repeat clients
+  clientType?: 'NEW' | 'REPEAT';
+  totalBookings?: number;
+  completedBookings?: number;
+  totalSpent?: number;
+  totalTips?: number;
+  totalDiscounts?: number;
+  lastVisit?: string | null;
   notes?: string;
+  nailHistory?: {
+    hasRussianManicure?: boolean;
+    hasGelOverlay?: boolean;
+    hasSoftgelExtensions?: boolean;
+  };
+  healthInfo?: {
+    allergies?: string;
+    nailConcerns?: string;
+    nailDamageHistory?: string;
+  };
+  inspoDescription?: string;
+  waiverAccepted?: boolean;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -100,6 +111,7 @@ export interface Booking {
   paidAmount?: number;
   depositAmount?: number;
   tipAmount?: number;
+  discountAmount?: number;
   // Payment date tracking (when payments were actually received)
   depositDate?: string; // ISO date string when deposit was paid
   paidDate?: string; // ISO date string when full/partial payment was made
@@ -107,6 +119,11 @@ export interface Booking {
   // Payment method tracking
   depositPaymentMethod?: 'PNB' | 'CASH' | 'GCASH'; // Payment method for deposit
   paidPaymentMethod?: 'PNB' | 'CASH' | 'GCASH'; // Payment method for total payment
+  invoiceId?: string;
+  invoiceTotal?: number;
+  confirmedAt?: string;
+  clientNotes?: string;
+  adminNotes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -122,7 +139,6 @@ export interface BookingWithCustomer extends Booking {
 }
 
 export type SlotInput = Omit<Slot, 'id' | 'createdAt' | 'updatedAt'>;
-export type BlockedDateInput = Omit<BlockedDate, 'id' | 'createdAt' | 'updatedAt'>;
 export type CustomerInput = Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>;
 export type NailTechInput = Omit<NailTech, 'id' | 'createdAt' | 'updatedAt'>;
 

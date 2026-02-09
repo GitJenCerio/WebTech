@@ -35,14 +35,20 @@ const QuotationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-QuotationSchema.pre('save', function (next) {
+QuotationSchema.pre('save', function () {
   if (!this.quotationNumber) {
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     this.quotationNumber = `QN-${dateStr}${random}`;
   }
-  next();
 });
 
-export default mongoose.models.Quotation || mongoose.model('Quotation', QuotationSchema);
+// Ensure model uses the latest schema in dev (avoid stale hooks after HMR)
+if (mongoose.models.Quotation) {
+  delete mongoose.models.Quotation;
+}
+
+const Quotation = mongoose.model('Quotation', QuotationSchema);
+
+export default Quotation;

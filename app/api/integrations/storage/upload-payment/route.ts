@@ -44,9 +44,11 @@ export async function POST(request: Request) {
       paymentProofPublicId: result.public_id,
     };
     await booking.save();
-    backupBooking(booking, 'update').catch(err =>
-      console.error('Failed to backup booking update to Google Sheets:', err)
-    );
+    if (booking.confirmedAt) {
+      backupBooking(booking, 'update').catch(err =>
+        console.error('Failed to backup booking update to Google Sheets:', err)
+      );
+    }
 
     return NextResponse.json({
       url: result.secure_url,

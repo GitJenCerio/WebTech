@@ -6,9 +6,13 @@ import NailTechBadge from '../NailTechBadge';
 interface SlotItemProps {
   time: string;
   status: BookingStatus;
+  slotType?: 'regular' | 'with_squeeze_fee' | null;
   nailTechName?: string;
   nailTechRole?: string;
   clientName?: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  clientSocialMediaName?: string;
   service?: string;
   isHidden?: boolean;
   onView?: () => void;
@@ -19,9 +23,13 @@ interface SlotItemProps {
 export default function SlotItem({
   time,
   status,
+  slotType,
   nailTechName,
   nailTechRole,
   clientName,
+  clientEmail,
+  clientPhone,
+  clientSocialMediaName,
   service,
   isHidden = false,
   onView,
@@ -29,6 +37,7 @@ export default function SlotItem({
   onCancel,
 }: SlotItemProps) {
   const canDeleteSlot = ['available', 'cancelled', 'CANCELLED', 'no_show', 'NO_SHOW'].includes(status);
+  const canEditSlot = ['available', 'blocked', 'cancelled', 'CANCELLED', 'no_show', 'NO_SHOW'].includes(status);
 
   return (
     <div className={`card mb-2 ${isHidden ? 'border-warning' : ''}`}>
@@ -39,6 +48,11 @@ export default function SlotItem({
               {time}
             </div>
             <StatusBadge status={status} />
+            {slotType === 'with_squeeze_fee' && (
+              <span className="badge bg-warning text-dark" style={{ fontSize: '0.7rem' }}>
+                Squeeze-in Fee
+              </span>
+            )}
             {isHidden && (
               <span className="badge bg-gray-500 text-white" style={{ fontSize: '0.7rem' }}>
                 <EyeOff className="me-1" style={{ display: 'inline', width: '14px', height: '14px' }} />Hidden from Clients
@@ -51,6 +65,9 @@ export default function SlotItem({
               <div>
                 <div className="fw-semibold small">{clientName}</div>
                 {service && <div className="text-muted small">{service}</div>}
+                {clientEmail && <div className="text-muted small">{clientEmail}</div>}
+                {clientPhone && <div className="text-muted small">{clientPhone}</div>}
+                {clientSocialMediaName && <div className="text-muted small">{clientSocialMediaName}</div>}
               </div>
             )}
           </div>
@@ -66,7 +83,7 @@ export default function SlotItem({
                 <Eye size={16} />
               </button>
             )}
-            {(onEdit) && (
+            {(onEdit && canEditSlot) && (
               <button
                 type="button"
                 className="btn btn-sm btn-outline-dark"

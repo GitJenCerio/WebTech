@@ -158,6 +158,14 @@ export async function backupCustomer(customer: Customer, operation: 'create' | '
     customer.socialMediaName || '',
     customer.referralSource || '',
     customer.isRepeatClient ? 'Yes' : 'No',
+    customer.clientType || '',
+    customer.totalBookings ?? 0,
+    customer.completedBookings ?? 0,
+    customer.totalSpent ?? 0,
+    customer.totalTips ?? 0,
+    customer.totalDiscounts ?? 0,
+    customer.lastVisit || '',
+    customer.isActive === false ? 'No' : 'Yes',
     customer.notes || '',
     customer.createdAt,
     customer.updatedAt,
@@ -387,7 +395,7 @@ export async function initializeSheets(): Promise<void> {
 
     const headers = {
       Slots: ['ID', 'Date', 'Time', 'Status', 'Slot Type', 'Notes', 'Is Hidden', 'Nail Tech ID', 'Created At', 'Updated At'],
-      Customers: ['ID', 'Name', 'First Name', 'Last Name', 'Email', 'Phone', 'Social Media Name', 'Referral Source', 'Is Repeat Client', 'Notes', 'Created At', 'Updated At'],
+      Customers: ['ID', 'Name', 'First Name', 'Last Name', 'Email', 'Phone', 'Social Media Name', 'Referral Source', 'Is Repeat Client', 'Client Type', 'Total Bookings', 'Completed Bookings', 'Total Spent', 'Total Tips', 'Total Discounts', 'Last Visit', 'Is Active', 'Notes', 'Created At', 'Updated At'],
       Bookings: ['ID', 'Booking ID', 'Slot ID', 'Paired Slot ID', 'Linked Slot IDs', 'Customer ID', 'Nail Tech ID', 'Status', 'Service Type', 'Client Type', 'Service Location', 'Assistant Name', 'Assistant Commission Rate', 'Form Response ID', 'Date Changed', 'Time Changed', 'Validation Warnings', 'Payment Status', 'Paid Amount', 'Deposit Amount', 'Tip Amount', 'Deposit Date', 'Paid Date', 'Tip Date', 'Deposit Payment Method', 'Paid Payment Method', 'Created At', 'Updated At', 'Payment Proof URL', 'Payment Proof Public ID', 'Inspiration Photo URLs', 'Current Nail Photo URLs', 'Completed At'],
       NailTechs: ['ID', 'Name', 'Role', 'Service Availability', 'Working Days', 'Discount', 'Commission Rate', 'Status', 'Created At', 'Updated At'],
       Users: ['ID', 'Name', 'Email', 'Role', 'Assigned Nail Tech ID', 'Is Active', 'Last Login', 'Created At', 'Updated At'],

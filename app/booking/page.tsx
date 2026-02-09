@@ -13,7 +13,7 @@ import NailTechSelectionModal from '@/components/booking/NailTechSelectionModal'
 import BookingFormModal from '@/components/booking/BookingFormModal';
 import SlotConfirmationModal from '@/components/booking/SlotConfirmationModal';
 import BookingSuccessModal from '@/components/booking/BookingSuccessModal';
-import type { Slot, BlockedDate, ServiceType, NailTech } from '@/lib/types';
+import type { Slot, ServiceType, NailTech } from '@/lib/types';
 import { getNextSlotTime, SLOT_TIMES } from '@/lib/constants/slots';
 import { formatTime12Hour } from '@/lib/utils';
 
@@ -51,8 +51,7 @@ function getRequiredSlotCount(serviceType: ServiceType, serviceLocation?: Servic
 function canSlotAccommodateService(
   slot: Slot,
   serviceType: ServiceType,
-  allSlots: Slot[],
-  blockedDates: BlockedDate[] = []
+  allSlots: Slot[]
 ): boolean {
   const requiredSlots = getRequiredSlotCount(serviceType);
   if (requiredSlots === 1) return true;
@@ -85,15 +84,6 @@ function canSlotAccommodateService(
       
       if (slotAtTime) {
         // Slot exists at this time
-        // Check if blocked
-        const isBlocked = blockedDates.some(
-          (block) => slotAtTime.date >= block.startDate && slotAtTime.date <= block.endDate
-        );
-        if (isBlocked) {
-          // Blocked slot breaks consecutiveness
-          return false;
-        }
-        
         // Check status
         if (slotAtTime.status === 'available') {
           // Found the next available slot - this is consecutive
@@ -138,7 +128,6 @@ export default function BookingPage() {
   } | null>(null);
 
   const [slots, setSlots] = useState<Slot[]>([]);
-  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
   const [nailTechs, setNailTechs] = useState<NailTech[]>([]);
   const [selectedNailTechId, setSelectedNailTechId] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
@@ -227,7 +216,6 @@ export default function BookingPage() {
       });
       const data = await response.json();
       setSlots(data.slots);
-      setBlockedDates(data.blockedDates);
     } catch (err) {
       console.error('Error loading availability', err);
       setError('Unable to load availability. Please try again.');
@@ -291,16 +279,6 @@ export default function BookingPage() {
         
         if (slotAtTime) {
           // Slot exists at this time
-          // Check if slot is blocked by a blocked date
-          const isBlocked = blockedDates.some(
-            (block) => slotAtTime.date >= block.startDate && slotAtTime.date <= block.endDate
-          );
-          
-          if (isBlocked) {
-            errorMessage = `This service requires ${requiredSlots} consecutive slots, but the slot at ${formatTime12Hour(nextTime)} is blocked. Please select a different time or date.`;
-            break;
-          }
-          
           // Check status
           if (slotAtTime.status === 'available') {
             // Found the next available slot - this is consecutive
@@ -351,7 +329,7 @@ export default function BookingPage() {
         `This booking will use the time slot at ${formatTime12Hour(selectedSlot.time)}.`
       );
     }
-  }, [selectedSlot, selectedService, slots, serviceOptions, blockedDates]);
+  }, [selectedSlot, selectedService, slots, serviceOptions]);
 
   const availableSlotsForDate = useMemo(
     () => {
@@ -359,13 +337,10 @@ export default function BookingPage() {
         (slot) =>
           slot.date === selectedDate &&
           slot.status === 'available' &&
-          !slot.isHidden &&
-          !blockedDates.some(
-            (block) => slot.date >= block.startDate && slot.date <= block.endDate
-          )
+          !slot.isHidden
       );
     },
-    [slots, selectedDate, blockedDates],
+    [slots, selectedDate],
   );
 
   // Filter slots that can accommodate the selected service
@@ -374,9 +349,9 @@ export default function BookingPage() {
       if (!selectedService || getRequiredSlotCount(selectedService) === 1) {
         return availableSlotsForDate;
       }
-      return availableSlotsForDate.filter((slot) => canSlotAccommodateService(slot, selectedService, slots, blockedDates));
+      return availableSlotsForDate.filter((slot) => canSlotAccommodateService(slot, selectedService, slots));
     },
-    [availableSlotsForDate, selectedService, slots, blockedDates],
+    [availableSlotsForDate, selectedService, slots],
   );
 
 
@@ -439,13 +414,13 @@ export default function BookingPage() {
     
     // Check each date for consecutive available slots
     Object.entries(dateGroups).forEach(([dateKey, dateSlots]) => {
-      if (canSlotAccommodateService(dateSlots[0], selectedService, slots, blockedDates)) {
+      if (canSlotAccommodateService(dateSlots[0], selectedService, slots)) {
         available.add(dateKey);
       }
     });
     
     return available;
-  }, [slots, blockedDates, selectedService, clientInfo]);
+  }, [slots, selectedService, clientInfo]);
 
   // Dates that don't have enough consecutive slots for the selected service
   const noAvailableSlotsDates = useMemo(() => {
@@ -554,6 +529,7 @@ export default function BookingPage() {
       }
 
       let customerId = clientInfo.customerId;
+      const isExistingCustomer = Boolean(customerId);
 
       // Create customer if no existing customer ID (new client or repeat-not-found)
       if (!customerId) {
@@ -577,7 +553,6 @@ export default function BookingPage() {
               nailConcerns: formData.nailConcerns,
               nailDamageHistory: formData.nailDamageHistory,
             },
-            preferredServices: formData.services,
             inspoDescription: formData.inspoDescription,
             waiverAccepted: formData.waiverAccepted === 'accept',
           }),
@@ -590,6 +565,38 @@ export default function BookingPage() {
 
         const customerData = await customerResponse.json();
         customerId = customerData.customer._id || customerData.customer.id;
+      }
+
+      if (isExistingCustomer && customerId) {
+        const updateResponse = await fetch(`/api/customers/${customerId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.contactNumber,
+            socialMediaName: formData.socialMediaName,
+            referralSource: formData.howDidYouFindUs,
+            referralSourceOther: formData.howDidYouFindUsOther,
+            nailHistory: {
+              hasRussianManicure: formData.hasRussianManicure === 'yes',
+              hasGelOverlay: formData.hasGelOverlay === 'yes',
+              hasSoftgelExtensions: formData.hasSoftgelExtensions === 'yes',
+            },
+            healthInfo: {
+              allergies: formData.allergies,
+              nailConcerns: formData.nailConcerns,
+              nailDamageHistory: formData.nailDamageHistory,
+            },
+            inspoDescription: formData.inspoDescription,
+            waiverAccepted: formData.waiverAccepted === 'accept',
+          }),
+        });
+
+        if (!updateResponse.ok) {
+          const errorData = await updateResponse.json().catch(() => ({ error: 'Failed to update customer' }));
+          throw new Error(errorData.error || 'Failed to update customer details');
+        }
       }
 
       const slotIds = [selectedSlot.id, ...linkedSlotIds];
@@ -732,7 +739,6 @@ export default function BookingPage() {
                         <CalendarGrid
                           referenceDate={currentMonth}
                           slots={slots}
-                          blockedDates={blockedDates}
                           selectedDate={selectedDate}
                           onSelectDate={setSelectedDate}
                           onChangeMonth={setCurrentMonth}

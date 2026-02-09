@@ -99,6 +99,52 @@ async function confirmSlots(slotIds: string[]): Promise<void> {
   );
 }
 
+export async function recomputeCustomerStats(customerId: string): Promise<void> {
+  await connectDB();
+  const bookings = await Booking.find({ customerId }).lean();
+
+  const totalBookings = bookings.length;
+  const completedBookings = bookings.filter((b: any) => b.completedAt).length;
+
+  let totalSpent = 0;
+  let totalTips = 0;
+  let totalDiscounts = 0;
+  let lastVisit: Date | null = null;
+
+  for (const booking of bookings) {
+    if (!booking.completedAt) continue;
+    const pricing = booking.pricing || {};
+    const tipAmount = pricing.tipAmount || 0;
+    const totalAmount = pricing.total || 0;
+    const discountAmount = pricing.discountAmount || 0;
+
+    totalSpent += totalAmount + tipAmount;
+    totalTips += tipAmount;
+    totalDiscounts += discountAmount;
+
+    const completedAt = new Date(booking.completedAt);
+    if (!lastVisit || completedAt > lastVisit) {
+      lastVisit = completedAt;
+    }
+  }
+
+  const clientType = totalBookings > 1 ? 'REPEAT' : 'NEW';
+
+  await Customer.findByIdAndUpdate(
+    customerId,
+    {
+      totalBookings,
+      completedBookings,
+      totalSpent,
+      totalTips,
+      totalDiscounts,
+      lastVisit,
+      clientType,
+    },
+    { new: false }
+  );
+}
+
 export interface CreateBookingInput {
   slotIds: string[];
   customerId: string;
@@ -112,6 +158,8 @@ export interface CreateBookingInput {
     total: number;
     depositRequired: number;
   };
+  clientNotes?: string;
+  adminNotes?: string;
 }
 
 /**
@@ -166,6 +214,8 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
       service: input.service,
       status: 'pending',
       paymentStatus: 'unpaid',
+      clientNotes: input.clientNotes || '',
+      adminNotes: input.adminNotes || '',
       pricing: {
         total: input.pricing.total,
         depositRequired: input.pricing.depositRequired,
@@ -177,6 +227,7 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
     });
 
     await booking.save();
+    await recomputeCustomerStats(input.customerId);
     return booking;
   } catch (error: any) {
     // If booking creation fails, release the slots
@@ -258,6 +309,9 @@ export async function updateBookingPayment(
   booking.payment = payment;
 
   await booking.save();
+  if (booking.completedAt) {
+    await recomputeCustomerStats(booking.customerId);
+  }
   return booking;
 }
 
@@ -295,6 +349,9 @@ export async function confirmBooking(bookingId: string): Promise<IBooking> {
 
   // Confirm booking and slots
   booking.status = 'confirmed';
+  if (!booking.confirmedAt) {
+    booking.confirmedAt = new Date();
+  }
   await booking.save();
   await confirmSlots(booking.slotIds);
 
@@ -380,6 +437,7 @@ export async function markBookingAsCompleted(bookingId: string): Promise<IBookin
   // Set completion timestamp
   booking.completedAt = new Date();
   await booking.save();
+  await recomputeCustomerStats(booking.customerId);
 
   return booking;
 }

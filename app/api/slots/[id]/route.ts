@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Slot from '@/lib/models/Slot';
+import Booking from '@/lib/models/Booking';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -25,6 +26,18 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       return NextResponse.json({ error: 'Slot not found' }, { status: 404 });
     }
 
+    const activeBooking = await Booking.findOne({
+      slotIds: { $in: [params.id] },
+      status: { $in: ['pending', 'confirmed'] },
+    }).lean();
+
+    if (slot.status === 'pending' || slot.status === 'confirmed' || activeBooking) {
+      return NextResponse.json(
+        { error: 'Cannot edit a pending or confirmed slot. Use booking actions instead.' },
+        { status: 400 }
+      );
+    }
+
     const allowedUpdates = ['status', 'notes', 'slotType', 'isHidden'];
     const updates: any = {};
     for (const key of allowedUpdates) {
@@ -44,6 +57,18 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     const slot = await Slot.findById(params.id);
     if (!slot) {
       return NextResponse.json({ error: 'Slot not found' }, { status: 404 });
+    }
+
+    const activeBooking = await Booking.findOne({
+      slotIds: { $in: [params.id] },
+      status: { $in: ['pending', 'confirmed'] },
+    }).lean();
+
+    if (slot.status === 'pending' || slot.status === 'confirmed' || activeBooking) {
+      return NextResponse.json(
+        { error: 'Cannot delete a pending or confirmed slot. Use booking actions instead.' },
+        { status: 400 }
+      );
     }
 
     if (slot.status !== 'available') {
