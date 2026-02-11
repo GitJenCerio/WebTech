@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import DataTable from '@/components/admin/DataTable';
 import Pagination from '@/components/admin/Pagination';
 import ActionDropdown from '@/components/admin/ActionDropdown';
-import Badge from '@/components/admin/Badge';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import StatusBadge, { BookingStatus } from '@/components/admin/StatusBadge';
 import AddUserModal from '@/components/admin/AddUserModal';
 import EditUserModal from '@/components/admin/EditUserModal';
@@ -189,12 +190,12 @@ export default function StaffPage() {
           <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
             Staff / Users
           </h4>
-          <button 
-            className="btn btn-dark"
+          <Button
+            type="button"
             onClick={() => setShowAddUserModal(true)}
           >
             <i className="bi bi-person-plus me-2"></i>Add User
-          </button>
+          </Button>
         </div>
         <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '300px' }}>
           <div className="text-center">
@@ -215,23 +216,26 @@ export default function StaffPage() {
           <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
             Staff / Users
           </h4>
-          <button 
-            className="btn btn-dark"
+          <Button
+            type="button"
             onClick={() => setShowAddUserModal(true)}
           >
             <i className="bi bi-person-plus me-2"></i>Add User
-          </button>
+          </Button>
         </div>
         <div className="alert alert-danger d-flex align-items-center" role="alert">
           <i className="bi bi-exclamation-circle me-2"></i>
           <div>
             <strong>Error loading users:</strong> {error}
-            <button 
-              className="btn btn-sm btn-outline-danger ms-3"
+            <Button
+              type="button"
+              size="sm"
+              variant="danger"
+              className="ms-3"
               onClick={fetchUsers}
             >
               <i className="bi bi-arrow-clockwise me-1"></i>Retry
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -248,20 +252,21 @@ export default function StaffPage() {
           </span>
         </h4>
         <div className="d-flex gap-2">
-          <button 
-            className="btn btn-outline-secondary"
+          <Button
+            type="button"
+            variant="secondary"
             onClick={fetchUsers}
             disabled={loading}
             title="Refresh users list"
           >
             <i className="bi bi-arrow-clockwise"></i>
-          </button>
-          <button 
-            className="btn btn-dark"
+          </Button>
+          <Button
+            type="button"
             onClick={() => setShowAddUserModal(true)}
           >
             <i className="bi bi-person-plus me-2"></i>Add User
-          </button>
+          </Button>
         </div>
       </div>
 

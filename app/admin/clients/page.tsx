@@ -5,7 +5,8 @@ import DataTable from '@/components/admin/DataTable';
 import Pagination from '@/components/admin/Pagination';
 import FilterBar from '@/components/admin/FilterBar';
 import ActionDropdown from '@/components/admin/ActionDropdown';
-import Badge from '@/components/admin/Badge';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui';
 
 const PAGE_SIZE = 10;
 
@@ -270,12 +271,16 @@ export default function ClientsPage() {
             <div className="modal-content">
               <div className="modal-header py-2 px-3">
                 <h5 className="modal-title">Client Details</h5>
-                <button
+                <Button
                   type="button"
-                  className="btn-close"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowClientModal(false)}
                   aria-label="Close"
-                ></button>
+                  className="px-2 py-1 text-lg leading-none"
+                >
+                  ×
+                </Button>
               </div>
 
               <div className="modal-body p-3" style={{ fontSize: '0.92rem' }}>
@@ -364,9 +369,9 @@ export default function ClientsPage() {
               </div>
 
               <div className="modal-footer py-2 px-3">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowClientModal(false)}>
+                <Button type="button" variant="secondary" onClick={() => setShowClientModal(false)}>
                   Close
-                </button>
+                </Button>
               </div>
             </div>
           </div>

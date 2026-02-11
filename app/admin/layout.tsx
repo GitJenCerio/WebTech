@@ -32,12 +32,16 @@ export default function AdminLayoutWrapper({
 
   if (status === 'loading') {
     return (
-      <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Loading...</span>
+          <div
+            className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#212529] border-t-transparent"
+            role="status"
+            aria-label="Loading"
+          >
+            <span className="sr-only">Loading...</span>
           </div>
-          <p className="mt-3 text-muted">Loading...</p>
+          <p className="mt-3 text-[#6c757d]">Loading...</p>
         </div>
       </div>
     );

@@ -4,7 +4,8 @@ import { useEffect, useState, Fragment } from 'react';
 import DataTable from '@/components/admin/DataTable';
 import Pagination from '@/components/admin/Pagination';
 import ActionDropdown from '@/components/admin/ActionDropdown';
-import Badge from '@/components/admin/Badge';
+import { Badge } from '@/components/ui/Badge';
+import { Button, Input, Select } from '@/components/ui';
 import type { NailTech as NailTechType, ServiceAvailability } from '@/lib/types';
 
 type NailTechFormState = {
@@ -324,9 +325,9 @@ export default function NailTechsPage() {
         <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
           Nail Tech Management
         </h4>
-        <button className="btn btn-dark" onClick={handleOpenAdd}>
+        <Button type="button" onClick={handleOpenAdd}>
           <i className="bi bi-person-plus me-2"></i>Add Nail Tech
-        </button>
+        </Button>
       </div>
 
       {error && (
@@ -374,14 +375,18 @@ export default function NailTechsPage() {
                   <h5 className="modal-title" style={{ fontWeight: 600, color: '#212529', fontSize: '1.25rem' }}>
                     {modalMode === 'add' ? 'Add Nail Technician' : modalMode === 'edit' ? 'Edit Nail Technician' : 'View Nail Technician'}
                   </h5>
-                  <button
+                  <Button
                     type="button"
-                    className="btn-close"
+                    variant="ghost"
+                    size="sm"
                     aria-label="Close"
                     onClick={() => !saving && setShowAddModal(false)}
                     disabled={saving}
+                    className="px-2 py-1 text-lg leading-none"
                     style={{ opacity: saving ? 0.5 : 1 }}
-                  ></button>
+                  >
+                    ×
+                  </Button>
                 </div>
                 <form onSubmit={handleSubmit}>
                   <div className="modal-body" style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
@@ -390,15 +395,14 @@ export default function NailTechsPage() {
                       <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                         Name <span className="text-danger">*</span>
                       </label>
-                      <input
+                      <Input
                         type="text"
-                        className="form-control"
                         value={form.name}
                         onChange={(e) => handleChange('name', e.target.value)}
                         required
                         placeholder="e.g. Jhen"
                         disabled={saving || modalMode === 'view'}
-                        style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                        style={{ fontSize: '0.875rem' }}
                       />
                     </div>
 
@@ -406,17 +410,16 @@ export default function NailTechsPage() {
                       <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                         Role <span className="text-danger">*</span>
                       </label>
-                      <select
-                        className="form-select"
+                      <Select
                         value={form.role}
                         onChange={(e) => handleChange('role', e.target.value as NailTechType['role'])}
                         disabled={saving || modalMode === 'view'}
-                        style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                        style={{ fontSize: '0.875rem' }}
                       >
                         <option value="Owner">Owner</option>
                         <option value="Senior Tech">Senior Tech</option>
                         <option value="Junior Tech">Junior Tech</option>
-                      </select>
+                      </Select>
                     </div>
                   </div>
 
@@ -424,17 +427,16 @@ export default function NailTechsPage() {
                     <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                       Service Availability <span className="text-danger">*</span>
                     </label>
-                    <select
-                      className="form-select"
+                    <Select
                       value={form.serviceAvailability}
                       onChange={(e) => handleChange('serviceAvailability', e.target.value as ServiceAvailability)}
                       disabled={saving || modalMode === 'view'}
-                      style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                      style={{ fontSize: '0.875rem' }}
                     >
                       <option value="Studio only">Studio only</option>
                       <option value="Home service only">Home service only</option>
                       <option value="Studio and Home Service">Studio and Home Service</option>
-                    </select>
+                    </Select>
                   </div>
 
                   <div className="mb-3">
@@ -443,12 +445,14 @@ export default function NailTechsPage() {
                     </label>
                     <div className="d-flex flex-wrap gap-2">
                       {allDays.map((day) => (
-                        <button
+                        <Button
                           key={day}
                           type="button"
-                          className={`btn btn-sm ${form.workingDays.includes(day) ? 'btn-dark' : 'btn-outline-secondary'}`}
+                          size="sm"
+                          variant={form.workingDays.includes(day) ? 'primary' : 'secondary'}
                           onClick={() => handleToggleWorkingDay(day)}
                           disabled={saving || modalMode === 'view'}
+                          className="min-w-[60px]"
                           style={{ 
                             borderRadius: '8px',
                             fontWeight: 500,
@@ -457,7 +461,7 @@ export default function NailTechsPage() {
                           }}
                         >
                           {day.slice(0, 3)}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                     <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.5rem' }}>
@@ -470,16 +474,15 @@ export default function NailTechsPage() {
                       <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                         Discount (%)
                       </label>
-                      <input
+                      <Input
                         type="number"
-                        className="form-control"
                         min={0}
                         max={100}
                         value={form.discount}
                         onChange={(e) => handleChange('discount', e.target.value)}
                         placeholder="e.g. 15"
                         disabled={saving || modalMode === 'view'}
-                        style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                        style={{ fontSize: '0.875rem' }}
                       />
                       <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.25rem' }}>
                         Optional: Discount percentage for all services
@@ -489,16 +492,15 @@ export default function NailTechsPage() {
                       <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                         Commission (%)
                       </label>
-                      <input
+                      <Input
                         type="number"
-                        className="form-control"
                         min={0}
                         max={100}
                         value={form.commissionRate}
                         onChange={(e) => handleChange('commissionRate', e.target.value)}
                         placeholder="e.g. 40"
                         disabled={saving || modalMode === 'view'}
-                        style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                        style={{ fontSize: '0.875rem' }}
                       />
                       <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.25rem' }}>
                         Optional: Commission rate (0-100)
@@ -510,22 +512,21 @@ export default function NailTechsPage() {
                     <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
                       Status <span className="text-danger">*</span>
                     </label>
-                    <select
-                      className="form-select"
+                    <Select
                       value={form.status}
                       onChange={(e) => handleChange('status', e.target.value as NailTechType['status'])}
                       disabled={saving || modalMode === 'view'}
-                      style={{ borderRadius: '8px', borderColor: '#ced4da', fontSize: '0.875rem' }}
+                      style={{ fontSize: '0.875rem' }}
                     >
                       <option value="Active">Active</option>
                       <option value="Inactive">Inactive</option>
-                    </select>
+                    </Select>
                   </div>
                 </div>
                 <div className="modal-footer" style={{ borderTop: '1px solid #e0e0e0', padding: '1rem 1.5rem' }}>
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-outline-secondary"
+                    variant="secondary"
                     onClick={() => !saving && setShowAddModal(false)}
                     disabled={saving}
                     style={{ 
@@ -536,11 +537,11 @@ export default function NailTechsPage() {
                     }}
                   >
                     Cancel
-                  </button>
+                  </Button>
                   {modalMode !== 'view' && (
-                    <button 
+                    <Button
                       type="submit" 
-                      className="btn btn-dark" 
+                      variant="primary"
                       disabled={saving || !form.name.trim()}
                       style={{ 
                         borderRadius: '8px',
@@ -563,7 +564,7 @@ export default function NailTechsPage() {
                           Save Nail Tech
                         </Fragment>
                       )}
-                    </button>
+                    </Button>
                   )}
                 </div>
               </form>

@@ -3,11 +3,17 @@ import React from 'react';
 export type BadgeVariant = 
   | 'default' 
   | 'available'
+  | 'booked'
+  | 'disabled'
   | 'pending' 
   | 'confirmed' 
   | 'completed' 
   | 'cancelled' 
   | 'no-show'
+  | 'shipped'
+  | 'in-progress'
+  | 'vip'
+  | 'regular'
   | 'primary'
   | 'secondary'
   | 'success'
@@ -24,11 +30,17 @@ interface BadgeProps {
 const variantStyles: Record<BadgeVariant, string> = {
   default: 'bg-gray-100 text-gray-800',
   available: 'bg-green-100 text-green-800',
+  booked: 'bg-gray-900 text-white',
+  disabled: 'bg-gray-200 text-gray-700',
   pending: 'bg-yellow-100 text-yellow-800',
   confirmed: 'bg-black text-white',
   completed: 'bg-blue-100 text-blue-800',
   cancelled: 'bg-red-100 text-red-800',
   'no-show': 'bg-gray-100 text-gray-600',
+  shipped: 'bg-gray-900 text-white',
+  'in-progress': 'bg-gray-200 text-gray-700',
+  vip: 'bg-gray-900 text-white',
+  regular: 'bg-gray-200 text-gray-700',
   primary: 'bg-blue-100 text-blue-800',
   secondary: 'bg-gray-100 text-gray-800',
   success: 'bg-green-100 text-green-800',

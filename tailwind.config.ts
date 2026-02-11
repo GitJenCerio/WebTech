@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import { borderRadius, colors, fonts, spacing } from "./lib/design-tokens";
 
 const config: Config = {
   content: [
@@ -69,18 +70,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#FFFFFF",
-        foreground: "#000000",
-        accent: "#000000",
+        background: colors.brand.white,
+        foreground: colors.brand.black,
+        accent: colors.brand.black,
         subtext: "#666666",
+        gray: colors.gray,
+        success: colors.success,
+        warning: colors.warning,
+        danger: colors.danger,
+        info: colors.info,
       },
       fontFamily: {
-        heading: ['var(--font-playfair)', 'serif'],
-        body: ['var(--font-lato)', 'sans-serif'],
-        balgor: ['var(--font-balgor)', 'sans-serif'],
-        acollia: ['var(--font-acollia)', 'sans-serif'],
-        ladinta: ['var(--font-ladinta)', 'sans-serif'],
+        heading: [...fonts.heading],
+        body: [...fonts.body],
+        balgor: [...fonts.decorative.balgor],
+        acollia: [...fonts.decorative.acollia],
+        ladinta: [...fonts.decorative.ladinta],
       },
+      spacing,
+      borderRadius,
     },
   },
   plugins: [],
