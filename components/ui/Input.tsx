@@ -1,18 +1,25 @@
-import React from 'react';
+import * as React from "react";
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  error?: boolean;
-}
+import { cn } from "./Utils";
 
-export function Input({ className = '', error = false, ...props }: InputProps) {
-  const stateStyles = error
-    ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30'
-    : 'border-gray-300 focus:border-black focus:ring-black/20';
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-  return (
-    <input
-      className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 ${stateStyles} ${className}`}
-      {...props}
-    />
-  );
-}
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-2xl border border-[#adb5bd] bg-gray-50 px-4 py-2 text-sm text-gray-900 transition-all file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 hover:border-[#6c757d] focus-visible:outline-2 focus-visible:outline-[#212529] focus-visible:outline-offset-2 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 box-border",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+Input.displayName = "Input";
+
+export { Input };

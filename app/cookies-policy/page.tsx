@@ -1,8 +1,13 @@
 import { Metadata } from 'next';
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.glammednailsbyjhen.com';
+
 export const metadata: Metadata = {
   title: 'Cookies Policy',
   description: 'Cookies policy for glammednailsbyjhen. Learn how we use cookies to improve your browsing experience.',
+  alternates: {
+    canonical: `${siteUrl}/cookies-policy`,
+  },
   robots: {
     index: true,
     follow: true,
@@ -11,8 +16,8 @@ export const metadata: Metadata = {
 
 export default function CookiesPolicy() {
   return (
-    <main className="max-w-3xl mx-auto py-16 px-4">
-      <h1 className="text-3xl font-bold mb-6">Cookies Policy</h1>
+    <main className="max-w-3xl mx-auto py-12 sm:py-16 px-2 sm:px-4">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6">Cookies Policy</h1>
       <p className="mb-4">This website uses cookies to make your browsing experience better. Here’s what that means:</p>
       <h2 className="text-xl font-semibold mt-8 mb-2">What Are Cookies?</h2>
       <p className="mb-4">Cookies are small files saved on your device by websites to help remember your preferences and track some information about your visit.</p>

@@ -1,8 +1,10 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { IoClose } from 'react-icons/io5';
 import type { ServiceType } from '@/lib/types';
+import { OverlayModal } from '@/components/ui/OverlayModal';
+import { OptionCard, OptionCardTitle, OptionCardDescription, OptionCardBadge } from '@/components/ui/OptionCard';
+import { Button } from '@/components/ui/Button';
 
 type ServiceLocation = 'homebased_studio' | 'home_service';
 
@@ -42,8 +44,6 @@ export default function ServiceTypeSelectionModal({
   onContinue,
   onBack,
 }: ServiceTypeSelectionModalProps) {
-  if (!isOpen) return null;
-
   const services = servicesByLocation[serviceLocation];
 
   const normalizeServiceValue = (value: ServiceType | string): ServiceType | null => {
@@ -54,72 +54,56 @@ export default function ServiceTypeSelectionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white border-2 border-gray-300 rounded-xl max-w-md w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[90vh] overflow-y-auto relative"
-      >
+    <OverlayModal
+      isOpen={isOpen}
+      onClose={onBack}
+      size="md"
+      zIndex={50}
+      closeButton={
         <button
           onClick={onBack}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
+          className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
           aria-label="Back"
           type="button"
         >
           <IoClose className="w-6 h-6 text-gray-700" />
         </button>
-
-        <h3 className="text-2xl font-semibold mb-2 pr-10 text-gray-900">What Service?</h3>
+      }
+    >
+      <div className="p-6 sm:p-8">
+        <h3 className="text-2xl font-semibold mb-2 text-gray-900">What Service?</h3>
         <p className="text-sm text-gray-600 mb-6">
           Select the service you'd like to book. We'll show only available dates for your selection.
         </p>
 
         <div className="space-y-3">
-          {services.map((service) => (
-            <button
-              key={service.value}
-              onClick={() => {
-                const normalized = normalizeServiceValue(service.value);
-                if (normalized) {
-                  onContinue(normalized);
+          {services.map((service) => {
+            const normalized = normalizeServiceValue(service.value);
+            const selected = selectedService === service.value;
+            return (
+              <OptionCard
+                key={service.value}
+                selected={selected}
+                onClick={() => normalized && onContinue(normalized)}
+                right={
+                  <OptionCardBadge selected={selected}>
+                    {service.slots === 1 ? '1 slot' : `${service.slots} slots`}
+                  </OptionCardBadge>
                 }
-              }}
-              className={`w-full text-left rounded-lg border-2 p-4 transition-all active:scale-[0.98] touch-manipulation ${
-                selectedService === service.value
-                  ? 'border-black bg-black text-white'
-                  : 'border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <p className="font-semibold text-base">{service.label}</p>
-                  <p className={`text-xs sm:text-sm opacity-75 mt-1 ${
-                    selectedService === service.value ? 'text-white/75' : 'text-gray-600'
-                  }`}>
-                    {service.description}
-                  </p>
-                </div>
-                <div className={`whitespace-nowrap text-xs sm:text-sm font-medium px-2.5 py-1 rounded-full border ${
-                  selectedService === service.value
-                    ? 'bg-white/20 border-white/30 text-white'
-                    : 'bg-gray-100 border-gray-300 text-gray-700'
-                }`}>
-                  {service.slots === 1 ? '1 slot' : `${service.slots} slots`}
-                </div>
-              </div>
-            </button>
-          ))}
+              >
+                <OptionCardTitle>{service.label}</OptionCardTitle>
+                <OptionCardDescription selected={selected}>{service.description}</OptionCardDescription>
+              </OptionCard>
+            );
+          })}
         </div>
 
         <div className="mt-6 pt-6 border-t border-gray-300 flex gap-3">
-          <button
-            onClick={onBack}
-            className="flex-1 px-4 py-3 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors active:scale-[0.98] touch-manipulation text-sm"
-          >
+          <Button variant="secondary" className="flex-1" onClick={onBack}>
             Back
-          </button>
+          </Button>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </OverlayModal>
   );
 }

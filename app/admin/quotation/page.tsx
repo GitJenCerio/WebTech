@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 
 // Helper function to clean currency values
 function cleanCurrencyValue(value: string | number): number {
@@ -503,18 +504,19 @@ export default function QuotationPage() {
                   <label className="form-label fw-medium" style={{ fontSize: '0.875rem' }}>
                     Service
                   </label>
-                  <select
-                    className="form-select"
-                    value={selectedService}
-                    onChange={(e) => setSelectedService(e.target.value)}
-                  >
-                    <option value="">Select a service...</option>
-                    {serviceNames.map((name, idx) => (
-                      <option key={idx} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={selectedService || '_placeholder'} onValueChange={(v) => setSelectedService(v === '_placeholder' ? '' : v)}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Select a service..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_placeholder">Select a service...</SelectItem>
+                      {serviceNames.map((name, idx) => (
+                        <SelectItem key={idx} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="mb-3">

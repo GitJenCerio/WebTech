@@ -4,6 +4,7 @@ import Slot from '@/lib/models/Slot';
 import NailTech from '@/lib/models/NailTech';
 import Booking from '@/lib/models/Booking';
 import Customer from '@/lib/models/Customer';
+import { cleanupPastSlotsIfDue } from '@/lib/services/cleanupPastSlots';
 
 export async function POST(request: Request) {
   try {
@@ -66,6 +67,9 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     await connectDB();
+    // Clean past unbooked slots when admin fetches slots (e.g. calendar refresh)
+    await cleanupPastSlotsIfDue();
+
     const { searchParams } = new URL(request.url);
 
     const query: any = {};

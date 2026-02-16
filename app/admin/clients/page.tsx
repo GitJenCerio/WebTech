@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import DataTable from '@/components/admin/DataTable';
@@ -6,7 +6,10 @@ import Pagination from '@/components/admin/Pagination';
 import FilterBar from '@/components/admin/FilterBar';
 import ActionDropdown from '@/components/admin/ActionDropdown';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui';
+import { Button } from '@/components/ui/Index';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { Card, CardContent } from "@/components/ui/Card";
 
 const PAGE_SIZE = 10;
 
@@ -207,9 +210,9 @@ export default function ClientsPage() {
       />
 
       {error && (
-        <div className="alert alert-danger" role="alert">
-          {error}
-        </div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {loading ? (
@@ -236,147 +239,116 @@ export default function ClientsPage() {
         </>
       )}
 
-      {showClientModal && (
-        <div
-          className={`modal fade ${showClientModal ? 'show' : ''}`}
-          style={{
-            display: showClientModal ? 'flex' : 'none',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1055,
-          }}
-          tabIndex={-1}
-          role="dialog"
-        >
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              zIndex: 0,
-            }}
-            onClick={() => setShowClientModal(false)}
-          />
+      <Dialog open={showClientModal} onOpenChange={(open) => !open && setShowClientModal(false)}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Client Details</DialogTitle>
+          </DialogHeader>
 
-          <div
-            className="modal-dialog modal-dialog-centered"
-            style={{ margin: '0.5rem auto', position: 'relative', zIndex: 1, width: 'min(96vw, 720px)' }}
-            role="document"
-          >
-            <div className="modal-content">
-              <div className="modal-header py-2 px-3">
-                <h5 className="modal-title">Client Details</h5>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowClientModal(false)}
-                  aria-label="Close"
-                  className="px-2 py-1 text-lg leading-none"
-                >
-                  ×
-                </Button>
-              </div>
-
-              <div className="modal-body p-3" style={{ fontSize: '0.92rem' }}>
-                {clientDetailsLoading ? (
-                  <div className="text-muted">Loading client details...</div>
-                ) : clientDetailsError ? (
-                  <div className="alert alert-danger">{clientDetailsError}</div>
-                ) : clientDetails?.customer ? (
-                  <>
-                    <div className="mb-2 p-2 border rounded bg-light">
-                      <div className="d-flex flex-column gap-1">
-                        <div><strong>Name:</strong> {clientDetails.customer.name}</div>
-                        {clientDetails.customer.email && <div><strong>Email:</strong> {clientDetails.customer.email}</div>}
-                        {clientDetails.customer.phone && <div><strong>Phone:</strong> {clientDetails.customer.phone}</div>}
-                        {clientDetails.customer.socialMediaName && (
-                          <div><strong>Social:</strong> {clientDetails.customer.socialMediaName}</div>
-                        )}
-                        {clientDetails.customer.referralSource && (
-                          <div><strong>Referral:</strong> {clientDetails.customer.referralSource}</div>
-                        )}
-                        {clientDetails.customer.referralSourceOther && (
-                          <div><strong>Referral (Other):</strong> {clientDetails.customer.referralSourceOther}</div>
-                        )}
-                      </div>
+          <div className="py-4 space-y-4" style={{ fontSize: '0.92rem' }}>
+            {clientDetailsLoading ? (
+              <div className="text-gray-600">Loading client details...</div>
+            ) : clientDetailsError ? (
+              <Alert variant="destructive">
+                <AlertDescription>{clientDetailsError}</AlertDescription>
+              </Alert>
+            ) : clientDetails?.customer ? (
+              <>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col gap-2">
+                      <div><strong>Name:</strong> {clientDetails.customer.name}</div>
+                      {clientDetails.customer.email && <div><strong>Email:</strong> {clientDetails.customer.email}</div>}
+                      {clientDetails.customer.phone && <div><strong>Phone:</strong> {clientDetails.customer.phone}</div>}
+                      {clientDetails.customer.socialMediaName && (
+                        <div><strong>Social:</strong> {clientDetails.customer.socialMediaName}</div>
+                      )}
+                      {clientDetails.customer.referralSource && (
+                        <div><strong>Referral:</strong> {clientDetails.customer.referralSource}</div>
+                      )}
+                      {clientDetails.customer.referralSourceOther && (
+                        <div><strong>Referral (Other):</strong> {clientDetails.customer.referralSourceOther}</div>
+                      )}
                     </div>
+                  </CardContent>
+                </Card>
 
-                    <div className="mb-2 p-2 border rounded bg-light">
-                      <div className="d-flex flex-wrap gap-3">
-                        <span><strong>Total Bookings:</strong> {clientDetails.customer.totalBookings ?? 0}</span>
-                        <span><strong>Completed:</strong> {clientDetails.customer.completedBookings ?? 0}</span>
-                        <span><strong>Last Visit:</strong> {clientDetails.customer.lastVisit ? new Date(clientDetails.customer.lastVisit).toLocaleDateString('en-US') : '-'}</span>
-                        <span><strong>Total Spent:</strong> PHP {(clientDetails.customer.totalSpent ?? 0).toLocaleString()}</span>
-                        <span><strong>Total Tips:</strong> PHP {(clientDetails.customer.totalTips ?? 0).toLocaleString()}</span>
-                        <span><strong>Total Discounts:</strong> PHP {(clientDetails.customer.totalDiscounts ?? 0).toLocaleString()}</span>
-                        <span><strong>Client Type:</strong> {clientDetails.customer.clientType || 'NEW'}</span>
-                        <span><strong>Status:</strong> {clientDetails.customer.isActive === false ? 'Inactive' : 'Active'}</span>
-                      </div>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-wrap gap-3">
+                      <span><strong>Total Bookings:</strong> {clientDetails.customer.totalBookings ?? 0}</span>
+                      <span><strong>Completed:</strong> {clientDetails.customer.completedBookings ?? 0}</span>
+                      <span><strong>Last Visit:</strong> {clientDetails.customer.lastVisit ? new Date(clientDetails.customer.lastVisit).toLocaleDateString('en-US') : '-'}</span>
+                      <span><strong>Total Spent:</strong> PHP {(clientDetails.customer.totalSpent ?? 0).toLocaleString()}</span>
+                      <span><strong>Total Tips:</strong> PHP {(clientDetails.customer.totalTips ?? 0).toLocaleString()}</span>
+                      <span><strong>Total Discounts:</strong> PHP {(clientDetails.customer.totalDiscounts ?? 0).toLocaleString()}</span>
+                      <span><strong>Client Type:</strong> {clientDetails.customer.clientType || 'NEW'}</span>
+                      <span><strong>Status:</strong> {clientDetails.customer.isActive === false ? 'Inactive' : 'Active'}</span>
                     </div>
+                  </CardContent>
+                </Card>
 
-                    {(clientDetails.customer.nailHistory || clientDetails.customer.healthInfo) && (
-                      <div className="mb-2 p-2 border rounded bg-light">
-                        {clientDetails.customer.nailHistory && (
-                          <div className="mb-2">
-                            <div className="fw-semibold">Nail History</div>
-                            <div className="text-muted small">
-                              Russian Manicure: {clientDetails.customer.nailHistory.hasRussianManicure ? 'Yes' : 'No'} | 
-                              Gel Overlay: {clientDetails.customer.nailHistory.hasGelOverlay ? 'Yes' : 'No'} | 
-                              Softgel Extensions: {clientDetails.customer.nailHistory.hasSoftgelExtensions ? 'Yes' : 'No'}
-                            </div>
+                {(clientDetails.customer.nailHistory || clientDetails.customer.healthInfo) && (
+                  <Card>
+                    <CardContent className="p-4">
+                      {clientDetails.customer.nailHistory && (
+                        <div className="mb-2">
+                          <div className="font-semibold">Nail History</div>
+                          <div className="text-gray-600 text-sm">
+                            Russian Manicure: {clientDetails.customer.nailHistory.hasRussianManicure ? 'Yes' : 'No'} | 
+                            Gel Overlay: {clientDetails.customer.nailHistory.hasGelOverlay ? 'Yes' : 'No'} | 
+                            Softgel Extensions: {clientDetails.customer.nailHistory.hasSoftgelExtensions ? 'Yes' : 'No'}
                           </div>
-                        )}
-                        {clientDetails.customer.healthInfo && (
-                          <div>
-                            <div className="fw-semibold">Health Info</div>
-                            {clientDetails.customer.healthInfo.allergies && (
-                              <div className="text-muted small">Allergies: {clientDetails.customer.healthInfo.allergies}</div>
-                            )}
-                            {clientDetails.customer.healthInfo.nailConcerns && (
-                              <div className="text-muted small">Nail Concerns: {clientDetails.customer.healthInfo.nailConcerns}</div>
-                            )}
-                            {clientDetails.customer.healthInfo.nailDamageHistory && (
-                              <div className="text-muted small">Damage History: {clientDetails.customer.healthInfo.nailDamageHistory}</div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {clientDetails.customer.inspoDescription ? (
-                      <div className="mb-2 p-2 border rounded bg-light">
-                        <div className="fw-semibold">Inspiration Description</div>
-                        <div className="text-muted small">{clientDetails.customer.inspoDescription}</div>
-                      </div>
-                    ) : null}
-
-                    {clientDetails.customer.notes ? (
-                      <div className="mb-2 p-2 border rounded bg-light">
-                        <div className="fw-semibold">Notes</div>
-                        <div className="text-muted small">{clientDetails.customer.notes}</div>
-                      </div>
-                    ) : null}
-                  </>
-                ) : (
-                  <div className="text-muted">No client details available.</div>
+                        </div>
+                      )}
+                      {clientDetails.customer.healthInfo && (
+                        <div>
+                          <div className="font-semibold">Health Info</div>
+                          {clientDetails.customer.healthInfo.allergies && (
+                            <div className="text-gray-600 text-sm">Allergies: {clientDetails.customer.healthInfo.allergies}</div>
+                          )}
+                          {clientDetails.customer.healthInfo.nailConcerns && (
+                            <div className="text-gray-600 text-sm">Nail Concerns: {clientDetails.customer.healthInfo.nailConcerns}</div>
+                          )}
+                          {clientDetails.customer.healthInfo.nailDamageHistory && (
+                            <div className="text-gray-600 text-sm">Damage History: {clientDetails.customer.healthInfo.nailDamageHistory}</div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 )}
-              </div>
 
-              <div className="modal-footer py-2 px-3">
-                <Button type="button" variant="secondary" onClick={() => setShowClientModal(false)}>
-                  Close
-                </Button>
-              </div>
-            </div>
+                {clientDetails.customer.inspoDescription && (
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="font-semibold">Inspiration Description</div>
+                      <div className="text-gray-600 text-sm">{clientDetails.customer.inspoDescription}</div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {clientDetails.customer.notes && (
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="font-semibold">Notes</div>
+                      <div className="text-gray-600 text-sm">{clientDetails.customer.notes}</div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            ) : (
+              <div className="text-gray-600">No client details available.</div>
+            )}
           </div>
-        </div>
-      )}
+
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setShowClientModal(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

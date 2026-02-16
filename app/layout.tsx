@@ -5,8 +5,8 @@ import SessionProvider from "@/components/providers/SessionProvider";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.glammednailsbyjhen.com';
 const siteName = 'glammednailsbyjhen';
-const defaultTitle = `${siteName} - Professional Nail Art & Manicure Services`;
-const defaultDescription = 'Premium Russian manicure, nail art, pedicure, and nail extension services in Manila, Philippines. Book your appointment online today!';
+const defaultTitle = `Russian Manicure & Pedicure in Manila | ${siteName}`;
+const defaultDescription = 'Russian manicure in Manila: premium e-file manicure, pedicure, nail art & extensions. Book your appointment online. Metro Manila nail studio.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -16,19 +16,18 @@ export const metadata: Metadata = {
   },
   description: defaultDescription,
   keywords: [
-    'nail salon',
-    'nail studio',
-    'manicure',
-    'pedicure',
-    'nail art',
-    'Russian manicure',
-    'nail extensions',
+    'Russian manicure in Manila',
+    'Russian manicure Manila',
+    'Russian pedicure Manila',
+    'Russian manicure Philippines',
+    'e-file manicure Manila',
     'nail salon Manila',
-    'nail services Philippines',
-    'gel nails',
-    'nail design',
-    'nail technician',
-    'nail care',
+    'manicure Manila',
+    'pedicure Manila',
+    'nail art Manila',
+    'nail extensions Manila',
+    'gel nails Manila',
+    'nail studio Metro Manila',
   ],
   authors: [{ name: 'glammednailsbyjhen' }],
   creator: 'glammednailsbyjhen',
@@ -50,7 +49,7 @@ export const metadata: Metadata = {
         url: '/logo.png',
         width: 400,
         height: 400,
-        alt: 'glammednailsbyjhen - Professional Nail Services',
+        alt: 'Russian manicure & pedicure in Manila | glammednailsbyjhen',
       },
     ],
   },
@@ -90,6 +89,7 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   themeColor: '#ffffff',
+  viewportFit: 'cover', // Enables safe-area-inset on notched devices
 };
 
 export default function RootLayout({

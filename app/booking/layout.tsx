@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.glammednailsbyjhen.com';
+
 export const metadata: Metadata = {
   title: 'Book Appointment - Online Booking',
   description: 'Book your nail appointment online. Choose from Russian manicure, nail art, pedicure, and nail extension services. Available slots updated in real-time.',
@@ -7,6 +9,10 @@ export const metadata: Metadata = {
     title: 'Book Your Nail Appointment Online | glammednailsbyjhen',
     description: 'Schedule your appointment online. Real-time availability for manicure, pedicure, nail art, and extension services.',
     type: 'website',
+    url: `${siteUrl}/booking`,
+  },
+  alternates: {
+    canonical: `${siteUrl}/booking`,
   },
   robots: {
     index: true,

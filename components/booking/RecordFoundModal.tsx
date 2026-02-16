@@ -18,7 +18,7 @@ export function RecordFoundModal({ open, customerName, onClose, onProceed }: Rec
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-slate-100 border-2 border-slate-300 rounded-lg max-w-md w-full p-4 sm:p-6 md:p-8 shadow-xl shadow-slate-900/20 my-4 max-h-[90vh] overflow-y-auto relative"
+        className="bg-white border-2 border-gray-300 rounded-xl max-w-md w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[90vh] overflow-y-auto relative"
       >
         <button
           onClick={(e) => {
@@ -26,11 +26,11 @@ export function RecordFoundModal({ open, customerName, onClose, onProceed }: Rec
             e.stopPropagation();
             onClose();
           }}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 rounded-full hover:bg-slate-200 active:bg-slate-300 transition-colors touch-manipulation z-10"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation z-10"
           aria-label="Close"
           type="button"
         >
-          <IoClose className="w-5 h-5 sm:w-6 sm:h-6 text-slate-700" />
+          <IoClose className="w-6 h-6 text-gray-700" />
         </button>
 
         <div className="flex items-start gap-4 mb-4 sm:mb-6">

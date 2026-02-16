@@ -6,6 +6,7 @@ import DataTable from '@/components/admin/DataTable';
 import Pagination from '@/components/admin/Pagination';
 import StatusBadge, { BookingStatus } from '@/components/admin/StatusBadge';
 import FilterBar from '@/components/admin/FilterBar';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 
 interface Transaction {
   id: string;

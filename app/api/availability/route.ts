@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Slot from '@/lib/models/Slot';
 import NailTech from '@/lib/models/NailTech';
+import { cleanupPastSlotsIfDue } from '@/lib/services/cleanupPastSlots';
 
 // Prevent caching in production to ensure fresh slot data
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+// Use Node.js runtime so the route is always registered (avoids dev 404s when edge is default)
+export const runtime = 'nodejs';
 
 /**
  * Normalize time to 24-hour format (HH:mm)
@@ -38,6 +41,8 @@ function normalizeTime(time: string): string {
 export async function GET(request: Request) {
   try {
     await connectDB();
+    // Clean past unbooked slots when slots are fetched (e.g. booking page refresh)
+    await cleanupPastSlotsIfDue();
 
     const { searchParams } = new URL(request.url);
     const nailTechId = searchParams.get('nailTechId');

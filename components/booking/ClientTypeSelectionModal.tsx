@@ -1,8 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Phone, Search, AlertCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Phone, Search, AlertCircle, X } from 'lucide-react';
+import { OverlayModal } from '@/components/ui/OverlayModal';
+import { OptionCard, OptionCardTitle, OptionCardDescription } from '@/components/ui/OptionCard';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
 
 type ClientType = 'new' | 'repeat';
 type ServiceLocation = 'homebased_studio' | 'home_service';
@@ -25,6 +30,7 @@ export default function ClientTypeSelectionModal({
   onClose,
   onContinue,
 }: ClientTypeSelectionModalProps) {
+  const router = useRouter();
   const [step, setStep] = useState<'type' | 'lookup' | 'location'>('type');
   const [clientType, setClientType] = useState<ClientType | null>(null);
   const [originalClientType, setOriginalClientType] = useState<ClientType | null>(null);
@@ -96,6 +102,11 @@ export default function ClientTypeSelectionModal({
     }
   };
 
+  const handleClose = () => {
+    onClose();
+    router.push('/');
+  };
+
   const handleLocationSelect = (location: ServiceLocation) => {
     if (!clientType) return;
 
@@ -123,13 +134,24 @@ export default function ClientTypeSelectionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white border-2 border-gray-300 rounded-xl max-w-md w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[90vh] overflow-y-auto relative"
-      >
-        <h3 className="text-2xl font-semibold mb-2 pr-10 text-gray-900">Book Your Appointment</h3>
+    <OverlayModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      size="md"
+      zIndex={50}
+      closeButton={
+        <button
+          type="button"
+          onClick={handleClose}
+          className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
+          aria-label="Close and return to homepage"
+        >
+          <X className="w-6 h-6 text-gray-700" />
+        </button>
+      }
+    >
+      <div className="p-6 sm:p-8">
+        <h3 className="text-2xl font-semibold mb-2 text-gray-900">Book Your Appointment</h3>
 
         {/* Step 1: Client Type Selection */}
         {step === 'type' && (
@@ -139,21 +161,15 @@ export default function ClientTypeSelectionModal({
             </p>
 
             <div className="space-y-3">
-              <button
-                onClick={() => handleSelectClientType('new')}
-                className="w-full text-left rounded-lg border-2 p-4 transition-all active:scale-[0.98] touch-manipulation border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md"
-              >
-                <p className="font-semibold text-base">New Client</p>
-                <p className="text-xs sm:text-sm opacity-75 mt-1 text-gray-600">I&apos;m booking for the first time</p>
-              </button>
+              <OptionCard selected={false} onClick={() => handleSelectClientType('new')}>
+                <OptionCardTitle>New Client</OptionCardTitle>
+                <OptionCardDescription>I&apos;m booking for the first time</OptionCardDescription>
+              </OptionCard>
 
-              <button
-                onClick={() => handleSelectClientType('repeat')}
-                className="w-full text-left rounded-lg border-2 p-4 transition-all active:scale-[0.98] touch-manipulation border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md"
-              >
-                <p className="font-semibold text-base">Returning Client</p>
-                <p className="text-xs sm:text-sm opacity-75 mt-1 text-gray-600">I&apos;ve booked before</p>
-              </button>
+              <OptionCard selected={false} onClick={() => handleSelectClientType('repeat')}>
+                <OptionCardTitle>Returning Client</OptionCardTitle>
+                <OptionCardDescription>I&apos;ve booked before</OptionCardDescription>
+              </OptionCard>
             </div>
           </div>
         )}
@@ -175,12 +191,12 @@ export default function ClientTypeSelectionModal({
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-gray-700 font-medium mb-2 flex items-center gap-2 block">
+                <Label className="mb-2 flex items-center gap-2">
                   <Phone className="w-4 h-4 text-gray-600" />
                   Contact Number
-                </label>
+                </Label>
                 <div className="flex gap-2">
-                  <input
+                  <Input
                     type="tel"
                     value={phone}
                     onChange={(e) => {
@@ -195,20 +211,21 @@ export default function ClientTypeSelectionModal({
                       }
                     }}
                     placeholder="e.g., 09123456789"
-                    className="flex-1 rounded-lg border-2 border-gray-300 bg-white px-3 py-3 text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors"
+                    className="flex-1"
                     disabled={lookupLoading}
                   />
-                  <button
+                  <Button
+                    variant="primary"
                     onClick={handleLookup}
                     disabled={lookupLoading || !phone.trim()}
-                    className="px-4 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-900 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed touch-manipulation"
+                    className="px-4 py-3"
                   >
                     {lookupLoading ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
                     ) : (
                       <Search className="w-5 h-5" />
                     )}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -229,12 +246,9 @@ export default function ClientTypeSelectionModal({
                   <p className="text-xs text-green-700">
                     We found your account. Click continue to proceed with your booking.
                   </p>
-                  <button
-                    onClick={() => setStep('location')}
-                    className="w-full mt-3 px-4 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-900 active:scale-[0.98] transition-all touch-manipulation text-sm"
-                  >
+                  <Button variant="primary" className="w-full mt-3" onClick={() => setStep('location')}>
                     Continue
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -247,12 +261,9 @@ export default function ClientTypeSelectionModal({
                   <p className="text-xs text-yellow-700">
                     We couldn&apos;t find an account with that number. You&apos;ll be booked as a new client.
                   </p>
-                  <button
-                    onClick={() => setStep('location')}
-                    className="w-full mt-3 px-4 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-900 active:scale-[0.98] transition-all touch-manipulation text-sm"
-                  >
+                  <Button variant="primary" className="w-full mt-3" onClick={() => setStep('location')}>
                     Continue as New Client
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -284,21 +295,15 @@ export default function ClientTypeSelectionModal({
             </p>
 
             <div className="space-y-3">
-              <button
-                onClick={() => handleLocationSelect('homebased_studio')}
-                className="w-full text-left rounded-lg border-2 p-4 transition-all active:scale-[0.98] touch-manipulation border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md"
-              >
-                <p className="font-semibold text-base">Home Studio</p>
-                <p className="text-xs sm:text-sm opacity-75 mt-1 text-gray-600">Service at our location</p>
-              </button>
+              <OptionCard selected={false} onClick={() => handleLocationSelect('homebased_studio')}>
+                <OptionCardTitle>Home Studio</OptionCardTitle>
+                <OptionCardDescription>Service at our location</OptionCardDescription>
+              </OptionCard>
 
-              <button
-                onClick={() => handleLocationSelect('home_service')}
-                className="w-full text-left rounded-lg border-2 p-4 transition-all active:scale-[0.98] touch-manipulation border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md"
-              >
-                <p className="font-semibold text-base">Home Service <span className="text-green-700 font-semibold">+₱1,000</span></p>
-                <p className="text-xs sm:text-sm opacity-75 mt-1 text-gray-600">Service at your home</p>
-              </button>
+              <OptionCard selected={false} onClick={() => handleLocationSelect('home_service')}>
+                <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">+₱1,000</span></OptionCardTitle>
+                <OptionCardDescription>Service at your home</OptionCardDescription>
+              </OptionCard>
             </div>
 
             {error && (
@@ -308,7 +313,7 @@ export default function ClientTypeSelectionModal({
             )}
           </div>
         )}
-      </motion.div>
-    </div>
+      </div>
+    </OverlayModal>
   );
 }

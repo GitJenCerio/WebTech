@@ -13,7 +13,7 @@ const BookingCounterSchema = new Schema<IBookingCounter>(
   { timestamps: true }
 );
 
-BookingCounterSchema.index({ dateKey: 1 }, { unique: true });
+// Index is created automatically by unique: true on dateKey; no need for schema.index()
 
 const BookingCounter: Model<IBookingCounter> =
   mongoose.models.BookingCounter || mongoose.model<IBookingCounter>('BookingCounter', BookingCounterSchema);

@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button';
 import StatusBadge, { BookingStatus } from '@/components/admin/StatusBadge';
 import AddUserModal from '@/components/admin/AddUserModal';
 import EditUserModal from '@/components/admin/EditUserModal';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { Loader2 } from 'lucide-react';
 
 interface Staff {
   id: string;
@@ -114,8 +116,8 @@ export default function StaffPage() {
       header: 'Name',
       render: (item: Staff) => (
         <div>
-          <div className="fw-semibold">{item.name}</div>
-          <small className="text-muted">{item.email}</small>
+          <div className="font-semibold">{item.name}</div>
+          <small className="text-gray-600">{item.email}</small>
         </div>
       ),
     },
@@ -127,17 +129,17 @@ export default function StaffPage() {
           {getRoleBadge(item.role)}
           {item.assignedNailTechName && (
             <div className="mt-1">
-              <small className="text-muted">
+              <small className="text-gray-600">
                 Assigned to: {item.assignedNailTechName}
               </small>
             </div>
           )}
           <div className="mt-1">
-            <small className="text-muted">
+            <small className="text-gray-600">
               {item.authMethod === 'google' ? (
-                <span><i className="bi bi-google me-1"></i>Google OAuth</span>
+                <span>Google OAuth</span>
               ) : (
-                <span><i className="bi bi-envelope me-1"></i>Email/Password</span>
+                <span>Email/Password</span>
               )}
             </small>
           </div>
@@ -152,8 +154,8 @@ export default function StaffPage() {
           {getStatusBadge(item.status)}
           {item.emailVerified && (
             <div className="mt-1">
-              <small className="text-success">
-                <i className="bi bi-check-circle me-1"></i>Verified
+              <small className="text-green-600">
+                Verified
               </small>
             </div>
           )}
@@ -186,7 +188,7 @@ export default function StaffPage() {
   if (loading) {
     return (
       <div>
-        <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="flex justify-between items-center mb-4">
           <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
             Staff / Users
           </h4>
@@ -194,15 +196,13 @@ export default function StaffPage() {
             type="button"
             onClick={() => setShowAddUserModal(true)}
           >
-            <i className="bi bi-person-plus me-2"></i>Add User
+            Add User
           </Button>
         </div>
-        <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '300px' }}>
+        <div className="flex items-center justify-center" style={{ minHeight: '300px' }}>
           <div className="text-center">
-            <div className="spinner-border text-dark" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="mt-3 text-muted">Loading users...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-gray-600 mx-auto" />
+            <p className="mt-3 text-gray-600">Loading users...</p>
           </div>
         </div>
       </div>
@@ -212,7 +212,7 @@ export default function StaffPage() {
   if (error) {
     return (
       <div>
-        <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="flex justify-between items-center mb-4">
           <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
             Staff / Users
           </h4>
@@ -220,38 +220,39 @@ export default function StaffPage() {
             type="button"
             onClick={() => setShowAddUserModal(true)}
           >
-            <i className="bi bi-person-plus me-2"></i>Add User
+            Add User
           </Button>
         </div>
-        <div className="alert alert-danger d-flex align-items-center" role="alert">
-          <i className="bi bi-exclamation-circle me-2"></i>
-          <div>
-            <strong>Error loading users:</strong> {error}
-            <Button
-              type="button"
-              size="sm"
-              variant="danger"
-              className="ms-3"
-              onClick={fetchUsers}
-            >
-              <i className="bi bi-arrow-clockwise me-1"></i>Retry
-            </Button>
-          </div>
-        </div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>
+            <div className="flex items-center justify-between">
+              <span><strong>Error loading users:</strong> {error}</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                className="ml-3"
+                onClick={fetchUsers}
+              >
+                Retry
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="flex justify-between items-center mb-4">
         <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
           Staff / Users
-          <span className="text-muted ms-2" style={{ fontSize: '0.875rem', fontWeight: 400 }}>
+          <span className="text-gray-600 ml-2" style={{ fontSize: '0.875rem', fontWeight: 400 }}>
             ({staff.length} {staff.length === 1 ? 'user' : 'users'})
           </span>
         </h4>
-        <div className="d-flex gap-2">
+        <div className="flex gap-2">
           <Button
             type="button"
             variant="secondary"
@@ -259,13 +260,13 @@ export default function StaffPage() {
             disabled={loading}
             title="Refresh users list"
           >
-            <i className="bi bi-arrow-clockwise"></i>
+            Refresh
           </Button>
           <Button
             type="button"
             onClick={() => setShowAddUserModal(true)}
           >
-            <i className="bi bi-person-plus me-2"></i>Add User
+            Add User
           </Button>
         </div>
       </div>

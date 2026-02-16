@@ -1,5 +1,18 @@
 import { useRef } from 'react';
 import html2canvas from 'html2canvas';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Label } from '@/components/ui/Label';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { Trash2 } from 'lucide-react';
 
 export interface InvoiceItem {
   description: string;
@@ -59,7 +72,7 @@ export default function InvoiceModal({
 }: InvoiceModalProps) {
   const quotationRef = useRef<HTMLDivElement>(null);
 
-  if (!show || !booking) return null;
+  if (!booking) return null;
 
   const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
   const discountAmount = invoiceDiscountAmount;
@@ -80,86 +93,71 @@ export default function InvoiceModal({
   };
 
   return (
-    <div
-      className={`modal fade ${show ? 'show' : ''}`}
-      style={{
-        display: show ? 'flex' : 'none',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1055,
-      }}
-      tabIndex={-1}
-      role="dialog"
-    >
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          zIndex: 0,
-        }}
-        onClick={onClose}
-      />
+    <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Create Invoice</DialogTitle>
+        </DialogHeader>
 
-      <div
-        className="modal-dialog modal-dialog-centered"
-        style={{ margin: '0.5rem auto', position: 'relative', zIndex: 1, width: 'min(96vw, 760px)' }}
-        role="document"
-      >
-        <div className="modal-content">
-          <div className="modal-header py-2 px-3">
-            <h5 className="modal-title">Create Invoice</h5>
-            <button type="button" className="btn-close" onClick={onClose} aria-label="Close"></button>
+        <div className="space-y-3" style={{ fontSize: '0.92rem' }}>
+          <div className="p-4 border border-gray-200 rounded-2xl bg-gray-50">
+            <div className="flex flex-col gap-2">
+              {booking.bookingCode && (
+                <div><strong>Booking Code:</strong> {booking.bookingCode}</div>
+              )}
+              <div><strong>Client:</strong> {booking.clientName}</div>
+              <div><strong>Service:</strong> {booking.service}</div>
+            </div>
           </div>
 
-          <div className="modal-body p-3" style={{ fontSize: '0.92rem' }}>
-            <div className="mb-2 p-2 border rounded bg-light">
-              <div className="d-flex flex-column gap-1">
-                {booking.bookingCode ? <div><strong>Booking Code:</strong> {booking.bookingCode}</div> : null}
-                <div><strong>Client:</strong> {booking.clientName}</div>
-                <div><strong>Service:</strong> {booking.service}</div>
-              </div>
-            </div>
+          {invoiceError && (
+            <Alert variant="destructive">
+              <AlertDescription>{invoiceError}</AlertDescription>
+            </Alert>
+          )}
 
-            {invoiceError && <div className="alert alert-danger">{invoiceError}</div>}
-
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Invoice Items</label>
-              <div className="mb-2">
-                <label className="form-label small mb-1">Add from Pricing</label>
-                <div className="d-flex gap-2">
-                  <select
-                    className="form-select"
-                    value={selectedPricingService}
-                    onChange={(e) => onSelectedPricingServiceChange(e.target.value)}
-                    disabled={pricingLoading || pricingError !== null}
-                  >
-                    <option value="">Select a service...</option>
+          <div className="space-y-4">
+            <Label className="text-base font-semibold">Invoice Items</Label>
+            <div className="space-y-2">
+              <Label className="text-sm">Add from Pricing</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={selectedPricingService}
+                  onValueChange={onSelectedPricingServiceChange}
+                  disabled={pricingLoading || pricingError !== null}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a service..." />
+                  </SelectTrigger>
+                  <SelectContent>
                     {pricingData.map((item, idx) => {
                       const firstKey = Object.keys(item)[0];
                       const name = String(item[firstKey] || '');
-                      return name ? <option key={idx} value={name}>{name}</option> : null;
+                      return name ? (
+                        <SelectItem key={idx} value={name}>{name}</SelectItem>
+                      ) : null;
                     })}
-                  </select>
-                  <button type="button" className="btn btn-outline-dark" disabled={!selectedPricingService} onClick={onAddFromPricing}>
-                    Add
-                  </button>
-                </div>
-                {pricingLoading && <div className="text-muted small mt-1">Loading pricing...</div>}
-                {pricingError && <div className="text-danger small mt-1">{pricingError}</div>}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onAddFromPricing}
+                  disabled={!selectedPricingService}
+                >
+                  Add
+                </Button>
               </div>
+              {pricingLoading && <div className="text-gray-500 text-sm">Loading pricing...</div>}
+              {pricingError && <div className="text-red-600 text-sm">{pricingError}</div>}
+            </div>
 
+            <div className="space-y-3">
               {invoiceItems.map((item, idx) => (
-                <div key={idx} className="row g-2 align-items-end mb-2">
-                  <div className="col-12 col-md-5">
-                    <label className="form-label small mb-1">Description</label>
-                    <input
-                      className="form-control"
+                <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-12 md:col-span-5">
+                    <Label className="text-xs mb-1">Description</Label>
+                    <Input
                       value={item.description}
                       onChange={(e) => {
                         const next = [...invoiceItems];
@@ -168,12 +166,11 @@ export default function InvoiceModal({
                       }}
                     />
                   </div>
-                  <div className="col-6 col-md-2">
-                    <label className="form-label small mb-1">Qty</label>
-                    <input
+                  <div className="col-span-6 md:col-span-2">
+                    <Label className="text-xs mb-1">Qty</Label>
+                    <Input
                       type="number"
                       min="1"
-                      className="form-control"
                       value={item.quantity}
                       onChange={(e) => {
                         const qty = Math.max(1, Number(e.target.value) || 1);
@@ -184,12 +181,11 @@ export default function InvoiceModal({
                       }}
                     />
                   </div>
-                  <div className="col-6 col-md-2">
-                    <label className="form-label small mb-1">Unit Price</label>
-                    <input
+                  <div className="col-span-6 md:col-span-2">
+                    <Label className="text-xs mb-1">Unit Price</Label>
+                    <Input
                       type="number"
                       min="0"
-                      className="form-control"
                       value={item.unitPrice}
                       onChange={(e) => {
                         const price = Math.max(0, Number(e.target.value) || 0);
@@ -200,100 +196,112 @@ export default function InvoiceModal({
                       }}
                     />
                   </div>
-                  <div className="col-12 col-md-2">
-                    <label className="form-label small mb-1">Total</label>
-                    <input className="form-control" value={item.total} disabled />
+                  <div className="col-span-10 md:col-span-2">
+                    <Label className="text-xs mb-1">Total</Label>
+                    <Input value={item.total} disabled />
                   </div>
-                  <div className="col-12 col-md-1">
-                    <button
+                  <div className="col-span-2">
+                    <Button
                       type="button"
-                      className="btn btn-outline-danger btn-sm w-100"
+                      variant="outline"
+                      size="sm"
                       onClick={() => {
                         if (invoiceItems.length === 1) return;
                         onInvoiceItemsChange(invoiceItems.filter((_, i) => i !== idx));
                       }}
+                      className="w-full"
                     >
-                      <i className="bi bi-trash"></i>
-                    </button>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
-
-              <button
-                type="button"
-                className="btn btn-outline-dark btn-sm"
-                onClick={() => onInvoiceItemsChange([...invoiceItems, { description: '', quantity: 1, unitPrice: 0, total: 0 }])}
-              >
-                <i className="bi bi-plus-circle me-2"></i>Add Item
-              </button>
             </div>
 
-            <div className="row g-2">
-              <div className="col-12 col-md-6">
-                <label className="form-label fw-semibold">Notes (optional)</label>
-                <input className="form-control" value={invoiceNotes} onChange={(e) => onInvoiceNotesChange(e.target.value)} />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onInvoiceItemsChange([...invoiceItems, { description: '', quantity: 1, unitPrice: 0, total: 0 }])}
+            >
+              <i className="bi bi-plus-circle mr-2"></i>Add Item
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-base font-semibold">Notes (optional)</Label>
+            <Input
+              value={invoiceNotes}
+              onChange={(e) => onInvoiceNotesChange(e.target.value)}
+            />
+          </div>
+
+          <div className="text-right space-y-1 font-semibold">
+            <div>Subtotal: PHP {subtotal.toLocaleString()}</div>
+            <div>Discount: -PHP {discountAmount.toLocaleString()}</div>
+            <div>Squeeze-in Fee: PHP {squeeze.toLocaleString()}</div>
+            <div>Total: PHP {total.toLocaleString()}</div>
+            <div>Deposit Paid: -PHP {depositPaid.toLocaleString()}</div>
+            <div>Balance Due: PHP {balance.toLocaleString()}</div>
+          </div>
+
+          <div className="mt-4">
+            <div ref={quotationRef} className="p-4 border border-gray-200 rounded-2xl bg-white" style={{ maxWidth: '680px', margin: '0 auto' }}>
+              <div className="text-center mb-3 pb-2 border-b-2 border-[#212529]">
+                <h5 className="mb-1 font-bold tracking-wider">QUOTATION</h5>
               </div>
-            </div>
-
-            <div className="mt-3 text-end fw-semibold">
-              <div>Subtotal: PHP {subtotal.toLocaleString()}</div>
-              <div>Discount: -PHP {discountAmount.toLocaleString()}</div>
-              <div>Squeeze-in Fee: PHP {squeeze.toLocaleString()}</div>
-              <div>Total: PHP {total.toLocaleString()}</div>
-              <div>Deposit Paid: -PHP {depositPaid.toLocaleString()}</div>
-              <div>Balance Due: PHP {balance.toLocaleString()}</div>
-            </div>
-
-            <div className="mt-3">
-              <div ref={quotationRef} className="p-3 border rounded bg-white" style={{ maxWidth: '680px', margin: '0 auto' }}>
-                <div className="text-center mb-2" style={{ borderBottom: '2px solid #000' }}>
-                  <h5 className="mb-1" style={{ fontWeight: 700, letterSpacing: '0.08em' }}>QUOTATION</h5>
-                </div>
-                <div className="mb-2">
-                  <div><strong>Client:</strong> {booking.clientName}</div>
-                  <div><strong>Date:</strong> {new Date().toLocaleDateString('en-US')}</div>
-                </div>
-                <div className="mb-2">
-                  {invoiceItems.map((item, idx) => (
-                    <div key={idx} className="d-flex justify-content-between">
-                      <div>{item.description} x {item.quantity}</div>
-                      <div>PHP {(item.total || 0).toLocaleString()}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="d-flex justify-content-between fw-semibold" style={{ borderTop: '2px solid #000', paddingTop: '6px' }}>
+              <div className="mb-3 space-y-1">
+                <div><strong>Client:</strong> {booking.clientName}</div>
+                <div><strong>Date:</strong> {new Date().toLocaleDateString('en-US')}</div>
+              </div>
+              <div className="mb-3 space-y-1">
+                {invoiceItems.map((item, idx) => (
+                  <div key={idx} className="flex justify-between">
+                    <div>{item.description} x {item.quantity}</div>
+                    <div>PHP {(item.total || 0).toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-1 pt-2 border-t-2 border-[#212529]">
+                <div className="flex justify-between font-semibold">
                   <span>Subtotal</span>
                   <span>PHP {subtotal.toLocaleString()}</span>
                 </div>
-                <div className="d-flex justify-content-between">
+                <div className="flex justify-between">
                   <span>Discount</span>
                   <span>-PHP {discountAmount.toLocaleString()}</span>
                 </div>
-                <div className="d-flex justify-content-between">
+                <div className="flex justify-between">
                   <span>Squeeze-in Fee</span>
                   <span>PHP {squeeze.toLocaleString()}</span>
                 </div>
-                <div className="d-flex justify-content-between fw-semibold" style={{ borderTop: '1px solid #000', paddingTop: '6px' }}>
+                <div className="flex justify-between font-semibold pt-2 border-t border-[#212529]">
                   <span>Total</span>
                   <span>PHP {total.toLocaleString()}</span>
                 </div>
               </div>
             </div>
           </div>
-
-          <div className="modal-footer py-2 px-3">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
-              Close
-            </button>
-            <button type="button" className="btn btn-outline-dark" onClick={handleDownload}>
-              Download
-            </button>
-            <button type="button" className="btn btn-dark" disabled={invoiceSaving} onClick={onSave}>
-              {invoiceSaving ? 'Saving...' : currentQuotationId ? 'Update Invoice' : 'Create Invoice'}
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
+
+        <DialogFooter className="flex-wrap gap-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+          <Button type="button" variant="outline" onClick={handleDownload}>
+            Download
+          </Button>
+          <Button
+            type="button"
+            variant="default"
+            disabled={invoiceSaving}
+            onClick={onSave}
+            loading={invoiceSaving}
+          >
+            {invoiceSaving ? 'Saving...' : currentQuotationId ? 'Update Invoice' : 'Create Invoice'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

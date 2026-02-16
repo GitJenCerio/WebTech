@@ -18,7 +18,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { path: '/admin/overview', label: 'Overview', icon: 'bi-grid-3x3-gap' },
-  { path: '/admin/bookings', label: 'Bookings & Slots', icon: 'bi-calendar-check' },
+  { path: '/admin/calendar', label: 'Calendar', icon: 'bi-calendar-check' },
+  { path: '/admin/bookings', label: 'Bookings', icon: 'bi-list-check' },
   { path: '/admin/finance', label: 'Finance', icon: 'bi-cash-stack' },
   { path: '/admin/quotation', label: 'Quotation', icon: 'bi-calculator' },
   { path: '/admin/clients', label: 'Clients', icon: 'bi-people' },

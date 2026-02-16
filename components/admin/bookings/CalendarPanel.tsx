@@ -2,6 +2,10 @@
 
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
+import { Plus, Calendar as CalendarIcon, CalendarDays, List, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Card, CardHeader, CardContent } from "@/components/ui/Card";
+import { Button } from '@/components/ui/Button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 
 interface Slot {
   id: string;
@@ -9,15 +13,27 @@ interface Slot {
   time: string;
   status: string;
   isHidden?: boolean;
+  clientName?: string;
+}
+
+interface NailTech {
+  id: string;
+  name: string;
+  role?: string;
 }
 
 interface CalendarPanelProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
-  onViewChange?: (view: 'month' | 'week') => void;
+  onViewChange?: (view: 'month' | 'week' | 'day') => void;
   slots?: Slot[];
   currentMonth?: Date;
   onMonthChange?: (month: Date) => void;
+  onAddAvailability?: () => void;
+  nailTechs?: NailTech[];
+  selectedNailTechId?: string;
+  onNailTechChange?: (techId: string) => void;
+  showNailTechFilter?: boolean;
 }
 
 export default function CalendarPanel({
@@ -27,8 +43,13 @@ export default function CalendarPanel({
   slots = [],
   currentMonth: controlledMonth,
   onMonthChange,
+  onAddAvailability,
+  nailTechs = [],
+  selectedNailTechId = 'all',
+  onNailTechChange,
+  showNailTechFilter = false,
 }: CalendarPanelProps) {
-  const [view, setView] = useState<'month' | 'week'>('month');
+  const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [internalMonth, setInternalMonth] = useState(new Date());
   
   // Use controlled month if provided, otherwise use internal state
@@ -76,7 +97,7 @@ export default function CalendarPanel({
     return days;
   };
 
-  const handleViewChange = (newView: 'month' | 'week') => {
+  const handleViewChange = (newView: 'month' | 'week' | 'day') => {
     setView(newView);
     onViewChange?.(newView);
   };
@@ -114,51 +135,218 @@ export default function CalendarPanel({
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Count slots by date
+  // Count slots by date and collect client names for booked/pending
   const slotsByDate = useMemo(() => {
-    const map = new Map<string, { available: number; booked: number; pending: number; total: number }>();
+    const map = new Map<string, {
+      available: number;
+      booked: number;
+      pending: number;
+      total: number;
+      bookedNames: string[];
+      pendingNames: string[];
+    }>();
     slots.forEach((slot) => {
       if (slot.isHidden) return; // Skip hidden slots
       const dateStr = slot.date;
       if (!map.has(dateStr)) {
-        map.set(dateStr, { available: 0, booked: 0, pending: 0, total: 0 });
+        map.set(dateStr, { available: 0, booked: 0, pending: 0, total: 0, bookedNames: [], pendingNames: [] });
       }
-      const counts = map.get(dateStr)!;
-      counts.total++;
-      if (slot.status === 'available') counts.available++;
-      else if (slot.status === 'booked' || slot.status === 'confirmed') counts.booked++;
-      else if (slot.status === 'pending') counts.pending++;
+      const data = map.get(dateStr)!;
+      data.total++;
+      const name = (slot as Slot).clientName?.trim() || '';
+      if (slot.status === 'available') data.available++;
+      else if (slot.status === 'booked' || slot.status === 'confirmed' || slot.status === 'CONFIRMED') {
+        data.booked++;
+        if (name) data.bookedNames.push(name);
+      } else if (slot.status === 'pending' || slot.status === 'PENDING_PAYMENT') {
+        data.pending++;
+        if (name) data.pendingNames.push(name);
+      }
     });
     return map;
   }, [slots]);
 
   const getSlotCounts = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return slotsByDate.get(dateStr) || { available: 0, booked: 0, pending: 0, total: 0 };
+    return slotsByDate.get(dateStr) || {
+      available: 0,
+      booked: 0,
+      pending: 0,
+      total: 0,
+      bookedNames: [],
+      pendingNames: [],
+    };
   };
 
   return (
-    <div className="card mb-4 w-100" style={{ minWidth: 0, overflow: 'hidden' }}>
-      <div className="card-header d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
-        <h5 className="mb-0">Select Date</h5>
-        <div className="btn-group" role="group">
-          <button
-            type="button"
-            className={`btn btn-sm ${view === 'month' ? 'btn-dark' : 'btn-outline-secondary'}`}
-            onClick={() => handleViewChange('month')}
-          >
-            Month
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm ${view === 'week' ? 'btn-dark' : 'btn-outline-secondary'}`}
-            onClick={() => handleViewChange('week')}
-          >
-            Week
-          </button>
+    <Card className="mb-4 w-full min-w-0 overflow-hidden h-100 d-flex flex-column">
+      <CardHeader className="pb-0">
+        {/* Single toolbar row: Nail Tech, Add Availability, Month/Week/Day on one line from md up */}
+        <div className="d-flex flex-wrap flex-md-nowrap align-items-center gap-2 mb-3 overflow-x-auto min-w-0">
+          {showNailTechFilter && nailTechs.length > 0 && (
+            <Select
+              value={selectedNailTechId}
+              onValueChange={(value) => onNailTechChange?.(value)}
+            >
+              <SelectTrigger className="w-full max-w-[180px] sm:max-w-[250px] min-w-0 h-9 shrink-0">
+                <SelectValue placeholder="All Nail Techs" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Nail Techs</SelectItem>
+                {nailTechs.map((tech) => (
+                  <SelectItem key={tech.id} value={tech.id}>
+                    {tech.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {onAddAvailability && (
+            <button
+              type="button"
+              className="btn btn-sm d-flex align-items-center gap-2 shrink-0 h-9"
+              onClick={onAddAvailability}
+              style={{
+                borderRadius: '16px',
+                padding: '0 1rem',
+                height: '36px',
+                minHeight: '36px',
+                fontWeight: 500,
+                background: 'linear-gradient(135deg, #495057 0%, #212529 100%)',
+                border: 'none',
+                color: '#ffffff',
+                boxShadow: '0 4px 15px rgba(33, 37, 41, 0.3)',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(33, 37, 41, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(33, 37, 41, 0.3)';
+              }}
+            >
+              <i className="bi bi-plus-lg" style={{ fontSize: '1rem' }}></i>
+              <span className="whitespace-nowrap">Add Availability</span>
+            </button>
+          )}
+          {/* View toggle: Month / Week / Day — same line on tablet/desktop */}
+          <div className="d-flex gap-2 align-items-center ms-md-auto flex-shrink-0">
+            <button
+              type="button"
+              className={`btn btn-sm d-flex align-items-center gap-2 ${
+                view === 'month' 
+                  ? 'text-white' 
+                  : 'btn-outline-secondary'
+              }`}
+              onClick={() => handleViewChange('month')}
+              style={{
+                borderRadius: '12px',
+                padding: '0.5rem 1rem',
+                fontWeight: 500,
+                border: view === 'month' ? 'none' : '1px solid #ced4da',
+                background: view === 'month' 
+                  ? 'linear-gradient(135deg, #495057 0%, #212529 100%)' 
+                  : 'transparent',
+                boxShadow: view === 'month' ? '0 4px 15px rgba(33, 37, 41, 0.3)' : 'none',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (view !== 'month') {
+                  e.currentTarget.style.background = '#f8f9fa';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (view !== 'month') {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
+              }}
+            >
+              <i className="bi bi-calendar3" style={{ fontSize: '1rem' }}></i>
+              <span>Month</span>
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm d-flex align-items-center gap-2 ${
+                view === 'week' 
+                  ? 'text-white' 
+                  : 'btn-outline-secondary'
+              }`}
+              onClick={() => handleViewChange('week')}
+              style={{
+                borderRadius: '12px',
+                padding: '0.5rem 1rem',
+                fontWeight: 500,
+                border: view === 'week' ? 'none' : '1px solid #ced4da',
+                background: view === 'week' 
+                  ? 'linear-gradient(135deg, #495057 0%, #212529 100%)' 
+                  : 'transparent',
+                boxShadow: view === 'week' ? '0 4px 15px rgba(33, 37, 41, 0.3)' : 'none',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (view !== 'week') {
+                  e.currentTarget.style.background = '#f8f9fa';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (view !== 'week') {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
+              }}
+            >
+              <i className="bi bi-calendar-week" style={{ fontSize: '1rem' }}></i>
+              <span>Week</span>
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm d-flex align-items-center gap-2 ${
+                view === 'day' 
+                  ? 'text-white' 
+                  : 'btn-outline-secondary'
+              }`}
+              onClick={() => handleViewChange('day')}
+              style={{
+                borderRadius: '12px',
+                padding: '0.5rem 1rem',
+                fontWeight: 500,
+                border: view === 'day' ? 'none' : '1px solid #ced4da',
+                background: view === 'day' 
+                  ? 'linear-gradient(135deg, #495057 0%, #212529 100%)' 
+                  : 'transparent',
+                boxShadow: view === 'day' ? '0 4px 15px rgba(33, 37, 41, 0.3)' : 'none',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (view !== 'day') {
+                  e.currentTarget.style.background = '#f8f9fa';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (view !== 'day') {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
+              }}
+            >
+              <i className="bi bi-list-ul" style={{ fontSize: '1rem' }}></i>
+              <span>Day</span>
+            </button>
+          </div>
         </div>
-      </div>
-      <div className="card-body" style={{ padding: 'clamp(0.65rem, 3vw, 1rem) clamp(0.5rem, 3vw, 0.9rem)' }}>
+      </CardHeader>
+      <CardContent 
+        className="flex-grow-1 min-h-0"
+        style={{ 
+          padding: 'clamp(0.65rem, 3vw, 1rem) clamp(0.5rem, 3vw, 0.9rem)',
+        }}
+      >
         <div className="d-flex justify-content-between align-items-center mb-2">
           <button 
             className="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center" 
@@ -205,39 +393,54 @@ export default function CalendarPanel({
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  justifyContent: 'flex-start',
                   padding: 'clamp(0.2rem, 1.4vw, 0.48rem)',
                   minHeight: 'clamp(44px, 11vw, 68px)',
                   lineHeight: '1.2',
-                  gap: '3px'
+                  gap: '2px',
                 }}
               >
-                <span className="fw-semibold" style={{ fontSize: 'clamp(0.75rem, 2.5vw, 0.95rem)' }}>{date.getDate()}</span>
-                {isCurrentMonth && counts.total > 0 && (
-                  <div style={{ 
-                    display: 'flex', 
-                    flexDirection: 'row', 
-                    flexWrap: 'wrap',
-                    gap: 'clamp(2px, 0.5vw, 4px)', 
+                <span
+                  className="fw-semibold calendar-day-num"
+                  style={{
+                    fontSize: 'clamp(0.75rem, 2.5vw, 0.95rem)',
+                    flexShrink: 0,
+                    minHeight: '1.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'center',
-                    maxWidth: '100%'
-                  }}>
+                  }}
+                >
+                  {date.getDate()}
+                </span>
+                <div
+                  className="calendar-day-badges"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    width: '100%',
+                    minHeight: 'clamp(40px, 10vw, 52px)',
+                  }}
+                >
+                {isCurrentMonth && counts.total > 0 && (
+                  <>
                     {counts.available > 0 && (
                       <span 
-                        className="slot-count-badge"
+                        className="slot-count-badge slot-count-available"
                         style={{ 
                           color: dateSelected ? '#fff' : '#155724',
-                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.2)' : '#d4edda',
-                          padding: 'clamp(1px, 0.3vw, 2px) clamp(4px, 1vw, 6px)',
-                          borderRadius: 'clamp(8px, 2vw, 10px)',
-                          fontSize: 'clamp(0.6rem, 1.8vw, 0.7rem)',
+                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#d4edda',
+                          padding: '2px 4px',
+                          fontSize: '0.55rem',
                           fontWeight: 700,
                           lineHeight: 1,
-                          minWidth: 'clamp(16px, 4vw, 20px)',
-                          display: 'inline-flex',
+                          display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          border: dateSelected ? 'none' : '1px solid #c3e6cb'
+                          width: '100%',
+                          borderRadius: '6px',
+                          minHeight: '14px',
                         }}
                       >
                         {counts.available}
@@ -245,48 +448,57 @@ export default function CalendarPanel({
                     )}
                     {counts.booked > 0 && (
                       <span 
-                        className="slot-count-badge"
+                        className="slot-count-badge slot-count-booked"
                         style={{ 
-                          color: dateSelected ? '#fff' : '#fff',
-                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.2)' : '#212529',
-                          padding: 'clamp(1px, 0.3vw, 2px) clamp(4px, 1vw, 6px)',
-                          borderRadius: 'clamp(8px, 2vw, 10px)',
-                          fontSize: 'clamp(0.6rem, 1.8vw, 0.7rem)',
+                          color: '#fff',
+                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#212529',
+                          padding: '2px 4px',
+                          fontSize: '0.55rem',
                           fontWeight: 700,
                           lineHeight: 1,
-                          minWidth: 'clamp(16px, 4vw, 20px)',
-                          display: 'inline-flex',
+                          display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          border: dateSelected ? 'none' : '1px solid #495057'
+                          width: '100%',
+                          borderRadius: '6px',
+                          minHeight: '14px',
+                          overflow: 'hidden',
                         }}
                       >
-                        {counts.booked}
+                        <span className="d-md-none">{counts.booked}</span>
+                        <span className="d-none d-md-inline" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={counts.bookedNames?.join(', ') || ''}>
+                          {counts.bookedNames?.length ? counts.bookedNames.join(', ') : counts.booked}
+                        </span>
                       </span>
                     )}
                     {counts.pending > 0 && (
                       <span 
-                        className="slot-count-badge"
+                        className="slot-count-badge slot-count-pending"
                         style={{ 
-                          color: dateSelected ? '#fff' : '#fff',
-                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.2)' : '#007bff',
-                          padding: 'clamp(1px, 0.3vw, 2px) clamp(4px, 1vw, 6px)',
-                          borderRadius: 'clamp(8px, 2vw, 10px)',
-                          fontSize: 'clamp(0.6rem, 1.8vw, 0.7rem)',
+                          color: '#fff',
+                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#007bff',
+                          padding: '2px 4px',
+                          fontSize: '0.55rem',
                           fontWeight: 700,
                           lineHeight: 1,
-                          minWidth: 'clamp(16px, 4vw, 20px)',
-                          display: 'inline-flex',
+                          display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          border: dateSelected ? 'none' : '1px solid #0056b3'
+                          width: '100%',
+                          borderRadius: '6px',
+                          minHeight: '14px',
+                          overflow: 'hidden',
                         }}
                       >
-                        {counts.pending}
+                        <span className="d-md-none">{counts.pending}</span>
+                        <span className="d-none d-md-inline" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={counts.pendingNames?.join(', ') || ''}>
+                          {counts.pendingNames?.length ? counts.pendingNames.join(', ') : counts.pending}
+                        </span>
                       </span>
                     )}
-                  </div>
+                  </>
                 )}
+                </div>
               </button>
             );
           })}
@@ -295,38 +507,43 @@ export default function CalendarPanel({
         <button 
           className="btn btn-sm btn-outline-secondary w-100" 
           onClick={handleToday}
-          style={{ marginTop: '0.5rem', padding: '0.5rem', fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}
+          style={{ 
+            marginTop: '0.5rem', 
+            padding: '0.5rem', 
+            fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
+            borderRadius: '16px',
+            borderColor: '#ced4da',
+            background: 'linear-gradient(to bottom, #ffffff, #f8f9fa)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+            transition: 'all 0.3s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
+          }}
         >
           Go to Today
         </button>
-      </div>
+      </CardContent>
       
       <style jsx>{`
         @media (max-width: 576px) {
-          .slot-count-badge {
-            border-radius: 50% !important;
-            width: clamp(18px, 5vw, 22px) !important;
-            height: clamp(18px, 5vw, 22px) !important;
-            min-width: clamp(18px, 5vw, 22px) !important;
-            padding: 0 !important;
-            aspect-ratio: 1 / 1;
+          .calendar-day-badges {
+            min-height: 46px;
           }
-        }
-        
-        @media (min-width: 577px) and (max-width: 991px) {
           .slot-count-badge {
+            width: 100% !important;
+            min-height: 14px !important;
             border-radius: 6px !important;
-            padding: 2px 5px !important;
-          }
-        }
-        
-        @media (min-width: 992px) {
-          .slot-count-badge {
-            border-radius: 8px !important;
-            padding: 2px 6px !important;
+            font-size: 0.5rem !important;
+            padding: 2px 4px !important;
           }
         }
       `}</style>
-    </div>
+    </Card>
   );
 }

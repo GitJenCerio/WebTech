@@ -1,4 +1,5 @@
-import React from 'react';
+﻿import React from 'react';
+import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 
 interface Column<T> {
   key: string;
@@ -22,19 +23,19 @@ export default function DataTable<T>({
   emptyMessage = 'No data available',
 }: DataTableProps<T>) {
   return (
-    <div className="card data-table-card">
+    <Card className="data-table-card">
       {title && (
-        <div className="card-header">
-          <h5 className="mb-0">{title}</h5>
-        </div>
+        <CardHeader>
+          <h5 className="mb-0 font-semibold text-[#212529]">{title}</h5>
+        </CardHeader>
       )}
-      <div className="card-body p-0">
-        <div className="table-responsive" style={{ maxWidth: '100%', overflowX: 'auto' }}>
-          <table className="table table-hover mb-0">
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full">
             <thead>
-              <tr>
+              <tr className="border-b border-gray-200">
                 {columns.map((column) => (
-                  <th key={column.key}>{column.header}</th>
+                  <th key={column.key} className="px-4 py-3 text-left text-sm font-semibold text-[#212529]">{column.header}</th>
                 ))}
               </tr>
             </thead>
@@ -42,14 +43,14 @@ export default function DataTable<T>({
               {data.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length} className="text-center py-5">
-                    <div className="text-muted">{emptyMessage}</div>
+                    <div className="text-gray-600">{emptyMessage}</div>
                   </td>
                 </tr>
               ) : (
                 data.map((item) => (
-                  <tr key={keyExtractor(item)}>
+                  <tr key={keyExtractor(item)} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                     {columns.map((column) => (
-                      <td key={column.key}>
+                      <td key={column.key} className="px-4 py-3">
                         {column.render
                           ? column.render(item)
                           : (item as any)[column.key]}
@@ -61,7 +62,7 @@ export default function DataTable<T>({
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

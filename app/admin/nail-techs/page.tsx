@@ -5,7 +5,7 @@ import DataTable from '@/components/admin/DataTable';
 import Pagination from '@/components/admin/Pagination';
 import ActionDropdown from '@/components/admin/ActionDropdown';
 import { Badge } from '@/components/ui/Badge';
-import { Button, Input, Select } from '@/components/ui';
+import { Button, Input, Select } from '@/components/ui/Index';
 import type { NailTech as NailTechType, ServiceAvailability } from '@/lib/types';
 
 type NailTechFormState = {
@@ -371,7 +371,7 @@ export default function NailTechsPage() {
           >
             <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
               <div className="modal-content" style={{ borderRadius: '12px', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
-                <div className="modal-header" style={{ borderBottom: '1px solid #e0e0e0', padding: '1.25rem 1.5rem' }}>
+                <div className="modal-header" style={{ padding: '1.25rem 1.5rem' }}>
                   <h5 className="modal-title" style={{ fontWeight: 600, color: '#212529', fontSize: '1.25rem' }}>
                     {modalMode === 'add' ? 'Add Nail Technician' : modalMode === 'edit' ? 'Edit Nail Technician' : 'View Nail Technician'}
                   </h5>
@@ -523,7 +523,7 @@ export default function NailTechsPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="modal-footer" style={{ borderTop: '1px solid #e0e0e0', padding: '1rem 1.5rem' }}>
+                <div className="modal-footer" style={{ padding: '1rem 1.5rem' }}>
                   <Button
                     type="button"
                     variant="secondary"

@@ -1,4 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Label } from '@/components/ui/Label';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 
 interface NailTech {
   id: string;
@@ -90,8 +102,6 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
         updateData.assignedNailTechId = null;
       }
 
-      console.log('Sending update request:', { userId: user.id, updateData });
-
       const response = await fetch(`/api/users/${user.id}`, {
         method: 'PATCH',
         headers: {
@@ -101,8 +111,6 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
       });
 
       const data = await response.json();
-
-      console.log('Update response:', { status: response.status, data });
 
       if (!response.ok) {
         setError(data.error || 'Failed to update user');
@@ -134,263 +142,153 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
     }
   };
 
-  if (!show || !user) return null;
+  if (!user) return null;
 
   return (
-    <>
-      <div
-        className={`modal fade ${show ? 'show' : ''}`}
-        style={{ 
-          display: show ? 'flex' : 'none', 
-          zIndex: 1055,
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-        tabIndex={-1}
-        role="dialog"
-        onClick={(e) => {
-          if (e.target === e.currentTarget && !loading) {
-            handleClose();
-          }
-        }}
-      >
-        <div 
-          className="modal-dialog modal-dialog-centered" 
-          style={{ maxWidth: '500px', margin: '1rem auto', position: 'relative', width: '100%' }} 
-          role="document" 
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="modal-content" style={{ borderRadius: '12px', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
-            <div className="modal-header" style={{ borderBottom: '1px solid #e0e0e0', padding: '1.25rem 1.5rem', backgroundColor: '#ffffff' }}>
-              <h5 className="modal-title" style={{ fontWeight: 600, color: '#212529', fontSize: '1.125rem', margin: 0 }}>
-                <i className="bi bi-pencil-square me-2" style={{ fontSize: '1rem' }}></i>
-                Edit User
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={handleClose}
-                aria-label="Close"
-                disabled={loading}
-                style={{ fontSize: '0.875rem', opacity: loading ? 0.5 : 1 }}
-              ></button>
+    <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            <i className="bi bi-pencil-square mr-2"></i>
+            Edit User
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="py-4 space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert variant="success">
+                <AlertDescription>{success}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={user.email}
+                disabled
+                className="bg-gray-100"
+              />
+              <small className="text-gray-500 text-xs block">
+                <i className="bi bi-lock mr-1"></i>Email cannot be changed
+              </small>
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body" style={{ padding: '1.5rem', backgroundColor: '#ffffff' }}>
-                {error && (
-                  <div className="alert alert-danger d-flex align-items-center mb-3" role="alert" style={{ borderRadius: '8px', padding: '0.75rem 1rem', fontSize: '0.875rem' }}>
-                    <i className="bi bi-exclamation-circle me-2"></i>
-                    <div style={{ fontSize: '0.875rem' }}>{error}</div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editName">Name</Label>
+              <Input
+                type="text"
+                id="editName"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="User's full name"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editRole">
+                Role <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={role}
+                onValueChange={(value) => {
+                  setRole(value as 'admin' | 'staff');
+                  if (value === 'admin') {
+                    setAssignedNailTechId('');
+                  }
+                }}
+                disabled={loading}
+              >
+                <SelectTrigger id="editRole">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {role === 'staff' && (
+              <div className="space-y-2">
+                <Label htmlFor="editAssignedNailTech">Assigned Nail Tech</Label>
+                {loadingNailTechs ? (
+                  <div className="px-4 py-2 bg-gray-100 rounded-2xl flex items-center">
+                    <span className="spinner-border spinner-border-sm mr-2"></span>
+                    <span className="text-gray-600 text-sm">Loading nail techs...</span>
                   </div>
-                )}
-
-                {success && (
-                  <div className="alert alert-success d-flex align-items-center mb-3" role="alert" style={{ borderRadius: '8px', padding: '0.75rem 1rem', fontSize: '0.875rem' }}>
-                    <i className="bi bi-check-circle me-2"></i>
-                    <div style={{ fontSize: '0.875rem' }}>{success}</div>
-                  </div>
-                )}
-
-                <div className="mb-3">
-                  <label className="form-label" style={{ fontWeight: 500, color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    value={user.email}
-                    disabled
-                    style={{ 
-                      borderRadius: '8px', 
-                      fontSize: '0.875rem', 
-                      padding: '0.75rem', 
-                      backgroundColor: '#f8f9fa',
-                      borderColor: '#e0e0e0',
-                      color: '#6c757d'
-                    }}
-                  />
-                  <small className="text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
-                    <i className="bi bi-lock me-1"></i>Email cannot be changed
-                  </small>
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="editName" className="form-label" style={{ fontWeight: 500, color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    id="editName"
-                    className="form-control"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="User's full name"
+                ) : (
+                  <Select
+                    value={assignedNailTechId}
+                    onValueChange={setAssignedNailTechId}
                     disabled={loading}
-                    style={{ 
-                      borderRadius: '8px', 
-                      fontSize: '0.875rem', 
-                      padding: '0.75rem',
-                      borderColor: '#ced4da'
-                    }}
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="editRole" className="form-label" style={{ fontWeight: 500, color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                    Role <span className="text-danger">*</span>
-                  </label>
-                  <select
-                    id="editRole"
-                    className="form-select"
-                    value={role}
-                    onChange={(e) => {
-                      setRole(e.target.value as 'admin' | 'staff');
-                      if (e.target.value === 'admin') {
-                        setAssignedNailTechId('');
-                      }
-                    }}
-                    disabled={loading}
-                    style={{ 
-                      borderRadius: '8px', 
-                      fontSize: '0.875rem', 
-                      padding: '0.75rem',
-                      borderColor: '#ced4da',
-                      cursor: loading ? 'not-allowed' : 'pointer'
-                    }}
                   >
-                    <option value="admin">Admin</option>
-                    <option value="staff">Staff</option>
-                  </select>
-                </div>
-
-                {role === 'staff' && (
-                  <div className="mb-3">
-                    <label htmlFor="editAssignedNailTech" className="form-label" style={{ fontWeight: 500, color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                      Assigned Nail Tech
-                    </label>
-                    {loadingNailTechs ? (
-                      <div className="form-control d-flex align-items-center" style={{ borderRadius: '8px', padding: '0.75rem', borderColor: '#ced4da', backgroundColor: '#f8f9fa' }}>
-                        <span className="spinner-border spinner-border-sm me-2" style={{ width: '1rem', height: '1rem' }}></span>
-                        <span style={{ fontSize: '0.875rem', color: '#6c757d' }}>Loading nail techs...</span>
-                      </div>
-                    ) : (
-                      <select
-                        id="editAssignedNailTech"
-                        className="form-select"
-                        value={assignedNailTechId}
-                        onChange={(e) => setAssignedNailTechId(e.target.value)}
-                        disabled={loading}
-                        style={{ 
-                          borderRadius: '8px', 
-                          fontSize: '0.875rem', 
-                          padding: '0.75rem',
-                          borderColor: '#ced4da',
-                          cursor: loading ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        <option value="">None</option>
-                        {nailTechs.map((tech) => (
-                          <option key={tech.id} value={tech.id}>
-                            {tech.name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                    <small className="text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
-                      Select a nail tech to assign to this staff member
-                    </small>
-                  </div>
+                    <SelectTrigger id="editAssignedNailTech">
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {nailTechs.map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id}>
+                          {tech.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
+                <small className="text-gray-500 text-xs block">
+                  Select a nail tech to assign to this staff member
+                </small>
+              </div>
+            )}
 
-                <div className="mb-0">
-                  <label htmlFor="editStatus" className="form-label" style={{ fontWeight: 500, color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                    Status <span className="text-danger">*</span>
-                  </label>
-                  <select
-                    id="editStatus"
-                    className="form-select"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as 'active' | 'inactive')}
-                    disabled={loading}
-                    style={{ 
-                      borderRadius: '8px', 
-                      fontSize: '0.875rem', 
-                      padding: '0.75rem',
-                      borderColor: '#ced4da',
-                      cursor: loading ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-              <div className="modal-footer" style={{ borderTop: '1px solid #e0e0e0', padding: '1rem 1.5rem', backgroundColor: '#ffffff' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleClose}
-                  disabled={loading}
-                  style={{ 
-                    borderRadius: '8px', 
-                    fontSize: '0.875rem', 
-                    padding: '0.5rem 1rem', 
-                    fontWeight: 500,
-                    borderColor: '#ced4da',
-                    backgroundColor: '#ffffff',
-                    color: '#495057'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-dark"
-                  disabled={loading}
-                  style={{ 
-                    borderRadius: '8px', 
-                    fontSize: '0.875rem', 
-                    padding: '0.5rem 1rem', 
-                    fontWeight: 500, 
-                    backgroundColor: loading ? '#6c757d' : '#212529', 
-                    borderColor: loading ? '#6c757d' : '#212529',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  {loading ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                        style={{ width: '1rem', height: '1rem' }}
-                      ></span>
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-check-circle me-2"></i>
-                      Update User
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+            <div className="space-y-2">
+              <Label htmlFor="editStatus">
+                Status <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={status}
+                onValueChange={(value) => setStatus(value as 'active' | 'inactive')}
+                disabled={loading}
+              >
+                <SelectTrigger id="editStatus">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
-      </div>
-      {show && (
-        <div
-          className="modal-backdrop fade show"
-          style={{ zIndex: 1050 }}
-          onClick={!loading ? handleClose : undefined}
-        ></div>
-      )}
-    </>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleClose}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="default"
+              disabled={loading}
+              loading={loading}
+            >
+              <i className="bi bi-check-circle mr-2"></i>
+              Update User
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

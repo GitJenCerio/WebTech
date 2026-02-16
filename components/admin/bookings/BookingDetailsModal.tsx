@@ -1,5 +1,15 @@
 import React from 'react';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/Button';
+import { Textarea } from '@/components/ui/Textarea';
+import { Badge } from '@/components/ui/Badge';
 
 interface BookingDetailsModalProps {
   show: boolean;
@@ -53,7 +63,7 @@ export default function BookingDetailsModal({
   adminNotesDraft = '',
   onViewClient,
 }: BookingDetailsModalProps) {
-  if (!show || !booking) return null;
+  if (!booking) return null;
 
   const isPendingPayment = ['booked', 'PENDING_PAYMENT', 'pending'].includes(booking.status);
   const canVerify = Boolean(booking.paymentProofUrl && onVerifyPaymentProof);
@@ -65,210 +75,176 @@ export default function BookingDetailsModal({
   const contactValue = booking.clientPhone || booking.clientEmail || '-';
 
   return (
-    <div
-      className={`modal fade ${show ? 'show' : ''}`}
-      style={{
-        display: show ? 'flex' : 'none',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1055,
-      }}
-      tabIndex={-1}
-      role="dialog"
-    >
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          zIndex: 0,
-        }}
-        onClick={onHide}
-      />
+    <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Booking Details</DialogTitle>
+        </DialogHeader>
 
-      <div
-        className="modal-dialog modal-dialog-centered"
-        style={{ margin: '0.5rem auto', position: 'relative', zIndex: 1, width: 'min(96vw, 640px)' }}
-        role="document"
-      >
-        <div className="modal-content">
-          <div className="modal-header py-2 px-3">
-            <h5 className="modal-title">Booking Details</h5>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={onHide}
-              aria-label="Close"
-            ></button>
-          </div>
-
-          <div className="modal-body p-3" style={{ fontSize: '0.92rem', maxHeight: '70vh', overflowY: 'auto' }}>
-            <div className="mb-2 p-2 border rounded bg-light">
-              <div className="d-flex justify-content-between align-items-start gap-2">
-                <div className="d-flex flex-column gap-1">
-                  {booking.bookingCode ? <div><strong>Booking Code:</strong> {booking.bookingCode}</div> : null}
-                  <div><strong>Date:</strong> {booking.date}</div>
-                  <div><strong>Time:</strong> {booking.time}</div>
-                  <div><strong>Client:</strong> {booking.clientName}</div>
-                  {booking.clientSocialMediaName ? (
-                    <div><strong>Social:</strong> {booking.clientSocialMediaName}</div>
-                  ) : null}
-                  <div><strong>Contact:</strong> {contactValue}</div>
-                  <div><strong>Service:</strong> {booking.service}</div>
-                  <div className="d-flex align-items-center gap-2 flex-wrap">
-                    <span><strong>Reservation Fee:</strong></span>
-                    <span className={`badge ${paymentStatusLabel === 'Paid' ? 'bg-success' : paymentStatusLabel === 'Partial' ? 'bg-warning text-dark' : 'bg-secondary'}`}>
-                      {paymentStatusLabel === 'Paid' || paymentStatusLabel === 'Partial' ? 'Paid' : 'Unpaid'}
-                    </span>
-                  </div>
-                </div>
-                {onViewClient && (
-                  <button
-                    type="button"
-                    className="btn btn-outline-dark btn-sm"
-                    onClick={onViewClient}
-                    disabled={!booking.customerId}
-                    title="View client profile"
-                    aria-label="View client profile"
-                  >
-                    <i className="bi bi-person-lines-fill"></i>
-                  </button>
+        <div className="space-y-3" style={{ fontSize: '0.92rem' }}>
+          <div className="p-4 border border-gray-200 rounded-2xl bg-gray-50">
+            <div className="flex justify-between items-start gap-4">
+              <div className="flex flex-col gap-2 flex-1">
+                {booking.bookingCode && (
+                  <div><strong>Booking Code:</strong> {booking.bookingCode}</div>
                 )}
-              </div>
-            </div>
-
-
-            {booking.paymentProofUrl && (
-              <div className="mb-2">
-                <label className="form-label fw-semibold mb-1">Payment Proof</label>
-                <div className="mb-1">
-                  <img
-                    src={booking.paymentProofUrl}
-                    alt="Payment proof"
-                    className="img-fluid rounded border"
-                    style={{ maxHeight: '220px', objectFit: 'contain', background: '#f8f9fa' }}
-                  />
+                <div><strong>Date:</strong> {booking.date}</div>
+                <div><strong>Time:</strong> {booking.time}</div>
+                <div><strong>Client:</strong> {booking.clientName}</div>
+                {booking.clientSocialMediaName && (
+                  <div><strong>Social:</strong> {booking.clientSocialMediaName}</div>
+                )}
+                <div><strong>Contact:</strong> {contactValue}</div>
+                <div><strong>Service:</strong> {booking.service}</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span><strong>Reservation Fee:</strong></span>
+                  <Badge
+                    variant={
+                      paymentStatusLabel === 'Paid'
+                        ? 'success'
+                        : paymentStatusLabel === 'Partial'
+                          ? 'warning'
+                          : 'secondary'
+                    }
+                  >
+                    {paymentStatusLabel === 'Paid' || paymentStatusLabel === 'Partial' ? 'Paid' : 'Unpaid'}
+                  </Badge>
                 </div>
-                <a
-                  href={booking.paymentProofUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="small"
+              </div>
+              {onViewClient && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onViewClient}
+                  disabled={!booking.customerId}
+                  title="View client profile"
                 >
-                  Open full image
-                </a>
-              </div>
-            )}
-
-            {booking.notes && (
-              <div className="mb-2">
-                <label className="form-label fw-semibold mb-1">Client Notes</label>
-                <div className="text-muted">{booking.notes}</div>
-              </div>
-            )}
-
-            <div className="mb-2">
-              <label className="form-label fw-semibold mb-1">Admin Notes</label>
-              <textarea
-                className="form-control"
-                rows={3}
-                value={adminNotesDraft}
-                onChange={(e) => onAdminNotesChange?.(e.target.value)}
-                placeholder="Add internal notes..."
-              />
-              <small className="text-muted">Visible to admins only.</small>
-              <div className="mt-2">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-dark"
-                  onClick={onSaveNotes}
-                  disabled={!onSaveNotes}
-                >
-                  Save Notes
-                </button>
-              </div>
+                  <i className="bi bi-person-lines-fill"></i>
+                </Button>
+              )}
             </div>
           </div>
 
-          <div className="modal-footer py-2 px-3">
-            <button type="button" className="btn btn-secondary" onClick={onHide}>
-              Close
-            </button>
+          {booking.paymentProofUrl && (
+            <div>
+              <label className="text-sm font-semibold mb-2 block">Payment Proof</label>
+              <div className="mb-2">
+                <img
+                  src={booking.paymentProofUrl}
+                  alt="Payment proof"
+                  className="w-full rounded-2xl border border-gray-200"
+                  style={{ maxHeight: '220px', objectFit: 'contain', background: '#f8f9fa' }}
+                />
+              </div>
+              <a
+                href={booking.paymentProofUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-gray-600 hover:text-[#212529]"
+              >
+                Open full image
+              </a>
+            </div>
+          )}
 
-            {isPendingPayment ? (
+          {booking.notes && (
+            <div>
+              <label className="text-sm font-semibold mb-2 block">Client Notes</label>
+              <div className="text-gray-600">{booking.notes}</div>
+            </div>
+          )}
+
+          <div>
+            <label className="text-sm font-semibold mb-2 block">Admin Notes</label>
+            <Textarea
+              rows={3}
+              value={adminNotesDraft}
+              onChange={(e) => onAdminNotesChange?.(e.target.value)}
+              placeholder="Add internal notes..."
+              className="mb-2"
+            />
+            <small className="text-gray-500 text-xs">Visible to admins only.</small>
+            <div className="mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onSaveNotes}
+                disabled={!onSaveNotes}
+              >
+                Save Notes
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="flex-wrap gap-2">
+          <Button variant="secondary" onClick={onHide}>
+            Close
+          </Button>
+
+          {isPendingPayment ? (
+            <>
+              <Button
+                variant="default"
+                onClick={onVerifyPaymentProof}
+                disabled={!canVerify || isVerifyingPaymentProof}
+                loading={isVerifyingPaymentProof}
+              >
+                <i className="bi bi-shield-check mr-2"></i>
+                {isVerifyingPaymentProof ? 'Verifying...' : 'Verify Payment Proof'}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={onCancel}
+                disabled={!onCancel}
+              >
+                <i className="bi bi-x-circle mr-2"></i>Cancel
+              </Button>
+            </>
+          ) : (
+            ['CONFIRMED', 'confirmed'].includes(booking.status) && (
               <>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={onVerifyPaymentProof}
-                  disabled={!canVerify || isVerifyingPaymentProof}
+                <Button
+                  variant="outline"
+                  onClick={onCreateInvoice}
+                  disabled={!onCreateInvoice}
                 >
-                  <i className="bi bi-shield-check me-2"></i>
-                  {isVerifyingPaymentProof ? 'Verifying...' : 'Verify Payment Proof'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger"
+                  <i className="bi bi-receipt mr-2"></i>Create Invoice
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={onReschedule}
+                  disabled={!onReschedule}
+                >
+                  <i className="bi bi-calendar-event mr-2"></i>Reschedule
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={onMarkNoShow}
+                  disabled={!onMarkNoShow}
+                >
+                  <i className="bi bi-person-x mr-2"></i>No Show
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={onMarkComplete}
+                  disabled={!onMarkComplete}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <i className="bi bi-check-circle mr-2"></i>Mark Complete
+                </Button>
+                <Button
+                  variant="destructive"
                   onClick={onCancel}
                   disabled={!onCancel}
                 >
-                  <i className="bi bi-x-circle me-2"></i>Cancel
-                </button>
+                  <i className="bi bi-x-circle mr-2"></i>Cancel
+                </Button>
               </>
-            ) : (
-              ['CONFIRMED', 'confirmed'].includes(booking.status) && (
-                <>
-                  <button
-                    type="button"
-                    className="btn btn-outline-dark"
-                    onClick={onCreateInvoice}
-                    disabled={!onCreateInvoice}
-                  >
-                    <i className="bi bi-receipt me-2"></i>Create Invoice
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary"
-                    onClick={onReschedule}
-                    disabled={!onReschedule}
-                  >
-                    <i className="bi bi-calendar-event me-2"></i>Reschedule
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline-dark"
-                    onClick={onMarkNoShow}
-                    disabled={!onMarkNoShow}
-                  >
-                    <i className="bi bi-person-x me-2"></i>No Show
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-success"
-                    onClick={onMarkComplete}
-                    disabled={!onMarkComplete}
-                  >
-                    <i className="bi bi-check-circle me-2"></i>Mark Complete
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={onCancel}
-                    disabled={!onCancel}
-                  >
-                    <i className="bi bi-x-circle me-2"></i>Cancel
-                  </button>
-                </>
-              )
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+            )
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

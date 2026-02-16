@@ -1,0 +1,367 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  --font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  
+  /* Brand Color System - Dark & Gray Theme */
+  --background: #ffffff;
+  --background-gradient: linear-gradient(to bottom, #ffffff, #f8f9fa);
+  --foreground: #212529;
+  --card: #ffffff;
+  --card-foreground: #212529;
+  --card-gradient: linear-gradient(to bottom, #ffffff, #f8f9fa);
+  --popover: #ffffff;
+  --popover-foreground: #212529;
+  --primary: #212529;
+  --primary-gradient: linear-gradient(135deg, #495057 0%, #212529 100%);
+  --primary-foreground: #ffffff;
+  --secondary: #f0f1f3;
+  --secondary-foreground: #212529;
+  --muted: #e8e9ec;
+  --muted-foreground: #6c757d;
+  --accent: #e8e9ec;
+  --accent-foreground: #212529;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #ced4da;
+  --input: transparent;
+  --input-background: #f9fafb;
+  --switch-background: #ced4da;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --font-weight-semibold: 600;
+  --ring: #6c757d;
+  
+  /* Brand Gray Scale */
+  --gray-50: #f8f9fa;
+  --gray-100: #f0f1f3;
+  --gray-200: #dee2e6;
+  --gray-300: #ced4da;
+  --gray-400: #adb5bd;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+  
+  /* Chart colors for data visualization */
+  --chart-1: #495057;
+  --chart-2: #6c757d;
+  --chart-3: #adb5bd;
+  --chart-4: #212529;
+  --chart-5: #343a40;
+  
+  /* Spacing tokens */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 0.75rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Border radius tokens - Matching your rounded design */
+  --radius: 1.5rem; /* 24px for main cards */
+  --radius-sm: 0.75rem; /* 12px */
+  --radius-md: 1rem; /* 16px for buttons and fields */
+  --radius-lg: 1.25rem; /* 20px for slot items */
+  --radius-xl: 1.5rem; /* 24px */
+  --radius-2xl: 2rem; /* 32px */
+  
+  /* Shadow tokens - More prominent, modern shadows */
+  --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.18), 0 8px 20px rgba(0, 0, 0, 0.12);
+  
+  /* Sidebar - Dark theme */
+  --sidebar: #212529;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #495057;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #343a40;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #343a40;
+  --sidebar-ring: #6c757d;
+  
+  /* Gradient definitions */
+  --gradient-primary: linear-gradient(135deg, #495057 0%, #212529 100%);
+  --gradient-secondary: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  --gradient-card: linear-gradient(to bottom, #ffffff, #f8f9fa);
+  --gradient-button-hover: linear-gradient(135deg, #343a40 0%, #212529 100%);
+}
+
+.dark {
+  --background: #1a1a1a;
+  --background-gradient: linear-gradient(to bottom, #1a1a1a, #0f0f0f);
+  --foreground: #ffffff;
+  --card: #212529;
+  --card-foreground: #ffffff;
+  --card-gradient: linear-gradient(to bottom, #212529, #1a1a1a);
+  --popover: #212529;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-gradient: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  --primary-foreground: #212529;
+  --secondary: #343a40;
+  --secondary-foreground: #ffffff;
+  --muted: #495057;
+  --muted-foreground: #adb5bd;
+  --accent: #495057;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #343a40;
+  --input: #343a40;
+  --input-background: #2d3139;
+  --switch-background: #495057;
+  --ring: #6c757d;
+  --chart-1: #6c757d;
+  --chart-2: #adb5bd;
+  --chart-3: #ced4da;
+  --chart-4: #495057;
+  --chart-5: #343a40;
+  --sidebar: #0f0f0f;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #6c757d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #212529;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #343a40;
+  --sidebar-ring: #6c757d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    font-size: var(--font-size);
+    font-family: var(--font-family);
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-family);
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  /**
+   * Typography styles for HTML elements
+   * Using your brand font weights and sizes
+   */
+  h1 {
+    font-size: 2rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
+  h2 {
+    font-size: 1.75rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
+  h4 {
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
+  h5 {
+    font-size: 1.125rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
+  h6 {
+    font-size: 1rem;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
+  label {
+    font-size: var(--font-size);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+    color: var(--foreground);
+  }
+
+  button {
+    font-size: var(--font-size);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+    font-family: var(--font-family);
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: var(--font-size);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+    font-family: var(--font-family);
+  }
+
+  /* Card styling with gradients */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+  }
+
+  .card-header {
+    background: var(--card-gradient);
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  /* Button gradients */
+  .btn-primary,
+  .btn-dark {
+    background: var(--gradient-primary);
+    border: none;
+    color: var(--primary-foreground);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 15px rgba(33, 37, 41, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover,
+  .btn-dark:hover {
+    background: var(--gradient-button-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(33, 37, 41, 0.4);
+  }
+
+  /* Form controls with rounded corners */
+  .form-control,
+  .form-select {
+    border-radius: var(--radius-md);
+    border-color: var(--border);
+    background: var(--input-background);
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--gray-800);
+    box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.2);
+    outline: none;
+  }
+}
+
+@layer utilities {
+  /* Gradient utilities */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .bg-gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+
+  .bg-gradient-card {
+    background: var(--card-gradient);
+  }
+
+  /* Shadow utilities */
+  .shadow-brand-sm {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .shadow-brand-md {
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-brand-lg {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .shadow-brand-xl {
+    box-shadow: var(--shadow-xl);
+  }
+
+  /* Border radius utilities */
+  .rounded-brand {
+    border-radius: var(--radius);
+  }
+
+  .rounded-brand-sm {
+    border-radius: var(--radius-sm);
+  }
+
+  .rounded-brand-md {
+    border-radius: var(--radius-md);
+  }
+
+  .rounded-brand-lg {
+    border-radius: var(--radius-lg);
+  }
+
+  .rounded-brand-xl {
+    border-radius: var(--radius-xl);
+  }
+}

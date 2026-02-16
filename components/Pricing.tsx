@@ -2,17 +2,18 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 // Fallback pricing data
 const defaultPricingPlans = [
   {
-    name: 'Classic Manicure',
+    name: 'Russian Manicure',
     price: '$25',
     addOnPrice: '$10+',
     features: ['Nail shaping', 'Cuticle care', 'Polish application', 'Hand massage'],
   },
   {
-    name: 'Gel Manicure',
+    name: 'Russian Manicure w/ Extensions',
     price: '$40',
     addOnPrice: '$10+',
     features: ['Nail shaping', 'Cuticle care', 'Gel polish', 'Hand massage', 'Lasts 2-3 weeks'],
@@ -44,8 +45,11 @@ const defaultPricingPlans = [
 // Format: https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0
 const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvjSeJtqzg0f4q0D2w4ihCFW6WwStYXpcJMHF7wVfo2iMbrIxuAL4ECPvYCupDsEq-fSuaN_hzI95z/pub?output=csv'; // Add your Google Sheet CSV URL here
 
-export default function Pricing() {
+type PricingProps = { asPage?: boolean };
+
+export default function Pricing({ asPage }: PricingProps) {
   const [pricingPlans, setPricingPlans] = useState(defaultPricingPlans);
+  const HeadingTag = asPage ? 'h1' : 'h2';
 
   useEffect(() => {
     // Function to parse CSV data
@@ -126,19 +130,19 @@ export default function Pricing() {
   }, []);
 
   return (
-    <section id="pricing" className="section-padding bg-gray-50">
+    <section id={asPage ? undefined : 'pricing'} className="section-padding bg-gray-50">
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8"
+        className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6"
       >
-        <div id="pricing" style={{ scrollMarginTop: '180px', height: 0 }} />
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-acollia text-center mb-3 sm:mb-4 px-3 sm:px-4">
+        {!asPage && <div id="pricing" style={{ scrollMarginTop: '180px', height: 0 }} />}
+        <HeadingTag className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-acollia text-center mb-3 sm:mb-4 px-2 sm:px-3">
           Pricing
-        </h2>
-        <p className="text-center text-gray-600 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-3 sm:px-4 text-sm sm:text-base">
+        </HeadingTag>
+        <p className="text-center text-gray-600 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-2 sm:px-3 text-sm sm:text-base">
           Transparent pricing for all our services
         </p>
 
@@ -182,12 +186,12 @@ export default function Pricing() {
                 <p className="mb-0 text-black text-center leading-tight sm:leading-snug">• All nail services come with 5 days warranty.</p>
                 <p className="text-[10px] sm:text-xs text-red-600 text-center leading-tight sm:leading-snug">• P500 advance deposit upon booking is required to secure the slot; non-refundable, but deductible from the total payment.</p>
               </div>
-              <a
+              <Link
                 href="/booking"
                 className="block w-full text-center px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 bg-black text-white font-medium border-2 border-white shadow-[0_0_0_2px_#000000] hover:bg-white hover:text-black hover:border hover:border-black hover:shadow-[0_0_0_2px_#ffffff,0_0_0_3px_#000000] transition-all duration-300 mt-auto text-xs sm:text-sm md:text-base whitespace-nowrap"
               >
                 Book Now
-              </a>
+              </Link>
             </motion.div>
           ))}
         </div>

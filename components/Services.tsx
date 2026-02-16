@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const services = [
   {
@@ -30,7 +31,7 @@ const services = [
     image: '/images/service-4.jpg',
   },
   {
-    title: 'Pedicure',
+    title: 'Russian Pedicure',
     description:
       'Indulge in a Russian-style pedicure with precise cuticle care and a long-lasting gel overlay for smooth, glossy toes. This service not only beautifies your nails but also maintains foot hygiene. Optional custom shades and nail art are available for a personalized finish.',
     image: '/images/service-5.jpg',
@@ -53,15 +54,15 @@ export default function Services() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-0"
+        className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-0"
       >
         <div id="services" style={{ scrollMarginTop: '180px', height: 0 }} />
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-4 sm:mb-5 font-acollia px-3 sm:px-4">Our Services</h2>
-        <p className="text-center text-gray-600 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-3 sm:px-4 text-sm sm:text-base">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-4 sm:mb-5 font-acollia px-2 sm:px-3">Our Services</h2>
+        <p className="text-center text-gray-600 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-2 sm:px-3 text-sm sm:text-base">
           Professional nail care services tailored to your needs
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-3 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-2 sm:px-4">
           {services.map((service, index) => (
             <motion.div
               key={service.title}
@@ -86,6 +87,14 @@ export default function Services() {
               </div>
               <h3 className="text-lg sm:text-xl md:text-2xl font-heading font-semibold mb-2">{service.title}</h3>
               <p className="text-gray-600 text-xs sm:text-sm md:text-base text-justify leading-relaxed">{service.description}</p>
+              {index === 0 && (
+                <Link
+                  href="/russian-manicure"
+                  className="inline-block mt-2 text-sm font-medium text-black hover:underline"
+                >
+                  Russian manicure in Manila — learn more →
+                </Link>
+              )}
             </motion.div>
           ))}
         </div>

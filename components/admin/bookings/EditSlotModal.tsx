@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Trash2, CheckCircle2 } from 'lucide-react';
 import { BookingStatus } from '../StatusBadge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/Button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
+import { Label } from '@/components/ui/Label';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 
 export type SlotType = 'regular' | 'with_squeeze_fee';
-
-interface NailTech {
-  id: string;
-  name: string;
-  role?: string;
-}
 
 interface EditSlotModalProps {
   show: boolean;
@@ -59,7 +66,7 @@ export default function EditSlotModal({
     }
   }, [slot, show]);
 
-  if (!show || !slot) return null;
+  if (!slot) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,178 +103,130 @@ export default function EditSlotModal({
   };
 
   return (
-    <div 
-      className="modal d-block"
-      style={{
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 1000,
-        display: show ? 'flex' : 'none',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      onClick={onHide}
-    >
-      <div 
-        className="modal-dialog modal-dialog-centered" 
-        style={{ 
-          margin: '0 auto', 
-          position: 'relative',
-          maxWidth: '500px',
-          width: '100%'
-        }} 
-        role="document"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-content" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
-          <div className="modal-header" style={{ padding: '0.75rem 1rem' }}>
-            <h5 className="modal-title" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
-              Edit Slot: {slot.time} on {slot.date}
-            </h5>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={onHide}
-              aria-label="Close"
-              disabled={isLoading || isDeleting}
-              style={{ padding: '0.5rem' }}
-            ></button>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body" style={{ padding: '1rem', maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
-              <div className="row g-2 g-md-3">
-                {/* Nail Tech Info */}
-                <div className="col-12">
-                  <label className="form-label fw-semibold" style={{ fontSize: '0.875rem' }}>
-                    Nail Technician
-                  </label>
-                  <div className="form-control" style={{ backgroundColor: '#f8f9fa' }}>
-                    {slot.nailTechName || 'Unknown'}
-                  </div>
-                  <small className="text-muted d-block mt-1" style={{ fontSize: '0.75rem' }}>
-                    Cannot be changed for existing slots
-                  </small>
-                </div>
+    <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit Slot: {slot.time} on {slot.date}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-3">
+            {/* Nail Tech Info */}
+            <div className="space-y-1.5">
+              <Label>Nail Technician</Label>
+              <div className="px-4 py-2 bg-gray-100 rounded-2xl text-sm">
+                {slot.nailTechName || 'Unknown'}
+              </div>
+              <small className="text-gray-500 text-xs block">
+                Cannot be changed for existing slots
+              </small>
+            </div>
 
-                {/* Slot Type */}
-                <div className="col-12">
-                  <label htmlFor="slotType" className="form-label fw-semibold" style={{ fontSize: '0.875rem' }}>
-                    Slot Type
-                  </label>
-                  <select
-                    id="slotType"
-                    className="form-select"
-                    value={slotType}
-                    onChange={(e) => setSlotType(e.target.value as SlotType)}
-                    disabled={isLoading}
-                  >
-                    <option value="regular">Regular</option>
-                    <option value="with_squeeze_fee">With Squeeze Fee (₱500)</option>
-                  </select>
-                </div>
+            {/* Slot Type */}
+            <div className="space-y-1.5">
+              <Label htmlFor="slotType">Slot Type</Label>
+              <Select
+                value={slotType}
+                onValueChange={(value) => setSlotType(value as SlotType)}
+                disabled={isLoading}
+              >
+                <SelectTrigger id="slotType">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="regular">Regular</SelectItem>
+                  <SelectItem value="with_squeeze_fee">With Squeeze Fee (₱500)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-                {/* Notes */}
-                <div className="col-12">
-                  <label htmlFor="notes" className="form-label fw-semibold" style={{ fontSize: '0.875rem' }}>
-                    Notes (Optional)
-                  </label>
-                  <textarea
-                    id="notes"
-                    className="form-control"
-                    rows={3}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Add any notes for this slot..."
-                    disabled={isLoading}
-                  />
-                </div>
+            {/* Notes */}
+            <div className="space-y-1.5">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any notes for this slot..."
+                disabled={isLoading}
+              />
+            </div>
 
-                {/* Hidden from Clients */}
-                <div className="col-12">
-                  <div className="form-check">
-                    <input
-                      id="isHidden"
-                      type="checkbox"
-                      className="form-check-input"
-                      checked={isHidden}
-                      onChange={(e) => setIsHidden(e.target.checked)}
-                      disabled={isLoading}
-                    />
-                    <label htmlFor="isHidden" className="form-check-label" style={{ fontSize: '0.875rem' }}>
-                      Hide from clients during booking
-                    </label>
-                  </div>
-                  <small className="text-muted d-block mt-1" style={{ fontSize: '0.75rem' }}>
-                    Hidden slots won't appear in the public booking calendar
-                  </small>
-                </div>
-
-                {/* Error Message */}
-                {(error || externalError) && (
-                  <div className="col-12">
-                    <div className="alert alert-dark mb-0" style={{ fontSize: '0.875rem', backgroundColor: '#f3f4f6', color: '#111827', borderColor: '#d1d5db' }}>
-                      <AlertCircle className="me-2" style={{ display: 'inline', width: '16px', height: '16px' }} />
-                      {error || externalError}
-                    </div>
-                  </div>
-                )}
+            {/* Hidden from Clients */}
+            <div className="flex items-start space-x-3 space-y-0">
+              <Checkbox
+                id="isHidden"
+                checked={isHidden}
+                onCheckedChange={(checked) => setIsHidden(checked === true)}
+                disabled={isLoading}
+              />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="isHidden" className="cursor-pointer">
+                  Hide from clients during booking
+                </Label>
+                <small className="text-gray-500 text-xs block">
+                  Hidden slots won't appear in the public booking calendar
+                </small>
               </div>
             </div>
-            <div className="modal-footer" style={{ padding: '0.75rem 1rem', borderTop: '1px solid #dee2e6' }}>
-              <button
-                type="button"
-                className="btn btn-outline-dark btn-sm"
-                onClick={handleDelete}
-                disabled={isLoading || isDeleting}
-                style={{ fontSize: '0.875rem', marginRight: 'auto' }}
-              >
-                {isDeleting ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="me-2" style={{ display: 'inline', width: '16px', height: '16px' }} />
-                    Delete
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={onHide}
-                disabled={isLoading || isDeleting}
-                style={{ fontSize: '0.875rem' }}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-dark btn-sm"
-                disabled={isLoading || isDeleting}
-                style={{ fontSize: '0.875rem' }}
-              >
-                {isLoading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="me-2" style={{ display: 'inline', width: '16px', height: '16px' }} />
-                    Save Changes
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+
+            {/* Error Message */}
+            {(error || externalError) && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error || externalError}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+          <DialogFooter className="flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDelete}
+              disabled={isLoading || isDeleting}
+              className="mr-auto"
+            >
+              {isDeleting ? (
+                <>
+                  <span className="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={onHide}
+              disabled={isLoading || isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="default"
+              size="sm"
+              disabled={isLoading || isDeleting}
+              loading={isLoading}
+            >
+              {isLoading ? (
+                'Saving...'
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,61 +1,40 @@
-import React from 'react';
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
-export type BadgeVariant = 
-  | 'default' 
-  | 'available'
-  | 'booked'
-  | 'disabled'
-  | 'pending' 
-  | 'confirmed' 
-  | 'completed' 
-  | 'cancelled' 
-  | 'no-show'
-  | 'shipped'
-  | 'in-progress'
-  | 'vip'
-  | 'regular'
-  | 'primary'
-  | 'secondary'
-  | 'success'
-  | 'danger'
-  | 'warning'
-  | 'info';
+import { cn } from "./Utils";
 
-interface BadgeProps {
-  children: React.ReactNode;
-  variant?: BadgeVariant;
-  className?: string;
-}
+const badgeVariants = cva(
+  "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-xs font-medium min-h-[24px] box-border transition-colors focus:outline-none focus:ring-2 focus:ring-[#212529] focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-gradient-to-br from-[#495057] to-[#212529] text-white",
+        secondary:
+          "border-transparent bg-gray-100 text-[#212529]",
+        destructive:
+          "border-transparent bg-red-100 text-red-800",
+        outline: "text-[#212529] border-gray-300",
+        success: "border-transparent bg-green-100 text-green-800",
+        warning: "border-transparent bg-yellow-100 text-yellow-800",
+        info: "border-transparent bg-blue-100 text-blue-800",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+);
 
-const variantStyles: Record<BadgeVariant, string> = {
-  default: 'bg-gray-100 text-gray-800',
-  available: 'bg-green-100 text-green-800',
-  booked: 'bg-gray-900 text-white',
-  disabled: 'bg-gray-200 text-gray-700',
-  pending: 'bg-yellow-100 text-yellow-800',
-  confirmed: 'bg-black text-white',
-  completed: 'bg-blue-100 text-blue-800',
-  cancelled: 'bg-red-100 text-red-800',
-  'no-show': 'bg-gray-100 text-gray-600',
-  shipped: 'bg-gray-900 text-white',
-  'in-progress': 'bg-gray-200 text-gray-700',
-  vip: 'bg-gray-900 text-white',
-  regular: 'bg-gray-200 text-gray-700',
-  primary: 'bg-blue-100 text-blue-800',
-  secondary: 'bg-gray-100 text-gray-800',
-  success: 'bg-green-100 text-green-800',
-  danger: 'bg-red-100 text-red-800',
-  warning: 'bg-yellow-100 text-yellow-800',
-  info: 'bg-blue-100 text-blue-800',
-};
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {}
 
-export function Badge({ children, variant = 'default', className = '' }: BadgeProps) {
-  const baseStyles = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
-  const variantStyle = variantStyles[variant];
-  
+function Badge({ className, variant, ...props }: BadgeProps) {
   return (
-    <span className={`${baseStyles} ${variantStyle} ${className}`}>
-      {children}
-    </span>
+    <div className={cn(badgeVariants({ variant }), className)} {...props} />
   );
 }
+
+export { Badge, badgeVariants };
+export type BadgeVariant = VariantProps<typeof badgeVariants>['variant'];

@@ -1,15 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import CalendarPanel from '@/components/admin/bookings/CalendarPanel';
-import SlotList from '@/components/admin/bookings/SlotList';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
 import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
-import AddSlotModal from '@/components/admin/bookings/AddSlotModal';
-import EditSlotModal from '@/components/admin/bookings/EditSlotModal';
-import DeleteConfirmationModal from '@/components/admin/DeleteConfirmationModal';
-import NailTechFilter from '@/components/admin/bookings/NailTechFilter';
-import NailTechBadge from '@/components/admin/NailTechBadge';
 import DataTable from '@/components/admin/DataTable';
 import FilterBar from '@/components/admin/FilterBar';
 import Pagination from '@/components/admin/Pagination';
@@ -17,48 +10,11 @@ import StatusBadge from '@/components/admin/StatusBadge';
 import ActionDropdown from '@/components/admin/ActionDropdown';
 import { BookingStatus } from '@/components/admin/StatusBadge';
 import { useUserRole } from '@/lib/hooks/useUserRole';
-import { format } from 'date-fns';
 
-function getTechIdFromQuery(): string | null {
-  if (typeof window === 'undefined') return null;
-  const params = new URLSearchParams(window.location.search);
-  return params.get('techId');
-}
 function cleanCurrencyValue(value: string | number): number {
   if (typeof value === 'number') return value;
   const cleaned = String(value).replace(/[^0-9.\\-]/g, '').trim();
   return parseFloat(cleaned) || 0;
-}
-
-interface Slot {
-  id: string;
-  date?: string;
-  time: string;
-  status: BookingStatus;
-  type?: 'regular' | 'with_squeeze_fee';
-  nailTechId?: string;
-  nailTechName?: string;
-  clientName?: string;
-  clientEmail?: string;
-  clientPhone?: string;
-  clientSocialMediaName?: string;
-  service?: string;
-  isHidden?: boolean;
-  booking?: {
-    id: string;
-    bookingCode: string;
-    customerId?: string;
-    customerName?: string;
-    customerEmail?: string;
-    customerPhone?: string;
-    customerSocialMediaName?: string;
-    slotIds?: string[];
-    service?: { type?: string };
-    status: string;
-    paymentStatus?: string;
-    pricing?: { total?: number; depositRequired?: number };
-    payment?: { paymentProofUrl?: string };
-  } | null;
 }
 
 interface Booking {
@@ -80,12 +36,7 @@ interface Booking {
 
 export default function BookingsPage() {
   const userRole = useUserRole();
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
-  const [showAddSlotModal, setShowAddSlotModal] = useState(false);
-  const [selectedNailTechId, setSelectedNailTechId] = useState<string>(
-    userRole.assignedNailTechId || 'all'
-  );
   const [selectedBooking, setSelectedBooking] = useState<{
     id?: string;
     bookingCode?: string;
@@ -214,74 +165,7 @@ export default function BookingsPage() {
     }]);
   }, [showInvoiceModal, selectedBooking?.service, invoiceItems, getUnitPriceForService]);
 
-  // State for slots
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [slotsLoading, setSlotsLoading] = useState(false);
-  const [slotsError, setSlotsError] = useState<string | null>(null);
 
-  // State for monthly slots (for calendar display)
-  const [monthlySlots, setMonthlySlots] = useState<Slot[]>([]);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-
-  // State for add slot operation
-  const [addingSlots, setAddingSlots] = useState(false);
-  const [addSlotsError, setAddSlotsError] = useState<string | null>(null);
-
-  // State for editing slots
-  const [showEditSlotModal, setShowEditSlotModal] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
-  const [editingSlot, setEditingSlot] = useState(false);
-  const [editSlotError, setEditSlotError] = useState<string | null>(null);
-
-  // State for delete confirmation
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [slotToDelete, setSlotToDelete] = useState<Slot | null>(null);
-  const [isDeletingSlot, setIsDeletingSlot] = useState(false);
-
-  const mapSlotStatus = useCallback((slot: any): BookingStatus => {
-    if (slot.booking?.status === 'pending') return 'PENDING_PAYMENT';
-    if (slot.booking?.status === 'confirmed') return 'CONFIRMED';
-    if (slot.booking?.status === 'cancelled') return 'CANCELLED';
-    if (slot.booking?.status === 'no_show') return 'NO_SHOW';
-    if (slot.status === 'blocked') return 'blocked';
-    if (slot.status === 'available') return 'available';
-    if (slot.status === 'confirmed') return 'CONFIRMED';
-    if (slot.status === 'pending') return 'pending';
-    return 'booked';
-  }, []);
-
-  const mapApiSlotToViewSlot = useCallback((slot: any): Slot => ({
-    id: slot.id || slot._id,
-    date: slot.date,
-    time: slot.time,
-    status: mapSlotStatus(slot),
-    type: slot.slotType,
-    nailTechId: slot.nailTechId,
-    nailTechName: nailTechs.find(t => t.id === slot.nailTechId)?.name,
-    clientName: slot.booking?.customerName,
-    clientEmail: slot.booking?.customerEmail,
-    clientPhone: slot.booking?.customerPhone,
-    clientSocialMediaName: slot.booking?.customerSocialMediaName,
-    service: slot.booking?.service?.type,
-    isHidden: slot.isHidden || false,
-    booking: slot.booking
-      ? {
-          id: slot.booking.id,
-          bookingCode: slot.booking.bookingCode,
-          customerId: slot.booking.customerId,
-          customerName: slot.booking.customerName,
-          customerEmail: slot.booking.customerEmail,
-          customerPhone: slot.booking.customerPhone,
-          customerSocialMediaName: slot.booking.customerSocialMediaName,
-          slotIds: slot.booking.slotIds,
-          service: slot.booking.service,
-          status: slot.booking.status,
-          paymentStatus: slot.booking.paymentStatus,
-          pricing: slot.booking.pricing,
-          payment: slot.booking.payment,
-        }
-      : null,
-  }), [mapSlotStatus, nailTechs]);
 
   // Fetch nail techs on mount
   useEffect(() => {
@@ -306,267 +190,7 @@ export default function BookingsPage() {
     fetchNailTechs();
   }, []);
 
-  useEffect(() => {
-    const techId = getTechIdFromQuery();
-    if (techId && techId !== selectedNailTechId) {
-      setSelectedNailTechId(techId);
-    }
-  }, [selectedNailTechId]);
 
-  // Fetch slots when date or nail tech changes
-  useEffect(() => {
-    async function fetchSlots() {
-      try {
-        setSlotsLoading(true);
-        setSlotsError(null);
-        
-        const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        const params = new URLSearchParams({ date: dateStr });
-        
-        if (selectedNailTechId && selectedNailTechId !== 'all') {
-          params.append('nailTechId', selectedNailTechId);
-        }
-        
-        const response = await fetch(`/api/slots?${params}`);
-        if (!response.ok) throw new Error('Failed to fetch slots');
-        
-        const data = await response.json();
-        setSlots(data.slots.map(mapApiSlotToViewSlot));
-      } catch (error: any) {
-        console.error('Error fetching slots:', error);
-        setSlotsError(error.message);
-      } finally {
-        setSlotsLoading(false);
-      }
-    }
-
-    if (!nailTechsLoading) {
-      fetchSlots();
-    }
-  }, [selectedDate, selectedNailTechId, nailTechsLoading, nailTechs, mapApiSlotToViewSlot]);
-
-  // Fetch monthly slots for calendar display
-  useEffect(() => {
-    async function fetchMonthlySlots() {
-      try {
-        const year = currentMonth.getFullYear();
-        const month = currentMonth.getMonth();
-        const startDate = format(new Date(year, month, 1), 'yyyy-MM-dd');
-        const endDate = format(new Date(year, month + 1, 0), 'yyyy-MM-dd');
-        
-        const params = new URLSearchParams({ startDate, endDate });
-        
-        if (selectedNailTechId && selectedNailTechId !== 'all') {
-          params.append('nailTechId', selectedNailTechId);
-        }
-        
-        const response = await fetch(`/api/slots?${params}`);
-        if (!response.ok) throw new Error('Failed to fetch monthly slots');
-        
-        const data = await response.json();
-        setMonthlySlots(data.slots.map((slot: any) => ({
-          ...mapApiSlotToViewSlot(slot),
-          nailTechName: undefined,
-          clientName: undefined,
-          service: undefined,
-          booking: null,
-        })));
-      } catch (error: any) {
-        console.error('Error fetching monthly slots:', error);
-      }
-    }
-
-    if (!nailTechsLoading) {
-      fetchMonthlySlots();
-    }
-  }, [currentMonth, selectedNailTechId, nailTechsLoading, mapApiSlotToViewSlot]);
-
-  const handleAddSlot = async (slotsData: Array<{
-    date: string;
-    time: string;
-    status: BookingStatus;
-    type: 'regular' | 'with_squeeze_fee';
-    nailTechId: string;
-    notes?: string;
-  }>) => {
-    try {
-      setAddingSlots(true);
-      setAddSlotsError(null);
-
-      // Extract unique dates and times
-      const dates = [...new Set(slotsData.map(s => s.date))];
-      const times = [...new Set(slotsData.map(s => s.time))];
-      const nailTechId = slotsData[0].nailTechId;
-      const status = slotsData[0].status;
-      const slotType = slotsData[0].type;
-      const notes = slotsData[0].notes;
-
-      const response = await fetch('/api/slots', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dates,
-          times,
-          nailTechId,
-          status,
-          slotType,
-          notes,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create slots');
-      }
-
-      const data = await response.json();
-      
-      // Refresh slots for the current date
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      if (dates.includes(dateStr)) {
-        // Re-fetch slots
-        const params = new URLSearchParams({ date: dateStr });
-        if (selectedNailTechId && selectedNailTechId !== 'all') {
-          params.append('nailTechId', selectedNailTechId);
-        }
-        
-        const refreshResponse = await fetch(`/api/slots?${params}`);
-        if (refreshResponse.ok) {
-          const refreshData = await refreshResponse.json();
-          setSlots(refreshData.slots.map(mapApiSlotToViewSlot));
-        }
-      }
-
-      // Refresh monthly slots for calendar
-      const year = currentMonth.getFullYear();
-      const month = currentMonth.getMonth();
-      const startDate = format(new Date(year, month, 1), 'yyyy-MM-dd');
-      const endDate = format(new Date(year, month + 1, 0), 'yyyy-MM-dd');
-      
-      const monthParams = new URLSearchParams({ startDate, endDate });
-      if (selectedNailTechId && selectedNailTechId !== 'all') {
-        monthParams.append('nailTechId', selectedNailTechId);
-      }
-      
-      const monthResponse = await fetch(`/api/slots?${monthParams}`);
-      if (monthResponse.ok) {
-        const monthData = await monthResponse.json();
-        setMonthlySlots(monthData.slots.map((slot: any) => ({
-          ...mapApiSlotToViewSlot(slot),
-          nailTechName: undefined,
-          clientName: undefined,
-          service: undefined,
-          booking: null,
-        })));
-      }
-
-      setShowAddSlotModal(false);
-    } catch (error: any) {
-      console.error('Error creating slots:', error);
-      setAddSlotsError(error.message);
-    } finally {
-      setAddingSlots(false);
-    }
-  };
-
-  const handleEditSlot = async (slotId: string, updates: {
-    status?: BookingStatus;
-    slotType?: 'regular' | 'with_squeeze_fee';
-    notes?: string;
-    isHidden?: boolean;
-  }) => {
-    try {
-      setEditingSlot(true);
-      setEditSlotError(null);
-
-      const response = await fetch(`/api/slots/${slotId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update slot');
-      }
-
-      // Refresh slots for the current date
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const params = new URLSearchParams({ date: dateStr });
-      if (selectedNailTechId && selectedNailTechId !== 'all') {
-        params.append('nailTechId', selectedNailTechId);
-      }
-      
-      const refreshResponse = await fetch(`/api/slots?${params}`);
-      if (refreshResponse.ok) {
-        const refreshData = await refreshResponse.json();
-        setSlots(refreshData.slots.map(mapApiSlotToViewSlot));
-      }
-
-      setShowEditSlotModal(false);
-      setSelectedSlot(null);
-    } catch (error: any) {
-      console.error('Error updating slot:', error);
-      setEditSlotError(error.message);
-    } finally {
-      setEditingSlot(false);
-    }
-  };
-
-  const handleDeleteSlot = (slot: Slot) => {
-    setSlotToDelete(slot);
-    setShowDeleteConfirmation(true);
-    setEditSlotError(null);
-  };
-
-  const refreshSelectedDateSlots = useCallback(async () => {
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    const params = new URLSearchParams({ date: dateStr });
-    if (selectedNailTechId && selectedNailTechId !== 'all') {
-      params.append('nailTechId', selectedNailTechId);
-    }
-
-    const refreshResponse = await fetch(`/api/slots?${params}`);
-    if (refreshResponse.ok) {
-      const refreshData = await refreshResponse.json();
-      setSlots(refreshData.slots.map(mapApiSlotToViewSlot));
-    }
-  }, [selectedDate, selectedNailTechId, mapApiSlotToViewSlot]);
-
-  const handleConfirmDelete = async () => {
-    if (!slotToDelete) return;
-
-    try {
-      setIsDeletingSlot(true);
-
-      const response = await fetch(`/api/slots/${slotToDelete.id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!response.ok) {
-        let error: any;
-        try {
-          error = await response.json();
-        } catch (e) {
-          error = { error: `HTTP ${response.status}` };
-        }
-        throw new Error(error.error || 'Failed to delete slot');
-      }
-
-      await refreshSelectedDateSlots();
-
-      setShowDeleteConfirmation(false);
-      setSlotToDelete(null);
-      setShowEditSlotModal(false);
-      setSelectedSlot(null);
-    } catch (error: any) {
-      console.error('Error deleting slot:', error);
-      setEditSlotError(error.message);
-    } finally {
-      setIsDeletingSlot(false);
-    }
-  };
 
   useEffect(() => {
     async function fetchBookings() {
@@ -619,39 +243,6 @@ export default function BookingsPage() {
     fetchBookings();
   }, [statusFilter, dateFrom, dateTo]);
 
-  const handleSlotClick = (slot: Slot) => {
-    if (slot.booking?.id && slot.clientName) {
-      setSelectedBooking({
-        id: slot.booking.id,
-        bookingCode: slot.booking.bookingCode,
-        customerId: slot.booking.customerId,
-        date: selectedDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
-        time: slot.time,
-        clientName: slot.clientName,
-        clientEmail: slot.booking?.customerEmail,
-        clientPhone: slot.booking?.customerPhone,
-        clientSocialMediaName: slot.booking?.customerSocialMediaName,
-        service: slot.service || 'Nail Service',
-        status: slot.status,
-        nailTechId: slot.nailTechId,
-        slotType: slot.type,
-        notes: slot.booking?.clientNotes || undefined,
-        paymentStatus: slot.booking.paymentStatus,
-        slotCount: (slot.booking.slotIds || []).length || 1,
-        reservationAmount: (((slot.booking.slotIds || []).length || 1) * 500),
-        paidAmount: slot.booking.pricing?.paidAmount ?? 0,
-        depositRequired: slot.booking.pricing?.depositRequired,
-        paymentProofUrl: slot.booking.payment?.paymentProofUrl,
-        adminNotes: slot.booking?.adminNotes || '',
-      });
-      setAdminNotesDraft(slot.booking?.adminNotes || '');
-      setShowModal(true);
-    }
-  };
 
   const handleViewClientProfile = () => {
     if (!selectedBooking?.customerId) return;
@@ -699,7 +290,40 @@ export default function BookingsPage() {
 
       setShowModal(false);
       setSelectedBooking(null);
-      await refreshSelectedDateSlots();
+      
+      // Refresh bookings list
+      const params = new URLSearchParams();
+      if (statusFilter && statusFilter !== 'all') {
+        params.set('status', statusFilter as any);
+      }
+      if (dateFrom) params.set('startDate', dateFrom);
+      if (dateTo) params.set('endDate', dateTo);
+
+      const refreshResponse = await fetch(`/api/bookings?${params.toString()}`);
+      if (refreshResponse.ok) {
+        const data = await refreshResponse.json();
+        const rows: Booking[] = (data.bookings || []).map((booking: any) => {
+          const apptDate = booking.appointmentDate || booking.createdAt || '';
+          const apptTime = booking.appointmentTime || '';
+          return {
+            id: booking.id,
+            bookingCode: booking.bookingCode,
+            customerId: booking.customerId,
+            nailTechId: booking.nailTechId,
+            date: apptDate,
+            time: apptTime,
+            clientName: booking.customerName || 'Unknown Client',
+            socialName: booking.customerSocialMediaName || '',
+            service: booking.service?.type || 'Nail Service',
+            status: booking.status || 'booked',
+            amount: booking.pricing?.total || 0,
+            amountPaid: booking.pricing?.paidAmount || 0,
+            clientNotes: booking.clientNotes || '',
+            adminNotes: booking.adminNotes || '',
+          };
+        });
+        setBookings(rows);
+      }
     } catch (error: any) {
       console.error(`Error performing booking action (${action}):`, error);
       alert(error.message || 'Failed to update booking');
@@ -750,7 +374,7 @@ export default function BookingsPage() {
           : prev
       );
 
-      await refreshSelectedDateSlots();
+      // Refresh bookings will happen via useEffect
     } catch (error: any) {
       console.error('Error verifying payment proof:', error);
       alert(error.message || 'Failed to verify payment proof');
@@ -777,7 +401,7 @@ export default function BookingsPage() {
       setSelectedBooking((prev) =>
         prev ? { ...prev, adminNotes: adminNotesDraft } : prev
       );
-      await refreshSelectedDateSlots();
+      // Refresh bookings will happen via useEffect
     } catch (error: any) {
       console.error('Error saving notes:', error);
       alert(error.message || 'Failed to save notes');
@@ -996,103 +620,8 @@ export default function BookingsPage() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
-          Bookings & Slots
+          Bookings
         </h4>
-        <div className="d-flex gap-2 flex-wrap">
-          {userRole.canManageAllTechs && !nailTechsLoading && (
-            <NailTechFilter
-              nailTechs={nailTechs}
-              selectedTechId={selectedNailTechId}
-              onTechChange={setSelectedNailTechId}
-              className="d-none d-md-block"
-            />
-          )}
-          <button
-            className="btn btn-dark"
-            onClick={() => {
-              setAddSlotsError(null);
-              setShowAddSlotModal(true);
-            }}
-            disabled={nailTechsLoading}
-          >
-            <i className="bi bi-plus-circle me-2"></i>Add Slot
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Nail Tech Filter */}
-      {userRole.canManageAllTechs && !nailTechsLoading && (
-        <div className="mb-3 d-md-none">
-          <NailTechFilter
-            nailTechs={nailTechs}
-            selectedTechId={selectedNailTechId}
-            onTechChange={setSelectedNailTechId}
-          />
-        </div>
-      )}
-
-      {/* Error Message */}
-      {slotsError && (
-        <div className="alert alert-danger alert-dismissible fade show" role="alert">
-          <i className="bi bi-exclamation-triangle me-2"></i>
-          {slotsError}
-          <button type="button" className="btn-close" onClick={() => setSlotsError(null)}></button>
-        </div>
-      )}
-
-      {/* Calendar Panel */}
-      <div className="row">
-        <div className="col-12 col-lg-5" style={{ minWidth: 0 }}>
-          <CalendarPanel
-            selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
-            currentMonth={currentMonth}
-            onMonthChange={setCurrentMonth}
-            slots={monthlySlots}
-          />
-        </div>
-
-        {/* Slot List */}
-        <div className="col-12 col-lg-7">
-          {slotsLoading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-dark" role="status">
-                <span className="visually-hidden">Loading slots...</span>
-              </div>
-              <p className="mt-2 text-muted">Loading slots...</p>
-            </div>
-          ) : (
-            <SlotList
-              date={selectedDate}
-              slots={slots.map((slot) => ({
-                ...slot,
-                slotType: slot.type,
-                nailTechRole: nailTechs.find((t) => t.id === slot.nailTechId)?.role,
-              }))}
-              onSlotClick={handleSlotClick}
-              onView={(slot) => handleSlotClick(slot)}
-              onEdit={(slot) => {
-                setSelectedSlot(slot);
-                setShowEditSlotModal(true);
-                setEditSlotError(null);
-              }}
-              onCancel={(slot) => {
-                const bookingStatus = slot.booking?.status;
-                if (slot.booking?.id && (bookingStatus === 'pending' || bookingStatus === 'confirmed')) {
-                  handleSlotClick(slot);
-                  return;
-                }
-
-                if (slot.status !== 'available') {
-                  setEditSlotError('Only available slots can be deleted. Use booking actions for active bookings.');
-                  return;
-                }
-
-                handleDeleteSlot(slot);
-              }}
-            />
-          )}
-        </div>
       </div>
 
       {/* Bookings Table */}
@@ -1210,119 +739,6 @@ export default function BookingsPage() {
         onInvoiceNotesChange={setInvoiceNotes}
         onAddFromPricing={handleAddInvoiceItemFromPricing}
         onSave={handleSaveInvoice}
-      />
-      {/* Add Slot Modal */}
-      {showAddSlotModal && (
-        <>
-          <AddSlotModal
-            show={showAddSlotModal}
-            onHide={() => {
-              if (!addingSlots) {
-                setShowAddSlotModal(false);
-                setAddSlotsError(null);
-              }
-            }}
-            onAdd={handleAddSlot}
-            selectedDate={selectedDate}
-            nailTechs={userRole.canManageAllTechs ? nailTechs : nailTechs.filter((t) => t.id === userRole.assignedNailTechId)}
-            defaultNailTechId={userRole.assignedNailTechId}
-            existingSlots={slots.map((slot) => ({
-              date: slot.date,
-              time: slot.time,
-              nailTechId: slot.nailTechId,
-            }))}
-          />
-          {addingSlots && (
-            <div 
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                zIndex: 2000,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <div className="text-center text-white">
-                <div className="spinner-border" role="status" style={{ width: '3rem', height: '3rem' }}>
-                  <span className="visually-hidden">Creating slots...</span>
-                </div>
-                <p className="mt-3 fs-5">Creating slots...</p>
-              </div>
-            </div>
-          )}
-          {addSlotsError && (
-            <div 
-              className="position-fixed top-0 start-50 translate-middle-x mt-3"
-              style={{ zIndex: 2001 }}
-            >
-              <div className="alert alert-danger alert-dismissible fade show shadow-lg" role="alert">
-                <i className="bi bi-exclamation-triangle me-2"></i>
-                {addSlotsError}
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={() => setAddSlotsError(null)}
-                ></button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Edit Slot Modal */}
-      <EditSlotModal
-        show={showEditSlotModal}
-        onHide={() => {
-          if (!editingSlot) {
-            setShowEditSlotModal(false);
-            setSelectedSlot(null);
-            setEditSlotError(null);
-          }
-        }}
-        onUpdate={handleEditSlot}
-        onDelete={async () => {
-          if (!selectedSlot) return;
-          if (selectedSlot.status !== 'available') {
-            setEditSlotError('Only available slots can be deleted. Use booking actions for active bookings.');
-            return;
-          }
-          handleDeleteSlot(selectedSlot);
-        }}
-        slot={selectedSlot ? {
-          id: selectedSlot.id,
-          date: selectedSlot.date || format(selectedDate, 'yyyy-MM-dd'),
-          time: selectedSlot.time,
-          status: selectedSlot.status,
-          type: selectedSlot.type as 'regular' | 'with_squeeze_fee',
-          nailTechId: selectedSlot.nailTechId,
-          nailTechName: selectedSlot.nailTechName,
-          notes: undefined,
-          isHidden: selectedSlot.isHidden,
-        } : undefined}
-        isLoading={editingSlot}
-        error={editSlotError}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        show={showDeleteConfirmation}
-        title="Delete Slot"
-        message="Are you sure you want to delete this slot?"
-        slotDate={slotToDelete?.date}
-        slotTime={slotToDelete?.time}
-        nailTechName={slotToDelete?.nailTechName}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => {
-          setShowDeleteConfirmation(false);
-          setSlotToDelete(null);
-          setEditSlotError(null);
-        }}
-        isLoading={isDeletingSlot}
       />
     </div>
   );

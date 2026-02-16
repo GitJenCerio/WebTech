@@ -1,5 +1,14 @@
 import React from 'react';
-import { AlertCircle, Calendar } from 'lucide-react';
+import { AlertCircle, Calendar, Loader2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/Dialog';
+import { Button } from '@/components/ui/Button';
 
 interface DeleteConfirmationModalProps {
   show: boolean;
@@ -24,8 +33,6 @@ export default function DeleteConfirmationModal({
   onCancel,
   isLoading = false,
 }: DeleteConfirmationModalProps) {
-  if (!show) return null;
-
   // Format the date and time details
   const dateFormatted = slotDate ? new Date(slotDate).toLocaleDateString('en-US', {
     weekday: 'short',
@@ -37,96 +44,54 @@ export default function DeleteConfirmationModal({
   const slotDetails = `${dateFormatted} at ${slotTime}${nailTechName ? ` - ${nailTechName}` : ''}`;
 
   return (
-    <div 
-      className="modal d-block"
-      style={{
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 1500,
-        display: show ? 'flex' : 'none',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      onClick={onCancel}
-    >
-      <div 
-        className="modal-dialog modal-dialog-centered" 
-        style={{ 
-          margin: '0 auto', 
-          position: 'relative',
-          maxWidth: '400px',
-          width: '100%'
-        }} 
-        role="document"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="modal-content">
-          <div className="modal-header" style={{ padding: '1rem', borderBottom: '1px solid #dee2e6' }}>
-            <h5 className="modal-title" style={{ fontSize: '1.125rem', fontWeight: 600, color: '#000000' }}>
-              <AlertCircle className="me-2" style={{ color: '#000000', display: 'inline', width: '20px', height: '20px' }} />
-              {title}
-            </h5>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={onCancel}
-              aria-label="Close"
-              disabled={isLoading}
-              style={{ padding: '0.5rem' }}
-            ></button>
+    <Dialog open={show} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-[#212529]" />
+            <DialogTitle className="text-lg font-semibold text-[#212529]">{title}</DialogTitle>
           </div>
-          <div className="modal-body" style={{ padding: '1.5rem' }}>
-            <p style={{ marginBottom: '0.75rem', color: '#495057', fontSize: '0.95rem' }}>
-              {message}
-            </p>
-            {slotDate && slotTime && (
-              <div style={{
-                backgroundColor: '#f3f4f6',
-                padding: '0.75rem 1rem',
-                borderLeft: '3px solid #000000',
-                marginTop: '1rem',
-                borderRadius: '4px'
-              }}>
-                <p style={{ marginBottom: 0, color: '#000000', fontWeight: 500, fontSize: '0.9rem' }}>
-                  <Calendar className="me-2" style={{ display: 'inline', width: '16px', height: '16px' }} />
-                  {slotDetails}
-                </p>
-              </div>
-            )}
-          </div>
-          <div className="modal-footer" style={{ padding: '0.75rem 1rem', borderTop: '1px solid #dee2e6', gap: '0.5rem' }}>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={onCancel}
-              disabled={isLoading}
-              style={{ fontSize: '0.875rem' }}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="btn btn-dark btn-sm"
-              onClick={onConfirm}
-              disabled={isLoading}
-              style={{ fontSize: '0.875rem' }}
-            >
-              {isLoading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </button>
-          </div>
+        </DialogHeader>
+        <div className="py-4">
+          <DialogDescription className="mb-3 text-gray-600 text-sm">
+            {message}
+          </DialogDescription>
+          {slotDate && slotTime && (
+            <div className="bg-gray-100 p-3 rounded-2xl border-l-4 border-[#212529] mt-4">
+              <p className="text-sm font-medium text-[#212529] flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {slotDetails}
+              </p>
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCancel}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="dark"
+            size="sm"
+            onClick={onConfirm}
+            disabled={isLoading}
+            loading={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              'Delete'
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

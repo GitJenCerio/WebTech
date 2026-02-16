@@ -31,7 +31,8 @@ const SERVICE_OPTIONS: Record<ServiceLocation, { value: ServiceType; label: stri
   ],
 };
 
-function getRequiredSlotCount(serviceType: ServiceType, serviceLocation?: ServiceLocation): number {
+function getRequiredSlotCount(serviceType: ServiceType | null, serviceLocation?: ServiceLocation): number {
+  if (serviceType === null) return 1;
   // For home service, manicure and pedicure require 2 slots (2 pax)
   if (serviceLocation === 'home_service' && (serviceType === 'manicure' || serviceType === 'pedicure')) {
     return 2;
@@ -138,7 +139,7 @@ export default function BookingPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
-  const [selectedService, setSelectedService] = useState<ServiceType>('manicure');
+  const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
   const [linkedSlots, setLinkedSlots] = useState<Slot[]>([]);
   const [serviceMessage, setServiceMessage] = useState<string | null>(null);
   const [squeezeFeeAcknowledged, setSqueezeFeeAcknowledged] = useState(false);
@@ -150,7 +151,7 @@ export default function BookingPage() {
   const serviceOptions = clientInfo ? SERVICE_OPTIONS[clientInfo.serviceLocation] : SERVICE_OPTIONS.homebased_studio;
 
   useEffect(() => {
-    if (clientInfo) {
+    if (clientInfo && selectedService !== null) {
       const options = SERVICE_OPTIONS[clientInfo.serviceLocation];
       if (!options.some((option) => option.value === selectedService)) {
         setSelectedService(options[0].value);
@@ -228,7 +229,7 @@ export default function BookingPage() {
 
 
   useEffect(() => {
-    if (!selectedSlot) {
+    if (!selectedSlot || !selectedService) {
       setLinkedSlots([]);
       setServiceMessage(null);
       return;
@@ -398,7 +399,7 @@ export default function BookingPage() {
   
   // Filter calendar dates to show only those with enough consecutive available slots
   const availableDatesForService = useMemo(() => {
-    if (!clientInfo) return new Set<string>();
+    if (!clientInfo || selectedService === null) return new Set<string>();
     
     const available = new Set<string>();
     const dateGroups: Record<string, Slot[]> = {};
@@ -675,19 +676,19 @@ export default function BookingPage() {
     <main className="min-h-screen bg-white">
       <Header />
       
-      <section className="pt-[80px] sm:pt-[90px] md:pt-[100px] lg:pt-[130px] px-2 sm:px-6 pb-8 sm:pb-12">
+      <section className="pt-[80px] sm:pt-[90px] md:pt-[100px] lg:pt-[130px] px-2 sm:px-3 pb-8 sm:pb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-7xl mx-auto"
         >
-          <h1 id="booking-heading" className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-acollia text-center mb-3 sm:mb-4 px-2 sm:px-4 text-slate-900 scroll-mt-28 sm:scroll-mt-32 lg:scroll-mt-36">
+          <h1 id="booking-heading" className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-acollia text-center mb-3 sm:mb-4 px-2 sm:px-3 text-slate-900 scroll-mt-28 sm:scroll-mt-32 lg:scroll-mt-36">
             Book Your Appointment
           </h1>
 
           {/* Nail Tech Selection - Now shown in modal */}
           {selectedNailTechId && (
-            <div className="mb-6 sm:mb-8 max-w-4xl mx-auto px-2 sm:px-4">
+            <div className="mb-6 sm:mb-8 max-w-4xl mx-auto px-2 sm:px-3">
               <div className="rounded-xl border-2 px-5 py-4" style={{ borderColor: '#212529', backgroundColor: '#f8f9fa' }}>
                 {(() => {
                   const selectedTech = nailTechs.find(t => t.id === selectedNailTechId);
@@ -731,7 +732,7 @@ export default function BookingPage() {
             </div>
           ) : (
             <>
-              <div className="max-w-4xl mx-auto px-2 sm:px-4">
+              <div className="max-w-4xl mx-auto px-2 sm:px-3">
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-[1.8fr,1fr]">
                   <div id="booking-calendar" className="scroll-mt-24 order-2 lg:order-1">
                     {(() => {
@@ -837,7 +838,7 @@ export default function BookingPage() {
                 </div>
               </div>
 
-              <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm px-2 sm:px-4" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>
+              <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm px-2 sm:px-3" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>
                 {error ? (
                   <p style={{ color: '#721c24' }}>{error}</p>
                 ) : (
@@ -857,6 +858,7 @@ export default function BookingPage() {
         }}
         onContinue={(data) => {
           setClientInfo(data);
+          setSelectedService(null);
           setShowClientTypeModal(false);
           setShowServiceTypeModal(true);
         }}

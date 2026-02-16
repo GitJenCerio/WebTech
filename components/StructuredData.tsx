@@ -39,9 +39,9 @@ export function StructuredData({
   priceRange = '$$',
   image = '/logo.png',
   url,
-  description = 'Premium Russian manicure, nail art, pedicure, and nail extension services in Manila, Philippines.',
+  description = 'Russian manicure and pedicure in Manila. E-file manicure, nail art, gel nails & extensions. Book online. Metro Manila nail studio.',
 }: StructuredDataProps) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://glammednailsbyjhen.vercel.app';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.glammednailsbyjhen.com';
   const fullUrl = url || siteUrl;
   const imageUrl = image.startsWith('http') ? image : `${siteUrl}${image}`;
 
@@ -123,6 +123,7 @@ export function StructuredData({
       break;
   }
 
+  // Safe: schema is built from fixed/controlled props only; no user input is injected.
   return (
     <script
       type="application/ld+json"

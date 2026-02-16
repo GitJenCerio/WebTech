@@ -1,53 +1,65 @@
-import React from 'react';
+import * as React from "react";
 
-interface CardProps {
-  children: React.ReactNode;
-  hover?: boolean;
-  className?: string;
-}
+import { cn } from "./Utils";
 
-interface CardSubComponentProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-function CardRoot({ children, hover, className = '' }: CardProps) {
-  const baseStyles = 'bg-white rounded-lg shadow-sm border border-gray-200';
-  const hoverStyles = hover ? 'transition-shadow hover:shadow-md' : '';
-  
+function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div className={`${baseStyles} ${hoverStyles} ${className}`}>
-      {children}
-    </div>
+    <div
+      className={cn(
+        "bg-white text-[#212529] flex flex-col gap-6 rounded-[24px] border border-gray-300 shadow-[0_6px_24px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.07)]",
+        className,
+      )}
+      {...props}
+    />
   );
 }
 
-function CardHeader({ children, className = '' }: CardSubComponentProps) {
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div className={`px-6 py-4 border-b border-gray-200 ${className}`}>
-      {children}
-    </div>
+    <div
+      className={cn(
+        "flex flex-col gap-1.5 px-6 pt-6 bg-gradient-to-b from-white to-gray-50 rounded-t-[24px]",
+        className,
+      )}
+      {...props}
+    />
   );
 }
 
-function CardBody({ children, className = '' }: CardSubComponentProps) {
+function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
   return (
-    <div className={`px-6 py-4 ${className}`}>
-      {children}
-    </div>
+    <h3
+      className={cn("text-lg font-semibold leading-none text-[#212529]", className)}
+      {...props}
+    />
   );
 }
 
-function CardFooter({ children, className = '' }: CardSubComponentProps) {
+function CardDescription({ className, ...props }: React.ComponentProps<"p">) {
   return (
-    <div className={`px-6 py-4 border-t border-gray-200 ${className}`}>
-      {children}
-    </div>
+    <p
+      className={cn("text-sm text-gray-600", className)}
+      {...props}
+    />
   );
 }
 
-export const Card = Object.assign(CardRoot, {
-  Header: CardHeader,
-  Body: CardBody,
-  Footer: CardFooter,
-});
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn("px-6 [&:last-child]:pb-6", className)}
+      {...props}
+    />
+  );
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn("flex items-center px-6 pb-6 rounded-b-[24px]", className)}
+      {...props}
+    />
+  );
+}
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };

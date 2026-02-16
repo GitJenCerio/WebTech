@@ -56,8 +56,37 @@ html, body {
   }
   
   .section-padding {
-    @apply px-2 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-24 py-8 sm:py-10 md:py-12 lg:py-16 xl:py-20;
+    @apply px-2 sm:px-4 md:px-5 lg:px-6 xl:px-8 2xl:px-10 py-8 sm:py-10 md:py-12 lg:py-16 xl:py-20;
   }
+
+  /* Safe-area insets for notched devices (e.g. iPhone X+) */
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .safe-left {
+    padding-left: env(safe-area-inset-left, 0);
+  }
+  .safe-right {
+    padding-right: env(safe-area-inset-right, 0);
+  }
+}
+
+/* Blog post content */
+.blog-content h2 {
+  @apply font-heading font-semibold text-gray-900 mt-8 mb-3 text-xl sm:text-2xl;
+}
+.blog-content h2:first-child { @apply mt-0; }
+.blog-content p {
+  @apply mb-4 leading-relaxed;
+}
+.blog-content ul {
+  @apply list-disc pl-6 mb-4 space-y-1;
+}
+.blog-content a {
+  @apply text-black font-medium underline hover:no-underline;
 }
 
 /* Override default browser styling for selected option in select dropdowns - remove all blue colors */
@@ -135,8 +164,8 @@ select::-webkit-scrollbar-thumb {
 /* Remove blue outline and focus ring from select element */
 select:focus {
   outline: none !important;
-  border-color: rgb(203 213 225) !important;
-  box-shadow: none !important;
+  border-color: #6c757d !important;
+  box-shadow: 0 0 0 2px rgba(33, 37, 41, 0.2) !important;
 }
 
 /* Force remove any blue highlight on tap/click */
@@ -164,3 +193,43 @@ select option::selection {
   color: white !important;
 }
 
+/* Global dropdown styles - prevent scrollbar issues */
+.dropdown-container,
+[class*="dropdown"],
+[data-dropdown] {
+  position: relative;
+  overflow: visible !important;
+}/* Prevent body scroll when dropdown is open */
+body.dropdown-open {
+  overflow: hidden !important;
+}/* Ensure dropdown menus appear above everything */
+.dropdown-menu,
+[class*="dropdown-menu"],
+[role="menu"] {
+  z-index: 1051 !important;
+  position: fixed !important;
+}
+
+/* Prevent scrollbars on parent containers when dropdown is visible */
+.card:has([data-dropdown-open]),
+.card:has(.dropdown-open) {
+  overflow: visible !important;
+}
+
+/* Mobile dropdown specific styles */
+@media (max-width: 767.98px) {
+  .mobile-dropdown-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1049;
+    background-color: transparent;
+  }
+  
+  .mobile-dropdown-menu {
+    position: fixed !important;
+    z-index: 1051 !important;
+  }
+}

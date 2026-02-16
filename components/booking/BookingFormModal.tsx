@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Phone, Mail, User, AlertCircle, ArrowLeft, Upload, Info } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 
 type ClientType = 'new' | 'repeat';
 
@@ -252,11 +253,11 @@ export default function BookingFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white border-2 border-gray-300 rounded-xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl my-2 sm:my-4 max-h-[95vh] overflow-y-auto relative"
+        className="bg-white border-2 border-gray-300 rounded-xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[95vh] overflow-y-auto relative"
       >
         <button
           onClick={(e) => {
@@ -264,12 +265,12 @@ export default function BookingFormModal({
             e.stopPropagation();
             onClose();
           }}
-          className="absolute top-2 right-2 sm:top-4 sm:right-4 p-1.5 sm:p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation z-10"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation z-10"
           aria-label="Close"
           type="button"
           disabled={isSubmitting}
         >
-          <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
+          <X className="w-6 h-6 text-gray-700" />
         </button>
 
         {/* Progress Indicator */}
@@ -309,7 +310,7 @@ export default function BookingFormModal({
               <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">Contact Information</h4>
               
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2 block">
+                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
                   <User className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                   Full Name <span className="text-red-500">*</span>
                 </label>
@@ -328,7 +329,7 @@ export default function BookingFormModal({
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2 block">
+                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
                   <Mail className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                   Email Address <span className="text-red-500">*</span>
                 </label>
@@ -347,7 +348,7 @@ export default function BookingFormModal({
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2 block">
+                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
                   <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                   Contact Number <span className="text-red-500">*</span>
                 </label>
@@ -387,23 +388,27 @@ export default function BookingFormModal({
                 <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 block">
                   How did you find out about us? <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={howDidYouFindUs}
-                  onChange={(e) => {
-                    setHowDidYouFindUs(e.target.value);
+                <Select
+                  value={howDidYouFindUs || '_placeholder'}
+                  onValueChange={(v) => {
+                    setHowDidYouFindUs(v === '_placeholder' ? '' : v);
                     setError(null);
                   }}
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors"
-                  disabled={isSubmitting}
                   required
+                  disabled={isSubmitting}
                 >
-                  <option value="">Select an option</option>
-                  <option value="facebook">Facebook</option>
-                  <option value="tiktok">TikTok</option>
-                  <option value="instagram">Instagram</option>
-                  <option value="referral">Referred by someone</option>
-                  <option value="other">Other</option>
-                </select>
+                  <SelectTrigger className="w-full h-9 sm:h-10 text-sm sm:text-base">
+                    <SelectValue placeholder="Select an option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_placeholder">Select an option</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="referral">Referred by someone</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
                 
                 {howDidYouFindUs === 'other' && (
                   <input
@@ -591,7 +596,7 @@ export default function BookingFormModal({
               <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">Nail Pictures</h4>
               
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2 block">
+                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
                   <Upload className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                   Upload Current Picture of Nail
                 </label>
@@ -605,7 +610,7 @@ export default function BookingFormModal({
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2 block">
+                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
                   <Upload className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                   Upload Nail Inspo (up to 3 images)
                 </label>

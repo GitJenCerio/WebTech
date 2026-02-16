@@ -1,4 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
+import { Card, CardContent } from "@/components/ui/Card";
+import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Label } from '@/components/ui/Label';
+import { Search } from 'lucide-react';
 
 interface FilterOption {
   value: string;
@@ -28,22 +33,18 @@ export default function FilterBar({
   className = '',
 }: FilterBarProps) {
   return (
-    <div className={`card mb-4 filter-bar ${className}`}>
-      <div className="card-body">
-        <div className="row g-3" style={{ margin: 0 }}>
+    <Card className={`mb-4 filter-bar ${className}`}>
+      <CardContent className="p-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {searchPlaceholder && (
-            <div className="col-12 col-md-4">
-              <label htmlFor="searchInput" className="form-label">
-                Search
-              </label>
-              <div className="input-group">
-                <span className="input-group-text bg-white border-end-0">
-                  <i className="bi bi-search"></i>
-                </span>
-                <input
+            <div className="space-y-2">
+              <Label htmlFor="searchInput">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
                   type="text"
                   id="searchInput"
-                  className="form-control border-start-0"
+                  className="pl-10"
                   placeholder={searchPlaceholder}
                   value={searchValue}
                   onChange={(e) => onSearchChange?.(e.target.value)}
@@ -53,29 +54,29 @@ export default function FilterBar({
           )}
 
           {filters.map((filter) => (
-            <div key={filter.key} className="col-12 col-md-4">
-              <label htmlFor={filter.key} className="form-label">
-                {filter.label}
-              </label>
+            <div key={filter.key} className="space-y-2">
+              <Label htmlFor={filter.key}>{filter.label}</Label>
               {filter.type === 'select' ? (
-                <select
-                  id={filter.key}
-                  className="form-select"
-                  value={filter.value || ''}
-                  onChange={(e) => filter.onChange?.(e.target.value)}
+                <Select
+                  value={filter.value || '__all__'}
+                  onValueChange={(value) => filter.onChange?.(value === '__all__' ? '' : value)}
                 >
-                  <option value="">All {filter.label}</option>
-                  {filter.options?.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id={filter.key}>
+                    <SelectValue placeholder={`All ${filter.label}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All {filter.label}</SelectItem>
+                    {filter.options?.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               ) : (
-                <input
+                <Input
                   type="date"
                   id={filter.key}
-                  className="form-control"
                   value={filter.value || ''}
                   onChange={(e) => filter.onChange?.(e.target.value)}
                 />
@@ -83,7 +84,7 @@ export default function FilterBar({
             </div>
           ))}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
