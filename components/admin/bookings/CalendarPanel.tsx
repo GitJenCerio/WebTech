@@ -342,12 +342,12 @@ export default function CalendarPanel({
         </div>
       </CardHeader>
       <CardContent 
-        className="flex-grow-1 min-h-0"
+        className="flex-grow-1 min-h-0 min-w-0 overflow-hidden"
         style={{ 
           padding: 'clamp(0.65rem, 3vw, 1rem) clamp(0.5rem, 3vw, 0.9rem)',
         }}
       >
-        <div className="d-flex justify-content-between align-items-center mb-2">
+        <div className="d-flex justify-content-between align-items-center mb-2 flex-shrink-0">
           <button 
             className="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center" 
             onClick={handlePrevMonth}
@@ -367,7 +367,8 @@ export default function CalendarPanel({
           </button>
         </div>
 
-        <div className="d-grid grid-calendar mb-2 w-100" style={{ minWidth: 0 }}>
+        <div className="calendar-grid-wrapper overflow-x-auto overflow-y-hidden mb-2 w-100" style={{ minWidth: 0 }}>
+        <div className="d-grid grid-calendar w-100" style={{ minWidth: 0 }}>
           {dayNames.map((day) => (
             <div key={day} className="text-center fw-semibold text-muted" style={{ fontSize: 'clamp(0.65rem, 2vw, 0.75rem)', padding: '0.25rem 0' }}>
               {day}
@@ -503,9 +504,10 @@ export default function CalendarPanel({
             );
           })}
         </div>
+        </div>
 
         <button 
-          className="btn btn-sm btn-outline-secondary w-100" 
+          className="btn btn-sm btn-outline-secondary w-100 flex-shrink-0" 
           onClick={handleToday}
           style={{ 
             marginTop: '0.5rem', 

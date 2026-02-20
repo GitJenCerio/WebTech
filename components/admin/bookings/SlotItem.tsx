@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Eye, Pencil, Trash2, EyeOff, MoreVertical } from 'lucide-react';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
 import NailTechBadge from '../NailTechBadge';
@@ -58,7 +58,6 @@ export default function SlotItem({
   onCancel,
 }: SlotItemProps) {
   const [showMobileDropdown, setShowMobileDropdown] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const canDeleteSlot = ['available', 'cancelled', 'CANCELLED', 'no_show', 'NO_SHOW'].includes(status);
   const canEditSlot = ['available', 'blocked', 'cancelled', 'CANCELLED', 'no_show', 'NO_SHOW'].includes(status);
@@ -82,17 +81,6 @@ export default function SlotItem({
       return () => {
         document.body.classList.remove('dropdown-open');
       };
-    }
-  }, [showMobileDropdown]);
-
-  // Update dropdown position when opening (before paint so no flash)
-  useLayoutEffect(() => {
-    if (showMobileDropdown && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 4,
-        right: window.innerWidth - rect.right,
-      });
     }
   }, [showMobileDropdown]);
 
@@ -184,100 +172,16 @@ export default function SlotItem({
               )}
             </div>
           </div>
-          {/* Show action buttons for both booked and available slots */}
-          {/* Desktop: Individual buttons */}
-          <div className="d-none d-md-flex gap-2">
-            {['booked', 'pending', 'PENDING_PAYMENT', 'confirmed', 'CONFIRMED', 'no_show', 'NO_SHOW'].includes(status) && onView && (
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={onView}
-                title="View details"
-                style={{
-                  borderRadius: '16px',
-                  background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
-                  border: 'none',
-                  color: '#ffffff',
-                  boxShadow: '0 2px 8px rgba(73, 80, 87, 0.3)',
-                  transition: 'all 0.3s ease',
-                  padding: '0.375rem 0.75rem',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(73, 80, 87, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(73, 80, 87, 0.3)';
-                }}
-              >
-                <Eye size={16} />
-              </button>
-            )}
-            {(onEdit && canEditSlot) && (
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={onEdit}
-                title="Edit slot"
-                style={{
-                  borderRadius: '16px',
-                  background: 'linear-gradient(135deg, #495057 0%, #212529 100%)',
-                  border: 'none',
-                  color: '#ffffff',
-                  boxShadow: '0 2px 8px rgba(33, 37, 41, 0.3)',
-                  transition: 'all 0.3s ease',
-                  padding: '0.375rem 0.75rem',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(33, 37, 41, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(33, 37, 41, 0.3)';
-                }}
-              >
-                <Pencil size={16} />
-              </button>
-            )}
-            {canDeleteSlot && onCancel && (
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={onCancel}
-                title="Delete slot"
-                style={{
-                  borderRadius: '16px',
-                  background: 'linear-gradient(135deg, #495057 0%, #212529 100%)',
-                  border: 'none',
-                  color: '#ffffff',
-                  boxShadow: '0 2px 8px rgba(33, 37, 41, 0.3)',
-                  transition: 'all 0.3s ease',
-                  padding: '0.375rem 0.75rem',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(33, 37, 41, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(33, 37, 41, 0.3)';
-                }}
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
-          </div>
-          
-          {/* Mobile: Dropdown */}
+          {/* Actions: single dropdown on all screens so card fits in narrow column */}
           {mobileActions.length > 0 && (
-            <div className="d-md-none position-relative">
+            <div className="position-relative flex-shrink-0">
               <button
                 ref={buttonRef}
                 type="button"
                 className="btn btn-sm"
                 onClick={() => setShowMobileDropdown(!showMobileDropdown)}
+                title="Actions"
+                aria-label="Slot actions"
                 style={{
                   borderRadius: '16px',
                   background: 'linear-gradient(135deg, #495057 0%, #212529 100%)',
@@ -292,22 +196,20 @@ export default function SlotItem({
               {showMobileDropdown && (
                 <>
                   <div 
-                    className="position-fixed top-0 left-0 w-100 h-100"
-                    style={{ 
-                      zIndex: 1049,
-                      backgroundColor: 'transparent',
-                    }}
+                    className="position-fixed inset-0"
+                    style={{ zIndex: 1049, backgroundColor: 'transparent' }}
                     onClick={() => setShowMobileDropdown(false)}
+                    aria-hidden="true"
                   />
                   <div 
-                    className="bg-white border rounded-2xl shadow-lg"
+                    className="bg-white border rounded-2xl shadow-lg position-absolute"
                     style={{ 
                       minWidth: '150px',
                       zIndex: 1051,
                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                      position: 'fixed',
-                      top: dropdownPosition.top,
-                      right: dropdownPosition.right,
+                      top: '100%',
+                      right: 0,
+                      marginTop: '4px',
                     }}
                   >
                     {mobileActions.map((action, index) => {

@@ -120,14 +120,111 @@
   background-color: #ffffff;
   color: #212529;
   z-index: 1000;
+  overflow-x: hidden;
   overflow-y: auto;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, width 0.3s ease;
   box-shadow: none;
   border-right: none;
 }
 
 .admin-sidebar.collapsed {
   transform: translateX(-100%);
+}
+
+/* Icons-only rail on tablet/laptop/desktop (expand on hover) */
+@media (min-width: 768px) {
+  .admin-sidebar.icons-only {
+    width: 72px;
+  }
+  /* Force full width when expanded (hovered) so labels and logo show */
+  .admin-sidebar.sidebar-expanded {
+    width: 250px !important;
+  }
+  .admin-sidebar.sidebar-expanded .nav-link-text {
+    display: inline !important;
+  }
+  .admin-sidebar.icons-only .admin-sidebar-header {
+    flex-direction: column;
+    padding: 1rem 0.5rem 0.75rem;
+  }
+  .admin-sidebar.icons-only .admin-sidebar-logo {
+    justify-content: center;
+  }
+  .admin-sidebar.icons-only .admin-sidebar-logo .img-fluid {
+    max-width: 40px;
+    height: auto;
+  }
+  .admin-sidebar.icons-only .admin-sidebar-logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .admin-sidebar.icons-only .admin-sidebar-logo-img {
+    width: 36px;
+    height: auto;
+    object-fit: contain;
+  }
+  .admin-sidebar.icons-only .nav-link {
+    justify-content: center;
+    padding: 0.875rem;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+  .admin-sidebar.icons-only .nav-link-text {
+    display: none;
+  }
+}
+
+.admin-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.admin-sidebar-logo {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.admin-sidebar-logo-icon {
+  display: none;
+}
+
+.admin-sidebar-toggle {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #495057;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.admin-sidebar-toggle:hover {
+  background: #f8f9fa;
+  color: #212529;
+}
+
+/* Topbar menu button: visible on mobile (overlay) and tablet/laptop (expand rail) */
+.admin-navbar-sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .admin-sidebar.icons-only .admin-sidebar-toggle {
+    margin: 0.5rem 0 0;
+  }
 }
 
 .admin-sidebar .nav-link {
@@ -175,6 +272,23 @@
 
 .admin-main.sidebar-collapsed {
   margin-left: 0;
+}
+
+/* Tablet and up: margin for rail (72px) or expanded (250px) */
+@media (min-width: 768px) {
+  .admin-main.sidebar-icons-only {
+    margin-left: 72px;
+  }
+  .admin-main.sidebar-expanded {
+    margin-left: 250px !important;
+  }
+}
+
+/* Mobile only: sidebar is overlay, main content full width */
+@media (max-width: 767.98px) {
+  .admin-main {
+    margin-left: 0 !important;
+  }
 }
 
 /* Top Navbar */
@@ -373,11 +487,13 @@
   opacity: 0.5;
 }
 
-/* Calendar Grid */
+/* Calendar Grid - responsive: columns can shrink to avoid overflow */
 .grid-calendar {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.35rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .calendar-day {
@@ -387,12 +503,14 @@
   background-color: #ffffff;
   color: #212529;
   min-height: 60px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   gap: 0.3rem;
   padding: 0.5rem 0.35rem;
+  overflow: hidden;
 }
 
 .calendar-day-num {
@@ -400,7 +518,31 @@
 }
 
 .calendar-day-badges {
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Wrapper so calendar grid can scroll horizontally on narrow screens */
+.calendar-grid-wrapper {
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.calendar-grid-wrapper .grid-calendar {
+  min-width: 260px;
+}
+
+/* Hide scrollbar but keep scroll (calendar + slot list) */
+.calendar-grid-wrapper,
+.slot-list-body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.calendar-grid-wrapper::-webkit-scrollbar,
+.slot-list-body::-webkit-scrollbar {
+  display: none;
 }
 
 .calendar-day:hover:not(:disabled) {
@@ -627,6 +769,12 @@ html, body {
   word-wrap: break-word;
 }
 
+/* Calendar page: prevent horizontal overflow */
+.admin-content .row {
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* Table responsive improvements */
 .data-table-card .table-responsive {
   overflow-x: auto;
@@ -790,8 +938,8 @@ html, body {
   max-width: 800px;
 }
 
-/* Responsive breakpoints */
-@media (max-width: 768px) {
+/* Mobile only: sidebar off-canvas, toggled by hamburger; overlay when open */
+@media (max-width: 767.98px) {
   .admin-sidebar {
     transform: translateX(-100%);
     width: 100%;
@@ -805,6 +953,10 @@ html, body {
   .admin-main {
     margin-left: 0;
   }
+}
+
+/* Responsive breakpoints - keep existing 768px rules for other adjustments */
+@media (max-width: 768px) {
 
   .admin-content {
     padding: 0.75rem;

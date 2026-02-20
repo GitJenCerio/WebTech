@@ -792,7 +792,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div>
+    <div className="w-100 min-w-0 overflow-x-hidden">
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
           Calendar & Slots
@@ -808,9 +808,9 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* Calendar Panel + Slot List - same height */}
+      {/* Calendar Panel + Slot List - same height; calendar wider, slots narrower */}
       <div className="row g-0 g-lg-3" style={{ alignItems: 'stretch' }}>
-        <div className="col-12 col-lg-7 d-flex" style={{ minWidth: 0 }}>
+        <div className="col-12 col-lg-8 col-xl-9 d-flex" style={{ minWidth: 0 }}>
           <div className="w-100" style={{ minHeight: 0 }}>
           <CalendarPanel
             selectedDate={selectedDate}
@@ -831,7 +831,7 @@ export default function CalendarPage() {
         </div>
 
         {/* Slot List */}
-        <div className="col-12 col-lg-5 d-flex" style={{ minWidth: 0 }}>
+        <div className="col-12 col-lg-4 col-xl-3 d-flex" style={{ minWidth: 0 }}>
           <div className="w-100" style={{ minHeight: 0 }}>
           {slotsLoading ? (
             <div className="card h-100 d-flex align-items-center justify-content-center" style={{ borderRadius: '24px', minHeight: '400px' }}>

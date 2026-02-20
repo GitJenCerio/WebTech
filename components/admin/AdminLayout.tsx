@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
 
+const SIDEBAR_RAIL_BREAKPOINT = 768; /* tablet and up: rail (icons-only); below: overlay + hamburger */
+
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
@@ -31,52 +33,102 @@ const navItems: NavItem[] = [
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isRailMode, setIsRailMode] = useState(false);
+  const [railExpanded, setRailExpanded] = useState(false);
   const pathname = usePathname();
   const { data: session } = useSession();
   const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const sidebarToggleRef = useRef<HTMLButtonElement | null>(null);
 
-  // Close sidebar on mobile when route changes
+  // Close overlay when route changes (mobile only)
   useEffect(() => {
     setSidebarOpen(false);
     setUserMenuOpen(false);
   }, [pathname]);
 
+  // Tablet and up = rail (icons-only, expand via toggle); below = overlay + hamburger
+  useEffect(() => {
+    const check = () => {
+      const rail = typeof window !== 'undefined' && window.innerWidth >= SIDEBAR_RAIL_BREAKPOINT;
+      setIsRailMode(rail);
+      if (!rail) {
+        setSidebarOpen(false);
+        setRailExpanded(false);
+      }
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // Click outside: close user menu; in rail mode collapse sidebar if expanded
   useEffect(() => {
     function handleDocumentClick(event: MouseEvent) {
-      if (!userMenuRef.current) return;
-      if (!userMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
         setUserMenuOpen(false);
+      }
+      if (isRailMode && railExpanded && sidebarRef.current && sidebarToggleRef.current) {
+        if (!sidebarRef.current.contains(target) && !sidebarToggleRef.current.contains(target)) {
+          setRailExpanded(false);
+        }
       }
     }
 
     document.addEventListener('mousedown', handleDocumentClick);
-    return () => {
-      document.removeEventListener('mousedown', handleDocumentClick);
-    };
-  }, []);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
+  }, [isRailMode, railExpanded]);
 
   const handleLogout = async () => {
     setUserMenuOpen(false);
     await signOut({ callbackUrl: '/admin' });
   };
 
+  const iconsOnly = isRailMode && !railExpanded;
+  const sidebarExpanded = isRailMode && railExpanded;
+
+  const handleRailToggle = () => {
+    if (isRailMode) setRailExpanded((e) => !e);
+  };
+
+  const handleMobileMenuClick = () => {
+    if (isRailMode) {
+      setRailExpanded((e) => !e);
+    } else {
+      setSidebarOpen((o) => !o);
+    }
+  };
+
   return (
     <div className="admin-layout">
-      {/* Sidebar */}
-      <aside className={`admin-sidebar ${sidebarOpen ? 'show' : ''}`}>
+      {/* Sidebar: overlay on mobile; rail (icons-only, expand via toggle) on tablet and up */}
+      <aside
+        ref={sidebarRef}
+        className={`admin-sidebar ${sidebarOpen ? 'show' : ''} ${iconsOnly ? 'icons-only' : ''} ${sidebarExpanded ? 'sidebar-expanded' : ''}`}
+      >
         <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="px-4 pb-3 pt-4">
-            <div className="flex justify-center">
-              <Image
-                src="/logo.png"
-                alt="Logo"
-                width={150}
-                height={50}
-                className="img-fluid"
-                priority
-              />
+          {/* Logo + expand/collapse toggle (tablet/laptop) */}
+          <div className="admin-sidebar-header">
+            <div className="admin-sidebar-logo">
+              {iconsOnly ? (
+                <div className="admin-sidebar-logo-icon" title="Logo">
+                  <Image src="/logo.png" alt="" width={40} height={40} className="admin-sidebar-logo-img" />
+                </div>
+              ) : (
+                <Image src="/logo.png" alt="Logo" width={150} height={50} className="img-fluid" priority />
+              )}
             </div>
+            {isRailMode && (
+              <button
+                type="button"
+                className="admin-sidebar-toggle"
+                onClick={handleRailToggle}
+                aria-label={iconsOnly ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                <i className={`bi bi-chevron-${iconsOnly ? 'right' : 'left'}`} style={{ fontSize: '1rem' }}></i>
+              </button>
+            )}
           </div>
 
           {/* Navigation */}
@@ -89,9 +141,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <Link
                       href={item.path}
                       className={`nav-link ${isActive ? 'active' : ''}`}
+                      title={iconsOnly ? item.label : undefined}
                     >
                       <i className={item.icon}></i>
-                      <span>{item.label}</span>
+                      <span className="nav-link-text">{item.label}</span>
                     </Link>
                   </li>
                 );
@@ -102,16 +155,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className={`admin-main ${sidebarOpen ? 'sidebar-collapsed' : ''}`}>
+      <div className={`admin-main ${sidebarOpen ? 'sidebar-collapsed' : ''} ${iconsOnly ? 'sidebar-icons-only' : ''} ${sidebarExpanded ? 'sidebar-expanded' : ''}`}>
         {/* Top Navbar */}
         <nav className="admin-navbar">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
-                className="p-0 text-[#495057] md:hidden"
+                ref={sidebarToggleRef}
+                className="admin-navbar-sidebar-toggle p-0 text-[#495057]"
                 type="button"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                aria-label="Toggle sidebar"
+                onClick={handleMobileMenuClick}
+                aria-label={isRailMode ? (railExpanded ? 'Collapse sidebar' : 'Expand sidebar') : 'Open menu'}
               >
                 <i className="bi bi-list" style={{ fontSize: '1.5rem' }}></i>
               </button>
@@ -210,12 +264,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="admin-content">{children}</div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile only: sidebar overlay - tap to close */}
       {sidebarOpen && (
         <div
           className="fixed left-0 top-0 z-[999] h-full w-full bg-black/50 md:hidden"
           style={{ zIndex: 999 }}
           onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
         ></div>
       )}
     </div>

@@ -67,7 +67,7 @@ export default function SlotList({
         <h5 className="mb-0" style={{ fontWeight: 600, color: '#212529' }}>Slots for {formatDate(date)}</h5>
       </div>
       <div 
-        className="card-body flex-grow-1 min-h-0 overflow-auto"
+        className="card-body flex-grow-1 min-h-0 overflow-auto slot-list-body"
         style={{
           background: '#ffffff',
           borderRadius: '0 0 24px 24px',
