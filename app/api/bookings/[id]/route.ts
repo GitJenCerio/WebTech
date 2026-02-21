@@ -20,13 +20,14 @@ export const dynamic = 'force-dynamic';
  * GET /api/bookings/[id]
  * Get booking by ID or booking code
  */
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     // Try as MongoDB ID first, then as booking code
-    let booking = await getBookingById(params.id);
+    let booking = await getBookingById(id);
     
     if (!booking) {
-      booking = await getBookingByCode(params.id);
+      booking = await getBookingByCode(id);
     }
 
     if (!booking) {
@@ -66,14 +67,15 @@ export async function GET(request: Request, { params }: { params: { id: string }
  * PATCH /api/bookings/[id]
  * Update booking (confirm, cancel, update payment)
  */
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { action, reason } = body;
 
     if (action === 'confirm') {
       // Confirm booking (requires deposit or full payment)
-      const booking = await confirmBooking(params.id);
+      const booking = await confirmBooking(id);
       const customer = await Customer.findById(booking.customerId).lean();
       if (customer?.email) {
         sendBookingConfirmedEmail(booking, customer).catch(err =>
@@ -101,7 +103,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       if (adminOverride && (!reason || !String(reason).trim())) {
         return NextResponse.json({ error: 'Reason is required when cancelling a booking' }, { status: 400 });
       }
-      const booking = await cancelBooking(params.id, adminOverride, reason);
+      const booking = await cancelBooking(id, adminOverride, reason);
       if (booking.confirmedAt) {
         backupBooking(booking, 'update').catch(err =>
           console.error('Failed to backup booking update to Google Sheets:', err)
@@ -128,7 +130,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
         }, { status: 400 });
       }
 
-      const booking = await updateBookingPayment(params.id, paidAmount, tipAmount, method);
+      const booking = await updateBookingPayment(id, paidAmount, tipAmount, method);
       if (booking.confirmedAt) {
         backupBooking(booking, 'update').catch(err =>
           console.error('Failed to backup booking update to Google Sheets:', err)
@@ -147,7 +149,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
     if (action === 'mark_completed') {
       // Mark booking as completed (admin-only)
-      const booking = await markBookingAsCompleted(params.id);
+      const booking = await markBookingAsCompleted(id);
       if (booking.confirmedAt) {
         backupBooking(booking, 'update').catch(err =>
           console.error('Failed to backup booking update to Google Sheets:', err)
@@ -167,7 +169,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       if (!reason || !String(reason).trim()) {
         return NextResponse.json({ error: 'Reason is required when rescheduling a booking' }, { status: 400 });
       }
-      const booking = await markBookingAsRescheduled(params.id, reason);
+      const booking = await markBookingAsRescheduled(id, reason);
       const customer = await Customer.findById(booking.customerId).lean();
       if (customer?.email) {
         sendBookingRescheduledEmail(booking, customer, reason).catch(err =>
@@ -194,7 +196,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       if (!reason || !String(reason).trim()) {
         return NextResponse.json({ error: 'Reason is required when marking no-show' }, { status: 400 });
       }
-      const booking = await markBookingAsNoShow(params.id, reason);
+      const booking = await markBookingAsNoShow(id, reason);
       if (booking.confirmedAt) {
         backupBooking(booking, 'update').catch(err =>
           console.error('Failed to backup booking update to Google Sheets:', err)
@@ -215,7 +217,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       const { default: Booking } = await import('@/lib/models/Booking');
       const { default: connectDB } = await import('@/lib/mongodb');
       await connectDB();
-      const booking = await Booking.findById(params.id);
+      const booking = await Booking.findById(id);
       if (!booking) {
         return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
       }

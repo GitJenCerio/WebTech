@@ -553,8 +553,9 @@ export async function getBookingsByCustomer(customerId: string) {
 export async function calculateCustomerLifetimeValue(customerId: string): Promise<number> {
   const bookings = await getBookingsByCustomer(customerId);
   return bookings.reduce((total, booking) => {
-    const invoiceTotal = booking.invoice?.total || 0;
-    const tipAmount = booking.tipAmount || 0;
+    const b = booking as { invoice?: { total?: number }; pricing?: { total?: number; tipAmount?: number } };
+    const invoiceTotal = b.invoice?.total ?? b.pricing?.total ?? 0;
+    const tipAmount = b.pricing?.tipAmount ?? 0;
     return total + invoiceTotal + tipAmount;
   }, 0);
 }

@@ -13,11 +13,14 @@ import NailTechSelectionModal from '@/components/booking/NailTechSelectionModal'
 import BookingFormModal from '@/components/booking/BookingFormModal';
 import SlotConfirmationModal from '@/components/booking/SlotConfirmationModal';
 import BookingSuccessModal from '@/components/booking/BookingSuccessModal';
-import type { Slot, ServiceType, NailTech } from '@/lib/types';
+import type { Slot, NailTech } from '@/lib/types';
+
+type ServiceLocation = 'homebased_studio' | 'home_service';
+type BookingServiceType = 'manicure' | 'pedicure' | 'mani_pedi' | 'home_service_2slots' | 'home_service_3slots';
 import { getNextSlotTime, SLOT_TIMES } from '@/lib/constants/slots';
 import { formatTime12Hour } from '@/lib/utils';
 
-const SERVICE_OPTIONS: Record<ServiceLocation, { value: ServiceType; label: string }[]> = {
+const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; label: string }[]> = {
   homebased_studio: [
     { value: 'manicure', label: 'Manicure (1 slot)' },
     { value: 'pedicure', label: 'Pedicure (1 slot)' },
@@ -31,7 +34,7 @@ const SERVICE_OPTIONS: Record<ServiceLocation, { value: ServiceType; label: stri
   ],
 };
 
-function getRequiredSlotCount(serviceType: ServiceType | null, serviceLocation?: ServiceLocation): number {
+function getRequiredSlotCount(serviceType: BookingServiceType | null, serviceLocation?: ServiceLocation): number {
   if (serviceType === null) return 1;
   // For home service, manicure and pedicure require 2 slots (2 pax)
   if (serviceLocation === 'home_service' && (serviceType === 'manicure' || serviceType === 'pedicure')) {
@@ -51,7 +54,7 @@ function getRequiredSlotCount(serviceType: ServiceType | null, serviceLocation?:
 
 function canSlotAccommodateService(
   slot: Slot,
-  serviceType: ServiceType,
+  serviceType: BookingServiceType,
   allSlots: Slot[]
 ): boolean {
   const requiredSlots = getRequiredSlotCount(serviceType);
@@ -109,10 +112,10 @@ function canSlotAccommodateService(
     referenceSlot = nextSlot;
   }
   return true;
+type ServiceLocation = 'homebased_studio' | 'home_service';
 }
 
 type ClientType = 'new' | 'repeat';
-type ServiceLocation = 'homebased_studio' | 'home_service';
 
 export default function BookingPage() {
   // Booking flow state
@@ -139,7 +142,7 @@ export default function BookingPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
-  const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
+  const [selectedService, setSelectedService] = useState<BookingServiceType | null>(null);
   const [linkedSlots, setLinkedSlots] = useState<Slot[]>([]);
   const [serviceMessage, setServiceMessage] = useState<string | null>(null);
   const [squeezeFeeAcknowledged, setSqueezeFeeAcknowledged] = useState(false);

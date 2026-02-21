@@ -9,11 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 interface Slot {
   id: string;
-  date: string;
+  date?: string;
   time: string;
   status: string;
   isHidden?: boolean;
   clientName?: string;
+  booking?: {
+    id?: string;
+    status?: string;
+    [key: string]: unknown;
+  } | null;
 }
 
 interface NailTech {
@@ -146,7 +151,7 @@ export default function CalendarPanel({
       pendingNames: string[];
     }>();
     slots.forEach((slot) => {
-      if (slot.isHidden) return; // Skip hidden slots
+      if (slot.isHidden || !slot.date) return; // Skip hidden or slots without date
       const dateStr = slot.date;
       if (!map.has(dateStr)) {
         map.set(dateStr, { available: 0, booked: 0, pending: 0, total: 0, bookedNames: [], pendingNames: [] });

@@ -16,6 +16,13 @@ interface Slot {
   clientSocialMediaName?: string;
   service?: string;
   isHidden?: boolean;
+  booking?: {
+    id?: string;
+    bookingCode?: string;
+    customerId?: string;
+    status?: string;
+    [key: string]: unknown;
+  } | null;
 }
 
 interface SlotListProps {

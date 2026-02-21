@@ -2,28 +2,36 @@
 // =============================================================
 
 import Customer from '@/lib/models/Customer';
+
+interface CachedClient {
+  name: string;
+  phone: string;
+  email?: string;
+  isRepeatClient?: boolean;
+}
 import { LRUCache } from 'lru-cache';
 
 // 1. IN-MEMORY CACHE (Reduces database hits by 90%+)
-const clientCache = new LRUCache({
+const clientCache = new LRUCache<string, CachedClient | boolean>({
   max: 500, // Store up to 500 clients in memory
   ttl: 1000 * 60 * 60, // 1 hour cache
   updateAgeOnGet: true,
 });
 
 // 2. INDEXED QUERY (Only fetches 1 document, not all 300+)
-export async function findClientByPhone(phone: string) {
+export async function findClientByPhone(phone: string): Promise<CachedClient | null> {
   // Check cache first (0 database operations)
   const cacheKey = `phone:${phone}`;
   if (clientCache.has(cacheKey)) {
-    return clientCache.get(cacheKey);
+    const cached = clientCache.get(cacheKey);
+    return typeof cached === 'object' ? cached : null;
   }
 
   // If not cached, query with index + lean() for speed
   const client = await Customer.findOne({ phone })
     .lean() // Returns plain object (faster, less memory)
     .select('name phone email isRepeatClient') // Only fetch needed fields
-    .exec();
+    .exec() as CachedClient | null;
 
   // Cache for next time
   if (client) {
@@ -57,8 +65,8 @@ export async function findClientsByPhones(phones: string[]) {
 
     // Cache results
     clients.forEach(client => {
-      clientCache.set(`phone:${client.phone}`, client);
-      results.push(client);
+      clientCache.set(`phone:${client.phone}`, client as unknown as CachedClient);
+      results.push(client as unknown as CachedClient);
     });
   }
 
@@ -69,7 +77,7 @@ export async function findClientsByPhones(phones: string[]) {
 export async function clientExists(phone: string): Promise<boolean> {
   const cacheKey = `exists:${phone}`;
   if (clientCache.has(cacheKey)) {
-    return clientCache.get(cacheKey);
+    return Boolean(clientCache.get(cacheKey));
   }
 
   // countDocuments is very lightweight
@@ -89,7 +97,7 @@ export async function warmCache() {
     .exec();
 
   recentClients.forEach(client => {
-    clientCache.set(`phone:${client.phone}`, client);
+    clientCache.set(`phone:${client.phone}`, client as unknown as CachedClient);
   });
 }
 

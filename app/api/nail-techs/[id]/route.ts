@@ -6,10 +6,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const nailTech = await getNailTechById(params.id);
+    const { id } = await params;
+    const nailTech = await getNailTechById(id);
     if (!nailTech) {
       return NextResponse.json({ error: 'Nail tech not found' }, { status: 404 });
     }
@@ -22,11 +23,12 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
-    const nailTech = await updateNailTech(params.id, body);
+    const nailTech = await updateNailTech(id, body);
     return NextResponse.json({ nailTech });
   } catch (error: any) {
     console.error('Error updating nail tech:', error);
@@ -36,10 +38,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await deleteNailTech(params.id);
+    const { id } = await params;
+    await deleteNailTech(id);
     return NextResponse.json({ message: 'Nail tech deactivated' });
   } catch (error: any) {
     console.error('Error deleting nail tech:', error);

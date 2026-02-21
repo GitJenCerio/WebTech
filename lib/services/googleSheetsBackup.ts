@@ -252,62 +252,74 @@ function normalizeDate(value: unknown): string {
 }
 
 export async function backupBooking(booking: BookingBackupInput, operation: 'create' | 'update' = 'create'): Promise<void> {
-  const id = booking.id || normalizeId(booking._id);
-  const bookingIdentifier = booking.bookingId || booking.bookingCode || '';
-  const primarySlotId = booking.slotId || booking.slotIds?.[0] || '';
+  const b = booking as Record<string, unknown> & {
+    id?: string; _id?: unknown; bookingId?: string; bookingCode?: string; slotId?: string; slotIds?: string[];
+    linkedSlotIds?: string[]; serviceType?: string; clientType?: string; serviceLocation?: string;
+    service?: { type?: string; clientType?: string; location?: string }; paidAmount?: number; depositAmount?: number;
+    tipAmount?: number; pricing?: { paidAmount?: number; depositRequired?: number; tipAmount?: number };
+    depositDate?: string; paidDate?: string; payment?: { depositPaidAt?: Date; fullyPaidAt?: Date; method?: string; paymentProofUrl?: string; paymentProofPublicId?: string };
+    depositPaymentMethod?: string; paidPaymentMethod?: string; clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
+    completedAt?: unknown; pairedSlotId?: string | null; customerId?: string; nailTechId?: string; status?: string;
+    formResponseId?: string; dateChanged?: boolean; timeChanged?: boolean; validationWarnings?: string[]; paymentStatus?: string;
+    tipDate?: string; createdAt?: unknown; updatedAt?: unknown;
+  };
+  const id = b.id || normalizeId(b._id);
+  const bookingIdentifier = b.bookingId || b.bookingCode || '';
+  const primarySlotId = b.slotId || b.slotIds?.[0] || '';
   const linkedSlotIds =
-    booking.linkedSlotIds && booking.linkedSlotIds.length > 0
-      ? booking.linkedSlotIds
-      : (booking.slotIds || []).slice(1);
-  const serviceType = booking.serviceType || booking.service?.type || '';
-  const clientType = booking.clientType || booking.service?.clientType || '';
-  const serviceLocation = booking.serviceLocation || booking.service?.location || '';
-  const paidAmount = booking.paidAmount ?? booking.pricing?.paidAmount ?? 0;
-  const depositAmount = booking.depositAmount ?? booking.pricing?.depositRequired ?? 0;
-  const tipAmount = booking.tipAmount ?? booking.pricing?.tipAmount ?? 0;
-  const depositDate = booking.depositDate || normalizeDate(booking.payment?.depositPaidAt);
-  const paidDate = booking.paidDate || normalizeDate(booking.payment?.fullyPaidAt);
-  const depositPaymentMethod = booking.depositPaymentMethod || booking.payment?.method || '';
-  const paidPaymentMethod = booking.paidPaymentMethod || booking.payment?.method || '';
-  const paymentProofUrl = booking.payment?.paymentProofUrl || '';
-  const paymentProofPublicId = booking.payment?.paymentProofPublicId || '';
-  const inspirationPhotoUrls = (booking.clientPhotos?.inspiration || [])
+    b.linkedSlotIds && b.linkedSlotIds.length > 0
+      ? b.linkedSlotIds
+      : (b.slotIds || []).slice(1);
+  const serviceType = b.serviceType || (b as { service?: { type?: string } }).service?.type || '';
+  const clientType = b.clientType || (b as { service?: { clientType?: string } }).service?.clientType || '';
+  const serviceLocation = b.serviceLocation || (b as { service?: { location?: string } }).service?.location || '';
+  const paidAmount = (b as { paidAmount?: number; pricing?: { paidAmount?: number } }).paidAmount ?? (b.pricing as { paidAmount?: number })?.paidAmount ?? 0;
+  const depositAmount = (b as { depositAmount?: number; pricing?: { depositRequired?: number } }).depositAmount ?? (b.pricing as { depositRequired?: number })?.depositRequired ?? 0;
+  const tipAmount = (b as { tipAmount?: number; pricing?: { tipAmount?: number } }).tipAmount ?? (b.pricing as { tipAmount?: number })?.tipAmount ?? 0;
+  const depositDate = (b as { depositDate?: string }).depositDate || normalizeDate((b.payment as { depositPaidAt?: Date })?.depositPaidAt);
+  const paidDate = (b as { paidDate?: string }).paidDate || normalizeDate((b.payment as { fullyPaidAt?: Date })?.fullyPaidAt);
+  const depositPaymentMethod = (b as { depositPaymentMethod?: string }).depositPaymentMethod || (b.payment as { method?: string })?.method || '';
+  const paidPaymentMethod = (b as { paidPaymentMethod?: string }).paidPaymentMethod || (b.payment as { method?: string })?.method || '';
+  const paymentProofUrl = (b.payment as { paymentProofUrl?: string })?.paymentProofUrl || '';
+  const paymentProofPublicId = (b.payment as { paymentProofPublicId?: string })?.paymentProofPublicId || '';
+  const clientPhotos = b.clientPhotos as { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> } | undefined;
+  const inspirationPhotoUrls = (clientPhotos?.inspiration || [])
     .map((photo) => photo?.url || '')
     .filter(Boolean)
     .join(',');
-  const currentPhotoUrls = (booking.clientPhotos?.currentState || [])
+  const currentPhotoUrls = (clientPhotos?.currentState || [])
     .map((photo) => photo?.url || '')
     .filter(Boolean)
     .join(',');
-  const completedAt = normalizeDate(booking.completedAt);
+  const completedAt = normalizeDate(b.completedAt);
 
   const values = [
     id,
     bookingIdentifier,
     primarySlotId,
-    booking.pairedSlotId || '',
+    b.pairedSlotId || '',
     linkedSlotIds.join(','),
-    booking.customerId,
-    booking.nailTechId,
-    booking.status,
+    b.customerId,
+    b.nailTechId,
+    b.status,
     serviceType,
     clientType,
     serviceLocation,
-    booking.formResponseId || '',
-    booking.dateChanged ? 'Yes' : 'No',
-    booking.timeChanged ? 'Yes' : 'No',
-    (booking.validationWarnings || []).join(';'),
-    booking.paymentStatus || '',
+    b.formResponseId || '',
+    b.dateChanged ? 'Yes' : 'No',
+    b.timeChanged ? 'Yes' : 'No',
+    (b.validationWarnings || []).join(';'),
+    b.paymentStatus || '',
     paidAmount,
     depositAmount,
     tipAmount,
     depositDate,
     paidDate,
-    booking.tipDate || '',
+    b.tipDate || '',
     depositPaymentMethod,
     paidPaymentMethod,
-    normalizeDate(booking.createdAt),
-    normalizeDate(booking.updatedAt),
+    normalizeDate(b.createdAt),
+    normalizeDate(b.updatedAt),
     paymentProofUrl,
     paymentProofPublicId,
     inspirationPhotoUrls,

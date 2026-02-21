@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { StructuredData } from "@/components/StructuredData";
 import SessionProvider from "@/components/providers/SessionProvider";
+
+const inter = Inter({ subsets: ["latin"] });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.glammednailsbyjhen.com';
 const siteName = 'glammednailsbyjhen';
@@ -104,7 +107,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <StructuredData />
       </head>
-      <body className="antialiased">
+      <body className={`${inter.className} antialiased`}>
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

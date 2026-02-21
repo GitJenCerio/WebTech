@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import StatCard from '@/components/admin/StatCard';
-import DataTable from '@/components/admin/DataTable';
-import Pagination from '@/components/admin/Pagination';
-import StatusBadge, { BookingStatus } from '@/components/admin/StatusBadge';
-import FilterBar from '@/components/admin/FilterBar';
-import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { Card, CardContent } from '@/components/ui/Card';
+
+const PAGE_SIZE = 10;
 
 interface Transaction {
   id: string;
@@ -24,6 +23,7 @@ interface Transaction {
 export default function FinancePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -49,14 +49,14 @@ export default function FinancePage() {
         const week = (weekData.bookings || []).map(mapBookingToTransaction);
 
         setTodayIncome(
-          today.filter(t => t.paymentStatus === 'paid').reduce((sum, t) => sum + t.total, 0)
+          today.filter((t: Transaction) => t.paymentStatus === 'paid').reduce((sum: number, t: Transaction) => sum + t.total, 0)
         );
         setWeekIncome(
-          week.filter(t => t.paymentStatus === 'paid').reduce((sum, t) => sum + t.total, 0)
+          week.filter((t: Transaction) => t.paymentStatus === 'paid').reduce((sum: number, t: Transaction) => sum + t.total, 0)
         );
         setPendingPayments(
-          week.filter(t => t.paymentStatus === 'pending' || t.paymentStatus === 'partial')
-            .reduce((sum, t) => sum + t.balance, 0)
+          week.filter((t: Transaction) => t.paymentStatus === 'pending' || t.paymentStatus === 'partial')
+            .reduce((sum: number, t: Transaction) => sum + t.balance, 0)
         );
       } catch (err: any) {
         console.error('Finance summary error:', err);
@@ -95,166 +95,238 @@ export default function FinancePage() {
     fetchTransactions();
   }, [dateFrom, dateTo]);
 
+  const filteredTransactions = useMemo(() => {
+    let out = filterTransactions(transactions, searchQuery);
+    if (statusFilter === 'paid' || statusFilter === 'pending' || statusFilter === 'partial') {
+      out = out.filter((t) => t.paymentStatus === statusFilter);
+    }
+    return out;
+  }, [transactions, searchQuery, statusFilter]);
+
+  const paginatedTransactions = useMemo(
+    () => paginateTransactions(filteredTransactions, currentPage, PAGE_SIZE),
+    [filteredTransactions, currentPage]
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / PAGE_SIZE));
+  const totalItems = filteredTransactions.length;
+
   const getPaymentStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; variant: BookingStatus }> = {
-      paid: { label: 'Paid', variant: 'completed' },
-      pending: { label: 'Pending', variant: 'booked' },
-      partial: { label: 'Partial', variant: 'booked' },
-    };
-    const config = statusMap[status] || { label: status, variant: 'booked' as BookingStatus };
-    return <StatusBadge status={config.variant} />;
+    const cls =
+      status === 'paid' ? 'bg-emerald-50 text-emerald-700' :
+      status === 'partial' ? 'bg-amber-50 text-amber-700' :
+      status === 'pending' ? 'bg-blue-50 text-blue-700' :
+      'bg-gray-100 text-gray-500';
+    return (
+      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
+        {status}
+      </span>
+    );
   };
 
-  const columns = [
-    {
-      key: 'date',
-      header: 'Date',
-      render: (item: Transaction) => {
-        const date = new Date(item.date);
-        return date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        });
-      },
-    },
-    {
-      key: 'clientName',
-      header: 'Client',
-    },
-    {
-      key: 'service',
-      header: 'Service',
-    },
-    {
-      key: 'total',
-      header: 'Total',
-      render: (item: Transaction) => (
-        <span className="fw-semibold">PHP {item.total.toLocaleString()}</span>
-      ),
-    },
-    {
-      key: 'paid',
-      header: 'Paid',
-      render: (item: Transaction) => (
-        <span>PHP {item.paid.toLocaleString()}</span>
-      ),
-    },
-    {
-      key: 'tip',
-      header: 'Tip',
-      render: (item: Transaction) => (
-        <span>PHP {item.tip.toLocaleString()}</span>
-      ),
-    },
-    {
-      key: 'discount',
-      header: 'Discount',
-      render: (item: Transaction) => (
-        <span>PHP {item.discount.toLocaleString()}</span>
-      ),
-    },
-    {
-      key: 'balance',
-      header: 'Balance',
-      render: (item: Transaction) => (
-        <span>PHP {item.balance.toLocaleString()}</span>
-      ),
-    },
-    {
-      key: 'paymentStatus',
-      header: 'Payment Status',
-      render: (item: Transaction) => getPaymentStatusBadge(item.paymentStatus),
-    },
-  ];
-
   return (
-    <div>
-      <h4 className="mb-4" style={{ fontWeight: 600, color: '#212529' }}>
-        Finance
-      </h4>
-
-      {/* Summary Cards */}
-      <div className="row g-4 mb-4">
-        <div className="col-12 col-md-4">
-          <StatCard
-            title="Today's Income"
-            value={`PHP ${todayIncome.toLocaleString()}`}
-            subtext="From completed appointments"
-            icon="bi-cash-stack"
-            iconBgColor="#212529"
-            darkBackground={true}
-          />
-        </div>
-        <div className="col-12 col-md-4">
-          <StatCard
-            title="This Week's Income"
-            value={`PHP ${weekIncome.toLocaleString()}`}
-            subtext="Last 7 days"
-            icon="bi-calendar-week"
-            iconBgColor="#e9ecef"
-          />
-        </div>
-        <div className="col-12 col-md-4">
-          <StatCard
-            title="Pending Payments"
-            value={`PHP ${pendingPayments.toLocaleString()}`}
-            subtext="Awaiting payment"
-            icon="bi-clock-history"
-            iconBgColor="#e9ecef"
-          />
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[#1a1a1a]">Finance</h1>
+          <p className="text-sm text-gray-400 mt-0.5">View income, transactions, and payments</p>
         </div>
       </div>
 
-      {/* Transactions Table */}
-      <FilterBar
-        searchPlaceholder="Search transactions..."
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
-        filters={[
-          {
-            key: 'dateFrom',
-            label: 'Date From',
-            type: 'date',
-            value: dateFrom,
-            onChange: setDateFrom,
-          },
-          {
-            key: 'dateTo',
-            label: 'Date To',
-            type: 'date',
-            value: dateTo,
-            onChange: setDateTo,
-          },
-        ]}
-      />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard
+          title="Today's Income"
+          value={`PHP ${todayIncome.toLocaleString()}`}
+          subtext="From completed appointments"
+          icon="bi-cash-stack"
+          variant="dark"
+          className="flex-grow-1"
+        />
+        <StatCard
+          title="This Week's Income"
+          iconBgColor="#e9ecef"
+          value={`PHP ${weekIncome.toLocaleString()}`}
+          subtext="Last 7 days"
+          icon="bi-calendar-week"
+          className="flex-grow-1"
+        />
+        <StatCard
+          title="Pending Payments"
+          iconBgColor="#e9ecef"
+          value={`PHP ${pendingPayments.toLocaleString()}`}
+          subtext="Awaiting payment"
+          icon="bi-clock-history"
+          className="flex-grow-1"
+        />
+      </div>
 
       {error && (
-        <div className="alert alert-danger" role="alert">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {error}
         </div>
       )}
 
-      {loading ? (
-        <div className="text-muted py-4">Loading transactions...</div>
-      ) : (
-        <>
-          <DataTable
-            title="Transactions"
-            columns={columns}
-            data={paginateTransactions(filterTransactions(transactions, searchQuery), currentPage, 10)}
-            keyExtractor={(item) => item.id}
-            emptyMessage="No transactions found"
-          />
-
-          <div className="mt-3">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.max(1, Math.ceil(filterTransactions(transactions, searchQuery).length / 10))}
-              onPageChange={setCurrentPage}
-            />
+      {/* Filter Card */}
+      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search by client or service..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all cursor-pointer"
+            >
+              <option value="all">All Statuses</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="partial">Partial</option>
+            </select>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-400 whitespace-nowrap">From</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-400 whitespace-nowrap">To</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+              />
+            </div>
+            {(searchQuery || statusFilter !== 'all' || dateFrom || dateTo) && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                  setDateFrom('');
+                  setDateTo('');
+                }}
+                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:text-[#1a1a1a] hover:border-[#1a1a1a] transition-all flex items-center gap-1.5"
+              >
+                <X className="h-3.5 w-3.5" />
+                Clear
+              </button>
+            )}
           </div>
-        </>
+        </CardContent>
+      </Card>
+
+      {/* Table Card */}
+      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Client</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Service</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Total</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Paid</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Tip</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Discount</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Balance</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#f5f5f5]">
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="px-5 py-16 text-center">
+                      <div className="flex flex-col items-center gap-3 text-gray-400">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span className="text-sm">Loading...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-5 py-16 text-center">
+                      <div className="flex flex-col items-center gap-2 text-gray-400">
+                        <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                          <Search className="h-5 w-5" />
+                        </div>
+                        <span className="text-sm font-medium">No results found</span>
+                        <span className="text-xs">Try adjusting your search or filters</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedTransactions.map((item) => (
+                    <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100">
+                      <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap tabular-nums">
+                        {item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                      </td>
+                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a]">{item.clientName}</td>
+                      <td className="px-5 py-3.5 text-[#1a1a1a]">{item.service}</td>
+                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString()}</td>
+                      <td className="px-5 py-3.5 text-gray-500 tabular-nums">₱{item.paid.toLocaleString()}</td>
+                      <td className="px-5 py-3.5 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
+                      <td className="px-5 py-3.5 text-gray-500 tabular-nums">₱{item.discount.toLocaleString()}</td>
+                      <td className="px-5 py-3.5 text-gray-500 tabular-nums">₱{item.balance.toLocaleString()}</td>
+                      <td className="px-5 py-3.5">{getPaymentStatusBadge(item.paymentStatus)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-xs text-gray-400">
+            Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              const page = i + 1;
+              return (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`h-8 w-8 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
+                    currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

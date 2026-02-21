@@ -83,15 +83,15 @@ export async function GET(request: Request) {
     }).lean();
 
     // Normalize slot times and ensure each slot has `id` for frontend (booking uses slot.id)
-    slots = slots.map(slot => ({
+    const normalizedSlots = (slots as any[]).map((slot: any) => ({
       ...slot,
-      id: (slot as any)._id?.toString?.() ?? (slot as any).id,
+      id: slot._id?.toString?.() ?? slot.id,
       time: normalizeTime(slot.time)
     }));
 
-    console.log('[API Availability] Found slots:', slots.length);
-    if (slots.length > 0) {
-      console.log('[API Availability] Sample slots:', slots.slice(0, 2).map(s => ({
+    console.log('[API Availability] Found slots:', normalizedSlots.length);
+    if (normalizedSlots.length > 0) {
+      console.log('[API Availability] Sample slots:', normalizedSlots.slice(0, 2).map((s: any) => ({
         date: s.date,
         time: s.time,
         status: s.status,
@@ -100,7 +100,7 @@ export async function GET(request: Request) {
       })));
     }
 
-    return NextResponse.json({ slots }, {
+    return NextResponse.json({ slots: normalizedSlots }, {
       headers: {
         'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
         'CDN-Cache-Control': 'public, s-maxage=30',

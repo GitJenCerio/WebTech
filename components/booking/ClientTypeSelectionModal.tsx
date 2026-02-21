@@ -215,7 +215,7 @@ export default function ClientTypeSelectionModal({
                     disabled={lookupLoading}
                   />
                   <Button
-                    variant="primary"
+                    variant="default"
                     onClick={handleLookup}
                     disabled={lookupLoading || !phone.trim()}
                     className="px-4 py-3"
@@ -246,7 +246,7 @@ export default function ClientTypeSelectionModal({
                   <p className="text-xs text-green-700">
                     We found your account. Click continue to proceed with your booking.
                   </p>
-                  <Button variant="primary" className="w-full mt-3" onClick={() => setStep('location')}>
+                  <Button variant="default" className="w-full mt-3" onClick={() => setStep('location')}>
                     Continue
                   </Button>
                 </div>
@@ -261,7 +261,7 @@ export default function ClientTypeSelectionModal({
                   <p className="text-xs text-yellow-700">
                     We couldn&apos;t find an account with that number. You&apos;ll be booked as a new client.
                   </p>
-                  <Button variant="primary" className="w-full mt-3" onClick={() => setStep('location')}>
+                  <Button variant="default" className="w-full mt-3" onClick={() => setStep('location')}>
                     Continue as New Client
                   </Button>
                 </div>

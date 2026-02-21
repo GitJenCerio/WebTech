@@ -1,15 +1,16 @@
 'use client';
 
-import { IoClose } from 'react-icons/io5';
 import type { ServiceType } from '@/lib/types';
+import { IoClose } from 'react-icons/io5';
 import { OverlayModal } from '@/components/ui/OverlayModal';
 import { OptionCard, OptionCardTitle, OptionCardDescription, OptionCardBadge } from '@/components/ui/OptionCard';
 import { Button } from '@/components/ui/Button';
 
 type ServiceLocation = 'homebased_studio' | 'home_service';
+type BookingServiceType = 'manicure' | 'pedicure' | 'mani_pedi' | 'home_service_2slots' | 'home_service_3slots';
 
 interface ServiceOption {
-  value: ServiceType | string;
+  value: BookingServiceType;
   label: string;
   description: string;
   slots: number;
@@ -32,8 +33,8 @@ const servicesByLocation: Record<ServiceLocation, ServiceOption[]> = {
 interface ServiceTypeSelectionModalProps {
   isOpen: boolean;
   serviceLocation: ServiceLocation;
-  selectedService: ServiceType | null;
-  onContinue: (serviceType: ServiceType) => void;
+  selectedService: BookingServiceType | null;
+  onContinue: (serviceType: BookingServiceType) => void;
   onBack: () => void;
 }
 
@@ -46,11 +47,11 @@ export default function ServiceTypeSelectionModal({
 }: ServiceTypeSelectionModalProps) {
   const services = servicesByLocation[serviceLocation];
 
-  const normalizeServiceValue = (value: ServiceType | string): ServiceType | null => {
+  const normalizeServiceValue = (value: BookingServiceType | string): BookingServiceType | null => {
     if (value === 'Russian Manicure') return 'manicure';
     if (value === 'Russian Manicure w/o Extensions') return 'manicure';
     if (value === 'Russian Manicure w/ Extensions') return 'manicure';
-    return (value as ServiceType) || null;
+    return (value as BookingServiceType) || null;
   };
 
   return (

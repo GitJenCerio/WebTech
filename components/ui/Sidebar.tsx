@@ -35,16 +35,16 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 
   return (
     <aside 
-      className="fixed left-0 top-0 h-screen bg-gradient-to-b from-[#212529] to-[#1a1d23] transition-all duration-300 z-50 shadow-lg"
+      className="fixed left-0 top-0 h-screen bg-card border-r border-border transition-all duration-300 z-50 shadow-sm"
       style={{ width: isExpanded ? '240px' : '72px' }}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
       <div className="flex flex-col h-full">
         {/* Logo */}
-        <div className="h-16 flex items-center justify-center border-b border-white/10">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#495057] to-[#212529] flex items-center justify-center shadow-md">
-            <span className="text-white font-semibold">S</span>
+        <div className="flex h-14 items-center justify-center border-b border-border px-4 md:h-16">
+          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-semibold">S</span>
           </div>
         </div>
 
@@ -59,15 +59,15 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
                 className={`
-                  w-full h-12 flex items-center px-6 transition-all relative
+                  w-full h-12 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all relative mx-2
                   ${isActive 
-                    ? 'bg-gradient-to-r from-[#495057]/20 to-transparent text-white' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    ? 'bg-accent text-accent-foreground' 
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                   }
                 `}
               >
                 {isActive && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#495057] to-[#212529] rounded-r-full" />
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" />
                 )}
                 <Icon className="w-5 h-5 flex-shrink-0" />
                 <span 
@@ -83,16 +83,16 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         </nav>
 
         {/* User profile */}
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-border">
           <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#495057] to-[#212529] flex-shrink-0 shadow-md" />
+            <div className="w-10 h-10 rounded-full bg-primary flex-shrink-0" />
             <div 
               className={`ml-3 transition-opacity duration-300 ${
                 isExpanded ? 'opacity-100' : 'opacity-0 w-0'
               }`}
             >
-              <p className="text-white text-sm font-medium">Admin User</p>
-              <p className="text-gray-400 text-xs">admin@company.com</p>
+              <p className="text-foreground text-sm font-medium">Admin User</p>
+              <p className="text-muted-foreground text-xs">admin@company.com</p>
             </div>
           </div>
         </div>

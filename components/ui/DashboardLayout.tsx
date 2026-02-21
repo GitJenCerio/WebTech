@@ -18,16 +18,16 @@ export function DashboardLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen flex-col md:flex-row bg-background">
       {/* Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block w-full border-b bg-card md:w-56 md:border-b-0 md:border-r">
         <Sidebar currentPage={currentPage} onNavigate={onNavigate} />
       </div>
 
       {/* Mobile sidebar overlay */}
       {isMobileMenuOpen && (
         <>
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
             onClick={() => setIsMobileMenuOpen(false)}
           />
@@ -37,19 +37,16 @@ export function DashboardLayout({
         </>
       )}
 
-      {/* Main content */}
-      <div className="lg:ml-[72px] min-h-screen">
-        {/* Main canvas container */}
-        <div className="p-4 md:p-6 lg:p-8">
-          <div className="max-w-[1600px] mx-auto bg-white rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.05)] overflow-hidden">
-            <Topbar 
-              title={pageTitle} 
-              onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            />
-            <div className="p-6 md:p-8">
-              {children}
-            </div>
-          </div>
+      {/* Main content - ml accounts for fixed sidebar rail */}
+      <div className="flex-1 overflow-auto lg:ml-[72px]">
+        <div className="flex flex-col min-h-screen">
+          <Topbar
+            title={pageTitle}
+            onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          />
+          <main className="flex-1 overflow-auto p-4 md:p-6 space-y-6">
+            {children}
+          </main>
         </div>
       </div>
     </div>

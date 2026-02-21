@@ -21,7 +21,7 @@ import {
 interface NavItem {
   path: string;
   label: string;
-  icon: React.ComponentType<{ className?: string; size?: number }>;
+  icon: React.ElementType;
 }
 
 const navItems: NavItem[] = [

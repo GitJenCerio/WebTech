@@ -4,20 +4,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "./Utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-xs font-medium min-h-[24px] box-border transition-colors focus:outline-none focus:ring-2 focus:ring-[#212529] focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
-        default:
-          "border-transparent bg-gradient-to-br from-[#495057] to-[#212529] text-white",
-        secondary:
-          "border-transparent bg-gray-100 text-[#212529]",
-        destructive:
-          "border-transparent bg-red-100 text-red-800",
-        outline: "text-[#212529] border-gray-300",
-        success: "border-transparent bg-green-100 text-green-800",
-        warning: "border-transparent bg-yellow-100 text-yellow-800",
-        info: "border-transparent bg-blue-100 text-blue-800",
+        default: "border-transparent bg-[#1a1a1a] text-white",
+        secondary: "border-transparent bg-[#f0f0f0] text-[#4b5563]",
+        outline: "border-[#e5e5e5] text-[#4b5563] bg-transparent",
+        success: "border-transparent bg-emerald-50 text-emerald-700",
+        warning: "border-transparent bg-amber-50 text-amber-700",
+        destructive: "border-transparent bg-red-50 text-red-600",
+        info: "border-transparent bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+        vip: "border-transparent bg-[#1a1a1a] text-white",
+        regular: "border-transparent bg-[#f0f0f0] text-[#4b5563]",
+        available: "border-transparent bg-emerald-50 text-emerald-700",
+        disabled: "border-transparent bg-[#f5f5f5] text-[#9ca3af]",
       },
     },
     defaultVariants: {
@@ -37,4 +38,4 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 export { Badge, badgeVariants };
-export type BadgeVariant = VariantProps<typeof badgeVariants>['variant'];
+export type BadgeVariant = VariantProps<typeof badgeVariants>["variant"];

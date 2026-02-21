@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import StatCard from '@/components/admin/StatCard';
@@ -83,19 +83,12 @@ export default function OverviewPage() {
   ];
 
   return (
-    <div className="container-mobile">
+    <div className="w-full max-w-full space-y-6">
       {/* Page Header */}
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-semibold text-gray-dark">
-          Overview
-        </h1>
-        <p className="text-sm text-gray-medium mt-1">
-          Dashboard summary and today's activities
-        </p>
-      </div>
+      <h1 className="text-2xl font-bold text-[#1a1a1a]">Overview</h1>
 
-      {/* Stat Cards - Mobile-first responsive grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 sm:mb-8">
+      {/* Stat Cards - Mobile-first responsive grid, equal height */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 sm:mb-8 items-stretch">
         <StatCard
           title="Today's Appointments"
           value={todayBookings.length}
@@ -126,54 +119,48 @@ export default function OverviewPage() {
         />
       </div>
 
-      {/* Charts Row - Mobile stacks, desktop side-by-side */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 sm:mb-8">
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch lg:min-h-[380px]">
         {/* Weekly Appointments Chart - Takes 2/3 on desktop */}
-        <div className="lg:col-span-2">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <h5 className="text-lg font-semibold text-[#212529]">
-                Weekly Appointments
-              </h5>
+        <div className="lg:col-span-2 min-h-0 flex flex-col">
+          <Card className="h-full flex flex-col border border-[#e5e5e5] shadow-card bg-white overflow-hidden transition-shadow hover:shadow-hover">
+            <CardHeader className="flex-shrink-0 pb-2 border-b border-[#f0f0f0]">
+              <h5 className="text-lg font-semibold text-[#1a1a1a]">Weekly Appointments</h5>
             </CardHeader>
-            <CardContent>
-              <ChartPlaceholder type="bar" title="Weekly appointments chart" />
+            <CardContent className="flex-1 min-h-0 flex flex-col">
+              <ChartPlaceholder type="bar" title="Weekly appointments chart" height="280px" className="flex-1" />
             </CardContent>
           </Card>
         </div>
         
         {/* Slot Utilization - Takes 1/3 on desktop */}
-        <div className="lg:col-span-1">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <h5 className="text-lg font-semibold text-[#212529]">
-                Slot Utilization Today
-              </h5>
+        <div className="lg:col-span-1 min-h-0 flex flex-col">
+          <Card className="h-full flex flex-col border border-[#e5e5e5] shadow-card bg-white overflow-hidden transition-shadow hover:shadow-hover">
+            <CardHeader className="flex-shrink-0 pb-2 border-b border-[#f0f0f0]">
+              <h5 className="text-lg font-semibold text-[#1a1a1a]">Slot Utilization Today</h5>
             </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center mb-4 text-sm">
+            <CardContent className="flex-1 min-h-0 flex flex-col">
+              <div className="flex justify-between items-center mb-4 text-sm flex-shrink-0">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-[#212529] rounded-sm"></div>
-                  <span className="text-[#212529]">Booked: 5</span>
+                  <div className="w-3 h-3 bg-[#1a1a1a] rounded-sm"></div>
+                  <span className="text-[#1a1a1a]">Booked: 5</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-gray-200 rounded-sm"></div>
-                  <span className="text-[#212529]">Available: 3</span>
+                  <div className="w-3 h-3 bg-[#e5e5e5] rounded-sm"></div>
+                  <span className="text-[#1a1a1a]">Available: 3</span>
                 </div>
               </div>
-              <ChartPlaceholder type="pie" height="200px" />
+              <ChartPlaceholder type="pie" height="200px" className="flex-1 min-h-[200px]" />
             </CardContent>
           </Card>
         </div>
       </div>
 
       {/* Today's Appointments Table */}
-      <Card>
-        <CardHeader>
+      <Card className="border border-[#e5e5e5] shadow-card bg-white">
+        <CardHeader className="border-b border-[#f0f0f0]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h5 className="text-lg font-semibold text-[#212529]">
-              Today&apos;s Appointments
-            </h5>
+            <h5 className="text-lg font-semibold text-[#1a1a1a]">Today&apos;s Appointments</h5>
             <Button 
               asChild
               variant="outline"

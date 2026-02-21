@@ -3,10 +3,11 @@ import connectDB from '@/lib/mongodb';
 import Slot from '@/lib/models/Slot';
 import Booking from '@/lib/models/Booking';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const slot = await Slot.findById(params.id).lean();
+    const { id } = await params;
+    const slot = await Slot.findById(id).lean();
     if (!slot) {
       return NextResponse.json({ error: 'Slot not found' }, { status: 404 });
     }
@@ -16,18 +17,19 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
+    const { id } = await params;
     const body = await request.json();
 
-    const slot = await Slot.findById(params.id);
+    const slot = await Slot.findById(id);
     if (!slot) {
       return NextResponse.json({ error: 'Slot not found' }, { status: 404 });
     }
 
     const activeBooking = await Booking.findOne({
-      slotIds: { $in: [params.id] },
+      slotIds: { $in: [id] },
       status: { $in: ['pending', 'confirmed'] },
     }).lean();
 
@@ -44,23 +46,24 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       if (body[key] !== undefined) updates[key] = body[key];
     }
 
-    const updated = await Slot.findByIdAndUpdate(params.id, updates, { new: true });
+    const updated = await Slot.findByIdAndUpdate(id, updates, { new: true });
     return NextResponse.json({ slot: updated });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to update slot' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const slot = await Slot.findById(params.id);
+    const { id } = await params;
+    const slot = await Slot.findById(id);
     if (!slot) {
       return NextResponse.json({ error: 'Slot not found' }, { status: 404 });
     }
 
     const activeBooking = await Booking.findOne({
-      slotIds: { $in: [params.id] },
+      slotIds: { $in: [id] },
       status: { $in: ['pending', 'confirmed'] },
     }).lean();
 
@@ -75,7 +78,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: `Cannot delete a ${slot.status} slot` }, { status: 400 });
     }
 
-    await Slot.findByIdAndDelete(params.id);
+    await Slot.findByIdAndDelete(id);
     return NextResponse.json({ message: 'Slot deleted successfully' });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to delete slot' }, { status: 500 });

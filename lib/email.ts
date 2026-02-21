@@ -34,7 +34,7 @@ export async function sendInviteEmail(params: SendInviteEmailParams): Promise<{ 
         from: fromEmail,
         to: email,
         subject: `Welcome to ${process.env.NEXT_PUBLIC_APP_NAME || 'Glammed Nails'} - Admin Access`,
-        html: getInviteEmailTemplate(displayName, resetLink, role),
+        html: getInviteEmailTemplate(email, displayName, resetLink, role),
       });
 
       if (result.data) {
@@ -76,7 +76,7 @@ export async function sendInviteEmail(params: SendInviteEmailParams): Promise<{ 
 /**
  * Generate HTML email template for invitation
  */
-function getInviteEmailTemplate(displayName: string, resetLink: string, role?: string): string {
+function getInviteEmailTemplate(email: string, displayName: string, resetLink: string, role?: string): string {
   const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Glammed Nails';
   
   return `

@@ -75,7 +75,7 @@ export default function DeleteConfirmationModal({
             Cancel
           </Button>
           <Button
-            variant="dark"
+            variant="destructive"
             size="sm"
             onClick={onConfirm}
             disabled={isLoading}

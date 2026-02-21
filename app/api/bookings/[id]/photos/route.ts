@@ -8,13 +8,14 @@ const ALLOWED_PHOTO_TYPES = ['inspiration', 'currentState'] as const;
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
+    const { id } = await params;
     const contentType = request.headers.get('content-type') || '';
     const isFormData = contentType.includes('multipart/form-data');
 
-    const booking = await Booking.findById(params.id);
+    const booking = await Booking.findById(id);
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
     if (!booking.clientPhotos) {
@@ -43,7 +44,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       }
 
       const buffer = Buffer.from(await file.arrayBuffer());
-      const result: any = await uploadImage(buffer, `booking_photos/${params.id}/${photoType}`);
+      const result: any = await uploadImage(buffer, `booking_photos/${id}/${photoType}`);
 
       const photo = { url: result.secure_url, publicId: result.public_id, uploadedAt: new Date() };
       booking.clientPhotos[photoType as 'inspiration' | 'currentState'].push(photo);
@@ -84,20 +85,26 @@ export async function POST(request: Request, { params }: { params: { id: string 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
+    const { id } = await params;
     const { publicId, photoType } = await request.json();
 
-    const booking = await Booking.findById(params.id);
+    if (!photoType || !ALLOWED_PHOTO_TYPES.includes(photoType)) {
+      return NextResponse.json({ error: 'Invalid photoType' }, { status: 400 });
+    }
+
+    const booking = await Booking.findById(id);
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
     // Remove from booking
-    if (!booking.clientPhotos || !booking.clientPhotos[photoType]) {
+    const typedPhotoType = photoType as 'inspiration' | 'currentState';
+    if (!booking.clientPhotos || !booking.clientPhotos[typedPhotoType]) {
       return NextResponse.json({ error: 'Photo collection not found' }, { status: 404 });
     }
 
-    booking.clientPhotos[photoType] = booking.clientPhotos[photoType].filter(
+    booking.clientPhotos[typedPhotoType] = booking.clientPhotos[typedPhotoType].filter(
       (p: any) => p.publicId !== publicId
     );
     await booking.save();

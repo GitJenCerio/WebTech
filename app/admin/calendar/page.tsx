@@ -44,8 +44,10 @@ interface Slot {
     service?: { type?: string };
     status: string;
     paymentStatus?: string;
-    pricing?: { total?: number; depositRequired?: number };
+    pricing?: { total?: number; depositRequired?: number; paidAmount?: number };
     payment?: { paymentProofUrl?: string };
+    clientNotes?: string;
+    adminNotes?: string;
   } | null;
 }
 
@@ -850,26 +852,27 @@ export default function CalendarPage() {
                 slotType: slot.type,
                 nailTechRole: nailTechs.find((t) => t.id === slot.nailTechId)?.role,
               }))}
-              onSlotClick={handleSlotClick}
-              onView={(slot) => handleSlotClick(slot)}
+              onSlotClick={(slot) => handleSlotClick(slot as Slot)}
+              onView={(slot) => handleSlotClick(slot as Slot)}
               onEdit={(slot) => {
-                setSelectedSlot(slot);
+                setSelectedSlot(slot as Slot);
                 setShowEditSlotModal(true);
                 setEditSlotError(null);
               }}
               onCancel={(slot) => {
-                const bookingStatus = slot.booking?.status;
-                if (slot.booking?.id && (bookingStatus === 'pending' || bookingStatus === 'confirmed')) {
-                  handleSlotClick(slot);
+                const s = slot as Slot;
+                const bookingStatus = s.booking?.status;
+                if (s.booking?.id && (bookingStatus === 'pending' || bookingStatus === 'confirmed')) {
+                  handleSlotClick(s);
                   return;
                 }
 
-                if (slot.status !== 'available') {
+                if (s.status !== 'available') {
                   setEditSlotError('Only available slots can be deleted. Use booking actions for active bookings.');
                   return;
                 }
 
-                handleDeleteSlot(slot);
+                handleDeleteSlot(s);
               }}
             />
           )}
@@ -942,11 +945,15 @@ export default function CalendarPage() {
             selectedDate={selectedDate}
             nailTechs={userRole.canManageAllTechs ? nailTechs : nailTechs.filter((t) => t.id === userRole.assignedNailTechId)}
             defaultNailTechId={userRole.assignedNailTechId}
-            existingSlots={slots.map((slot) => ({
-              date: slot.date,
-              time: slot.time,
-              nailTechId: slot.nailTechId,
-            }))}
+            existingSlots={slots
+              .filter((slot): slot is Slot & { date: string; nailTechId: string } =>
+                !!slot.date && !!slot.nailTechId
+              )
+              .map((slot) => ({
+                date: slot.date,
+                time: slot.time,
+                nailTechId: slot.nailTechId,
+              }))}
           />
           {addingSlots && (
             <div 

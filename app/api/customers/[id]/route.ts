@@ -7,15 +7,16 @@ import type { CustomerInput } from '@/lib/types';
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const customer = await Customer.findById(params.id).lean();
+    const { id } = await params;
+    const customer = await Customer.findById(id).lean();
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found.' }, { status: 404 });
     }
 
-    const bookings = await Booking.find({ customerId: params.id }).sort({ createdAt: -1 }).lean();
+    const bookings = await Booking.find({ customerId: id }).sort({ createdAt: -1 }).lean();
     const lifetimeValue = bookings.reduce((total, booking: any) => {
       const totalAmount = booking.pricing?.total || 0;
       const tipAmount = booking.pricing?.tipAmount || 0;
@@ -73,8 +74,9 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const {
       name,
@@ -110,7 +112,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (isActive !== undefined) updates.isActive = isActive;
 
     await connectDB();
-    const customer = await Customer.findByIdAndUpdate(params.id, updates, { new: true }).lean();
+    const customer = await Customer.findByIdAndUpdate(id, updates, { new: true }).lean();
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found.' }, { status: 404 });
     }
@@ -148,24 +150,25 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-    const customer = await Customer.findById(params.id);
+    const { id } = await params;
+    const customer = await Customer.findById(id);
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
     // Check for active bookings
     const activeBookings = await Booking.countDocuments({
-      customerId: params.id,
+      customerId: id,
       status: { $in: ['pending', 'confirmed'] },
     });
     if (activeBookings > 0) {
       return NextResponse.json({ error: 'Cannot delete customer with active bookings' }, { status: 400 });
     }
 
-    await Customer.findByIdAndDelete(params.id);
+    await Customer.findByIdAndDelete(id);
     return NextResponse.json({ message: 'Customer deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting customer:', error);

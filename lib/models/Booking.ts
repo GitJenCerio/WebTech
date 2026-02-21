@@ -157,7 +157,7 @@ const BookingSchema = new Schema<IBooking>(
 BookingSchema.pre('save', async function() {
   // If this is an update (not a new document) and completedAt is being modified
   if (!this.isNew && this.isModified('completedAt')) {
-    const original = await this.constructor.findById(this._id);
+    const original = await (this.constructor as mongoose.Model<IBooking>).findById(this._id);
     if (original && (original as any).completedAt !== null && this.completedAt !== (original as any).completedAt) {
       // Prevent changing completedAt if it was already set
       throw new Error('Cannot change completedAt once it is set');

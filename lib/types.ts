@@ -1,5 +1,5 @@
-export type SlotStatus = 'available' | 'blocked' | 'pending' | 'confirmed';
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'no_show';
+export type SlotStatus = 'available' | 'blocked' | 'pending' | 'confirmed' | 'booked';
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'no_show' | 'pending_payment' | 'pending_form';
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'refunded';
 export type ServiceType = 'Russian Manicure' | 'Russian Pedicure' | 'Russian Mani + Pedi' | 'Russian Manicure for 2' | 'Russian Pedicure for 2' | 'Russian Mani + Pedi for 1' | 'Russian Mani + Pedi for 2';
 export type NailTechRole = 'Owner' | 'Junior Tech' | 'Senior Tech';

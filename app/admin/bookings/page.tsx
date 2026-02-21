@@ -3,13 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
 import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
-import DataTable from '@/components/admin/DataTable';
-import FilterBar from '@/components/admin/FilterBar';
-import Pagination from '@/components/admin/Pagination';
-import StatusBadge from '@/components/admin/StatusBadge';
-import ActionDropdown from '@/components/admin/ActionDropdown';
 import { BookingStatus } from '@/components/admin/StatusBadge';
 import { useUserRole } from '@/lib/hooks/useUserRole';
+import { Card, CardContent } from '@/components/ui/Card';
+import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+
+const PAGE_SIZE = 10;
 
 function cleanCurrencyValue(value: string | number): number {
   if (typeof value === 'number') return value;
@@ -527,169 +526,242 @@ export default function BookingsPage() {
     }
   };
 
-  const columns = [
-    {
-      key: 'date',
-      header: 'Date',
-      render: (item: Booking) => {
-        const date = new Date(item.date);
-        return isNaN(date.getTime()) ? '-' : date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        });
-      },
-    },
-    {
-      key: 'time',
-      header: 'Time',
-      render: (item: Booking) => item.time || '-',
-    },
-    {
-      key: 'clientName',
-      header: 'Client',
-    },
-    {
-      key: 'socialName',
-      header: 'Social Name',
-      render: (item: Booking) => item.socialName || '-',
-    },
-    {
-      key: 'service',
-      header: 'Service',
-    },
-    {
-      key: 'amountPaid',
-      header: 'Amount Paid',
-      render: (item: Booking) => (
-        <span className="fw-semibold">
-          {item.amountPaid && item.amountPaid > 0 ? `₱${item.amountPaid.toLocaleString()}` : '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (item: Booking) => <StatusBadge status={item.status} />,
-    },
-    {
-      key: 'amount',
-      header: 'Amount',
-      render: (item: Booking) =>
-        item.amount ? `₱${item.amount.toLocaleString()}` : '-',
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      render: (item: Booking) => (
-        <ActionDropdown
-          actions={[
-            {
-              label: 'View',
-              icon: 'bi-eye',
-              onClick: () => {
-                setSelectedBooking({
-                  id: item.id,
-                  bookingCode: item.bookingCode,
-                  customerId: item.customerId,
-                  nailTechId: item.nailTechId,
-                  date: item.date,
-                  time: item.time,
-                  clientName: item.clientName,
-                  clientSocialMediaName: item.socialName,
-                  service: item.service,
-                  status: item.status,
-                  slotCount: 1,
-                  reservationAmount: 500,
-                  paidAmount: item.amountPaid ?? 0,
-                  notes: item.clientNotes,
-                  adminNotes: item.adminNotes,
-                });
-                setAdminNotesDraft(item.adminNotes || '');
-                setShowModal(true);
-              },
-            },
-            { label: 'Cancel', icon: 'bi-x-circle', variant: 'danger' },
-          ]}
-        />
-      ),
-    },
-  ];
+  const filteredBookings = filterBookings(bookings, searchQuery);
+  const paginatedBookings = paginateBookings(filteredBookings, currentPage, PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filteredBookings.length / PAGE_SIZE));
+  const totalItems = filteredBookings.length;
+
+  const getStatusBadge = (status: BookingStatus) => {
+    const cls =
+      status === 'completed' || status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
+      status === 'pending' || status === 'booked' ? 'bg-amber-50 text-amber-700' :
+      status === 'cancelled' ? 'bg-red-50 text-red-600' :
+      status === 'no_show' ? 'bg-gray-100 text-gray-500' :
+      'bg-gray-100 text-gray-500';
+    return (
+      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
+        {(status || '').replace(/_/g, ' ')}
+      </span>
+    );
+  };
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
-          Bookings
-        </h4>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[#1a1a1a]">Bookings</h1>
+          <p className="text-sm text-gray-400 mt-0.5">View and manage all appointments</p>
+        </div>
       </div>
 
-      {/* Bookings Table */}
-      <div className="mt-4">
-        <FilterBar
-          searchPlaceholder="Search bookings..."
-          searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
-          filters={[
-            {
-              key: 'status',
-              label: 'Status',
-              type: 'select',
-              value: statusFilter,
-              onChange: setStatusFilter,
-              options: [
-                { value: 'all', label: 'All Status' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'confirmed', label: 'Confirmed' },
-                { value: 'no_show', label: 'No Show' },
-                { value: 'cancelled', label: 'Cancelled' },
-              ],
-            },
-            {
-              key: 'dateFrom',
-              label: 'Date From',
-              type: 'date',
-              value: dateFrom,
-              onChange: setDateFrom,
-            },
-            {
-              key: 'dateTo',
-              label: 'Date To',
-              type: 'date',
-              value: dateTo,
-              onChange: setDateTo,
-            },
-          ]}
-        />
+      {bookingsError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          {bookingsError}
+        </div>
+      )}
 
-        {bookingsError && (
-          <div className="alert alert-danger" role="alert">
-            {bookingsError}
-          </div>
-        )}
-
-        {bookingsLoading ? (
-          <div className="text-muted py-4">Loading bookings...</div>
-        ) : (
-          <>
-            <DataTable
-              title="All Bookings"
-              columns={columns}
-              data={paginateBookings(filterBookings(bookings, searchQuery), currentPage, 10)}
-              keyExtractor={(item) => item.id}
-              emptyMessage="No bookings found"
-            />
-
-            <div className="mt-3">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={Math.max(1, Math.ceil(filterBookings(bookings, searchQuery).length / 10))}
-                onPageChange={setCurrentPage}
+      {/* Filter Card */}
+      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
               />
             </div>
-          </>
-        )}
-      </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all cursor-pointer"
+            >
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="completed">Completed</option>
+              <option value="no_show">No Show</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-400 whitespace-nowrap">From</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-400 whitespace-nowrap">To</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+              />
+            </div>
+            {(searchQuery || statusFilter !== 'all' || dateFrom || dateTo) && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                  setDateFrom('');
+                  setDateTo('');
+                }}
+                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:text-[#1a1a1a] hover:border-[#1a1a1a] transition-all flex items-center gap-1.5"
+              >
+                <X className="h-3.5 w-3.5" />
+                Clear
+              </button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table Card */}
+      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Time</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Client</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Social Name</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Service</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Amount Paid</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Amount</th>
+                  <th className="px-5 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#f5f5f5]">
+                {bookingsLoading ? (
+                  <tr>
+                    <td colSpan={9} className="px-5 py-16 text-center">
+                      <div className="flex flex-col items-center gap-3 text-gray-400">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span className="text-sm">Loading...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedBookings.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-5 py-16 text-center">
+                      <div className="flex flex-col items-center gap-2 text-gray-400">
+                        <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                          <Search className="h-5 w-5" />
+                        </div>
+                        <span className="text-sm font-medium">No results found</span>
+                        <span className="text-xs">Try adjusting your search or filters</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedBookings.map((item) => (
+                    <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100 group">
+                      <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap tabular-nums">
+                        {item.date ? (() => {
+                          const d = new Date(item.date);
+                          return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        })() : '—'}
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-500">{item.time || '—'}</td>
+                      <td className="px-5 py-3.5">
+                        <span className="font-medium text-[#1a1a1a]">{item.clientName}</span>
+                      </td>
+                      <td className="px-5 py-3.5 text-gray-500">{item.socialName || '—'}</td>
+                      <td className="px-5 py-3.5 text-[#1a1a1a]">{item.service}</td>
+                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">
+                        {item.amountPaid && item.amountPaid > 0 ? `₱${item.amountPaid.toLocaleString()}` : '—'}
+                      </td>
+                      <td className="px-5 py-3.5">{getStatusBadge(item.status)}</td>
+                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">
+                        {item.amount ? `₱${item.amount.toLocaleString()}` : '—'}
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => {
+                              setSelectedBooking({
+                                id: item.id,
+                                bookingCode: item.bookingCode,
+                                customerId: item.customerId,
+                                nailTechId: item.nailTechId,
+                                date: item.date,
+                                time: item.time,
+                                clientName: item.clientName,
+                                clientSocialMediaName: item.socialName,
+                                service: item.service,
+                                status: item.status,
+                                slotCount: 1,
+                                reservationAmount: 500,
+                                paidAmount: item.amountPaid ?? 0,
+                                notes: item.clientNotes,
+                                adminNotes: item.adminNotes,
+                              });
+                              setAdminNotesDraft(item.adminNotes || '');
+                              setShowModal(true);
+                            }}
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                          >
+                            View
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-xs text-gray-400">
+            Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              const page = i + 1;
+              return (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`h-8 w-8 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
+                    currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Booking Details Modal */}
       <BookingDetailsModal

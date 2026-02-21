@@ -27,21 +27,21 @@ export default function AdminLayoutWrapper({
 
   // If on login page, render without layout
   if (isLoginPage) {
-    return <>{children}</>;
+    return <div className="admin-dashboard min-h-screen bg-[#f5f5f5]">{children}</div>;
   }
 
   if (status === 'loading') {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="admin-dashboard flex min-h-screen items-center justify-center bg-[#f5f5f5]">
         <div className="text-center">
           <div
-            className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#212529] border-t-transparent"
+            className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
             role="status"
             aria-label="Loading"
           >
             <span className="sr-only">Loading...</span>
           </div>
-          <p className="mt-3 text-[#6c757d]">Loading...</p>
+          <p className="mt-3 text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -51,5 +51,9 @@ export default function AdminLayoutWrapper({
     return null;
   }
 
-  return <AdminLayout>{children}</AdminLayout>;
+  return (
+    <div className="admin-dashboard">
+      <AdminLayout>{children}</AdminLayout>
+    </div>
+  );
 }

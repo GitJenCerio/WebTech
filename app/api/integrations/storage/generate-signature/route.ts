@@ -12,16 +12,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'bookingId and photoType required' }, { status: 400 });
     }
 
+    const validPhotoTypes = ['inspiration', 'currentState'] as const;
+    if (!validPhotoTypes.includes(photoType as typeof validPhotoTypes[number])) {
+      return NextResponse.json({ error: 'Invalid photoType' }, { status: 400 });
+    }
+
+    const typedPhotoType = photoType as 'inspiration' | 'currentState';
+
     const booking = await Booking.findById(bookingId);
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
     // Check photo limit (max 3 per type)
-    const existing = booking.clientPhotos?.[photoType]?.length || 0;
+    const existing = booking.clientPhotos?.[typedPhotoType]?.length || 0;
     if (existing >= 3) {
       return NextResponse.json({ error: 'Maximum 3 photos allowed per type' }, { status: 400 });
     }
 
-    const folder = photoType === 'inspiration' ? 'nail_inspo' : 'nail_current';
+    const folder = typedPhotoType === 'inspiration' ? 'nail_inspo' : 'nail_current';
     const { signature, timestamp } = generateSignature({
       folder: `${folder}/${bookingId}`,
       upload_preset: 'nail_photos',

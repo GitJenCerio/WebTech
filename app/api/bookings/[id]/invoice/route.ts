@@ -5,11 +5,11 @@ import Customer from '@/lib/models/Customer';
 import Quotation from '@/lib/models/Quotation';
 import { recomputeCustomerStats } from '@/lib/services/bookingService';
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
-
-    const booking = await Booking.findById(params.id);
+    const { id } = await params;
+    const booking = await Booking.findById(id);
     if (!booking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }

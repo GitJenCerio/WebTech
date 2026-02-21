@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   async headers() {
     return [
@@ -26,8 +28,6 @@ const nextConfig = {
   },
   compress: true,
   poweredByHeader: false,
-  // Performance optimizations
-  swcMinify: true,
   reactStrictMode: true,
   // Optimize production builds
   productionBrowserSourceMaps: false,
@@ -37,9 +37,15 @@ const nextConfig = {
       exclude: ['error', 'warn'],
     } : false,
   },
-  // Webpack configuration to fix es-toolkit/compat/get import issue
-  webpack: (config, { isServer }) => {
-    const path = require('path');
+  // Turbopack (Next.js 16 default) - resolve alias for es-toolkit
+  turbopack: {
+    root: __dirname,
+    resolveAlias: {
+      'es-toolkit/compat/get': path.resolve(__dirname, 'node_modules/es-toolkit/compat/get.js'),
+    },
+  },
+  // Webpack fallback - same alias for builds using --webpack
+  webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       'es-toolkit/compat/get': path.resolve(__dirname, 'node_modules/es-toolkit/compat/get.js'),
