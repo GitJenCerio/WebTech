@@ -25,10 +25,10 @@ export async function sendInviteEmail(params: SendInviteEmailParams): Promise<{ 
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
-      
-      const fromEmail = process.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM_DOMAIN 
-        ? `noreply@${process.env.RESEND_FROM_DOMAIN}`
-        : 'onboarding@resend.dev'; // Default Resend domain for testing
+      // Use same from address as other app emails (verified domain required for delivery)
+      const fromEmail = process.env.EMAIL_FROM || process.env.RESEND_FROM_EMAIL 
+        || (process.env.RESEND_FROM_DOMAIN ? `noreply@${process.env.RESEND_FROM_DOMAIN}` : null)
+        || 'onboarding@resend.dev';
       
       const result = await resend.emails.send({
         from: fromEmail,

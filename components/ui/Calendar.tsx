@@ -7,20 +7,16 @@ import { DayPicker, type DayButtonProps } from "react-day-picker";
 import { cn } from "./Utils";
 import { buttonVariants } from "./Button";
 
-const DayButtonWithWhiteSelected = React.forwardRef<
-  HTMLButtonElement,
-  DayButtonProps
->(function DayButtonWithWhiteSelected({ modifiers, className, ...props }, ref) {
+function DayButtonWithWhiteSelected({ modifiers, className, ...props }: DayButtonProps) {
   const isSelected =
     modifiers.selected || modifiers.range_start || modifiers.range_end;
   return (
     <button
-      ref={ref}
       {...props}
       className={cn(className, isSelected && "!text-white")}
     />
   );
-});
+}
 
 function Calendar({
   className,

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Search, X, ChevronLeft, ChevronRight, Loader2, FileText } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Loader2, FileText, Plus } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Badge } from '@/components/ui/Badge';
@@ -82,6 +82,9 @@ export default function ClientsPage() {
   const [clientDetailsError, setClientDetailsError] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<{ name: string; email: string; phone: string; socialMediaName: string; notes: string; isVIP: boolean }>({ name: '', email: '', phone: '', socialMediaName: '', notes: '', isVIP: false });
   const [savingClient, setSavingClient] = useState(false);
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
+  const [addClientDraft, setAddClientDraft] = useState({ name: '', email: '', phone: '', socialMediaName: '', notes: '', isVIP: false });
+  const [addingClient, setAddingClient] = useState(false);
 
   const handleViewClient = useCallback(async (clientId: string, mode: 'view' | 'edit' = 'view') => {
     try {
@@ -111,6 +114,37 @@ export default function ClientsPage() {
       setClientDetailsLoading(false);
     }
   }, []);
+
+  const handleAddClient = async () => {
+    if (!addClientDraft.name.trim()) return;
+    try {
+      setAddingClient(true);
+      const res = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: addClientDraft.name.trim(),
+          email: addClientDraft.email.trim() || undefined,
+          phone: addClientDraft.phone.trim() || undefined,
+          socialMediaName: addClientDraft.socialMediaName.trim() || undefined,
+          notes: addClientDraft.notes.trim() || undefined,
+          isVIP: addClientDraft.isVIP,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to add client');
+      }
+      toast.success('Client added successfully');
+      setShowAddClientModal(false);
+      setAddClientDraft({ name: '', email: '', phone: '', socialMediaName: '', notes: '', isVIP: false });
+      await fetchClients();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add client');
+    } finally {
+      setAddingClient(false);
+    }
+  };
 
   const handleSaveClient = async () => {
     const customerId = clientDetails?.customer?.id;
@@ -215,6 +249,13 @@ export default function ClientsPage() {
                 Clear
               </button>
             )}
+            <button
+              onClick={() => setShowAddClientModal(true)}
+              className="h-9 px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2 ml-auto"
+            >
+              <Plus className="h-4 w-4" />
+              Add Client
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -611,6 +652,81 @@ export default function ClientsPage() {
                 Close
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Client Dialog */}
+      <Dialog open={showAddClientModal} onOpenChange={(open) => !open && setShowAddClientModal(false)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Client</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <div>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Name <span className="text-red-500">*</span></label>
+              <Input
+                value={addClientDraft.name}
+                onChange={(e) => setAddClientDraft((d) => ({ ...d, name: e.target.value }))}
+                className="h-9"
+                placeholder="Client name"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Email</label>
+              <Input
+                type="email"
+                value={addClientDraft.email}
+                onChange={(e) => setAddClientDraft((d) => ({ ...d, email: e.target.value }))}
+                className="h-9"
+                placeholder="Email"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Phone</label>
+              <Input
+                value={addClientDraft.phone}
+                onChange={(e) => setAddClientDraft((d) => ({ ...d, phone: e.target.value }))}
+                className="h-9"
+                placeholder="Phone"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Social Media</label>
+              <Input
+                value={addClientDraft.socialMediaName}
+                onChange={(e) => setAddClientDraft((d) => ({ ...d, socialMediaName: e.target.value }))}
+                className="h-9"
+                placeholder="Social media name"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Notes</label>
+              <textarea
+                value={addClientDraft.notes}
+                onChange={(e) => setAddClientDraft((d) => ({ ...d, notes: e.target.value }))}
+                className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-[#e5e5e5] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]"
+                placeholder="Notes"
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <Checkbox
+                id="add-vip"
+                checked={addClientDraft.isVIP}
+                onCheckedChange={(checked) => setAddClientDraft((d) => ({ ...d, isVIP: !!checked }))}
+              />
+              <label htmlFor="add-vip" className="text-sm font-medium text-[#1a1a1a] cursor-pointer">
+                VIP Client
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setShowAddClientModal(false)} disabled={addingClient}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleAddClient} disabled={addingClient || !addClientDraft.name.trim()}>
+              {addingClient ? 'Adding...' : 'Add Client'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

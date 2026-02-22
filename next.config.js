@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const path = require('path');
 
+// Use forward slashes for module resolution (fixes Turbopack Windows path issue)
+const esToolkitGetPath = path.join(__dirname, 'node_modules', 'es-toolkit', 'compat', 'get.js').replace(/\\/g, '/');
+
 const nextConfig = {
   async headers() {
     return [
@@ -37,18 +40,17 @@ const nextConfig = {
       exclude: ['error', 'warn'],
     } : false,
   },
-  // Turbopack (Next.js 16 default) - resolve alias for es-toolkit
+  // Turbopack alias (forward slashes for Windows compatibility)
   turbopack: {
-    root: __dirname,
     resolveAlias: {
-      'es-toolkit/compat/get': path.resolve(__dirname, 'node_modules/es-toolkit/compat/get.js'),
+      'es-toolkit/compat/get': esToolkitGetPath,
     },
   },
-  // Webpack fallback - same alias for builds using --webpack
+  // Webpack alias for es-toolkit
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      'es-toolkit/compat/get': path.resolve(__dirname, 'node_modules/es-toolkit/compat/get.js'),
+      'es-toolkit/compat/get': esToolkitGetPath,
     };
     return config;
   },

@@ -73,7 +73,6 @@ export { Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableC
 export { Tooltip } from './Tooltip';
 export { Popover } from './Popover';
 export { Calendar } from './Calendar';
-export { DataTable } from './DataTable';
 export { StatCard } from './StatCard';
 export { Sidebar } from './Sidebar';
 export { Topbar } from './Topbar';

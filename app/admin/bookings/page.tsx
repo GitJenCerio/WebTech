@@ -5,20 +5,17 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
 import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
+import AddBookingModal from '@/components/admin/bookings/AddBookingModal';
 import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
 import { BookingStatus } from '@/components/admin/StatusBadge';
 import { DateRangePicker } from '@/components/admin/DateRangePicker';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Loader2, Plus } from 'lucide-react';
+import { usePricing } from '@/lib/hooks/usePricing';
+import { useNailTechs } from '@/lib/hooks/useNailTechs';
 
 const PAGE_SIZE = 10;
-
-function cleanCurrencyValue(value: string | number): number {
-  if (typeof value === 'number') return value;
-  const cleaned = String(value).replace(/[^0-9.\\-]/g, '').trim();
-  return parseFloat(cleaned) || 0;
-}
 
 interface Booking {
   id: string;
@@ -88,63 +85,10 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [bookingsError, setBookingsError] = useState<string | null>(null);
+  const [showAddBookingModal, setShowAddBookingModal] = useState(false);
 
-  const normalizeServiceName = useCallback((value: string) => {
-    return value
-      .toLowerCase()
-      .replace(/&/g, 'and')
-      .replace(/[^a-z0-9]+/g, '');
-  }, []);
-
-  const findPricingRow = useCallback((serviceName: string) => {
-    if (!serviceName || pricingData.length === 0) return null;
-    const normalized = normalizeServiceName(serviceName.trim());
-    if (!normalized) return null;
-
-    return (
-      pricingData.find((item) => {
-        const firstKey = Object.keys(item)[0];
-        const name = String(item[firstKey] || '').trim();
-        const rowNorm = normalizeServiceName(name);
-        return rowNorm === normalized;
-      }) ||
-      pricingData.find((item) => {
-        const firstKey = Object.keys(item)[0];
-        const name = String(item[firstKey] || '').trim();
-        const rowNorm = normalizeServiceName(name);
-        return rowNorm.includes(normalized) || normalized.includes(rowNorm);
-      }) ||
-      null
-    );
-  }, [pricingData, normalizeServiceName]);
-
-  const getUnitPriceForService = useCallback((serviceName: string): number | null => {
-    const found = findPricingRow(serviceName);
-    if (!found) return null;
-
-    const priceKey =
-      pricingHeaders.find((h) => {
-        const key = h.toLowerCase();
-        return key.includes('price') || key.includes('amount') || key.includes('cost') || key.includes('rate');
-      }) || pricingHeaders[1];
-
-    if (priceKey && Object.prototype.hasOwnProperty.call(found, priceKey)) {
-      const value = cleanCurrencyValue(found[priceKey] || 0);
-      if (value > 0) return value;
-    }
-
-    // Fallback: first numeric-looking value in row
-    for (const key of Object.keys(found)) {
-      const val = cleanCurrencyValue(found[key]);
-      if (val > 0) return val;
-    }
-
-    return null;
-  }, [findPricingRow, pricingHeaders]);
-
-  // State for nail techs
-  const [nailTechs, setNailTechs] = useState<Array<{ id: string; name: string; role?: string; discount?: number }>>([]);
-  const [nailTechsLoading, setNailTechsLoading] = useState(true);
+  const { getUnitPriceForService } = usePricing(pricingData, pricingHeaders);
+  const { nailTechs, loading: nailTechsLoading } = useNailTechs();
 
   useEffect(() => {
     const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
@@ -171,87 +115,56 @@ export default function BookingsPage() {
     }]);
   }, [showInvoiceModal, selectedBooking?.service, invoiceItems, getUnitPriceForService]);
 
-
-
-  // Fetch nail techs on mount
-  useEffect(() => {
-    async function fetchNailTechs() {
-      try {
-        setNailTechsLoading(true);
-        const response = await fetch('/api/nail-techs');
-        if (!response.ok) throw new Error('Failed to fetch nail techs');
-        const data = await response.json();
-        setNailTechs(data.nailTechs.map((tech: any) => ({
-          id: tech.id || tech._id,
-          name: tech.name,
-          role: tech.specialties?.[0] || 'Nail Tech',
-          discount: typeof tech.discount === 'number' ? tech.discount : undefined,
-        })));
-      } catch (error: any) {
-        console.error('Error fetching nail techs:', error);
-      } finally {
-        setNailTechsLoading(false);
+  const fetchBookings = useCallback(async () => {
+    try {
+      setBookingsLoading(true);
+      setBookingsError(null);
+      const params = new URLSearchParams();
+      const urlCustomerId = searchParams.get('customerId');
+      const urlTechId = searchParams.get('techId') || searchParams.get('nailTechId');
+      if (urlCustomerId) params.set('customerId', urlCustomerId);
+      if (urlTechId) params.set('nailTechId', urlTechId);
+      if (statusFilter && statusFilter !== 'all') {
+        params.set('status', statusFilter as any);
       }
+      if (dateFrom) params.set('startDate', dateFrom);
+      if (dateTo) params.set('endDate', dateTo);
+      const response = await fetch(`/api/bookings?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch bookings');
+      const data = await response.json();
+      const rows: Booking[] = (data.bookings || []).map((booking: any) => {
+        const apptDate = booking.appointmentDate || booking.createdAt || '';
+        const apptTime = booking.appointmentTime || '';
+        return {
+          id: booking.id,
+          bookingCode: booking.bookingCode,
+          customerId: booking.customerId,
+          nailTechId: booking.nailTechId,
+          date: apptDate,
+          time: apptTime,
+          clientName: booking.customerName || 'Unknown Client',
+          socialName: booking.customerSocialMediaName || '',
+          service: booking.service?.type || 'Nail Service',
+          status: booking.status || 'booked',
+          amount: booking.pricing?.total || 0,
+          amountPaid: booking.pricing?.paidAmount || 0,
+          clientNotes: booking.clientNotes || '',
+          adminNotes: booking.adminNotes || '',
+        };
+      });
+      setBookings(rows);
+      setCurrentPage(1);
+    } catch (error: any) {
+      console.error('Error fetching bookings:', error);
+      setBookingsError(error.message || 'Failed to fetch bookings');
+    } finally {
+      setBookingsLoading(false);
     }
-    fetchNailTechs();
-  }, []);
-
-
-
-  useEffect(() => {
-    async function fetchBookings() {
-      try {
-        setBookingsLoading(true);
-        setBookingsError(null);
-
-        const params = new URLSearchParams();
-        const urlCustomerId = searchParams.get('customerId');
-        const urlTechId = searchParams.get('techId') || searchParams.get('nailTechId');
-        if (urlCustomerId) params.set('customerId', urlCustomerId);
-        if (urlTechId) params.set('nailTechId', urlTechId);
-        if (statusFilter && statusFilter !== 'all') {
-          params.set('status', statusFilter as any);
-        }
-        if (dateFrom) params.set('startDate', dateFrom);
-        if (dateTo) params.set('endDate', dateTo);
-
-        const response = await fetch(`/api/bookings?${params.toString()}`);
-        if (!response.ok) throw new Error('Failed to fetch bookings');
-
-        const data = await response.json();
-        const rows: Booking[] = (data.bookings || []).map((booking: any) => {
-          const apptDate = booking.appointmentDate || booking.createdAt || '';
-          const apptTime = booking.appointmentTime || '';
-          return {
-            id: booking.id,
-            bookingCode: booking.bookingCode,
-            customerId: booking.customerId,
-            nailTechId: booking.nailTechId,
-            date: apptDate,
-            time: apptTime,
-            clientName: booking.customerName || 'Unknown Client',
-            socialName: booking.customerSocialMediaName || '',
-            service: booking.service?.type || 'Nail Service',
-            status: booking.status || 'booked',
-            amount: booking.pricing?.total || 0,
-            amountPaid: booking.pricing?.paidAmount || 0,
-            clientNotes: booking.clientNotes || '',
-            adminNotes: booking.adminNotes || '',
-          };
-        });
-
-        setBookings(rows);
-        setCurrentPage(1);
-      } catch (error: any) {
-        console.error('Error fetching bookings:', error);
-        setBookingsError(error.message || 'Failed to fetch bookings');
-      } finally {
-        setBookingsLoading(false);
-      }
-    }
-
-    fetchBookings();
   }, [statusFilter, dateFrom, dateTo, searchParams]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
 
   const handleViewClientProfile = () => {
@@ -679,6 +592,13 @@ export default function BookingsPage() {
                 Clear
               </button>
             )}
+            <button
+              onClick={() => setShowAddBookingModal(true)}
+              className="h-9 px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2 ml-auto"
+            >
+              <Plus className="h-4 w-4" />
+              Add Booking
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -968,6 +888,15 @@ export default function BookingsPage() {
         onInvoiceNotesChange={setInvoiceNotes}
         onAddFromPricing={handleAddInvoiceItemFromPricing}
         onSave={handleSaveInvoice}
+      />
+
+      <AddBookingModal
+        open={showAddBookingModal}
+        onClose={() => setShowAddBookingModal(false)}
+        onSuccess={() => {
+          toast.success('Booking created successfully');
+          fetchBookings();
+        }}
       />
     </div>
   );

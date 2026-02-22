@@ -1,9 +1,17 @@
 'use client';
 
-import { useEffect, useState, Fragment, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/Dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import { Card, CardContent } from '@/components/ui/Card';
 import type { NailTech as NailTechType, ServiceAvailability } from '@/lib/types';
@@ -306,15 +314,16 @@ export default function NailTechsPage() {
                 className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
               />
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all cursor-pointer"
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[140px] h-9 px-3">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
             {(searchQuery || statusFilter !== 'all') && (
               <button
                 onClick={() => {
@@ -524,226 +533,165 @@ export default function NailTechsPage() {
         </div>
       )}
 
-      {showAddModal && (
-        <Fragment>
-          <div 
-            className="modal-backdrop fade show" 
-            onClick={() => !saving && setShowAddModal(false)}
-            style={{ zIndex: 1050 }}
-          ></div>
-          <div 
-            className="modal fade show d-block" 
-            tabIndex={-1} 
-            role="dialog"
-            style={{ zIndex: 1055 }}
-          >
-            <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
-              <div className="modal-content" style={{ borderRadius: '12px', border: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
-                <div className="modal-header" style={{ padding: '1.25rem 1.5rem' }}>
-                  <h5 className="modal-title" style={{ fontWeight: 600, color: '#212529', fontSize: '1.25rem' }}>
-                    {modalMode === 'add' ? 'Add Nail Technician' : modalMode === 'edit' ? 'Edit Nail Technician' : 'View Nail Technician'}
-                  </h5>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-label="Close"
-                    onClick={() => !saving && setShowAddModal(false)}
-                    disabled={saving}
-                    className="px-2 py-1 text-lg leading-none"
-                    style={{ opacity: saving ? 0.5 : 1 }}
-                  >
-                    ×
-                  </Button>
-                </div>
-                <form onSubmit={handleSubmit}>
-                  <div className="modal-body" style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                        Name <span className="text-danger">*</span>
-                      </label>
-                      <Input
-                        type="text"
-                        value={form.name}
-                        onChange={(e) => handleChange('name', e.target.value)}
-                        required
-                        placeholder="e.g. Jhen"
-                        disabled={saving || modalMode === 'view'}
-                        style={{ fontSize: '0.875rem' }}
-                      />
-                    </div>
-
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                        Role <span className="text-danger">*</span>
-                      </label>
-                      <select
-                        value={form.role}
-                        onChange={(e) => handleChange('role', e.target.value as NailTechType['role'])}
-                        disabled={saving || modalMode === 'view'}
-                        className="form-select w-100"
-                        style={{ fontSize: '0.875rem' }}
-                      >
-                        <option value="Owner">Owner</option>
-                        <option value="Senior Tech">Senior Tech</option>
-                        <option value="Junior Tech">Junior Tech</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                      Service Availability <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      value={form.serviceAvailability}
-                      onChange={(e) => handleChange('serviceAvailability', e.target.value as ServiceAvailability)}
-                      disabled={saving || modalMode === 'view'}
-                      className="form-select w-100"
-                      style={{ fontSize: '0.875rem' }}
-                    >
-                      <option value="Studio only">Studio only</option>
-                      <option value="Home service only">Home service only</option>
-                      <option value="Studio and Home Service">Studio and Home Service</option>
-                    </select>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                      Working Days <span className="text-danger">*</span>
-                    </label>
-                    <div className="d-flex flex-wrap gap-2">
-                      {allDays.map((day) => (
-                        <Button
-                          key={day}
-                          type="button"
-                          size="sm"
-                          variant={form.workingDays.includes(day) ? 'default' : 'secondary'}
-                          onClick={() => handleToggleWorkingDay(day)}
-                          disabled={saving || modalMode === 'view'}
-                          className="min-w-[60px]"
-                          style={{ 
-                            borderRadius: '8px',
-                            fontWeight: 500,
-                            transition: 'all 0.2s ease',
-                            minWidth: '60px'
-                          }}
-                        >
-                          {day.slice(0, 3)}
-                        </Button>
-                      ))}
-                    </div>
-                    <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.5rem' }}>
-                      Select all days this technician is available
-                    </small>
-                  </div>
-
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                        Discount (%)
-                      </label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={form.discount}
-                        onChange={(e) => handleChange('discount', e.target.value)}
-                        placeholder="e.g. 15"
-                        disabled={saving || modalMode === 'view'}
-                        style={{ fontSize: '0.875rem' }}
-                      />
-                      <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.25rem' }}>
-                        Optional: Discount percentage for all services
-                      </small>
-                    </div>
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                        Commission (%)
-                      </label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={form.commissionRate}
-                        onChange={(e) => handleChange('commissionRate', e.target.value)}
-                        placeholder="e.g. 40"
-                        disabled={saving || modalMode === 'view'}
-                        style={{ fontSize: '0.875rem' }}
-                      />
-                      <small className="text-muted" style={{ fontSize: '0.75rem', display: 'block', marginTop: '0.25rem' }}>
-                        Optional: Commission rate (0-100)
-                      </small>
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="form-label fw-medium" style={{ color: '#495057', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                      Status <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      value={form.status}
-                      onChange={(e) => handleChange('status', e.target.value as NailTechType['status'])}
-                      disabled={saving || modalMode === 'view'}
-                      className="form-select w-100"
-                      style={{ fontSize: '0.875rem' }}
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="modal-footer" style={{ padding: '1rem 1.5rem' }}>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => !saving && setShowAddModal(false)}
-                    disabled={saving}
-                    style={{ 
-                      borderRadius: '8px',
-                      fontWeight: 500,
-                      padding: '0.5rem 1rem',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  {modalMode !== 'view' && (
-                    <Button
-                      type="submit" 
-                      variant="default"
-                      disabled={saving || !form.name.trim()}
-                      style={{ 
-                        borderRadius: '8px',
-                        fontWeight: 500,
-                        padding: '0.5rem 1rem',
-                        backgroundColor: saving || !form.name.trim() ? '#6c757d' : '#212529',
-                        borderColor: saving || !form.name.trim() ? '#6c757d' : '#212529',
-                        transition: 'all 0.2s ease',
-                        boxShadow: saving || !form.name.trim() ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.1)'
-                      }}
-                    >
-                      {saving ? (
-                        <Fragment>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                          Saving...
-                        </Fragment>
-                      ) : (
-                        <Fragment>
-                          <i className="bi bi-check-circle me-2"></i>
-                          Save Nail Tech
-                        </Fragment>
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </form>
+      <Dialog open={showAddModal} onOpenChange={(open) => !saving && setShowAddModal(open)}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto border-[#e5e5e5] bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-[#1a1a1a]">
+              {modalMode === 'add' ? 'Add Nail Technician' : modalMode === 'edit' ? 'Edit Nail Technician' : 'View Nail Technician'}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Name <span className="text-red-500">*</span></label>
+                <Input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  required
+                  placeholder="e.g. Jhen"
+                  disabled={saving || modalMode === 'view'}
+                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Role <span className="text-red-500">*</span></label>
+                <Select
+                  value={form.role}
+                  onValueChange={(v) => handleChange('role', v as NailTechType['role'])}
+                  disabled={saving || modalMode === 'view'}
+                >
+                  <SelectTrigger className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Owner">Owner</SelectItem>
+                    <SelectItem value="Senior Tech">Senior Tech</SelectItem>
+                    <SelectItem value="Junior Tech">Junior Tech</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-          </div>
-        </Fragment>
-      )}
+
+            <div>
+              <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Service Availability <span className="text-red-500">*</span></label>
+              <Select
+                value={form.serviceAvailability}
+                onValueChange={(v) => handleChange('serviceAvailability', v as ServiceAvailability)}
+                disabled={saving || modalMode === 'view'}
+              >
+                <SelectTrigger className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Studio only">Studio only</SelectItem>
+                  <SelectItem value="Home service only">Home service only</SelectItem>
+                  <SelectItem value="Studio and Home Service">Studio and Home Service</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Working Days <span className="text-red-500">*</span></label>
+              <div className="flex flex-wrap gap-2">
+                {allDays.map((day) => (
+                  <Button
+                    key={day}
+                    type="button"
+                    size="sm"
+                    variant={form.workingDays.includes(day) ? 'default' : 'secondary'}
+                    onClick={() => handleToggleWorkingDay(day)}
+                    disabled={saving || modalMode === 'view'}
+                    className="min-w-[60px] rounded-lg h-9"
+                  >
+                    {day.slice(0, 3)}
+                  </Button>
+                ))}
+              </div>
+              <small className="text-gray-500 text-xs block mt-1.5">Select all days this technician is available</small>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Discount (%)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.discount}
+                  onChange={(e) => handleChange('discount', e.target.value)}
+                  placeholder="e.g. 15"
+                  disabled={saving || modalMode === 'view'}
+                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                />
+                <small className="text-gray-500 text-xs block mt-1">Optional: Discount percentage for all services</small>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Commission (%)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.commissionRate}
+                  onChange={(e) => handleChange('commissionRate', e.target.value)}
+                  placeholder="e.g. 40"
+                  disabled={saving || modalMode === 'view'}
+                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                />
+                <small className="text-gray-500 text-xs block mt-1">Optional: Commission rate (0-100)</small>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Status <span className="text-red-500">*</span></label>
+              <Select
+                value={form.status}
+                onValueChange={(v) => handleChange('status', v as NailTechType['status'])}
+                disabled={saving || modalMode === 'view'}
+              >
+                <SelectTrigger className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DialogFooter className="gap-2 pt-4">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setShowAddModal(false)}
+                disabled={saving}
+                className="rounded-xl"
+              >
+                Cancel
+              </Button>
+              {modalMode !== 'view' && (
+                <Button
+                  type="submit"
+                  disabled={saving || !form.name.trim()}
+                  className="rounded-xl bg-[#1a1a1a] hover:bg-[#2d2d2d] text-white"
+                >
+                  {saving ? (
+                    <>
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent inline-block mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-check-circle mr-2" />
+                      Save Nail Tech
+                    </>
+                  )}
+                </Button>
+              )}
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={deleteConfirmOpen}

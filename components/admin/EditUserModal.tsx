@@ -226,15 +226,15 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
                   </div>
                 ) : (
                   <Select
-                    value={assignedNailTechId}
-                    onValueChange={setAssignedNailTechId}
+                    value={assignedNailTechId || '__none__'}
+                    onValueChange={(v) => setAssignedNailTechId(v === '__none__' ? '' : v)}
                     disabled={loading}
                   >
                     <SelectTrigger id="editAssignedNailTech">
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {nailTechs.map((tech) => (
                         <SelectItem key={tech.id} value={tech.id}>
                           {tech.name}

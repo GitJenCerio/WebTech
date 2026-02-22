@@ -6,18 +6,7 @@ import html2canvas from 'html2canvas';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-
-// Helper function to clean currency values
-function cleanCurrencyValue(value: string | number): number {
-  if (typeof value === 'number') return value;
-  
-  // Remove currency symbols (₱, $, etc.), commas, and spaces
-  const cleaned = String(value)
-    .replace(/[₱$,\s]/g, '')
-    .trim();
-  
-  return parseFloat(cleaned) || 0;
-}
+import { cleanCurrencyValue } from '@/lib/utils/currency';
 
 interface PricingItem {
   [key: string]: string | number;
@@ -666,8 +655,8 @@ export default function QuotationPage() {
                           key={index}
                           className={`mb-3 pb-3 ${index < lineItems.length - 1 ? 'border-b border-[#e5e5e5]' : ''}`}
                         >
-                          <div className="d-flex justify-content-between align-items-start mb-2">
-                            <h6 className="mb-1" style={{ 
+                          <div className="flex justify-between items-start mb-2">
+                            <h6 className="mb-1 flex-1" style={{ 
                               fontSize: 'clamp(0.875rem, 2vw, 1.125rem)',
                               fontWeight: 600,
                               color: '#212529',
@@ -675,7 +664,7 @@ export default function QuotationPage() {
                             }}>
                               {item.serviceName}
                             </h6>
-                            <p className="mb-0 ms-2" style={{ 
+                            <p className="mb-0 ml-2 shrink-0" style={{ 
                               fontSize: 'clamp(0.875rem, 2vw, 1.125rem)',
                               fontWeight: 700,
                               color: '#1a1a1a',
@@ -684,7 +673,7 @@ export default function QuotationPage() {
                               ₱{item.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                             </p>
                           </div>
-                          <div className="d-flex gap-3" style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', color: '#6c757d' }}>
+                          <div className="flex gap-3 text-sm text-gray-500" style={{ fontSize: 'clamp(0.75rem, 2vw, 0.875rem)' }}>
                             <span><strong>QTY:</strong> {item.quantity}</span>
                             <span><strong>UNIT PRICE:</strong> ₱{item.unitPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
                           </div>
@@ -694,7 +683,7 @@ export default function QuotationPage() {
 
                     {/* Total Section */}
                     <div className="pt-3 border-t-[3px] border-[#1a1a1a]">
-                      <div className="d-flex justify-content-between align-items-center mb-2">
+                      <div className="flex justify-between items-center mb-2">
                         <p className="mb-0" style={{ 
                           fontSize: 'clamp(0.875rem, 2vw, 1rem)',
                           fontWeight: 500,
@@ -710,7 +699,7 @@ export default function QuotationPage() {
                           ₱{subtotal.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                         </p>
                       </div>
-                      <div className="d-flex justify-content-between align-items-center">
+                      <div className="flex justify-between items-center">
                         <p className="mb-0" style={{ 
                           fontSize: 'clamp(1.125rem, 3vw, 1.5rem)',
                           fontWeight: 700,

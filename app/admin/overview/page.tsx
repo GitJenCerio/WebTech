@@ -1,135 +1,229 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import StatCard from '@/components/admin/StatCard';
-import ChartPlaceholder from '@/components/admin/ChartPlaceholder';
 import StatusBadge from '@/components/admin/StatusBadge';
-import { Card, CardHeader, CardContent } from "@/components/ui/Card";
+import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import type { BookingStatus } from '@/components/admin/StatusBadge';
 
 interface TodayBooking {
   id: string;
   time: string;
   clientName: string;
   service: string;
-  status: 'booked' | 'completed' | 'cancelled';
+  status: BookingStatus;
 }
+
+function getManilaDateKey(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date()).replace(/-/g, '');
+}
+
+function formatTime(isoOrTime: string): string {
+  if (!isoOrTime) return '—';
+  if (isoOrTime.includes(':')) return isoOrTime;
+  const d = new Date(isoOrTime);
+  return isNaN(d.getTime()) ? isoOrTime : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+const PIE_COLORS = ['#1a1a1a', '#e5e5e5', '#a3a3a3'];
 
 /**
  * Admin Overview/Dashboard Page
- * Mobile-first responsive design with monochrome luxury branding
- * Displays key metrics, charts, and today's appointments
+ * Fetches live data from API, displays charts with recharts
  */
 export default function OverviewPage() {
-  // Mock data - will be replaced with real API data
-  const todayBookings: TodayBooking[] = [
-    {
-      id: '1',
-      time: '9:00 AM',
-      clientName: 'Sarah Johnson',
-      service: 'Russian Manicure',
-      status: 'booked',
-    },
-    {
-      id: '2',
-      time: '11:00 AM',
-      clientName: 'Maria Garcia',
-      service: 'Nail Art + Pedicure',
-      status: 'booked',
-    },
-    {
-      id: '3',
-      time: '2:00 PM',
-      clientName: 'Emily Chen',
-      service: 'Gel Extension',
-      status: 'booked',
-    },
-    {
-      id: '4',
-      time: '4:00 PM',
-      clientName: 'Jessica Williams',
-      service: 'Manicure & Pedicure',
-      status: 'booked',
-    },
-    {
-      id: '5',
-      time: '5:30 PM',
-      clientName: 'Amanda Lee',
-      service: 'Nail Art',
-      status: 'booked',
-    },
-  ];
+  const [todayBookings, setTodayBookings] = useState<TodayBooking[]>([]);
+  const [weekBookings, setWeekBookings] = useState<any[]>([]);
+  const [slots, setSlots] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const todayKey = getManilaDateKey();
+  const todayYmd = `${todayKey.slice(0, 4)}-${todayKey.slice(4, 6)}-${todayKey.slice(6, 8)}`;
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        setError(null);
+        const [todayRes, weekRes, slotsRes] = await Promise.all([
+          fetch('/api/bookings?range=today'),
+          fetch('/api/bookings?range=week'),
+          fetch(`/api/slots?startDate=${todayYmd}&endDate=${todayYmd}`),
+        ]);
+
+        if (!todayRes.ok || !weekRes.ok) throw new Error('Failed to fetch bookings');
+        const todayData = await todayRes.json();
+        const weekData = await weekRes.json();
+        const slotsData = slotsRes.ok ? await slotsRes.json() : { slots: [] };
+
+        const today = (todayData.bookings || []).map((b: any) => ({
+          id: b.id,
+          time: formatTime(b.appointmentTime || b.createdAt || ''),
+          clientName: b.customerName || 'Unknown Client',
+          service: b.service?.type || 'Nail Service',
+          status: (b.status || 'pending') as BookingStatus,
+          amount: b.pricing?.total ?? b.invoice?.total ?? 0,
+          pricing: b.pricing,
+        }));
+        setTodayBookings(today);
+
+        setWeekBookings(weekData.bookings || []);
+
+        const slotList = slotsData.slots || [];
+        setSlots(slotList);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load overview data');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [todayYmd]);
+
+  const stats = useMemo(() => {
+    const upcoming = todayBookings.filter((b) =>
+      ['pending', 'confirmed', 'booked'].includes(String(b.status).toLowerCase())
+    );
+    const completed = todayBookings.filter((b) =>
+      String(b.status).toLowerCase() === 'completed'
+    );
+    const availableSlots = slots.filter((s: any) => s.status === 'available');
+    const bookedSlots = slots.filter((s: any) =>
+      ['pending', 'confirmed'].includes(s.status)
+    );
+    const totalSlots = slots.length;
+    const income = todayBookings.reduce((sum, b) => {
+      const s = String(b.status).toLowerCase();
+      if (['completed', 'confirmed', 'pending', 'booked'].includes(s)) {
+        const amt = (b as any).amount ?? (b as any).pricing?.total ?? 0;
+        return sum + Number(amt) || 0;
+      }
+      return sum;
+    }, 0);
+    return {
+      appointmentsCount: todayBookings.length,
+      upcomingCount: upcoming.length,
+      completedCount: completed.length,
+      availableSlots: availableSlots.length,
+      totalSlots: totalSlots || 1,
+      bookedSlots: bookedSlots.length,
+      income,
+    };
+  }, [todayBookings, slots]);
+
+  const weeklyChartData = useMemo(() => {
+    const dayCount: Record<string, number> = {};
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    days.forEach((d) => (dayCount[d] = 0));
+    weekBookings.forEach((b: any) => {
+      const dateStr = b.appointmentDate || b.completedAt || b.createdAt;
+      if (!dateStr) return;
+      const d = new Date(dateStr);
+      const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
+      if (dayCount[dayName] !== undefined) dayCount[dayName]++;
+    });
+    return days.map((name) => ({ name, count: dayCount[name] ?? 0 }));
+  }, [weekBookings]);
+
+  const pieData = useMemo(() => {
+    const booked = stats.bookedSlots;
+    const available = stats.availableSlots;
+    return [
+      { name: 'Booked', value: booked, color: PIE_COLORS[0] },
+      { name: 'Available', value: available, color: PIE_COLORS[1] },
+    ].filter((d) => d.value > 0);
+  }, [stats.bookedSlots, stats.availableSlots]);
 
   const columns = [
+    { key: 'time' as const, header: 'Time' },
+    { key: 'clientName' as const, header: 'Client' },
+    { key: 'service' as const, header: 'Service' },
     {
-      key: 'time',
-      header: 'Time',
-    },
-    {
-      key: 'clientName',
-      header: 'Client',
-    },
-    {
-      key: 'service',
-      header: 'Service',
-    },
-    {
-      key: 'status',
+      key: 'status' as const,
       header: 'Status',
       render: (item: TodayBooking) => <StatusBadge status={item.status} />,
     },
   ];
 
+  if (loading && todayBookings.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="text-gray-400 text-sm">Loading overview...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-full space-y-6">
-      {/* Stat Cards - Mobile-first responsive grid, equal height */}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 sm:mb-8 items-stretch">
         <StatCard
           title="Today's Appointments"
-          value={todayBookings.length}
-          subtext={`${todayBookings.filter((b) => b.status === 'booked').length} upcoming`}
+          value={stats.appointmentsCount}
+          subtext={`${stats.upcomingCount} upcoming`}
           icon="bi-calendar-check"
           variant="light"
         />
         <StatCard
           title="Available Slots Today"
-          value="3"
-          subtext="Out of 8 total slots"
+          value={stats.availableSlots}
+          subtext={`Out of ${stats.totalSlots} total slots`}
           icon="bi-clock"
           variant="light"
         />
         <StatCard
           title="Completed Today"
-          value="2"
-          subtext="This morning"
+          value={stats.completedCount}
+          subtext=""
           icon="bi-check-circle"
           variant="dark"
         />
         <StatCard
           title="Estimated Income Today"
-          value="₱12,500"
+          value={`₱${stats.income.toLocaleString()}`}
           subtext="From completed & booked"
           icon="bi-cash-stack"
           variant="light"
         />
       </div>
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch lg:min-h-[380px]">
-        {/* Weekly Appointments Chart - Takes 2/3 on desktop */}
         <div className="lg:col-span-2 min-h-0 flex flex-col">
           <Card className="h-full flex flex-col border border-[#e5e5e5] shadow-card bg-white overflow-hidden transition-shadow hover:shadow-hover">
             <CardHeader className="flex-shrink-0 pb-2 border-b border-[#f0f0f0]">
               <h5 className="text-lg font-semibold text-[#1a1a1a]">Weekly Appointments</h5>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 flex flex-col">
-              <ChartPlaceholder type="bar" title="Weekly appointments chart" height="280px" className="flex-1" />
+            <CardContent className="flex-1 min-h-0 flex flex-col" style={{ minHeight: 280 }}>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={weeklyChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#888" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 8, border: '1px solid #e5e5e5' }}
+                    formatter={(value: number) => [value, 'Appointments']}
+                  />
+                  <Bar dataKey="count" fill="#1a1a1a" radius={[4, 4, 0, 0]} name="Appointments" />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
-        
-        {/* Slot Utilization - Takes 1/3 on desktop */}
+
         <div className="lg:col-span-1 min-h-0 flex flex-col">
           <Card className="h-full flex flex-col border border-[#e5e5e5] shadow-card bg-white overflow-hidden transition-shadow hover:shadow-hover">
             <CardHeader className="flex-shrink-0 pb-2 border-b border-[#f0f0f0]">
@@ -139,35 +233,52 @@ export default function OverviewPage() {
               <div className="flex justify-between items-center mb-4 text-sm flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-[#1a1a1a] rounded-sm"></div>
-                  <span className="text-[#1a1a1a]">Booked: 5</span>
+                  <span className="text-[#1a1a1a]">Booked: {stats.bookedSlots}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-[#e5e5e5] rounded-sm"></div>
-                  <span className="text-[#1a1a1a]">Available: 3</span>
+                  <span className="text-[#1a1a1a]">Available: {stats.availableSlots}</span>
                 </div>
               </div>
-              <ChartPlaceholder type="pie" height="200px" className="flex-1 min-h-[200px]" />
+              {pieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => [value, 'Slots']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm min-h-[200px]">
+                  No slot data for today
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Today's Appointments Table */}
       <Card className="border border-[#e5e5e5] shadow-card bg-white">
         <CardHeader className="border-b border-[#f0f0f0]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h5 className="text-lg font-semibold text-[#1a1a1a]">Today&apos;s Appointments</h5>
-            <Button 
-              asChild
-              variant="outline"
-              size="sm"
-            >
+            <Button asChild variant="outline" size="sm">
               <Link href="/admin/bookings">View All</Link>
             </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -178,7 +289,7 @@ export default function OverviewPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f5f5f5]">
-                {todayBookings.slice(0, 5).length === 0 ? (
+                {todayBookings.length === 0 ? (
                   <tr>
                     <td colSpan={columns.length} className="px-5 py-12 text-center text-gray-400 text-sm">No appointments today</td>
                   </tr>
@@ -196,9 +307,8 @@ export default function OverviewPage() {
               </tbody>
             </table>
           </div>
-          {/* Mobile card view */}
           <div className="sm:hidden p-4 space-y-3">
-            {todayBookings.slice(0, 5).length === 0 ? (
+            {todayBookings.length === 0 ? (
               <p className="text-center py-8 text-gray-400 text-sm">No appointments today</p>
             ) : (
               todayBookings.slice(0, 5).map((item) => (

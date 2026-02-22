@@ -13,6 +13,8 @@ import DeleteConfirmationModal from '@/components/admin/DeleteConfirmationModal'
 import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
 import { BookingStatus } from '@/components/admin/StatusBadge';
 import { useUserRole } from '@/lib/hooks/useUserRole';
+import { usePricing } from '@/lib/hooks/usePricing';
+import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import { format } from 'date-fns';
 
 function getTechIdFromQuery(searchParams: URLSearchParams): string | null {
@@ -102,9 +104,8 @@ export default function CalendarPage() {
   const [selectedPricingService, setSelectedPricingService] = useState('');
   const [currentQuotationId, setCurrentQuotationId] = useState<string | null>(null);
 
-  // State for nail techs
-  const [nailTechs, setNailTechs] = useState<Array<{ id: string; name: string; role?: string; discount?: number }>>([]);
-  const [nailTechsLoading, setNailTechsLoading] = useState(true);
+  const { getUnitPriceForService } = usePricing(pricingData, pricingHeaders);
+  const { nailTechs, loading: nailTechsLoading } = useNailTechs();
 
   // State for slots
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -176,29 +177,6 @@ export default function CalendarPage() {
         }
       : null,
   }), [mapSlotStatus, nailTechs]);
-
-  // Fetch nail techs on mount
-  useEffect(() => {
-    async function fetchNailTechs() {
-      try {
-        setNailTechsLoading(true);
-        const response = await fetch('/api/nail-techs');
-        if (!response.ok) throw new Error('Failed to fetch nail techs');
-        const data = await response.json();
-        setNailTechs(data.nailTechs.map((tech: any) => ({
-          id: tech.id || tech._id,
-          name: tech.name,
-          role: tech.specialties?.[0] || 'Nail Tech',
-          discount: typeof tech.discount === 'number' ? tech.discount : undefined,
-        })));
-      } catch (error: any) {
-        console.error('Error fetching nail techs:', error);
-      } finally {
-        setNailTechsLoading(false);
-      }
-    }
-    fetchNailTechs();
-  }, []);
 
   useEffect(() => {
     const techId = getTechIdFromQuery(searchParams);
@@ -642,58 +620,6 @@ export default function CalendarPage() {
     }
   };
 
-  const normalizeServiceName = useCallback((value: string) => {
-    return value
-      .toLowerCase()
-      .replace(/&/g, 'and')
-      .replace(/[^a-z0-9]+/g, '');
-  }, []);
-
-  const findPricingRow = useCallback((serviceName: string) => {
-    if (!serviceName || pricingData.length === 0) return null;
-    const normalized = normalizeServiceName(serviceName.trim());
-    if (!normalized) return null;
-
-    return (
-      pricingData.find((item) => {
-        const firstKey = Object.keys(item)[0];
-        const name = String(item[firstKey] || '').trim();
-        const rowNorm = normalizeServiceName(name);
-        return rowNorm === normalized;
-      }) ||
-      pricingData.find((item) => {
-        const firstKey = Object.keys(item)[0];
-        const name = String(item[firstKey] || '').trim();
-        const rowNorm = normalizeServiceName(name);
-        return rowNorm.includes(normalized) || normalized.includes(rowNorm);
-      }) ||
-      null
-    );
-  }, [pricingData, normalizeServiceName]);
-
-  const getUnitPriceForService = useCallback((serviceName: string): number | null => {
-    const found = findPricingRow(serviceName);
-    if (!found) return null;
-
-    const priceKey =
-      pricingHeaders.find((h) => {
-        const key = h.toLowerCase();
-        return key.includes('price') || key.includes('amount') || key.includes('cost') || key.includes('rate');
-      }) || pricingHeaders[1];
-
-    if (priceKey && Object.prototype.hasOwnProperty.call(found, priceKey)) {
-      const value = parseFloat(String(found[priceKey] || 0).replace(/[^0-9.\\-]/g, '')) || 0;
-      if (value > 0) return value;
-    }
-
-    for (const key of Object.keys(found)) {
-      const val = parseFloat(String(found[key]).replace(/[^0-9.\\-]/g, '')) || 0;
-      if (val > 0) return val;
-    }
-
-    return null;
-  }, [findPricingRow, pricingHeaders]);
-
   useEffect(() => {
     const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
     const rate = typeof selectedBooking?.nailTechId === 'string'
@@ -865,12 +791,10 @@ export default function CalendarPage() {
         <div className="w-full lg:flex-1 flex min-w-0 order-1 lg:order-2">
           <div className="w-full" style={{ minHeight: 0 }}>
           {slotsLoading ? (
-            <div className="card h-100 d-flex align-items-center justify-content-center" style={{ borderRadius: '24px', minHeight: '400px' }}>
+            <div className="rounded-2xl border border-[#e5e5e5] bg-white flex items-center justify-center min-h-[400px]">
               <div className="text-center py-5">
-                <div className="spinner-border text-dark" role="status">
-                  <span className="visually-hidden">Loading slots...</span>
-                </div>
-                <p className="mt-2 text-muted">Loading slots...</p>
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1a1a1a] border-t-transparent mx-auto" role="status" aria-label="Loading" />
+                <p className="mt-2 text-sm text-gray-500">Loading slots...</p>
               </div>
             </div>
           ) : (

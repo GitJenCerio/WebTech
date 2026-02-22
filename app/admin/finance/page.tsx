@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
 import StatCard from '@/components/admin/StatCard';
 import { DateRangePicker } from '@/components/admin/DateRangePicker';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -112,6 +112,29 @@ export default function FinancePage() {
   const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / PAGE_SIZE));
   const totalItems = filteredTransactions.length;
 
+  const exportToCsv = () => {
+    const headers = ['Date', 'Client', 'Service', 'Total', 'Paid', 'Tip', 'Discount', 'Balance', 'Status'];
+    const rows = filteredTransactions.map((t) => [
+      t.date ? new Date(t.date).toLocaleDateString('en-CA') : '',
+      `"${(t.clientName || '').replace(/"/g, '""')}"`,
+      `"${(t.service || '').replace(/"/g, '""')}"`,
+      t.total,
+      t.paid,
+      t.tip,
+      t.discount,
+      t.balance,
+      t.paymentStatus,
+    ]);
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `finance-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getPaymentStatusBadge = (status: string) => {
     const cls =
       status === 'paid' ? 'bg-emerald-50 text-emerald-700' :
@@ -211,6 +234,14 @@ export default function FinancePage() {
                 Clear
               </button>
             )}
+            <button
+              onClick={exportToCsv}
+              disabled={filteredTransactions.length === 0}
+              className="h-9 px-4 text-sm font-medium rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </button>
           </div>
         </CardContent>
       </Card>

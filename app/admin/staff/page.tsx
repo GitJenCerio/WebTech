@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import AddUserModal from '@/components/admin/AddUserModal';
 import EditUserModal from '@/components/admin/EditUserModal';
+import ResetPasswordDialog from '@/components/admin/ResetPasswordDialog';
 
 const PAGE_SIZE = 10;
 
@@ -46,6 +47,7 @@ export default function StaffPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Staff | null>(null);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -256,6 +258,15 @@ export default function StaffPage() {
                           >
                             Edit
                           </button>
+                          <button
+                            onClick={() => {
+                              setSelectedUser(item);
+                              setShowResetPasswordDialog(true);
+                            }}
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                          >
+                            Reset Password
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -300,12 +311,23 @@ export default function StaffPage() {
                     )}
                     {item.emailVerified && <span className="text-xs text-emerald-600">Verified</span>}
                   </div>
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
-                  >
-                    Edit
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(item)}
+                      className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedUser(item);
+                        setShowResetPasswordDialog(true);
+                      }}
+                      className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                    >
+                      Reset Password
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -357,10 +379,24 @@ export default function StaffPage() {
           setSelectedUser(null);
         }}
         onUserUpdated={() => {
-          // Refetch users after updating
           fetchUsers();
         }}
         user={selectedUser}
+      />
+
+      {/* Reset Password Dialog */}
+      <ResetPasswordDialog
+        open={showResetPasswordDialog}
+        onClose={() => {
+          setShowResetPasswordDialog(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser ? {
+          id: selectedUser.id,
+          name: selectedUser.name,
+          email: selectedUser.email,
+          authMethod: selectedUser.authMethod,
+        } : null}
       />
     </div>
   );

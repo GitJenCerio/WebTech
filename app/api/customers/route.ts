@@ -123,6 +123,7 @@ export async function POST(request: Request) {
       totalDiscounts: 0,
       lastVisit: null,
       notes: body.notes?.trim(),
+      isVIP: body.isVIP === true,
       nailHistory: body.nailHistory,
       healthInfo: body.healthInfo,
       inspoDescription: body.inspoDescription?.trim(),
