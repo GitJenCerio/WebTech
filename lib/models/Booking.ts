@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 import type { BookingStatus, PaymentStatus, ServiceType } from '@/lib/types';
 
 export interface IBooking extends Document {
+  firebaseId?: string;
   bookingCode: string; // Unique booking code (e.g., "GN-20260209001")
   customerId: string; // Reference to Customer
   nailTechId: string; // Reference to NailTech
@@ -55,6 +56,7 @@ export interface IBooking extends Document {
 
 const BookingSchema = new Schema<IBooking>(
   {
+    firebaseId: { type: String, sparse: true },
     bookingCode: { 
       type: String, 
       required: true, 

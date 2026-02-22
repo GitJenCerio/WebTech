@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Trash2, CheckCircle2 } from 'lucide-react';
 import { BookingStatus } from '../StatusBadge';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import {
   Dialog,
   DialogContent,
@@ -56,6 +57,7 @@ export default function EditSlotModal({
   const [isHidden, setIsHidden] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (slot) {
@@ -84,16 +86,17 @@ export default function EditSlotModal({
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete this slot?`)) {
-      return;
-    }
+  const handleRequestDelete = () => {
+    setShowDeleteConfirm(true);
+  };
 
+  const handleConfirmDelete = async () => {
     setError(null);
     setIsDeleting(true);
 
     try {
       await onDelete(slot.id);
+      setShowDeleteConfirm(false);
       onHide();
     } catch (err: any) {
       setError(err.message || 'Failed to delete slot');
@@ -103,6 +106,7 @@ export default function EditSlotModal({
   };
 
   return (
+    <>
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -183,7 +187,7 @@ export default function EditSlotModal({
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleDelete}
+              onClick={handleRequestDelete}
               disabled={isLoading || isDeleting}
               className="mr-auto"
             >
@@ -228,5 +232,16 @@ export default function EditSlotModal({
         </form>
       </DialogContent>
     </Dialog>
+    <ConfirmDialog
+      open={showDeleteConfirm}
+      onOpenChange={setShowDeleteConfirm}
+      title="Delete slot"
+      description="Are you sure you want to delete this slot?"
+      confirmLabel="Delete"
+      variant="destructive"
+      onConfirm={() => handleConfirmDelete()}
+      isLoading={isDeleting}
+    />
+    </>
   );
 }

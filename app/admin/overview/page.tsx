@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import StatCard from '@/components/admin/StatCard';
-import DataTable from '@/components/admin/DataTable';
 import ChartPlaceholder from '@/components/admin/ChartPlaceholder';
 import StatusBadge from '@/components/admin/StatusBadge';
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
@@ -84,9 +83,6 @@ export default function OverviewPage() {
 
   return (
     <div className="w-full max-w-full space-y-6">
-      {/* Page Header */}
-      <h1 className="text-2xl font-bold text-[#1a1a1a]">Overview</h1>
-
       {/* Stat Cards - Mobile-first responsive grid, equal height */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 sm:mb-8 items-stretch">
         <StatCard
@@ -112,7 +108,7 @@ export default function OverviewPage() {
         />
         <StatCard
           title="Estimated Income Today"
-          value="â‚±12,500"
+          value="₱12,500"
           subtext="From completed & booked"
           icon="bi-cash-stack"
           variant="light"
@@ -170,13 +166,56 @@ export default function OverviewPage() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <DataTable
-            columns={columns}
-            data={todayBookings.slice(0, 5)}
-            keyExtractor={(item) => item.id}
-            emptyMessage="No appointments today"
-          />
+        <CardContent className="p-0">
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                  {columns.map((col) => (
+                    <th key={col.key} className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">{col.header}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#f5f5f5]">
+                {todayBookings.slice(0, 5).length === 0 ? (
+                  <tr>
+                    <td colSpan={columns.length} className="px-5 py-12 text-center text-gray-400 text-sm">No appointments today</td>
+                  </tr>
+                ) : (
+                  todayBookings.slice(0, 5).map((item) => (
+                    <tr key={item.id} className="hover:bg-[#fafafa] transition-colors">
+                      {columns.map((col) => (
+                        <td key={col.key} className="px-5 py-3.5">
+                          {col.render ? col.render(item) : (item as any)[col.key]}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* Mobile card view */}
+          <div className="sm:hidden p-4 space-y-3">
+            {todayBookings.slice(0, 5).length === 0 ? (
+              <p className="text-center py-8 text-gray-400 text-sm">No appointments today</p>
+            ) : (
+              todayBookings.slice(0, 5).map((item) => (
+                <div key={item.id} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-[#1a1a1a]">{item.clientName}</p>
+                    <StatusBadge status={item.status} />
+                  </div>
+                  <p className="text-sm text-gray-500">{item.time}</p>
+                  <p className="text-sm text-[#1a1a1a]">{item.service}</p>
+                  <Button asChild variant="outline" size="sm" className="w-full mt-2">
+                    <Link href="/admin/bookings">View Details</Link>
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

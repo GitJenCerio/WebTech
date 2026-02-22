@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { StructuredData } from "@/components/StructuredData";
 import SessionProvider from "@/components/providers/SessionProvider";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -109,6 +110,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased`}>
         <SessionProvider>{children}</SessionProvider>
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

@@ -3,7 +3,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import StatCard from '@/components/admin/StatCard';
+import { DateRangePicker } from '@/components/admin/DateRangePicker';
 import { Card, CardContent } from '@/components/ui/Card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 
 const PAGE_SIZE = 10;
 
@@ -125,14 +127,6 @@ export default function FinancePage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">Finance</h1>
-          <p className="text-sm text-gray-400 mt-0.5">View income, transactions, and payments</p>
-        </div>
-      </div>
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
@@ -170,43 +164,37 @@ export default function FinancePage() {
       {/* Filter Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
         <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 w-full sm:min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search by client or service..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+                className="w-full pl-9 pr-4 h-9 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
               />
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all cursor-pointer"
-            >
-              <option value="all">All Statuses</option>
-              <option value="paid">Paid</option>
-              <option value="pending">Pending</option>
-              <option value="partial">Partial</option>
-            </select>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-400 whitespace-nowrap">From</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-400 whitespace-nowrap">To</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[140px] h-9 px-3">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="partial">Partial</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[140px]">
+              <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Date range</label>
+              <DateRangePicker
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onDateFromChange={setDateFrom}
+                onDateToChange={setDateTo}
+                placeholder="From – To"
+                className="flex-1 min-w-0"
               />
             </div>
             {(searchQuery || statusFilter !== 'all' || dateFrom || dateTo) && (
@@ -230,7 +218,8 @@ export default function FinancePage() {
       {/* Table Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
@@ -287,44 +276,82 @@ export default function FinancePage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile card view */}
+          <div className="sm:hidden p-4 space-y-3">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-sm">Loading...</span>
+              </div>
+            ) : paginatedTransactions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                  <Search className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-medium">No results found</span>
+                <span className="text-xs">Try adjusting your search or filters</span>
+              </div>
+            ) : (
+              paginatedTransactions.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-[#1a1a1a]">{item.clientName}</p>
+                    {getPaymentStatusBadge(item.paymentStatus)}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-400 text-xs">Service</span>
+                      <p className="text-[#1a1a1a]">{item.service}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Total</span>
+                      <p className="text-[#1a1a1a] font-medium">₱{item.total.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Paid</span>
+                      <p className="text-[#1a1a1a]">₱{item.paid.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Balance</span>
+                      <p className="text-[#1a1a1a]">₱{item.balance.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
-          <p className="text-xs text-gray-400">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
+          <p className="text-xs text-gray-400 order-2 sm:order-1">
             Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems}
           </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const page = i + 1;
-              return (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`h-8 w-8 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
-                    currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
+            <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
+              <div className="hidden sm:flex items-center gap-1">
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const page = i + 1;
+                  return (
+                    <button key={page} onClick={() => setCurrentPage(page)}
+                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                    >{page}</button>
+                  );
+                })}
+              </div>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
+            </div>
           </div>
         </div>
       )}

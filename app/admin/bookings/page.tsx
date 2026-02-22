@@ -1,11 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
 import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
+import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
 import { BookingStatus } from '@/components/admin/StatusBadge';
-import { useUserRole } from '@/lib/hooks/useUserRole';
+import { DateRangePicker } from '@/components/admin/DateRangePicker';
 import { Card, CardContent } from '@/components/ui/Card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
 const PAGE_SIZE = 10;
@@ -34,8 +38,11 @@ interface Booking {
 }
 
 export default function BookingsPage() {
-  const userRole = useUserRole();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [showModal, setShowModal] = useState(false);
+  const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
+  const [pendingBookingAction, setPendingBookingAction] = useState<'cancel' | 'reschedule' | 'mark_no_show' | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<{
     id?: string;
     bookingCode?: string;
@@ -198,6 +205,10 @@ export default function BookingsPage() {
         setBookingsError(null);
 
         const params = new URLSearchParams();
+        const urlCustomerId = searchParams.get('customerId');
+        const urlTechId = searchParams.get('techId') || searchParams.get('nailTechId');
+        if (urlCustomerId) params.set('customerId', urlCustomerId);
+        if (urlTechId) params.set('nailTechId', urlTechId);
         if (statusFilter && statusFilter !== 'all') {
           params.set('status', statusFilter as any);
         }
@@ -240,38 +251,33 @@ export default function BookingsPage() {
     }
 
     fetchBookings();
-  }, [statusFilter, dateFrom, dateTo]);
+  }, [statusFilter, dateFrom, dateTo, searchParams]);
 
 
   const handleViewClientProfile = () => {
     if (!selectedBooking?.customerId) return;
-    window.location.href = `/admin/clients?customerId=${selectedBooking.customerId}`;
+    router.push(`/admin/clients?customerId=${selectedBooking.customerId}`);
   };
 
-  const handleBookingAction = async (
-    action: 'cancel' | 'reschedule' | 'mark_no_show' | 'mark_completed'
+  const openReasonDialog = (action: 'cancel' | 'reschedule' | 'mark_no_show') => {
+    setPendingBookingAction(action);
+    setReasonDialogOpen(true);
+  };
+
+  const handleReasonConfirm = (reason: string) => {
+    if (pendingBookingAction && selectedBooking?.id) {
+      handleBookingActionWithReason(pendingBookingAction, reason);
+    }
+    setPendingBookingAction(null);
+  };
+
+  const handleBookingActionWithReason = async (
+    action: 'cancel' | 'reschedule' | 'mark_no_show',
+    reason: string
   ) => {
     if (!selectedBooking?.id) return;
 
     try {
-      let reason: string | undefined;
-      if (action === 'cancel' || action === 'reschedule' || action === 'mark_no_show') {
-        const label =
-          action === 'cancel'
-            ? 'cancel'
-            : action === 'reschedule'
-              ? 'reschedule'
-              : 'mark as no show';
-        const input = window.prompt(`Please enter reason to ${label}:`);
-        if (input === null) return;
-        const trimmed = input.trim();
-        if (!trimmed) {
-          alert('Reason is required.');
-          return;
-        }
-        reason = trimmed;
-      }
-
       const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -289,9 +295,13 @@ export default function BookingsPage() {
 
       setShowModal(false);
       setSelectedBooking(null);
-      
+      toast.success('Booking updated');
       // Refresh bookings list
       const params = new URLSearchParams();
+      const urlCustomerId = searchParams.get('customerId');
+      const urlTechId = searchParams.get('techId') || searchParams.get('nailTechId');
+      if (urlCustomerId) params.set('customerId', urlCustomerId);
+      if (urlTechId) params.set('nailTechId', urlTechId);
       if (statusFilter && statusFilter !== 'all') {
         params.set('status', statusFilter as any);
       }
@@ -325,7 +335,68 @@ export default function BookingsPage() {
       }
     } catch (error: any) {
       console.error(`Error performing booking action (${action}):`, error);
-      alert(error.message || 'Failed to update booking');
+      toast.error(error.message || 'Failed to update booking');
+    }
+  };
+
+  const handleMarkCompleted = async () => {
+    if (!selectedBooking?.id) return;
+    try {
+      const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark_completed' }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to mark completed' }));
+        throw new Error(errorData.error || 'Failed to mark completed');
+      }
+      setShowModal(false);
+      setSelectedBooking(null);
+      toast.success('Booking marked as completed');
+      const params = new URLSearchParams();
+      const urlCustomerId = searchParams.get('customerId');
+      const urlTechId = searchParams.get('techId') || searchParams.get('nailTechId');
+      if (urlCustomerId) params.set('customerId', urlCustomerId);
+      if (urlTechId) params.set('nailTechId', urlTechId);
+      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter as any);
+      if (dateFrom) params.set('startDate', dateFrom);
+      if (dateTo) params.set('endDate', dateTo);
+      const refreshResponse = await fetch(`/api/bookings?${params.toString()}`);
+      if (refreshResponse.ok) {
+        const data = await refreshResponse.json();
+        const rows: Booking[] = (data.bookings || []).map((booking: any) => {
+          const apptDate = booking.appointmentDate || booking.createdAt || '';
+          const apptTime = booking.appointmentTime || '';
+          return {
+            id: booking.id,
+            bookingCode: booking.bookingCode,
+            customerId: booking.customerId,
+            nailTechId: booking.nailTechId,
+            date: apptDate,
+            time: apptTime,
+            clientName: booking.customerName || 'Unknown Client',
+            socialName: booking.customerSocialMediaName || '',
+            service: booking.service?.type || 'Nail Service',
+            status: booking.status || 'booked',
+            amount: booking.pricing?.total || 0,
+            amountPaid: booking.pricing?.paidAmount || 0,
+            clientNotes: booking.clientNotes || '',
+            adminNotes: booking.adminNotes || '',
+          };
+        });
+        setBookings(rows);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to mark completed');
+    }
+  };
+
+  const handleBookingAction = (action: 'cancel' | 'reschedule' | 'mark_no_show' | 'mark_completed') => {
+    if (action === 'mark_completed') {
+      handleMarkCompleted();
+    } else {
+      openReasonDialog(action);
     }
   };
 
@@ -373,10 +444,11 @@ export default function BookingsPage() {
           : prev
       );
 
+      toast.success('Payment verified and booking confirmed');
       // Refresh bookings will happen via useEffect
     } catch (error: any) {
       console.error('Error verifying payment proof:', error);
-      alert(error.message || 'Failed to verify payment proof');
+      toast.error(error.message || 'Failed to verify payment proof');
     } finally {
       setIsVerifyingPaymentProof(false);
     }
@@ -400,10 +472,11 @@ export default function BookingsPage() {
       setSelectedBooking((prev) =>
         prev ? { ...prev, adminNotes: adminNotesDraft } : prev
       );
+      toast.success('Notes saved');
       // Refresh bookings will happen via useEffect
     } catch (error: any) {
       console.error('Error saving notes:', error);
-      alert(error.message || 'Failed to save notes');
+      toast.error(error.message || 'Failed to save notes');
     }
   };
 
@@ -516,7 +589,7 @@ export default function BookingsPage() {
 
       const data = await response.json();
       setCurrentQuotationId(data?.quotation?._id || data?.quotation?.id || currentQuotationId);
-      alert(currentQuotationId ? 'Invoice updated successfully.' : 'Invoice created successfully.');
+      toast.success(currentQuotationId ? 'Invoice updated successfully.' : 'Invoice created successfully.');
       setShowInvoiceModal(false);
     } catch (error: any) {
       console.error('Error creating invoice:', error);
@@ -547,14 +620,6 @@ export default function BookingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">Bookings</h1>
-          <p className="text-sm text-gray-400 mt-0.5">View and manage all appointments</p>
-        </div>
-      </div>
-
       {bookingsError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {bookingsError}
@@ -564,45 +629,40 @@ export default function BookingsPage() {
       {/* Filter Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
         <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 min-w-0 sm:min-w-[140px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+                className="w-full pl-9 pr-4 h-9 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
               />
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all cursor-pointer"
-            >
-              <option value="all">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-              <option value="no_show">No Show</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-400 whitespace-nowrap">From</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-400 whitespace-nowrap">To</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[140px] h-9 px-3">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="confirmed">Confirmed</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="no_show">No Show</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[140px]">
+              <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Date range</label>
+              <DateRangePicker
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onDateFromChange={setDateFrom}
+                onDateToChange={setDateTo}
+                placeholder="From – To"
+                compact
+                className="flex-1 min-w-0"
               />
             </div>
             {(searchQuery || statusFilter !== 'all' || dateFrom || dateTo) && (
@@ -626,7 +686,8 @@ export default function BookingsPage() {
       {/* Table Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
@@ -721,44 +782,115 @@ export default function BookingsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile card view */}
+          <div className="sm:hidden p-4 space-y-3">
+            {bookingsLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-sm">Loading...</span>
+              </div>
+            ) : paginatedBookings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                  <Search className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-medium">No results found</span>
+                <span className="text-xs">Try adjusting your search or filters</span>
+              </div>
+            ) : (
+              paginatedBookings.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium text-[#1a1a1a]">{item.clientName}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {item.date ? (() => {
+                          const d = new Date(item.date);
+                          return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                        })() : '—'} · {item.time || '—'}
+                      </p>
+                    </div>
+                    {getStatusBadge(item.status)}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-400 text-xs">Service</span>
+                      <p className="text-[#1a1a1a]">{item.service}</p>
+                    </div>
+                    {item.socialName && (
+                      <div>
+                        <span className="text-gray-400 text-xs">Social</span>
+                        <p className="text-[#1a1a1a] truncate">{item.socialName}</p>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-gray-400 text-xs">Amount</span>
+                      <p className="text-[#1a1a1a] font-medium">{item.amount ? `₱${item.amount.toLocaleString()}` : '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Paid</span>
+                      <p className="text-[#1a1a1a]">{item.amountPaid && item.amountPaid > 0 ? `₱${item.amountPaid.toLocaleString()}` : '—'}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedBooking({
+                        id: item.id,
+                        bookingCode: item.bookingCode,
+                        customerId: item.customerId,
+                        nailTechId: item.nailTechId,
+                        date: item.date,
+                        time: item.time,
+                        clientName: item.clientName,
+                        clientSocialMediaName: item.socialName,
+                        service: item.service,
+                        status: item.status,
+                        slotCount: 1,
+                        reservationAmount: 500,
+                        paidAmount: item.amountPaid ?? 0,
+                        notes: item.clientNotes,
+                        adminNotes: item.adminNotes,
+                      });
+                      setAdminNotesDraft(item.adminNotes || '');
+                      setShowModal(true);
+                    }}
+                    className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
+                  >
+                    View Details
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
-          <p className="text-xs text-gray-400">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
+          <p className="text-xs text-gray-400 order-2 sm:order-1">
             Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems}
           </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const page = i + 1;
-              return (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`h-8 w-8 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
-                    currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
+            <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
+              <div className="hidden sm:flex items-center gap-1">
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const page = i + 1;
+                  return (
+                    <button key={page} onClick={() => setCurrentPage(page)}
+                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                    >{page}</button>
+                  );
+                })}
+              </div>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
+            </div>
           </div>
         </div>
       )}
@@ -790,6 +922,31 @@ export default function BookingsPage() {
         onCreateInvoice={handleCreateInvoice}
         onVerifyPaymentProof={handleVerifyPaymentProof}
         isVerifyingPaymentProof={isVerifyingPaymentProof}
+      />
+
+      <ReasonInputDialog
+        open={reasonDialogOpen}
+        onOpenChange={(open) => {
+          setReasonDialogOpen(open);
+          if (!open) setPendingBookingAction(null);
+        }}
+        title={
+          pendingBookingAction === 'cancel'
+            ? 'Cancel booking'
+            : pendingBookingAction === 'reschedule'
+              ? 'Reschedule booking'
+              : 'Mark as no show'
+        }
+        description={
+          pendingBookingAction === 'cancel'
+            ? 'Please enter the reason for cancelling this booking.'
+            : pendingBookingAction === 'reschedule'
+              ? 'Please enter the reason for rescheduling this booking.'
+              : 'Please enter the reason for marking this as no show.'
+        }
+        placeholder="Enter reason..."
+        confirmLabel={pendingBookingAction === 'reschedule' ? 'Reschedule' : 'Confirm'}
+        onConfirm={handleReasonConfirm}
       />
 
       <InvoiceModal

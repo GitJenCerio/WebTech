@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IUser extends Document {
+  firebaseId?: string;
   email: string;
   password?: string; // Hashed password for email/password auth
   name?: string;
@@ -15,6 +16,7 @@ export interface IUser extends Document {
 
 const UserSchema = new Schema<IUser>(
   {
+    firebaseId: { type: String, sparse: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true }, // unique: true automatically creates an index
     password: { type: String, select: false }, // Don't return password by default
     name: { type: String },

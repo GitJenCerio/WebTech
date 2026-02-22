@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState, Fragment, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, X, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import { Card, CardContent } from '@/components/ui/Card';
 import type { NailTech as NailTechType, ServiceAvailability } from '@/lib/types';
 
@@ -46,7 +48,10 @@ function paginateNailTechs(rows: NailTechType[], page: number, pageSize: number)
 }
 
 export default function NailTechsPage() {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [techToDelete, setTechToDelete] = useState<NailTechType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [nailTechs, setNailTechs] = useState<NailTechType[]>([]);
@@ -118,11 +123,11 @@ export default function NailTechsPage() {
   };
 
   const handleViewSlots = (tech: NailTechType) => {
-    window.location.href = `/admin/bookings?techId=${encodeURIComponent(tech.id)}`;
+    router.push(`/admin/bookings?techId=${encodeURIComponent(tech.id)}`);
   };
 
   const handleViewBookings = (tech: NailTechType) => {
-    window.location.href = `/admin/bookings?techId=${encodeURIComponent(tech.id)}`;
+    router.push(`/admin/bookings?techId=${encodeURIComponent(tech.id)}`);
   };
 
   const handleChange = (field: keyof NailTechFormState, value: any) => {
@@ -221,8 +226,15 @@ export default function NailTechsPage() {
     }
   };
 
-  const handleDeleteTech = async (tech: NailTechType) => {
-    if (!confirm(`Are you sure you want to delete ${tech.name}?`)) return;
+  const handleRequestDeleteTech = (tech: NailTechType) => {
+    setTechToDelete(tech);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDeleteTech = async () => {
+    if (!techToDelete) return;
+    const tech = techToDelete;
+    setTechToDelete(null);
     try {
       setSaving(true);
       setError(null);
@@ -237,6 +249,7 @@ export default function NailTechsPage() {
       setNailTechs((prev) =>
         prev.map((t) => (t.id === tech.id ? { ...t, status: 'Inactive' } : t))
       );
+      setDeleteConfirmOpen(false);
     } catch (err: any) {
       console.error('Error deleting nail tech', err);
       setError(err.message || 'Failed to delete nail tech');
@@ -263,15 +276,10 @@ export default function NailTechsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">Nail Techs</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Manage nail technicians and their availability</p>
-        </div>
+      <div className="flex justify-end">
         <button
           onClick={handleOpenAdd}
-          className="h-9 px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center gap-2 shadow-sm"
+          className="w-full sm:w-auto min-h-[44px] px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2 shadow-sm"
         >
           <Plus className="h-4 w-4" />
           Add Nail Tech
@@ -287,8 +295,8 @@ export default function NailTechsPage() {
       {/* Filter Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
         <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 w-full sm:min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
@@ -326,7 +334,8 @@ export default function NailTechsPage() {
       {/* Table Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
@@ -398,7 +407,7 @@ export default function NailTechsPage() {
                             Slots
                           </button>
                           <button
-                            onClick={() => handleDeleteTech(item)}
+                            onClick={() => handleRequestDeleteTech(item)}
                             className="h-7 px-2.5 text-xs rounded-md border border-transparent bg-white text-gray-300 hover:border-red-200 hover:text-red-500 transition-all"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -411,44 +420,106 @@ export default function NailTechsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile card view */}
+          <div className="sm:hidden p-4 space-y-3">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-sm">Loading...</span>
+              </div>
+            ) : paginatedTechs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                  <Search className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-medium">No results found</span>
+                <span className="text-xs">Try adjusting your search or filters</span>
+              </div>
+            ) : (
+              paginatedTechs.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium text-[#1a1a1a]">Ms. {item.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.role}</p>
+                    </div>
+                    {getStatusBadge(item.status)}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-400 text-xs">Discount</span>
+                      <p className="text-[#1a1a1a]">{item.discount != null ? `${item.discount}%` : '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Commission</span>
+                      <p className="text-[#1a1a1a]">{item.commissionRate != null ? `${Math.round(item.commissionRate * 100)}%` : '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Service</span>
+                      <p className="text-[#1a1a1a]">{item.serviceAvailability}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 pt-1">
+                    <button
+                      onClick={() => handleOpenView(item)}
+                      className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
+                    >
+                      View
+                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleOpenEdit(item)}
+                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleViewSlots(item)}
+                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                      >
+                        Slots
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => handleRequestDeleteTech(item)}
+                      className="w-full h-10 flex items-center justify-center rounded-lg border border-transparent bg-white text-gray-400 hover:border-red-200 hover:text-red-500 transition-all text-sm"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
-          <p className="text-xs text-gray-400">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
+          <p className="text-xs text-gray-400 order-2 sm:order-1">
             Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems}
           </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const page = i + 1;
-              return (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`h-8 w-8 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
-                    currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
+            <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
+              <div className="hidden sm:flex items-center gap-1">
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const page = i + 1;
+                  return (
+                    <button key={page} onClick={() => setCurrentPage(page)}
+                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                    >{page}</button>
+                  );
+                })}
+              </div>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
+            </div>
           </div>
         </div>
       )}
@@ -673,6 +744,20 @@ export default function NailTechsPage() {
           </div>
         </Fragment>
       )}
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={(open) => {
+          setDeleteConfirmOpen(open);
+          if (!open) setTechToDelete(null);
+        }}
+        title="Delete nail tech"
+        description={techToDelete ? `Are you sure you want to delete ${techToDelete.name}?` : ''}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => handleConfirmDeleteTech()}
+        isLoading={saving}
+      />
     </div>
   );
 }

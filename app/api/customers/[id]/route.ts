@@ -48,6 +48,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         inspoDescription: customer.inspoDescription,
         waiverAccepted: customer.waiverAccepted,
         isActive: customer.isActive ?? true,
+        isVIP: customer.isVIP ?? false,
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
       },
@@ -93,6 +94,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       inspoDescription,
       waiverAccepted,
       isActive,
+      isVIP,
     } = body ?? {};
 
     const updates: Partial<CustomerInput> = {};
@@ -110,9 +112,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (inspoDescription !== undefined) updates.inspoDescription = inspoDescription;
     if (waiverAccepted !== undefined) updates.waiverAccepted = waiverAccepted;
     if (isActive !== undefined) updates.isActive = isActive;
+    if (isVIP !== undefined) updates.isVIP = isVIP;
 
     await connectDB();
-    const customer = await Customer.findByIdAndUpdate(id, updates, { new: true }).lean();
+    const customer = await Customer.findByIdAndUpdate(
+      id,
+      { $set: updates },
+      { new: true, runValidators: false }
+    ).lean();
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found.' }, { status: 404 });
     }
@@ -141,6 +148,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         inspoDescription: customer.inspoDescription,
         waiverAccepted: customer.waiverAccepted,
         isActive: customer.isActive ?? true,
+        isVIP: customer.isVIP ?? false,
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
       }

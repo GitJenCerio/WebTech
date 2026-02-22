@@ -1,8 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Search, X, ChevronLeft, ChevronRight, Loader2, FileText } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button, Input } from '@/components/ui';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { Badge } from '@/components/ui/Badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
 import { Card, CardContent } from "@/components/ui/Card";
 
@@ -14,6 +18,7 @@ interface Client {
   email: string;
   phone: string;
   clientType?: 'NEW' | 'REPEAT';
+  isVIP?: boolean;
   totalBookings: number;
   completedBookings: number;
   totalSpent: number;
@@ -32,6 +37,7 @@ interface ApiCustomer {
   phone?: string;
   notes?: string;
   clientType?: 'NEW' | 'REPEAT';
+  isVIP?: boolean;
   totalBookings?: number;
   completedBookings?: number;
   totalSpent?: number;
@@ -49,6 +55,7 @@ function mapApiToClient(c: ApiCustomer): Client {
     email: c.email ?? '',
     phone: c.phone ?? '',
     clientType: c.clientType,
+    isVIP: c.isVIP ?? false,
     totalBookings: c.totalBookings ?? 0,
     completedBookings: c.completedBookings ?? 0,
     totalSpent: c.totalSpent ?? 0,
@@ -62,32 +69,81 @@ function mapApiToClient(c: ApiCustomer): Client {
 }
 
 export default function ClientsPage() {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showClientModal, setShowClientModal] = useState(false);
+  const [clientModalMode, setClientModalMode] = useState<'view' | 'edit'>('view');
   const [clientDetails, setClientDetails] = useState<any | null>(null);
   const [clientDetailsLoading, setClientDetailsLoading] = useState(false);
   const [clientDetailsError, setClientDetailsError] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{ name: string; email: string; phone: string; socialMediaName: string; notes: string; isVIP: boolean }>({ name: '', email: '', phone: '', socialMediaName: '', notes: '', isVIP: false });
+  const [savingClient, setSavingClient] = useState(false);
 
-  const handleViewClient = useCallback(async (clientId: string) => {
+  const handleViewClient = useCallback(async (clientId: string, mode: 'view' | 'edit' = 'view') => {
     try {
       setClientDetailsLoading(true);
       setClientDetailsError(null);
+      setClientModalMode(mode);
       setShowClientModal(true);
 
       const response = await fetch(`/api/customers/${clientId}`);
       if (!response.ok) throw new Error('Failed to load client details');
       const data = await response.json();
       setClientDetails(data);
+      const c = data?.customer;
+      if (c) {
+        setEditDraft({
+          name: c.name ?? '',
+          email: c.email ?? '',
+          phone: c.phone ?? '',
+          socialMediaName: c.socialMediaName ?? '',
+          notes: c.notes ?? '',
+          isVIP: c.isVIP ?? false,
+        });
+      }
     } catch (err: any) {
       setClientDetailsError(err.message || 'Failed to load client details');
     } finally {
       setClientDetailsLoading(false);
     }
   }, []);
+
+  const handleSaveClient = async () => {
+    const customerId = clientDetails?.customer?.id;
+    if (!customerId) return;
+    try {
+      setSavingClient(true);
+      const res = await fetch(`/api/customers/${customerId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editDraft.name.trim(),
+          email: editDraft.email.trim() || undefined,
+          phone: editDraft.phone.trim() || undefined,
+          socialMediaName: editDraft.socialMediaName.trim() || undefined,
+          notes: editDraft.notes.trim() || undefined,
+          isVIP: editDraft.isVIP,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to update client');
+      }
+      const data = await res.json();
+      setClientDetails({ customer: data.customer });
+      setClientModalMode('view');
+      toast.success('Client updated successfully');
+      await fetchClients();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update client');
+    } finally {
+      setSavingClient(false);
+    }
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -98,33 +154,27 @@ export default function ClientsPage() {
     }
   }, [handleViewClient]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchClients = useCallback(async () => {
     setLoading(true);
     setError(null);
     const params = new URLSearchParams();
     if (searchQuery.trim()) params.set('search', searchQuery.trim());
-    fetch(`/api/customers?${params.toString()}`)
-      .then((res) => {
-        if (!res.ok) throw new Error(res.statusText || 'Failed to fetch clients');
-        return res.json();
-      })
-      .then((data: { customers: ApiCustomer[] }) => {
-        if (!cancelled) {
-          setClients((data.customers ?? []).map(mapApiToClient));
-          setCurrentPage(1);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message || 'Failed to load clients');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const res = await fetch(`/api/customers?${params.toString()}`);
+      if (!res.ok) throw new Error(res.statusText || 'Failed to fetch clients');
+      const data = await res.json();
+      setClients((data.customers ?? []).map(mapApiToClient));
+      setCurrentPage(1);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load clients');
+    } finally {
+      setLoading(false);
+    }
   }, [searchQuery]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   const totalPages = Math.max(1, Math.ceil(clients.length / PAGE_SIZE));
   const paginatedClients = useMemo(() => {
@@ -136,14 +186,6 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">Clients</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Manage your client roster</p>
-        </div>
-      </div>
-
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {error}
@@ -153,8 +195,8 @@ export default function ClientsPage() {
       {/* Filter Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
         <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 w-full sm:min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
@@ -180,7 +222,8 @@ export default function ClientsPage() {
       {/* Table Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
@@ -228,7 +271,13 @@ export default function ClientsPage() {
                       </td>
                       <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">{item.totalVisits}</td>
                       <td className="px-5 py-3.5">
-                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">Regular</span>
+                        <div className="flex flex-wrap items-center gap-1">
+                          {item.isVIP ? (
+                            <Badge variant="vip">VIP</Badge>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">Regular</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-3.5">
                         {item.hasNotes ? (
@@ -242,19 +291,19 @@ export default function ClientsPage() {
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
-                            onClick={() => handleViewClient(item.id)}
+                            onClick={() => handleViewClient(item.id, 'view')}
                             className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
                           >
                             View
                           </button>
                           <button
-                            onClick={() => {}}
+                            onClick={() => handleViewClient(item.id, 'edit')}
                             className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
                           >
                             Edit
                           </button>
                           <button
-                            onClick={() => { window.location.href = `/admin/bookings?customerId=${item.id}`; }}
+                            onClick={() => router.push(`/admin/bookings?customerId=${item.id}`)}
                             className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
                           >
                             Bookings
@@ -267,52 +316,121 @@ export default function ClientsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile card view */}
+          <div className="sm:hidden p-4 space-y-3">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-sm">Loading...</span>
+              </div>
+            ) : paginatedClients.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                  <Search className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-medium">No results found</span>
+                <span className="text-xs">Try adjusting your search or filters</span>
+              </div>
+            ) : (
+              paginatedClients.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-[#1a1a1a]">{item.name}</p>
+                    {item.isVIP ? (
+                      <Badge variant="vip">VIP</Badge>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">Regular</span>
+                    )}
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    {item.email && <p className="text-gray-600">{item.email}</p>}
+                    {item.phone && <p className="text-gray-500 text-xs">{item.phone}</p>}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <span>{item.totalVisits} visits</span>
+                    {item.hasNotes && <FileText className="h-3.5 w-3.5" />}
+                  </div>
+                  <div className="flex flex-col gap-2 pt-1">
+                    <button
+                      onClick={() => handleViewClient(item.id, 'view')}
+                      className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
+                    >
+                      View
+                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleViewClient(item.id, 'edit')}
+                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => router.push(`/admin/bookings?customerId=${item.id}`)}
+                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                      >
+                        Bookings
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
-          <p className="text-xs text-gray-400">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
+          <p className="text-xs text-gray-400 order-2 sm:order-1">
             Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems}
           </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const page = i + 1;
-              return (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`h-8 w-8 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
-                    currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
+            <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <div className="hidden sm:flex items-center gap-1">
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const page = i + 1;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
+                        currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      <Dialog open={showClientModal} onOpenChange={(open) => !open && setShowClientModal(false)}>
+      <Dialog open={showClientModal} onOpenChange={(open) => { if (!open) { setShowClientModal(false); setClientModalMode('view'); } }}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Client Details</DialogTitle>
+            <DialogTitle>{clientModalMode === 'edit' ? 'Edit Client' : 'Client Details'}</DialogTitle>
           </DialogHeader>
 
           <div className="py-4 space-y-4" style={{ fontSize: '0.92rem' }}>
@@ -324,6 +442,68 @@ export default function ClientsPage() {
               </div>
             ) : clientDetails?.customer ? (
               <>
+                {clientModalMode === 'edit' ? (
+                  <Card>
+                    <CardContent className="p-4 space-y-3">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 block mb-1">Name</label>
+                        <Input
+                          value={editDraft.name}
+                          onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
+                          className="h-9"
+                          placeholder="Client name"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 block mb-1">Email</label>
+                        <Input
+                          type="email"
+                          value={editDraft.email}
+                          onChange={(e) => setEditDraft((d) => ({ ...d, email: e.target.value }))}
+                          className="h-9"
+                          placeholder="Email"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 block mb-1">Phone</label>
+                        <Input
+                          value={editDraft.phone}
+                          onChange={(e) => setEditDraft((d) => ({ ...d, phone: e.target.value }))}
+                          className="h-9"
+                          placeholder="Phone"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 block mb-1">Social Media</label>
+                        <Input
+                          value={editDraft.socialMediaName}
+                          onChange={(e) => setEditDraft((d) => ({ ...d, socialMediaName: e.target.value }))}
+                          className="h-9"
+                          placeholder="Social media name"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 block mb-1">Notes</label>
+                        <textarea
+                          value={editDraft.notes}
+                          onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
+                          className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-[#e5e5e5] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]"
+                          placeholder="Notes"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 pt-1">
+                        <Checkbox
+                          id="edit-vip"
+                          checked={editDraft.isVIP}
+                          onCheckedChange={(checked) => setEditDraft((d) => ({ ...d, isVIP: !!checked }))}
+                        />
+                        <label htmlFor="edit-vip" className="text-sm font-medium text-[#1a1a1a] cursor-pointer">
+                          VIP Client
+                        </label>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex flex-col gap-2">
@@ -342,6 +522,7 @@ export default function ClientsPage() {
                     </div>
                   </CardContent>
                 </Card>
+                )}
 
                 <Card>
                   <CardContent className="p-4">
@@ -354,6 +535,9 @@ export default function ClientsPage() {
                       <span><strong>Total Discounts:</strong> PHP {(clientDetails.customer.totalDiscounts ?? 0).toLocaleString()}</span>
                       <span><strong>Client Type:</strong> {clientDetails.customer.clientType || 'NEW'}</span>
                       <span><strong>Status:</strong> {clientDetails.customer.isActive === false ? 'Inactive' : 'Active'}</span>
+                      {clientDetails.customer.isVIP && (
+                        <Badge variant="vip">VIP</Badge>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -413,9 +597,20 @@ export default function ClientsPage() {
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => setShowClientModal(false)}>
-              Close
-            </Button>
+            {clientModalMode === 'edit' ? (
+              <>
+                <Button type="button" variant="secondary" onClick={() => setClientModalMode('view')} disabled={savingClient}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={handleSaveClient} disabled={savingClient || !editDraft.name.trim()}>
+                  {savingClient ? 'Saving...' : 'Save'}
+                </Button>
+              </>
+            ) : (
+              <Button type="button" variant="secondary" onClick={() => setShowClientModal(false)}>
+                Close
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

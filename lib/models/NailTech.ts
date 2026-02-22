@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 import type { NailTechRole, ServiceAvailability, NailTechStatus } from '@/lib/types';
 
 export interface INailTech extends Document {
+  firebaseId?: string;
   name: string; // Stored without "Ms." prefix
   role: NailTechRole;
   serviceAvailability: ServiceAvailability;
@@ -15,6 +16,7 @@ export interface INailTech extends Document {
 
 const NailTechSchema = new Schema<INailTech>(
   {
+    firebaseId: { type: String, sparse: true },
     name: { type: String, required: true, trim: true },
     role: {
       type: String,

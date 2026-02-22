@@ -71,7 +71,7 @@ export default function SlotList({
           padding: '1rem 1.25rem'
         }}
       >
-        <h5 className="mb-0" style={{ fontWeight: 600, color: '#212529' }}>Slots for {formatDate(date)}</h5>
+        <h5 className="mb-0 text-xs sm:text-sm" style={{ fontWeight: 600, color: '#212529' }}>Slots for {formatDate(date)}</h5>
       </div>
       <div 
         className="card-body flex-grow-1 min-h-0 overflow-auto slot-list-body"

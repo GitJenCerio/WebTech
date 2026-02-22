@@ -83,6 +83,7 @@ export interface Customer {
   inspoDescription?: string;
   waiverAccepted?: boolean;
   isActive?: boolean;
+  isVIP?: boolean;
   createdAt: string;
   updatedAt: string;
 }

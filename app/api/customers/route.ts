@@ -69,6 +69,7 @@ export async function GET(request: Request) {
       inspoDescription: c.inspoDescription,
       waiverAccepted: c.waiverAccepted,
       isActive: c.isActive ?? true,
+      isVIP: c.isVIP ?? false,
       totalVisits: c.totalBookings ?? 0,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,

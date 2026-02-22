@@ -129,27 +129,20 @@ export default function StaffPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1a1a1a]">Staff</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Manage staff members and their roles</p>
-        </div>
-        <div className="flex gap-2">
+      <div className="flex justify-end gap-2">
           <button
             onClick={fetchUsers}
             disabled={loading}
-            className="h-9 px-4 text-sm font-medium rounded-lg border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+            className="min-h-[44px] px-4 text-sm font-medium rounded-lg border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
           >
             Refresh
           </button>
           <button
             onClick={() => setShowAddUserModal(true)}
-            className="h-9 px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center gap-2 shadow-sm"
+            className="flex-1 sm:flex-initial min-h-[44px] px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             Add User
           </button>
-        </div>
       </div>
 
       {error && (
@@ -162,8 +155,8 @@ export default function StaffPage() {
       {/* Filter Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
         <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 w-full sm:min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
@@ -198,7 +191,8 @@ export default function StaffPage() {
       {/* Table Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
@@ -270,44 +264,77 @@ export default function StaffPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile card view */}
+          <div className="sm:hidden p-4 space-y-3">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-sm">Loading...</span>
+              </div>
+            ) : paginatedStaff.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                  <Search className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-medium">No results found</span>
+                <span className="text-xs">Try adjusting your search or filters</span>
+              </div>
+            ) : (
+              paginatedStaff.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium text-[#1a1a1a]">{item.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.email}</p>
+                    </div>
+                    {getStatusBadge(item.status)}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500 capitalize">{item.role}</span>
+                    {item.assignedNailTechName && (
+                      <span className="text-xs text-gray-400">Assigned: {item.assignedNailTechName}</span>
+                    )}
+                    {item.emailVerified && <span className="text-xs text-emerald-600">Verified</span>}
+                  </div>
+                  <button
+                    onClick={() => handleEdit(item)}
+                    className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
+                  >
+                    Edit
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
-          <p className="text-xs text-gray-400">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
+          <p className="text-xs text-gray-400 order-2 sm:order-1">
             Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems}
           </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const page = i + 1;
-              return (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`h-8 w-8 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
-                    currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="h-8 w-8 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
+            <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
+              <div className="hidden sm:flex items-center gap-1">
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const page = i + 1;
+                  return (
+                    <button key={page} onClick={() => setCurrentPage(page)}
+                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                    >{page}</button>
+                  );
+                })}
+              </div>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
+            </div>
           </div>
         </div>
       )}

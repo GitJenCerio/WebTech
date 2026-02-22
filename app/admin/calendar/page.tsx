@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import CalendarPanel from '@/components/admin/bookings/CalendarPanel';
 import SlotList from '@/components/admin/bookings/SlotList';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
@@ -8,14 +10,13 @@ import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
 import AddSlotModal from '@/components/admin/bookings/AddSlotModal';
 import EditSlotModal from '@/components/admin/bookings/EditSlotModal';
 import DeleteConfirmationModal from '@/components/admin/DeleteConfirmationModal';
+import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
 import { BookingStatus } from '@/components/admin/StatusBadge';
 import { useUserRole } from '@/lib/hooks/useUserRole';
 import { format } from 'date-fns';
 
-function getTechIdFromQuery(): string | null {
-  if (typeof window === 'undefined') return null;
-  const params = new URLSearchParams(window.location.search);
-  return params.get('techId');
+function getTechIdFromQuery(searchParams: URLSearchParams): string | null {
+  return searchParams.get('techId');
 }
 
 interface Slot {
@@ -52,8 +53,12 @@ interface Slot {
 }
 
 export default function CalendarPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const userRole = useUserRole();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
+  const [pendingBookingAction, setPendingBookingAction] = useState<'cancel' | 'reschedule' | 'mark_no_show' | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showAddSlotModal, setShowAddSlotModal] = useState(false);
   const [selectedNailTechId, setSelectedNailTechId] = useState<string>(
@@ -125,6 +130,8 @@ export default function CalendarPage() {
   const [slotToDelete, setSlotToDelete] = useState<Slot | null>(null);
   const [isDeletingSlot, setIsDeletingSlot] = useState(false);
 
+  const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
+
   const mapSlotStatus = useCallback((slot: any): BookingStatus => {
     if (slot.booking?.status === 'pending') return 'PENDING_PAYMENT';
     if (slot.booking?.status === 'confirmed') return 'CONFIRMED';
@@ -194,11 +201,11 @@ export default function CalendarPage() {
   }, []);
 
   useEffect(() => {
-    const techId = getTechIdFromQuery();
+    const techId = getTechIdFromQuery(searchParams);
     if (techId && techId !== selectedNailTechId) {
       setSelectedNailTechId(techId);
     }
-  }, [selectedNailTechId]);
+  }, [selectedNailTechId, searchParams]);
 
   // Fetch slots when date or nail tech changes
   useEffect(() => {
@@ -481,33 +488,27 @@ export default function CalendarPage() {
 
   const handleViewClientProfile = () => {
     if (!selectedBooking?.customerId) return;
-    window.location.href = `/admin/clients?customerId=${selectedBooking.customerId}`;
+    router.push(`/admin/clients?customerId=${selectedBooking.customerId}`);
   };
 
-  const handleBookingAction = async (
-    action: 'cancel' | 'reschedule' | 'mark_no_show' | 'mark_completed'
+  const openReasonDialog = (action: 'cancel' | 'reschedule' | 'mark_no_show') => {
+    setPendingBookingAction(action);
+    setReasonDialogOpen(true);
+  };
+
+  const handleReasonConfirm = (reason: string) => {
+    if (pendingBookingAction && selectedBooking?.id) {
+      handleBookingActionWithReason(pendingBookingAction, reason);
+    }
+    setPendingBookingAction(null);
+  };
+
+  const handleBookingActionWithReason = async (
+    action: 'cancel' | 'reschedule' | 'mark_no_show',
+    reason: string
   ) => {
     if (!selectedBooking?.id) return;
-
     try {
-      let reason: string | undefined;
-      if (action === 'cancel' || action === 'reschedule' || action === 'mark_no_show') {
-        const label =
-          action === 'cancel'
-            ? 'cancel'
-            : action === 'reschedule'
-              ? 'reschedule'
-              : 'mark as no show';
-        const input = window.prompt(`Please enter reason to ${label}:`);
-        if (input === null) return;
-        const trimmed = input.trim();
-        if (!trimmed) {
-          alert('Reason is required.');
-          return;
-        }
-        reason = trimmed;
-      }
-
       const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -517,19 +518,48 @@ export default function CalendarPage() {
           adminOverride: action === 'cancel',
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to update booking status' }));
         throw new Error(errorData.error || 'Failed to update booking status');
       }
-
       setShowModal(false);
       setSelectedBooking(null);
+      toast.success('Booking updated');
       await refreshSelectedDateSlots();
       await refreshMonthlySlots();
     } catch (error: any) {
       console.error(`Error performing booking action (${action}):`, error);
-      alert(error.message || 'Failed to update booking');
+      toast.error(error.message || 'Failed to update booking');
+    }
+  };
+
+  const handleMarkCompleted = async () => {
+    if (!selectedBooking?.id) return;
+    try {
+      const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark_completed' }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to mark completed' }));
+        throw new Error(errorData.error || 'Failed to mark completed');
+      }
+      setShowModal(false);
+      setSelectedBooking(null);
+      toast.success('Booking marked as completed');
+      await refreshSelectedDateSlots();
+      await refreshMonthlySlots();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to mark completed');
+    }
+  };
+
+  const handleBookingAction = (action: 'cancel' | 'reschedule' | 'mark_no_show' | 'mark_completed') => {
+    if (action === 'mark_completed') {
+      handleMarkCompleted();
+    } else {
+      openReasonDialog(action);
     }
   };
 
@@ -580,7 +610,7 @@ export default function CalendarPage() {
       await refreshMonthlySlots();
     } catch (error: any) {
       console.error('Error verifying payment proof:', error);
-      alert(error.message || 'Failed to verify payment proof');
+      toast.error(error.message || 'Failed to verify payment proof');
     } finally {
       setIsVerifyingPaymentProof(false);
     }
@@ -604,10 +634,11 @@ export default function CalendarPage() {
       setSelectedBooking((prev) =>
         prev ? { ...prev, adminNotes: adminNotesDraft } : prev
       );
+      toast.success('Notes saved');
       await refreshSelectedDateSlots();
     } catch (error: any) {
       console.error('Error saving notes:', error);
-      alert(error.message || 'Failed to save notes');
+      toast.error(error.message || 'Failed to save notes');
     }
   };
 
@@ -783,7 +814,7 @@ export default function CalendarPage() {
 
       const data = await response.json();
       setCurrentQuotationId(data?.quotation?._id || data?.quotation?.id || currentQuotationId);
-      alert(currentQuotationId ? 'Invoice updated successfully.' : 'Invoice created successfully.');
+      toast.success(currentQuotationId ? 'Invoice updated successfully.' : 'Invoice created successfully.');
       setShowInvoiceModal(false);
     } catch (error: any) {
       console.error('Error creating invoice:', error);
@@ -794,13 +825,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="w-100 min-w-0 overflow-x-hidden">
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <h4 style={{ fontWeight: 600, color: '#212529', margin: 0 }}>
-          Calendar & Slots
-        </h4>
-      </div>
-
+    <div className="w-full min-w-0 overflow-x-hidden">
       {/* Error Message */}
       {slotsError && (
         <div className="alert alert-danger alert-dismissible fade show" role="alert">
@@ -810,16 +835,19 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* Calendar Panel + Slot List - same height; calendar wider, slots narrower */}
-      <div className="row g-0 g-lg-3" style={{ alignItems: 'stretch' }}>
-        <div className="col-12 col-lg-8 col-xl-9 d-flex" style={{ minWidth: 0 }}>
-          <div className="w-100" style={{ minHeight: 0 }}>
+      {/* Calendar Panel + Slot List - stack on xs/sm, side-by-side on lg+ */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-3" style={{ alignItems: 'stretch' }}>
+        <div className="w-full lg:flex-[2] xl:flex-[3] flex min-w-0 order-2 lg:order-1">
+          <div className="w-full" style={{ minHeight: 0 }}>
           <CalendarPanel
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
+            onViewChange={setCalendarView}
             currentMonth={currentMonth}
             onMonthChange={setCurrentMonth}
             slots={monthlySlots}
+            daySlots={slots}
+            onSlotClick={(slot) => handleSlotClick(slot as Slot)}
             onAddAvailability={() => {
               setAddSlotsError(null);
               setShowAddSlotModal(true);
@@ -832,9 +860,10 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Slot List */}
-        <div className="col-12 col-lg-4 col-xl-3 d-flex" style={{ minWidth: 0 }}>
-          <div className="w-100" style={{ minHeight: 0 }}>
+        {/* Slot List - hidden in day view (slots shown in calendar panel) */}
+        {calendarView !== 'day' && (
+        <div className="w-full lg:flex-1 flex min-w-0 order-1 lg:order-2">
+          <div className="w-full" style={{ minHeight: 0 }}>
           {slotsLoading ? (
             <div className="card h-100 d-flex align-items-center justify-content-center" style={{ borderRadius: '24px', minHeight: '400px' }}>
               <div className="text-center py-5">
@@ -878,6 +907,7 @@ export default function CalendarPage() {
           )}
           </div>
         </div>
+        )}
       </div>
 
       {/* Booking Details Modal */}
@@ -907,6 +937,31 @@ export default function CalendarPage() {
         onCreateInvoice={handleCreateInvoice}
         onVerifyPaymentProof={handleVerifyPaymentProof}
         isVerifyingPaymentProof={isVerifyingPaymentProof}
+      />
+
+      <ReasonInputDialog
+        open={reasonDialogOpen}
+        onOpenChange={(open) => {
+          setReasonDialogOpen(open);
+          if (!open) setPendingBookingAction(null);
+        }}
+        title={
+          pendingBookingAction === 'cancel'
+            ? 'Cancel booking'
+            : pendingBookingAction === 'reschedule'
+              ? 'Reschedule booking'
+              : 'Mark as no show'
+        }
+        description={
+          pendingBookingAction === 'cancel'
+            ? 'Please enter the reason for cancelling this booking.'
+            : pendingBookingAction === 'reschedule'
+              ? 'Please enter the reason for rescheduling this booking.'
+              : 'Please enter the reason for marking this as no show.'
+        }
+        placeholder="Enter reason..."
+        confirmLabel={pendingBookingAction === 'reschedule' ? 'Reschedule' : 'Confirm'}
+        onConfirm={handleReasonConfirm}
       />
 
       <InvoiceModal

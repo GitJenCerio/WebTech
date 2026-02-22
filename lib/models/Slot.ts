@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 import type { SlotStatus } from '@/lib/types';
 
 export interface ISlot extends Document {
+  firebaseId?: string;
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   status: SlotStatus;
@@ -15,6 +16,7 @@ export interface ISlot extends Document {
 
 const SlotSchema = new Schema<ISlot>(
   {
+    firebaseId: { type: String, sparse: true },
     date: { type: String, required: true },
     time: { type: String, required: true },
     status: {

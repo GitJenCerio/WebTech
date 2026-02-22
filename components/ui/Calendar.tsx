@@ -1,11 +1,26 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, type DayButtonProps } from "react-day-picker";
 
 import { cn } from "./Utils";
 import { buttonVariants } from "./Button";
+
+const DayButtonWithWhiteSelected = React.forwardRef<
+  HTMLButtonElement,
+  DayButtonProps
+>(function DayButtonWithWhiteSelected({ modifiers, className, ...props }, ref) {
+  const isSelected =
+    modifiers.selected || modifiers.range_start || modifiers.range_end;
+  return (
+    <button
+      ref={ref}
+      {...props}
+      className={cn(className, isSelected && "!text-white")}
+    />
+  );
+});
 
 function Calendar({
   className,
@@ -16,50 +31,43 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("rdp-root p-4 rounded-2xl", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row gap-2",
+        months: "flex flex-col sm:flex-row gap-4",
         month: "flex flex-col gap-4",
-        caption: "flex justify-center pt-1 relative items-center w-full",
-        caption_label: "text-sm font-medium text-[#212529]",
+        month_caption: "flex justify-center pt-1 relative items-center w-full",
+        caption_label: "text-sm font-medium text-[#1a1a1a]",
         nav: "flex items-center gap-1",
-        nav_button: cn(
+        button_previous: cn(
           buttonVariants({ variant: "outline" }),
-          "size-7 bg-transparent p-0 opacity-50 hover:opacity-100 rounded-2xl",
+          "size-8 bg-transparent p-0 opacity-50 hover:opacity-100 rounded-2xl border-[#e5e5e5] hover:border-[#1a1a1a]",
         ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
-        table: "w-full border-collapse space-x-1",
-        head_row: "flex",
-        head_cell:
-          "text-gray-600 rounded-2xl w-8 font-normal text-[0.8rem]",
-        row: "flex w-full mt-2",
-        cell: cn(
-          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-gray-100 [&:has([aria-selected].day-range-end)]:rounded-r-2xl",
-          props.mode === "range"
-            ? "[&:has(>.day-range-end)]:rounded-r-2xl [&:has(>.day-range-start)]:rounded-l-2xl first:[&:has([aria-selected])]:rounded-l-2xl last:[&:has([aria-selected])]:rounded-r-2xl"
-            : "[&:has([aria-selected])]:rounded-2xl",
+        button_next: cn(
+          buttonVariants({ variant: "outline" }),
+          "size-8 bg-transparent p-0 opacity-50 hover:opacity-100 rounded-2xl border-[#e5e5e5] hover:border-[#1a1a1a]",
         ),
-        day: cn(
+        month_grid: "w-full border-collapse",
+        weekdays: "flex",
+        weekday: "text-gray-500 rounded-xl w-9 font-normal text-[0.75rem]",
+        week: "flex w-full mt-2",
+        day: "relative p-0 text-center text-sm",
+        day_button: cn(
           buttonVariants({ variant: "ghost" }),
-          "size-8 p-0 font-normal aria-selected:opacity-100 rounded-2xl",
+          "size-9 p-0 font-normal rounded-2xl text-[#1a1a1a] hover:bg-[#f5f5f5] hover:text-[#1a1a1a]",
         ),
-        day_range_start:
-          "day-range-start aria-selected:bg-gradient-to-br aria-selected:from-[#495057] aria-selected:to-[#212529] aria-selected:text-white",
-        day_range_end:
-          "day-range-end aria-selected:bg-gradient-to-br aria-selected:from-[#495057] aria-selected:to-[#212529] aria-selected:text-white",
-        day_selected:
-          "bg-gradient-to-br from-[#495057] to-[#212529] text-white hover:from-[#343a40] hover:to-[#212529] focus:from-[#495057] focus:to-[#212529]",
-        day_today: "bg-gray-100 text-[#212529] font-semibold",
-        day_outside:
-          "day-outside text-gray-400 aria-selected:text-gray-400",
-        day_disabled: "text-gray-400 opacity-50",
-        day_range_middle:
-          "aria-selected:bg-gray-100 aria-selected:text-[#212529]",
-        day_hidden: "invisible",
+        selected:
+          "bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] hover:text-white focus:bg-[#1a1a1a]",
+        today: "bg-[#f0f0f0] text-[#1a1a1a] font-semibold",
+        outside: "text-gray-400 opacity-50",
+        disabled: "text-gray-300 opacity-50",
+        range_start: "rounded-l-2xl bg-[#1a1a1a] text-white",
+        range_end: "rounded-r-2xl bg-[#1a1a1a] text-white",
+        range_middle: "bg-[#f5f5f5] text-[#1a1a1a] rounded-none",
+        hidden: "invisible",
         ...classNames,
       }}
       components={{
+        DayButton: DayButtonWithWhiteSelected,
         Chevron: ({ orientation, className, ...props }: { orientation?: "left" | "right" | "up" | "down"; className?: string; size?: number; disabled?: boolean }) => {
           const Icon = orientation === "left" ? ChevronLeft : ChevronRight;
           return <Icon className={cn("size-4", className)} {...props} />;

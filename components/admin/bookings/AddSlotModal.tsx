@@ -209,7 +209,7 @@ export default function AddSlotModal({
             {/* Step 1: Select Nail Tech First */}
             {nailTechs.length > 0 && (
               <div className="space-y-1.5">
-                <Label htmlFor="nailTech" className="text-sm">
+                <Label htmlFor="nailTech" className="text-xs">
                   Nail Technician <span className="text-red-500">*</span>
                 </Label>
                 <Select
@@ -220,12 +220,12 @@ export default function AddSlotModal({
                   }}
                   required
                 >
-                  <SelectTrigger id="nailTech" className="w-full h-9">
+                  <SelectTrigger id="nailTech" className="w-[130px] h-9 text-xs rounded-xl px-3">
                     <SelectValue placeholder="-- Select Nail Tech --" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="text-xs">
                     {nailTechs.map((tech) => (
-                      <SelectItem key={tech.id} value={tech.id}>
+                      <SelectItem key={tech.id} value={tech.id} className="text-xs">
                         {tech.name}
                       </SelectItem>
                     ))}

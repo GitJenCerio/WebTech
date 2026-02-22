@@ -32,6 +32,8 @@ interface CalendarPanelProps {
   onDateSelect: (date: Date) => void;
   onViewChange?: (view: 'month' | 'week' | 'day') => void;
   slots?: Slot[];
+  daySlots?: Slot[];
+  onSlotClick?: (slot: Slot) => void;
   currentMonth?: Date;
   onMonthChange?: (month: Date) => void;
   onAddAvailability?: () => void;
@@ -46,6 +48,8 @@ export default function CalendarPanel({
   onDateSelect,
   onViewChange,
   slots = [],
+  daySlots = [],
+  onSlotClick,
   currentMonth: controlledMonth,
   onMonthChange,
   onAddAvailability,
@@ -105,6 +109,9 @@ export default function CalendarPanel({
   const handleViewChange = (newView: 'month' | 'week' | 'day') => {
     setView(newView);
     onViewChange?.(newView);
+    if (newView === 'week' || newView === 'day') {
+      syncMonthForDate(selectedDate);
+    }
   };
 
   const handlePrevMonth = () => {
@@ -125,6 +132,65 @@ export default function CalendarPanel({
     }
   };
 
+  const handlePrevPeriod = () => {
+    if (view === 'week') {
+      const newDate = new Date(selectedDate);
+      newDate.setDate(newDate.getDate() - 7);
+      onDateSelect(newDate);
+      syncMonthForDate(newDate);
+    } else if (view === 'day') {
+      const newDate = new Date(selectedDate);
+      newDate.setDate(newDate.getDate() - 1);
+      onDateSelect(newDate);
+      syncMonthForDate(newDate);
+    } else {
+      handlePrevMonth();
+    }
+  };
+
+  const handleNextPeriod = () => {
+    if (view === 'week') {
+      const newDate = new Date(selectedDate);
+      newDate.setDate(newDate.getDate() + 7);
+      onDateSelect(newDate);
+      syncMonthForDate(newDate);
+    } else if (view === 'day') {
+      const newDate = new Date(selectedDate);
+      newDate.setDate(newDate.getDate() + 1);
+      onDateSelect(newDate);
+      syncMonthForDate(newDate);
+    } else {
+      handleNextMonth();
+    }
+  };
+
+  const syncMonthForDate = (date: Date) => {
+    if (date.getMonth() !== currentMonth.getMonth() || date.getFullYear() !== currentMonth.getFullYear()) {
+      const newMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+      if (onMonthChange) onMonthChange(newMonth);
+      else setInternalMonth(newMonth);
+    }
+  };
+
+  const getWeekStart = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    d.setDate(d.getDate() - day);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const getDaysInWeek = (date: Date) => {
+    const start = getWeekStart(date);
+    const days: Date[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  };
+
   const handleToday = () => {
     const today = new Date();
     const todayMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -136,9 +202,24 @@ export default function CalendarPanel({
     onDateSelect(today);
   };
 
-  const days = getDaysInMonth();
+  const daysInMonth = getDaysInMonth();
+  const daysInWeek = getDaysInWeek(selectedDate);
+  const days = view === 'month' ? daysInMonth : view === 'week' ? daysInWeek : [selectedDate];
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  const getHeaderText = () => {
+    if (view === 'month') {
+      return `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
+    }
+    if (view === 'week') {
+      const start = getWeekStart(selectedDate);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      return `${monthNames[start.getMonth()]} ${start.getDate()}–${end.getDate()}, ${start.getFullYear()}`;
+    }
+    return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getDate()}, ${selectedDate.getFullYear()}`;
+  };
 
   // Count slots by date and collect client names for booked/pending
   const slotsByDate = useMemo(() => {
@@ -184,22 +265,22 @@ export default function CalendarPanel({
   };
 
   return (
-    <Card className="mb-4 w-full min-w-0 overflow-hidden h-100 d-flex flex-column">
+    <Card className="mb-4 w-full min-w-0 overflow-hidden h-100 d-flex flex-column rounded-3xl">
       <CardHeader className="pb-0">
-        {/* Single toolbar row: Nail Tech, Add Availability, Month/Week/Day on one line from md up */}
+        {/* Single toolbar row: Nail Tech, Add Slot, Month/Week/Day on one line from md up */}
         <div className="d-flex flex-wrap flex-md-nowrap align-items-center gap-2 mb-3 overflow-x-auto min-w-0">
           {showNailTechFilter && nailTechs.length > 0 && (
             <Select
               value={selectedNailTechId}
               onValueChange={(value) => onNailTechChange?.(value)}
             >
-              <SelectTrigger className="w-full max-w-[180px] sm:max-w-[250px] min-w-0 h-9 shrink-0">
+              <SelectTrigger className="h-9 w-[130px] shrink-0 text-xs px-3 rounded-xl">
                 <SelectValue placeholder="All Nail Techs" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Nail Techs</SelectItem>
+              <SelectContent className="text-xs">
+                <SelectItem value="all" className="text-xs">All Nail Techs</SelectItem>
                 {nailTechs.map((tech) => (
-                  <SelectItem key={tech.id} value={tech.id}>
+                  <SelectItem key={tech.id} value={tech.id} className="text-xs">
                     {tech.name}
                   </SelectItem>
                 ))}
@@ -209,13 +290,13 @@ export default function CalendarPanel({
           {onAddAvailability && (
             <button
               type="button"
-              className="btn btn-sm d-flex align-items-center gap-2 shrink-0 h-9"
+              className="btn btn-sm d-flex align-items-center gap-2 shrink-0 h-9 text-xs sm:hidden"
               onClick={onAddAvailability}
               style={{
-                borderRadius: '16px',
                 padding: '0 1rem',
                 height: '36px',
                 minHeight: '36px',
+                borderRadius: '20px',
                 fontWeight: 500,
                 background: 'linear-gradient(135deg, #495057 0%, #212529 100%)',
                 border: 'none',
@@ -232,15 +313,15 @@ export default function CalendarPanel({
                 e.currentTarget.style.boxShadow = '0 4px 15px rgba(33, 37, 41, 0.3)';
               }}
             >
-              <i className="bi bi-plus-lg" style={{ fontSize: '1rem' }}></i>
-              <span className="whitespace-nowrap">Add Availability</span>
+              <i className="bi bi-plus-lg" style={{ fontSize: '0.75rem' }}></i>
+              <span className="whitespace-nowrap truncate">Add Slot</span>
             </button>
           )}
           {/* View toggle: Month / Week / Day — same line on tablet/desktop */}
           <div className="d-flex gap-2 align-items-center ms-md-auto flex-shrink-0">
             <button
               type="button"
-              className={`btn btn-sm d-flex align-items-center gap-2 ${
+              className={`btn btn-sm d-flex align-items-center gap-1.5 text-xs ${
                 view === 'month' 
                   ? 'text-white' 
                   : 'btn-outline-secondary'
@@ -248,7 +329,7 @@ export default function CalendarPanel({
               onClick={() => handleViewChange('month')}
               style={{
                 borderRadius: '12px',
-                padding: '0.5rem 1rem',
+                padding: '0.375rem 0.75rem',
                 fontWeight: 500,
                 border: view === 'month' ? 'none' : '1px solid #ced4da',
                 background: view === 'month' 
@@ -275,7 +356,7 @@ export default function CalendarPanel({
             </button>
             <button
               type="button"
-              className={`btn btn-sm d-flex align-items-center gap-2 ${
+              className={`btn btn-sm d-flex align-items-center gap-1.5 text-xs ${
                 view === 'week' 
                   ? 'text-white' 
                   : 'btn-outline-secondary'
@@ -283,7 +364,7 @@ export default function CalendarPanel({
               onClick={() => handleViewChange('week')}
               style={{
                 borderRadius: '12px',
-                padding: '0.5rem 1rem',
+                padding: '0.375rem 0.75rem',
                 fontWeight: 500,
                 border: view === 'week' ? 'none' : '1px solid #ced4da',
                 background: view === 'week' 
@@ -305,12 +386,12 @@ export default function CalendarPanel({
                 }
               }}
             >
-              <i className="bi bi-calendar-week" style={{ fontSize: '1rem' }}></i>
+              <i className="bi bi-calendar-week" style={{ fontSize: '0.875rem' }}></i>
               <span>Week</span>
             </button>
             <button
               type="button"
-              className={`btn btn-sm d-flex align-items-center gap-2 ${
+              className={`btn btn-sm d-flex align-items-center gap-1.5 text-xs ${
                 view === 'day' 
                   ? 'text-white' 
                   : 'btn-outline-secondary'
@@ -318,7 +399,7 @@ export default function CalendarPanel({
               onClick={() => handleViewChange('day')}
               style={{
                 borderRadius: '12px',
-                padding: '0.5rem 1rem',
+                padding: '0.375rem 0.75rem',
                 fontWeight: 500,
                 border: view === 'day' ? 'none' : '1px solid #ced4da',
                 background: view === 'day' 
@@ -340,7 +421,7 @@ export default function CalendarPanel({
                 }
               }}
             >
-              <i className="bi bi-list-ul" style={{ fontSize: '1rem' }}></i>
+              <i className="bi bi-list-ul" style={{ fontSize: '0.875rem' }}></i>
               <span>Day</span>
             </button>
           </div>
@@ -355,17 +436,17 @@ export default function CalendarPanel({
         <div className="d-flex justify-content-between align-items-center mb-2 flex-shrink-0">
           <button 
             className="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center" 
-            onClick={handlePrevMonth}
+            onClick={handlePrevPeriod}
             style={{ minWidth: '36px', minHeight: '36px', padding: '0.25rem' }}
           >
             <i className="bi bi-chevron-left"></i>
           </button>
           <h6 className="mb-0 text-center" style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1rem)' }}>
-            {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            {getHeaderText()}
           </h6>
           <button 
             className="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center" 
-            onClick={handleNextMonth}
+            onClick={handleNextPeriod}
             style={{ minWidth: '36px', minHeight: '36px', padding: '0.25rem' }}
           >
             <i className="bi bi-chevron-right"></i>
@@ -373,6 +454,78 @@ export default function CalendarPanel({
         </div>
 
         <div className="calendar-grid-wrapper overflow-x-auto overflow-y-hidden mb-2 w-100" style={{ minWidth: 0 }}>
+        {view === 'day' ? (
+          <div className="w-100 rounded-3 p-4" style={{ background: 'linear-gradient(to bottom, #f8f9fa, #fff)', border: '1px solid #e9ecef' }}>
+            <div className="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <h5 className="mb-0 fw-bold text-dark" style={{ fontSize: '1.125rem' }}>
+                  {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                </h5>
+                {isToday(selectedDate) && (
+                  <span className="badge bg-dark mt-1" style={{ fontSize: '0.7rem' }}>Today</span>
+                )}
+              </div>
+            </div>
+            {(() => {
+              const counts = getSlotCounts(selectedDate);
+              const slotsForDay = daySlots.length > 0 ? daySlots : slots.filter((s) => s.date === format(selectedDate, 'yyyy-MM-dd') && !s.isHidden);
+              const sortedSlots = [...slotsForDay].sort((a, b) => a.time.localeCompare(b.time));
+              return (
+                <div className="space-y-3">
+                  <div className="d-flex flex-wrap gap-2">
+                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#d4edda', color: '#155724', fontSize: '0.8rem' }}>
+                      {counts.available} available
+                    </span>
+                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#212529', color: '#fff', fontSize: '0.8rem' }}>
+                      {counts.booked} booked
+                    </span>
+                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#007bff', color: '#fff', fontSize: '0.8rem' }}>
+                      {counts.pending} pending
+                    </span>
+                  </div>
+                  {counts.bookedNames.length > 0 && (
+                    <div>
+                      <div className="text-muted small mb-1">Booked: {counts.bookedNames.join(', ')}</div>
+                    </div>
+                  )}
+                  {counts.pendingNames.length > 0 && (
+                    <div>
+                      <div className="text-muted small mb-1">Pending: {counts.pendingNames.join(', ')}</div>
+                    </div>
+                  )}
+                  <div className="mt-3">
+                    <div className="fw-semibold text-muted small mb-2">{sortedSlots.length} slot{sortedSlots.length !== 1 ? 's' : ''} this day</div>
+                    <div className="d-flex flex-column gap-1" style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                      {sortedSlots.length === 0 ? (
+                        <div className="text-muted small py-2">No slots</div>
+                      ) : (
+                        sortedSlots.map((slot) => (
+                          <button
+                            key={slot.id}
+                            type="button"
+                            className="d-flex align-items-center justify-content-between px-3 py-2 rounded-2 border-0 w-100 text-start"
+                            style={{
+                              background: slot.status === 'available' ? '#d4edda' : slot.status === 'booked' || slot.status === 'confirmed' || slot.status === 'CONFIRMED' ? '#212529' : '#cce5ff',
+                              color: slot.status === 'available' ? '#155724' : '#fff',
+                              fontSize: '0.875rem',
+                              cursor: onSlotClick ? 'pointer' : 'default',
+                            }}
+                            onClick={() => onSlotClick?.(slot)}
+                          >
+                            <span className="fw-medium">{slot.time}</span>
+                            <span className="small opacity-90">
+                              {slot.status === 'available' ? 'Available' : (slot.clientName || slot.status)}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        ) : (
         <div className="d-grid grid-calendar w-100" style={{ minWidth: 0 }}>
           {dayNames.map((day) => (
             <div key={day} className="text-center fw-semibold text-muted" style={{ fontSize: 'clamp(0.65rem, 2vw, 0.75rem)', padding: '0.25rem 0' }}>
@@ -380,7 +533,7 @@ export default function CalendarPanel({
             </div>
           ))}
           {days.map((date, index) => {
-            const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
+            const isCurrentMonth = view !== 'month' || date.getMonth() === currentMonth.getMonth();
             const dateToday = isToday(date);
             const dateSelected = isSelected(date);
             const counts = getSlotCounts(date);
@@ -509,6 +662,7 @@ export default function CalendarPanel({
             );
           })}
         </div>
+        )}
         </div>
 
         <button 

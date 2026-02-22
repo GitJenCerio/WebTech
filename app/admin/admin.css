@@ -1,6 +1,7 @@
 /* Admin Dashboard — Monochrome Theme */
 /* Bootstrap kept for legacy pages (calendar, quotation) */
 @import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'react-day-picker/style.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
 /* Admin Login Page */
@@ -262,6 +263,52 @@
   justify-content: center;
 }
 
+/* React Day Picker — admin brand theme (rounded, monochrome) */
+/* Applied to admin-dashboard and date picker popover (portaled outside layout) */
+.admin-dashboard .rdp-root,
+.admin-date-picker-popover .rdp-root {
+  --rdp-accent-color: #1a1a1a;
+  --rdp-accent-background-color: #1a1a1a;
+  --rdp-day_button-border-radius: 16px;
+  --rdp-day_button-height: 40px;
+  --rdp-day_button-width: 40px;
+  --rdp-range_start-background: #1a1a1a;
+  --rdp-range_end-background: #1a1a1a;
+  --rdp-range_start-color: #ffffff;
+  --rdp-range_end-color: #ffffff;
+  --rdp-range_start-date-background-color: #1a1a1a;
+  --rdp-range_end-date-background-color: #1a1a1a;
+  --rdp-range_middle-background-color: #f5f5f5;
+  --rdp-range_middle-color: #1a1a1a;
+  --rdp-today-color: #1a1a1a;
+}
+
+.admin-dashboard .rdp-day_button,
+.admin-date-picker-popover .rdp-day_button {
+  border-radius: 16px !important;
+}
+
+.admin-dashboard .rdp-selected,
+.admin-date-picker-popover .rdp-selected,
+.admin-dashboard .rdp-range_start,
+.admin-date-picker-popover .rdp-range_start,
+.admin-dashboard .rdp-range_end,
+.admin-date-picker-popover .rdp-range_end {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border-radius: 16px !important;
+}
+
+/* Ensure selected/range day buttons have white text */
+.admin-dashboard .rdp-selected .rdp-day_button,
+.admin-date-picker-popover .rdp-selected .rdp-day_button,
+.admin-dashboard .rdp-range_start .rdp-day_button,
+.admin-date-picker-popover .rdp-range_start .rdp-day_button,
+.admin-dashboard .rdp-range_end .rdp-day_button,
+.admin-date-picker-popover .rdp-range_end .rdp-day_button {
+  color: #ffffff !important;
+}
+
 /* Calendar Grid */
 .grid-calendar {
   display: grid;
@@ -273,7 +320,7 @@
 
 .calendar-day {
   aspect-ratio: 1;
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   border: 1px solid #e5e5e5;
   background-color: #ffffff;
   color: #1a1a1a;
@@ -341,8 +388,11 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.data-table-card .table {
-  min-width: 600px;
+/* min-width only on sm+ to allow mobile card view; tables scroll on xs until dual-render */
+@media (min-width: 640px) {
+  .data-table-card .table {
+    min-width: 500px;
+  }
 }
 
 /* Mobile sidebar */
@@ -407,6 +457,13 @@
     height: 78px;
     min-height: 78px;
     max-height: 78px;
+  }
+}
+
+/* Calendar day min 40px on xs for touch */
+@media (max-width: 640px) {
+  .calendar-day {
+    min-height: 40px;
   }
 }
 

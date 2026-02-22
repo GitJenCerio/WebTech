@@ -17,7 +17,10 @@
     "show-collection-usage": "tsx scripts/show-collection-usage.ts",
     "migrate": "node scripts/migrate-firebase-to-mongodb.js",
     "migrate:dry-run": "DRY_RUN=true node scripts/migrate-firebase-to-mongodb.js",
-    "migrate:rollback": "node scripts/migrate-firebase-to-mongodb.js --rollback"
+    "migrate:rollback": "node scripts/migrate-firebase-to-mongodb.js --rollback",
+    "migrate:all": "node scripts/migrate-all-firebase-to-mongodb.js",
+    "migrate:all:dry-run": "node scripts/migrate-all-firebase-to-mongodb.js --dry-run",
+    "migrate:all:rollback": "node scripts/migrate-all-firebase-to-mongodb.js --rollback"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
@@ -61,6 +64,7 @@
     "react-icons": "^5.5.0",
     "recharts": "^3.5.1",
     "resend": "^6.8.0",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

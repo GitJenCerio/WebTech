@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface ICustomer extends Document {
+  firebaseId?: string; // From Firebase migration, for idempotency
   name: string;
   firstName?: string;
   lastName?: string;
@@ -31,12 +32,14 @@ export interface ICustomer extends Document {
   inspoDescription?: string;
   waiverAccepted?: boolean;
   isActive?: boolean;
+  isVIP?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const CustomerSchema = new Schema<ICustomer>(
   {
+    firebaseId: { type: String, sparse: true },
     name: { type: String, required: true },
     firstName: { type: String },
     lastName: { type: String },
@@ -67,6 +70,7 @@ const CustomerSchema = new Schema<ICustomer>(
     inspoDescription: { type: String },
     waiverAccepted: { type: Boolean },
     isActive: { type: Boolean, default: true },
+    isVIP: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
