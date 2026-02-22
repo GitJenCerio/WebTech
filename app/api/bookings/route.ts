@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 import { createBooking, listBookings, type CreateBookingInput } from '@/lib/services/bookingService';
 import type { BookingStatus, PaymentStatus } from '@/lib/types';
 import { sendBookingPendingEmail } from '@/lib/email';
@@ -15,6 +17,9 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const assignedNailTechId = session?.user?.assignedNailTechId;
+
     const body = await request.json();
     const {
       slotIds,
@@ -69,6 +74,9 @@ export async function POST(request: Request) {
 
     if (!nailTechId) {
       return NextResponse.json({ error: 'Nail tech ID is required' }, { status: 400 });
+    }
+    if (assignedNailTechId && nailTechId !== assignedNailTechId) {
+      return NextResponse.json({ error: 'You can only create bookings for your assigned nail tech' }, { status: 403 });
     }
 
     if (!service || !service.type || !service.location || !service.clientType) {
@@ -166,6 +174,9 @@ export async function POST(request: Request) {
  */
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const assignedNailTechId = session?.user?.assignedNailTechId;
+
     const { searchParams } = new URL(request.url);
     
     const filters: {
@@ -194,6 +205,10 @@ export async function GET(request: Request) {
 
     if (searchParams.get('nailTechId')) {
       filters.nailTechId = searchParams.get('nailTechId')!;
+    }
+    // Staff with assigned nail tech: restrict to their tech only
+    if (assignedNailTechId) {
+      filters.nailTechId = assignedNailTechId;
     }
 
     if (searchParams.get('status')) {

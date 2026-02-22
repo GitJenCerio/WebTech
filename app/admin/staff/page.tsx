@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 import { Card, CardContent } from '@/components/ui/Card';
 import AddUserModal from '@/components/admin/AddUserModal';
 import EditUserModal from '@/components/admin/EditUserModal';
@@ -42,6 +44,8 @@ function paginateStaff(rows: Staff[], page: number, pageSize: number): Staff[] {
 }
 
 export default function StaffPage() {
+  const router = useRouter();
+  const userRole = useUserRole();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -54,10 +58,13 @@ export default function StaffPage() {
   const [error, setError] = useState('');
   const [nailTechs, setNailTechs] = useState<Array<{ id: string; name: string }>>([]);
 
-  // Fetch users from database
   useEffect(() => {
+    if (!userRole.canManageAllTechs) {
+      router.replace('/admin/overview');
+      return;
+    }
     fetchUsers();
-  }, []);
+  }, [userRole.canManageAllTechs, router]);
 
   const fetchUsers = async () => {
     try {
@@ -128,6 +135,10 @@ export default function StaffPage() {
       </span>
     );
   };
+
+  if (!userRole.canManageAllTechs) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">

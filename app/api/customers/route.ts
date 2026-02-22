@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Customer from '@/lib/models/Customer';
+import Booking from '@/lib/models/Booking';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,12 +28,20 @@ async function ensureLegacyFirebaseIdIndexRemoved() {
 /**
  * GET /api/customers
  * List customers with optional search. Returns customers with totalVisits (booking count).
+ * Staff with assignedNailTechId only see clients who have bookings with that nail tech.
  */
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim();
+
+    const assignedNailTechId = (session.user as any)?.assignedNailTechId;
 
     const query: Record<string, unknown> = {};
     if (search) {
@@ -41,6 +52,17 @@ export async function GET(request: Request) {
         { phone: regex },
         { socialMediaName: regex },
       ];
+    }
+
+    // Staff with assigned nail tech: only show clients who have bookings with that tech
+    if (assignedNailTechId) {
+      const customerIdsWithBookings = await Booking.distinct('customerId', {
+        nailTechId: assignedNailTechId,
+      });
+      if (customerIdsWithBookings.length === 0) {
+        return NextResponse.json({ customers: [] });
+      }
+      query._id = { $in: customerIdsWithBookings };
     }
 
     const customers = await Customer.find(query).sort({ name: 1 }).lean().exec();

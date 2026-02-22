@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 import Image from 'next/image';
 import {
   LayoutDashboard,
@@ -52,6 +53,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [railExpanded, setRailExpanded] = useState(false);
   const pathname = usePathname();
   const { data: session } = useSession();
+  const userRole = useUserRole();
   const sidebarRef = useRef<HTMLElement | null>(null);
   const sidebarToggleRef = useRef<HTMLButtonElement | null>(null);
 
@@ -142,7 +144,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {/* Navigation */}
           <nav className="flex-1 p-2">
             <ul className="m-0 list-none p-0">
-              {navItems.map((item) => {
+              {navItems.filter((item) => item.path !== '/admin/staff' || userRole.canManageAllTechs).map((item) => {
                 const isActive = pathname === item.path || (pathname.startsWith(item.path) && item.path !== '/admin/overview');
                 return (
                   <li key={item.path}>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 import { Button, Input } from '@/components/ui';
 import {
   Dialog,
@@ -57,6 +58,7 @@ function paginateNailTechs(rows: NailTechType[], page: number, pageSize: number)
 
 export default function NailTechsPage() {
   const router = useRouter();
+  const userRole = useUserRole();
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [techToDelete, setTechToDelete] = useState<NailTechType | null>(null);
@@ -285,13 +287,15 @@ export default function NailTechsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <button
-          onClick={handleOpenAdd}
-          className="w-full sm:w-auto min-h-[44px] px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2 shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          Add Nail Tech
-        </button>
+        {userRole.canManageAllTechs && (
+          <button
+            onClick={handleOpenAdd}
+            className="w-full sm:w-auto min-h-[44px] px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2 shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            Add Nail Tech
+          </button>
+        )}
       </div>
 
       {error && (

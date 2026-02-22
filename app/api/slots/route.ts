@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Slot from '@/lib/models/Slot';
 import NailTech from '@/lib/models/NailTech';
@@ -9,10 +11,16 @@ import { cleanupPastSlotsIfDue } from '@/lib/services/cleanupPastSlots';
 export async function POST(request: Request) {
   try {
     await connectDB();
+    const session = await getServerSession(authOptions);
+    const assignedNailTechId = session?.user?.assignedNailTechId;
+
     const body = await request.json();
 
     if (!body.nailTechId) {
       return NextResponse.json({ error: 'Nail tech ID is required' }, { status: 400 });
+    }
+    if (assignedNailTechId && body.nailTechId !== assignedNailTechId) {
+      return NextResponse.json({ error: 'You can only create slots for your assigned nail tech' }, { status: 403 });
     }
 
     const nailTech = await NailTech.findById(body.nailTechId);
@@ -67,13 +75,17 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     await connectDB();
-    // Clean past unbooked slots when admin fetches slots (e.g. calendar refresh)
     await cleanupPastSlotsIfDue();
+
+    const session = await getServerSession(authOptions);
+    const assignedNailTechId = session?.user?.assignedNailTechId;
 
     const { searchParams } = new URL(request.url);
 
     const query: any = {};
     if (searchParams.get('nailTechId')) query.nailTechId = searchParams.get('nailTechId');
+    // Staff with assigned nail tech: restrict to their tech only
+    if (assignedNailTechId) query.nailTechId = assignedNailTechId;
     if (searchParams.get('date')) query.date = searchParams.get('date');
     if (searchParams.get('status')) query.status = searchParams.get('status');
     if (searchParams.get('startDate') && searchParams.get('endDate')) {

@@ -63,9 +63,17 @@ export default function CalendarPage() {
   const [pendingBookingAction, setPendingBookingAction] = useState<'cancel' | 'reschedule' | 'mark_no_show' | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showAddSlotModal, setShowAddSlotModal] = useState(false);
-  const [selectedNailTechId, setSelectedNailTechId] = useState<string>(
-    userRole.assignedNailTechId || 'all'
-  );
+  const [selectedNailTechId, setSelectedNailTechId] = useState<string>('all');
+
+  // Sync selected tech when staff has assigned nail tech (session loads async)
+  useEffect(() => {
+    if (userRole.assignedNailTechId) {
+      setSelectedNailTechId(userRole.assignedNailTechId);
+    } else if (!userRole.assignedNailTechId && userRole.canManageAllTechs) {
+      const fromQuery = searchParams.get('techId');
+      if (fromQuery) setSelectedNailTechId(fromQuery);
+    }
+  }, [userRole.assignedNailTechId, userRole.canManageAllTechs, searchParams]);
   const [selectedBooking, setSelectedBooking] = useState<{
     id?: string;
     bookingCode?: string;

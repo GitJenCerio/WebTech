@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]/route';
 import { 
   getBookingById, 
   getBookingByCode,
@@ -22,16 +24,16 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params;
-    // Try as MongoDB ID first, then as booking code
-    let booking = await getBookingById(id);
-    
-    if (!booking) {
-      booking = await getBookingByCode(id);
-    }
+    const session = await getServerSession(authOptions);
+    const assignedNailTechId = session?.user?.assignedNailTechId;
 
-    if (!booking) {
-      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+    const { id } = await params;
+    let booking = await getBookingById(id);
+    if (!booking) booking = await getBookingByCode(id);
+    if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+
+    if (assignedNailTechId && String(booking.nailTechId) !== assignedNailTechId) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     return NextResponse.json({
@@ -69,9 +71,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
  */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    const assignedNailTechId = session?.user?.assignedNailTechId;
+
     const { id } = await params;
     const body = await request.json();
     const { action, reason } = body;
+
+    if (assignedNailTechId) {
+      const existing = await getBookingById(id) || await getBookingByCode(id);
+      if (!existing || String(existing.nailTechId) !== assignedNailTechId) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+      }
+    }
 
     if (action === 'confirm') {
       // Confirm booking (requires deposit or full payment)

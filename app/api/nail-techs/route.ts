@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { listNailTechs, listActiveNailTechs, createNailTech } from '@/lib/services/nailTechService';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
+import { listNailTechs, listActiveNailTechs, createNailTech, getNailTechById } from '@/lib/services/nailTechService';
 import type { NailTechInput } from '@/lib/types';
 
 // Mark this route as dynamic to prevent static analysis during build
@@ -7,10 +9,19 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const assignedNailTechId = session?.user?.assignedNailTechId;
+
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get('activeOnly') === 'true';
-    
-    const nailTechs = activeOnly ? await listActiveNailTechs() : await listNailTechs();
+
+    let nailTechs;
+    if (assignedNailTechId) {
+      const tech = await getNailTechById(assignedNailTechId);
+      nailTechs = tech ? [tech] : [];
+    } else {
+      nailTechs = activeOnly ? await listActiveNailTechs() : await listNailTechs();
+    }
     
     // OPTIMIZED: Nail techs change very infrequently, cache for 5 minutes
     // This significantly reduces Firestore reads since nail techs are loaded on every page
@@ -28,6 +39,16 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    // Staff cannot add nail techs
+    const assignedNailTechId = (session.user as any)?.assignedNailTechId;
+    if (assignedNailTechId) {
+      return NextResponse.json({ error: 'You do not have permission to add nail techs' }, { status: 403 });
+    }
+
     const body = await request.json();
 
     const payload: NailTechInput = {

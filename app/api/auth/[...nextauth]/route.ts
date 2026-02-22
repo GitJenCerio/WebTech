@@ -37,7 +37,9 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name || user.email.split('@')[0],
             image: user.image,
-          };
+            role: user.role,
+            assignedNailTechId: user.assignedNailTechId?.toString() || null,
+          } as any;
         } catch (error) {
           console.error('Auth error:', error);
           return null;
@@ -113,12 +115,30 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;
+        session.user.role = token.role;
+        session.user.assignedNailTechId = token.assignedNailTechId ?? null;
       }
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
+        if ('role' in user && user.role) token.role = user.role;
+        if ('assignedNailTechId' in user) token.assignedNailTechId = user.assignedNailTechId ?? null;
+        // For Google OAuth, user won't have role/assignedNailTechId - fetch from DB
+        if (user.email && !token.role) {
+          try {
+            await connectDB();
+            const dbUser = await User.findOne({ email: user.email }).select('role assignedNailTechId');
+            if (dbUser) {
+              token.sub = dbUser._id.toString();
+              token.role = dbUser.role;
+              token.assignedNailTechId = dbUser.assignedNailTechId?.toString() || null;
+            }
+          } catch (e) {
+            console.error('JWT: Failed to fetch user role', e);
+          }
+        }
       }
       return token;
     },
