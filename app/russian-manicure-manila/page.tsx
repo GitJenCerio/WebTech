@@ -75,7 +75,7 @@ export default function RussianManicureManilaPage() {
         <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
           {/* H1 & intro */}
           <header className="text-center mb-10 sm:mb-14">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-acollia text-gray-900 mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-heading text-gray-900 mb-4">
               Russian Manicure in Manila
             </h1>
             <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
@@ -85,7 +85,7 @@ export default function RussianManicureManilaPage() {
 
           {/* Before & after */}
           <section className="mb-12 sm:mb-16" aria-labelledby="before-after-heading">
-            <h2 id="before-after-heading" className="text-2xl sm:text-3xl font-heading font-semibold text-gray-900 mb-6 text-center">
+            <h2 id="before-after-heading" className="text-2xl sm:text-3xl font-heading font-normal text-gray-900 mb-6 text-center">
               Before & After
             </h2>
             <p className="text-gray-600 text-sm sm:text-base text-center mb-8 max-w-xl mx-auto">
@@ -121,7 +121,7 @@ export default function RussianManicureManilaPage() {
 
           {/* Process */}
           <section className="mb-12 sm:mb-16" aria-labelledby="process-heading">
-            <h2 id="process-heading" className="text-2xl sm:text-3xl font-heading font-semibold text-gray-900 mb-6 text-center">
+            <h2 id="process-heading" className="text-2xl sm:text-3xl font-heading font-normal text-gray-900 mb-6 text-center">
               The Russian Manicure Process
             </h2>
             <p className="text-gray-600 text-sm sm:text-base text-center mb-8 max-w-2xl mx-auto">
@@ -134,7 +134,7 @@ export default function RussianManicureManilaPage() {
                     {item.step}
                   </span>
                   <div>
-                    <h3 className="font-heading font-semibold text-gray-900 mb-1">{item.title}</h3>
+                    <h3 className="font-heading font-normal text-gray-900 mb-1">{item.title}</h3>
                     <p className="text-gray-600 text-sm sm:text-base leading-relaxed">{item.text}</p>
                   </div>
                 </li>
@@ -144,7 +144,7 @@ export default function RussianManicureManilaPage() {
 
           {/* Price range */}
           <section className="mb-12 sm:mb-16" aria-labelledby="pricing-heading">
-            <h2 id="pricing-heading" className="text-2xl sm:text-3xl font-heading font-semibold text-gray-900 mb-6 text-center">
+            <h2 id="pricing-heading" className="text-2xl sm:text-3xl font-heading font-normal text-gray-900 mb-6 text-center">
               Price Range
             </h2>
             <p className="text-gray-600 text-sm sm:text-base text-center mb-4 max-w-xl mx-auto">
@@ -168,7 +168,7 @@ export default function RussianManicureManilaPage() {
 
           {/* Who it's for */}
           <section className="mb-12 sm:mb-16" aria-labelledby="ideal-heading">
-            <h2 id="ideal-heading" className="text-2xl sm:text-3xl font-heading font-semibold text-gray-900 mb-6 text-center">
+            <h2 id="ideal-heading" className="text-2xl sm:text-3xl font-heading font-normal text-gray-900 mb-6 text-center">
               Who It’s Ideal For
             </h2>
             <ul className="max-w-2xl mx-auto space-y-3 text-gray-600 text-sm sm:text-base">
@@ -193,13 +193,13 @@ export default function RussianManicureManilaPage() {
 
           {/* FAQ */}
           <section className="mb-12 sm:mb-16" aria-labelledby="faq-heading">
-            <h2 id="faq-heading" className="text-2xl sm:text-3xl font-heading font-semibold text-gray-900 mb-8 text-center">
+            <h2 id="faq-heading" className="text-2xl sm:text-3xl font-heading font-normal text-gray-900 mb-8 text-center">
               Russian Manicure FAQ
             </h2>
             <ul className="space-y-8">
               {faqs.map((faq) => (
                 <li key={faq.q}>
-                  <h3 className="font-heading font-semibold text-gray-900 mb-2 text-lg">
+                  <h3 className="font-heading font-normal text-gray-900 mb-2 text-lg">
                     {faq.q}
                   </h3>
                   <p className="text-gray-600 text-sm sm:text-base leading-relaxed">{faq.a}</p>

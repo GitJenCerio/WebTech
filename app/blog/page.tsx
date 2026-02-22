@@ -48,7 +48,7 @@ export default function BlogPage() {
       <main className="min-h-screen bg-white pt-[72px] sm:pt-[88px] pb-16">
         <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
           <header className="text-center py-10 sm:py-14">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-acollia text-gray-900 mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-heading text-gray-900 mb-4">
               Blog
             </h1>
             <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
@@ -76,7 +76,7 @@ export default function BlogPage() {
                     >
                       {formatDate(post.date)}
                     </time>
-                    <h2 className="text-xl sm:text-2xl font-heading font-semibold text-gray-900 mt-1 group-hover:text-black group-hover:underline">
+                    <h2 className="text-xl sm:text-2xl font-heading font-normal text-gray-900 mt-1 group-hover:text-black group-hover:underline">
                       {post.title}
                     </h2>
                     <p className="text-gray-600 text-sm sm:text-base mt-2 line-clamp-2">

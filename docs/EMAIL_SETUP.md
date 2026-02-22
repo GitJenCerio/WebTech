@@ -34,6 +34,11 @@ The invitation email system requires an email service to be configured. Currentl
    RESEND_FROM_EMAIL=noreply@yourdomain.com
    # OR
    RESEND_FROM_DOMAIN=yourdomain.com
+   
+   # Payment QR codes for booking pending email (use direct image URLs for embedding)
+   # Get direct links: open Imgur album, right-click image → Copy image address
+   PAYMENT_QR_GCASH_URL=https://i.imgur.com/xxxxx.jpg
+   PAYMENT_QR_PNB_URL=https://i.imgur.com/xxxxx.jpg
    ```
 
 4. **Verify your domain** (Optional, for production)

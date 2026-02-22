@@ -27,7 +27,7 @@ export default function Gallery() {
   return (
     <section id="gallery" className="section-padding bg-white">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-acollia text-center mb-3 sm:mb-4 px-2 sm:px-3">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading text-center mb-3 sm:mb-4 px-2 sm:px-3">
           Gallery
         </h2>
         <p className="text-center text-gray-600 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-2 sm:px-3 text-sm sm:text-base">

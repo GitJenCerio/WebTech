@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,11 @@ import { Input } from '@/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
+
+interface NailTech {
+  id: string;
+  name: string;
+}
 
 interface AddUserModalProps {
   show: boolean;
@@ -26,9 +31,33 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('google');
+  const [role, setRole] = useState<'admin' | 'staff'>('admin');
+  const [assignedNailTechId, setAssignedNailTechId] = useState<string>('');
+  const [nailTechs, setNailTechs] = useState<NailTech[]>([]);
+  const [loadingNailTechs, setLoadingNailTechs] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (show) {
+      const fetchNailTechs = async () => {
+        try {
+          setLoadingNailTechs(true);
+          const response = await fetch('/api/nail-techs?activeOnly=true');
+          const data = await response.json();
+          if (response.ok && data.nailTechs) {
+            setNailTechs(data.nailTechs);
+          }
+        } catch (err) {
+          console.error('Error fetching nail techs:', err);
+        } finally {
+          setLoadingNailTechs(false);
+        }
+      };
+      fetchNailTechs();
+    }
+  }, [show]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +90,12 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
       }
     }
 
+    if (role === 'staff' && !assignedNailTechId) {
+      setError('Staff must be assigned to a nail tech');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/users', {
         method: 'POST',
@@ -72,6 +107,8 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
           name: name || undefined,
           password: authMethod === 'password' ? password : undefined,
           authMethod,
+          role,
+          assignedNailTechId: role === 'staff' ? assignedNailTechId || null : null,
         }),
       });
 
@@ -101,6 +138,8 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
       setPassword('');
       setConfirmPassword('');
       setAuthMethod('google');
+      setRole('admin');
+      setAssignedNailTechId('');
 
       // Notify parent and close modal after a delay
       setTimeout(() => {
@@ -122,6 +161,8 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
       setPassword('');
       setConfirmPassword('');
       setAuthMethod('google');
+      setRole('admin');
+      setAssignedNailTechId('');
       setError('');
       setSuccess('');
       onHide();
@@ -205,6 +246,60 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
                 disabled={loading}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">
+                Role <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={role}
+                onValueChange={(value) => {
+                  setRole(value as 'admin' | 'staff');
+                  if (value === 'admin') setAssignedNailTechId('');
+                }}
+                disabled={loading}
+              >
+                <SelectTrigger id="role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {role === 'staff' && (
+              <div className="space-y-2">
+                <Label htmlFor="assignedNailTech">
+                  Assigned Nail Tech <span className="text-red-500">*</span>
+                </Label>
+                {loadingNailTechs ? (
+                  <p className="text-sm text-gray-500">Loading nail techs...</p>
+                ) : (
+                  <Select
+                    value={assignedNailTechId || '__none__'}
+                    onValueChange={(v) => setAssignedNailTechId(v === '__none__' ? '' : v)}
+                    disabled={loading}
+                  >
+                    <SelectTrigger id="assignedNailTech">
+                      <SelectValue placeholder="Select a nail tech" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Select —</SelectItem>
+                      {nailTechs.map((tech) => (
+                        <SelectItem key={tech.id} value={tech.id}>
+                          {tech.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <small className="text-gray-500 text-xs block">
+                  Staff can only see data for their assigned nail tech
+                </small>
+              </div>
+            )}
 
             {authMethod === 'password' && (
               <>

@@ -82,7 +82,7 @@ export default async function BlogPostPage({ params }: Props) {
             <time dateTime={post.date} className="text-sm text-gray-500 block">
               {formatDate(post.date)}
             </time>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-acollia font-semibold text-gray-900 mt-1">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-normal text-gray-900 mt-1">
               {post.title}
             </h1>
             <p className="text-gray-600 mt-2 text-base sm:text-lg">

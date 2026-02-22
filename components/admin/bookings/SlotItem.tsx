@@ -29,6 +29,7 @@ interface SlotItemProps {
   nailTechId?: string;
   nailTechName?: string;
   nailTechRole?: string;
+  serviceLocation?: 'homebased_studio' | 'home_service';
   clientName?: string;
   clientEmail?: string;
   clientPhone?: string;
@@ -46,7 +47,8 @@ export default function SlotItem({
   slotType,
   nailTechId,
   nailTechName,
-  nailTechRole,
+  nailTechRole: _nailTechRole,
+  serviceLocation,
   clientName,
   clientEmail,
   clientPhone,
@@ -156,6 +158,19 @@ export default function SlotItem({
                   {serviceBadge.label}
                 </span>
               )}
+              {['confirmed', 'CONFIRMED'].includes(status) && serviceLocation && (
+                <span
+                  title={serviceLocation === 'home_service' ? 'Home Service' : 'Studio'}
+                  className="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold min-h-[24px] box-border"
+                  style={{
+                    backgroundColor: serviceLocation === 'home_service' ? '#fef3c7' : '#dbeafe',
+                    color: serviceLocation === 'home_service' ? '#92400e' : '#1e40af',
+                    border: `1px solid ${serviceLocation === 'home_service' ? '#fcd34d' : '#93c5fd'}`,
+                  }}
+                >
+                  {serviceLocation === 'home_service' ? 'HS' : 'ST'}
+                </span>
+              )}
               {isHidden && (
                 <span
                   className="inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium min-h-[24px] box-border border border-transparent text-white"
@@ -165,7 +180,7 @@ export default function SlotItem({
                 </span>
               )}
               {nailTechName && (
-                <NailTechBadge name={nailTechName} nailTechId={nailTechId} role={nailTechRole} />
+                <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
               )}
               {clientName && (
                 <span className="text-muted small fw-semibold">{clientName}</span>

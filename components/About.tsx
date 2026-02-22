@@ -34,7 +34,7 @@ export default function About() {
             className="text-center lg:text-left px-2 sm:px-0"
           >
             <div id="about" style={{ scrollMarginTop: '180px', height: 0 }} />
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-acollia mb-4 sm:mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading mb-4 sm:mb-6">
               About Us
             </h2>
             <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base md:text-lg text-justify leading-relaxed">

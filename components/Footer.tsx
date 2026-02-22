@@ -50,7 +50,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-heading font-semibold text-base sm:text-lg md:text-xl mb-3 sm:mb-4">Quick Links</h4>
+            <h4 className="font-heading font-normal text-base sm:text-lg md:text-xl mb-3 sm:mb-4">Quick Links</h4>
             <ul className="space-y-1.5 sm:space-y-2 text-gray-600 text-sm sm:text-base">
               {quickLinks.map((link) => (
                 <li key={link.href}>
@@ -63,7 +63,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-heading font-semibold text-base sm:text-lg md:text-xl mb-3 sm:mb-4">Contact Us</h4>
+            <h4 className="font-heading font-normal text-base sm:text-lg md:text-xl mb-3 sm:mb-4">Contact Us</h4>
             <div className="text-gray-600 space-y-1.5 sm:space-y-2 text-sm sm:text-base">
               <p>Manila, Philippines</p>
               <p className="mt-3 sm:mt-4">

@@ -1,4 +1,6 @@
-import { useRef } from 'react';
+'use client';
+
+import { useRef, useState, useCallback, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import {
   Dialog,
@@ -9,10 +11,9 @@ import {
 } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ChevronDown } from 'lucide-react';
 
 export interface InvoiceItem {
   description: string;
@@ -46,7 +47,7 @@ interface InvoiceModalProps {
   onSelectedPricingServiceChange: (value: string) => void;
   onInvoiceItemsChange: (items: InvoiceItem[]) => void;
   onInvoiceNotesChange: (value: string) => void;
-  onAddFromPricing: () => void;
+  onAddFromPricing: (serviceName?: string) => void;
   onSave: () => Promise<void>;
 }
 
@@ -71,6 +72,36 @@ export default function InvoiceModal({
   onSave,
 }: InvoiceModalProps) {
   const quotationRef = useRef<HTMLDivElement>(null);
+  const [serviceSearch, setServiceSearch] = useState('');
+  const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const serviceNames = useCallback(() => {
+    return pricingData
+      .map((item) => {
+        const firstKey = Object.keys(item)[0];
+        return String(item[firstKey] || '');
+      })
+      .filter((name) => name.trim());
+  }, [pricingData]);
+
+  const filteredServices = useCallback(() => {
+    const names = serviceNames();
+    const q = serviceSearch.trim().toLowerCase();
+    if (!q) return names;
+    return names.filter((name) => name.toLowerCase().includes(q));
+  }, [serviceNames, serviceSearch]);
+
+  const handleSelectService = (name: string) => {
+    onAddFromPricing(name);
+    setServiceSearch('');
+    setServiceDropdownOpen(false);
+    onSelectedPricingServiceChange('');
+  };
+
+  useEffect(() => {
+    if (!serviceDropdownOpen) setServiceSearch('');
+  }, [serviceDropdownOpen]);
 
   if (!booking) return null;
 
@@ -96,7 +127,7 @@ export default function InvoiceModal({
     <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Invoice</DialogTitle>
+          <DialogTitle>{currentQuotationId ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3" style={{ fontSize: '0.92rem' }}>
@@ -120,30 +151,66 @@ export default function InvoiceModal({
             <Label className="text-base font-semibold">Invoice Items</Label>
             <div className="space-y-2">
               <Label className="text-sm">Add from Pricing</Label>
-              <div className="flex gap-2">
-                <Select
-                  value={selectedPricingService}
-                  onValueChange={onSelectedPricingServiceChange}
-                  disabled={pricingLoading || pricingError !== null}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a service..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pricingData.map((item, idx) => {
-                      const firstKey = Object.keys(item)[0];
-                      const name = String(item[firstKey] || '');
-                      return name ? (
-                        <SelectItem key={idx} value={name}>{name}</SelectItem>
-                      ) : null;
-                    })}
-                  </SelectContent>
-                </Select>
+              <div className="relative flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    ref={searchInputRef}
+                    value={serviceSearch}
+                    onChange={(e) => {
+                      setServiceSearch(e.target.value);
+                      setServiceDropdownOpen(true);
+                    }}
+                    onFocus={() => setServiceDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setServiceDropdownOpen(false), 150)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const filtered = filteredServices();
+                        if (filtered.length >= 1) handleSelectService(filtered[0]);
+                      }
+                    }}
+                    placeholder="Type to search service..."
+                    disabled={pricingLoading || pricingError !== null}
+                    className="pr-9"
+                  />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  {serviceDropdownOpen && (
+                    <div
+                      className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg z-50 py-1"
+                    >
+                      {filteredServices().length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-gray-500">No matching services</div>
+                      ) : (
+                        filteredServices().map((name, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleSelectService(name);
+                            }}
+                          >
+                            {name}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={onAddFromPricing}
-                  disabled={!selectedPricingService}
+                  onClick={() => {
+                    const filtered = filteredServices();
+                    if (filtered.length >= 1) {
+                      handleSelectService(filtered[0]);
+                    } else if (selectedPricingService) {
+                      onAddFromPricing(selectedPricingService);
+                      onSelectedPricingServiceChange('');
+                    }
+                  }}
+                  disabled={filteredServices().length === 0 && !selectedPricingService}
                 >
                   Add
                 </Button>
@@ -153,6 +220,9 @@ export default function InvoiceModal({
             </div>
 
             <div className="space-y-3">
+              {invoiceItems.length === 0 && (
+                <p className="text-sm text-gray-500 py-2">No items yet. Select a service from the pricing list above or add items manually below.</p>
+              )}
               {invoiceItems.map((item, idx) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-end">
                   <div className="col-span-12 md:col-span-5">
@@ -205,10 +275,7 @@ export default function InvoiceModal({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        if (invoiceItems.length === 1) return;
-                        onInvoiceItemsChange(invoiceItems.filter((_, i) => i !== idx));
-                      }}
+                      onClick={() => onInvoiceItemsChange(invoiceItems.filter((_, i) => i !== idx))}
                       className="w-full"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -278,6 +345,14 @@ export default function InvoiceModal({
                 <div className="flex justify-between font-semibold pt-2 border-t border-[#212529]">
                   <span>Total</span>
                   <span>PHP {total.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Deposit Paid</span>
+                  <span>-PHP {depositPaid.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-semibold pt-2 border-t border-[#212529]">
+                  <span>Balance Due</span>
+                  <span>PHP {balance.toLocaleString()}</span>
                 </div>
               </div>
             </div>

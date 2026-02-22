@@ -59,13 +59,15 @@ export async function POST(request: Request) {
     }
 
     // Staff (users with assigned nail tech) cannot add users
-    const assignedNailTechId = (session.user as any)?.assignedNailTechId;
-    if (assignedNailTechId) {
+    const sessionAssignedTechId = (session.user as any)?.assignedNailTechId;
+    if (sessionAssignedTechId) {
       return NextResponse.json({ error: 'You do not have permission to add users' }, { status: 403 });
     }
 
     const body = await request.json();
-    const { email, password, name, authMethod } = body;
+    const { email, password, name, authMethod, role: bodyRole, assignedNailTechId: bodyAssignedNailTechId } = body;
+    const role = bodyRole === 'staff' ? 'staff' : 'admin';
+    const assignedNailTechId = role === 'staff' ? (bodyAssignedNailTechId || null) : null;
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -73,6 +75,10 @@ export async function POST(request: Request) {
 
     if (authMethod === 'password' && !password) {
       return NextResponse.json({ error: 'Password is required for password authentication' }, { status: 400 });
+    }
+
+    if (role === 'staff' && !assignedNailTechId) {
+      return NextResponse.json({ error: 'Staff must be assigned to a nail tech' }, { status: 400 });
     }
 
     await connectDB();
@@ -93,7 +99,8 @@ export async function POST(request: Request) {
         email: email.toLowerCase(),
         name: name || email.split('@')[0],
         emailVerified: true,
-        role: 'admin',
+        role,
+        assignedNailTechId: assignedNailTechId || undefined,
         status: 'active',
       });
 
@@ -107,7 +114,7 @@ export async function POST(request: Request) {
           email: user.email,
           displayName: user.name || user.email.split('@')[0],
           resetLink: inviteLink,
-          role: 'Admin',
+          role: role === 'admin' ? 'Admin' : 'Staff',
         });
         emailSent = emailResult.success;
         emailError = emailResult.error;
@@ -144,7 +151,8 @@ export async function POST(request: Request) {
         password: hashedPassword,
         name: name || email.split('@')[0],
         emailVerified: true,
-        role: 'admin',
+        role,
+        assignedNailTechId: assignedNailTechId || undefined,
         status: 'active',
       });
 

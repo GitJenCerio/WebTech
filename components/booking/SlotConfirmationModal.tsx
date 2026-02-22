@@ -10,10 +10,13 @@ interface SlotConfirmationModalProps {
   slotTime: string;
   slotType?: 'regular' | 'with_squeeze_fee' | null;
   linkedSlotTimes?: string[];
+  slotCount?: number; // Total slots (1 + linked), for deposit calc: ₱500 per slot
   serviceName?: string;
   onConfirm: () => void;
   onBack: () => void;
 }
+
+const DEPOSIT_PER_SLOT = 500;
 
 export default function SlotConfirmationModal({
   isOpen,
@@ -21,11 +24,15 @@ export default function SlotConfirmationModal({
   slotTime,
   slotType,
   linkedSlotTimes = [],
+  slotCount: slotCountProp,
   serviceName,
   onConfirm,
   onBack,
 }: SlotConfirmationModalProps) {
   if (!isOpen) return null;
+
+  const slotCount = slotCountProp ?? (1 + (linkedSlotTimes?.length || 0));
+  const totalDeposit = DEPOSIT_PER_SLOT * slotCount;
 
   const formattedDate = slotDate
     ? new Date(slotDate + 'T00:00:00').toLocaleDateString('en-US', {
@@ -76,7 +83,7 @@ export default function SlotConfirmationModal({
                 <p className="text-base font-semibold text-gray-900">
                   {slotTime ? formatTime12Hour(slotTime) : ''}
                   {linkedSlotTimes.length > 0 && (
-                    <span className="text-sm font-normal text-gray-600">
+                    <span className="text-base font-semibold text-gray-900">
                       {' & '}
                       {linkedSlotTimes.map((t) => formatTime12Hour(t)).join(' & ')}
                     </span>
@@ -103,14 +110,14 @@ export default function SlotConfirmationModal({
           )}
 
           {/* Deposit Info */}
-          <div className="rounded-xl border-2 border-gray-300 bg-gray-50 px-4 py-3 space-y-2">
-            <p className="text-sm text-gray-900 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-gray-700 flex-shrink-0" />
-              <strong>₱500 deposit</strong> is required upon booking
+          <div className="rounded-xl border-2 border-gray-300 bg-gray-50 px-4 py-3 space-y-2 text-left">
+            <p className="text-sm text-gray-900 flex items-start gap-2 text-left">
+              <CheckCircle2 className="w-4 h-4 text-gray-700 flex-shrink-0 mt-0.5" />
+              <span><span className="font-medium">₱{totalDeposit.toLocaleString()} deposit</span> is required ({slotCount} slot{slotCount !== 1 ? 's' : ''} × ₱500) upon booking</span>
             </p>
-            <p className="text-sm text-gray-900 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-gray-700 flex-shrink-0" />
-              Deposit is <strong>non-refundable</strong> but consumable
+            <p className="text-sm text-gray-900 flex items-start gap-2 text-left">
+              <CheckCircle2 className="w-4 h-4 text-gray-700 flex-shrink-0 mt-0.5" />
+              <span>Deposit is <span className="font-medium">non-refundable</span> but consumable</span>
             </p>
           </div>
         </div>

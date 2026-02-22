@@ -23,7 +23,7 @@ Your application already has Google Sign-In configured in the code. You just nee
 3. Click **"Create"**
 
 ### Fill in the App Information:
-- **App name:** Glammed Nails by Jhen
+- **App name:** glammednailsbyjhen
 - **User support email:** admin@glammednailsbyjhen.com
 - **App logo:** (Optional) Upload your logo
 - **Application home page:** https://glammednailsbyjhen.vercel.app (or your domain)
@@ -48,7 +48,7 @@ Your application already has Google Sign-In configured in the code. You just nee
 1. Go to **"APIs & Services"** > **"Credentials"**
 2. Click **"Create Credentials"** > **"OAuth client ID"**
 3. **Application type:** Select **"Web application"**
-4. **Name:** Glammed Nails Web Client
+4. **Name:** glammednailsbyjhen Web Client
 5. **Authorized JavaScript origins:** Add these URLs:
    ```
    http://localhost:3000

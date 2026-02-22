@@ -86,6 +86,7 @@ export default function ClientTypeSelectionModal({
           customer: {
             id: data.customer.id,
             name: data.customer.name,
+            email: data.customer.email || '',
             phone: data.customer.phone || phone.trim(),
             socialMediaName: data.customer.socialMediaName || '',
           },
@@ -115,6 +116,7 @@ export default function ClientTypeSelectionModal({
       serviceLocation: ServiceLocation;
       customerId?: string;
       customerName?: string;
+      customerEmail?: string;
       contactNumber?: string;
       socialMediaName?: string;
     } = {
@@ -126,6 +128,7 @@ export default function ClientTypeSelectionModal({
     if (lookupResult?.found && lookupResult.customer) {
       data.customerId = lookupResult.customer.id;
       data.customerName = lookupResult.customer.name;
+      data.customerEmail = lookupResult.customer.email;
       data.contactNumber = lookupResult.customer.phone;
       data.socialMediaName = lookupResult.customer.socialMediaName;
     }

@@ -18,7 +18,7 @@ export default function HomeFAQPreview() {
         transition={{ duration: 0.6 }}
         className="max-w-3xl mx-auto px-2 sm:px-4"
       >
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-acollia text-center mb-4 px-3">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading text-center mb-4 px-3">
           Frequently Asked Questions
         </h2>
         <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
@@ -27,7 +27,7 @@ export default function HomeFAQPreview() {
         <ul className="space-y-4 mb-8">
           {previewItems.map((faq) => (
             <li key={faq.question} className="border-b border-gray-200 pb-4 last:border-0">
-              <h3 className="font-heading font-semibold text-gray-900 mb-1 text-sm sm:text-base">
+              <h3 className="font-heading font-normal text-gray-900 mb-1 text-sm sm:text-base">
                 {faq.question}
               </h3>
               <p className="text-gray-600 text-sm leading-relaxed">

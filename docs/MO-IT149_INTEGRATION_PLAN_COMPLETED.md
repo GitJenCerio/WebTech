@@ -1,7 +1,7 @@
 # MO-IT149 Web Technology Application
 ## Integration Plan: File Storage, Authentication, and Access Control
 
-**Project:** Glammed Nails by Jhen - Nail Appointment Booking System  
+**Project:** glammednailsbyjhen - Nail Appointment Booking System  
 **Prepared by:** Jennifer B. Cerio  
 **Date:** February 6, 2026
 

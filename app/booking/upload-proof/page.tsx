@@ -164,8 +164,10 @@ function UploadProofContent() {
       )}
 
       {uploadSuccess && (
-        <div className="mb-6 p-4 rounded-lg bg-green-50 border-2 border-green-200 text-green-800 text-sm">
-          Proof uploaded successfully. We will confirm your booking once verified.
+        <div className="mb-6 p-4 rounded-lg bg-green-50 border-2 border-green-200 text-green-800 text-sm space-y-2">
+          <p className="font-semibold">Thank you for uploading!</p>
+          <p>You will receive a confirmation email once your payment has been verified. Your slot is secured after we confirm.</p>
+          <p className="text-xs text-green-700">If you have any questions, please reach out to us.</p>
         </div>
       )}
 

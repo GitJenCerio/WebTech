@@ -80,12 +80,12 @@ const config: Config = {
         hover: "0 6px 16px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)",
       },
       fontFamily: {
-        heading: ['Playfair Display', 'serif'],
-        body: ['Lato', 'sans-serif'],
+        heading: ['Balgor', 'sans-serif'],
+        body: ['var(--font-jost)', 'Jost', 'sans-serif'],
+        sans: ['var(--font-jost)', 'Jost', 'sans-serif'],
         balgor: ['Balgor', 'sans-serif'],
         acollia: ['Acollia', 'sans-serif'],
         ladinta: ['Ladinta', 'sans-serif'],
-        sans: ['Inter', 'sans-serif'],
       },
       spacing: {
         xs: '0.5rem',

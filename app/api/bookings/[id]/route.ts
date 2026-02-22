@@ -53,6 +53,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         invoice: booking.invoice || null,
         clientNotes: booking.clientNotes || '',
         adminNotes: booking.adminNotes || '',
+        clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
         createdAt: booking.createdAt.toISOString(),
         updatedAt: booking.updatedAt.toISOString(),
       }

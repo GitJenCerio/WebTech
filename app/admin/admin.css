@@ -119,7 +119,7 @@
   justify-content: center;
 }
 
-/* Sidebar nav links */
+/* Sidebar nav links — Jost + letter-spacing for spa-like airiness */
 .admin-sidebar .nav-link {
   color: #4b5563;
   padding: 0.5rem 0.75rem;
@@ -132,6 +132,7 @@
   font-size: 0.875rem;
   font-weight: 400;
   text-decoration: none;
+  letter-spacing: 0.04em;
 }
 
 .admin-sidebar .nav-link:hover {

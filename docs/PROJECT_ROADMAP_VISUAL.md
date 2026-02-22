@@ -1,5 +1,5 @@
 # Project Roadmap - Visual Overview
-## Glammed Nails by Jhen
+## glammednailsbyjhen
 
 **Duration:** 12 Weeks (Feb 10 - May 5, 2026)  
 **Team:** 3-4 Developers

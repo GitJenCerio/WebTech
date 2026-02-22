@@ -13,7 +13,7 @@ export default function HomeAboutPreview() {
         transition={{ duration: 0.6 }}
         className="max-w-3xl mx-auto px-2 sm:px-4 text-center"
       >
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-acollia text-center mb-4 px-3">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading text-center mb-4 px-3">
           About Us
         </h2>
         <p className="text-gray-600 mb-6 text-sm sm:text-base leading-relaxed">

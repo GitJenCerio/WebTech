@@ -1,5 +1,5 @@
 # Integration Architecture Summary
-## Glammed Nails by Jhen - Booking System
+## glammednailsbyjhen - Booking System
 
 **Last Updated:** February 6, 2026  
 **Project:** MO-IT149 Web Technology Application

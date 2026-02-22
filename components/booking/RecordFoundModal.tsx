@@ -40,7 +40,7 @@ export function RecordFoundModal({ open, customerName, onClose, onProceed }: Rec
             </div>
           </div>
           <div className="flex-1">
-            <h3 className="text-xl sm:text-2xl font-heading font-semibold mb-2 pr-8 sm:pr-10">
+            <h3 className="text-xl sm:text-2xl font-heading font-normal mb-2 pr-8 sm:pr-10">
               Record Found
             </h3>
             <p className="text-sm sm:text-base text-slate-600 mb-4">

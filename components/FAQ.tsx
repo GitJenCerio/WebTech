@@ -41,7 +41,7 @@ export default function FAQ({ asPage }: FAQProps) {
         className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6"
       >
         {!asPage && <div id="faq" style={{ scrollMarginTop: '180px', height: 0 }} />}
-        <HeadingTag className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-acollia text-center mb-3 sm:mb-4 px-2 sm:px-3">Frequently Asked Questions</HeadingTag>
+        <HeadingTag className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading text-center mb-3 sm:mb-4 px-2 sm:px-3">Frequently Asked Questions</HeadingTag>
         <p className="text-center text-gray-600 mb-8 sm:mb-10 md:mb-12 text-sm sm:text-base px-2 sm:px-3">Have questions? We have answers</p>
         <div className="space-y-6 sm:space-y-8">
           {faqSections.map((section, sectionIdx) => {

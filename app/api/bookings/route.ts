@@ -85,8 +85,8 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    const pricingTotal = 0;
-    const pricingDeposit = 0;
+    const pricingTotal = typeof pricing?.total === 'number' ? pricing.total : 0;
+    const pricingDeposit = typeof pricing?.depositRequired === 'number' ? pricing.depositRequired : 0;
 
     const input: CreateBookingInput = {
       slotIds,
@@ -260,8 +260,13 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       bookings: bookings.map(booking => {
-        const firstSlotId = (booking.slotIds || [])[0];
+        const bidSlotIds = booking.slotIds || [];
+        const firstSlotId = bidSlotIds[0];
         const slotInfo = firstSlotId ? slotById.get(String(firstSlotId)) : undefined;
+        const appointmentTimes = bidSlotIds
+          .map((sid) => slotById.get(String(sid))?.time)
+          .filter((t): t is string => !!t)
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
         return {
         id: booking._id.toString(),
         bookingCode: booking.bookingCode,
@@ -274,6 +279,7 @@ export async function GET(request: Request) {
         slotIds: booking.slotIds,
         appointmentDate: slotInfo?.date || null,
         appointmentTime: slotInfo?.time || null,
+        appointmentTimes: appointmentTimes.length > 0 ? appointmentTimes : (slotInfo?.time ? [slotInfo.time] : []),
         service: booking.service,
         status: booking.status,
         paymentStatus: booking.paymentStatus,
@@ -284,6 +290,7 @@ export async function GET(request: Request) {
         invoice: booking.invoice || null,
         clientNotes: booking.clientNotes || '',
         adminNotes: booking.adminNotes || '',
+        clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
         createdAt: booking.createdAt.toISOString(),
         updatedAt: booking.updatedAt.toISOString(),
       };

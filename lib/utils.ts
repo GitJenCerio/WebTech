@@ -29,6 +29,36 @@ export function formatTime12Hour(time24: string): string {
 }
 
 /**
+ * Parses time string (24h or 12h) to minutes since midnight for sorting
+ */
+function parseTimeToMinutes(time: string): number {
+  if (!time) return 0;
+  const upper = time.toUpperCase();
+  if (upper.includes('AM') || upper.includes('PM')) {
+    const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!match) return 0;
+    let [, h, m, period] = match;
+    let hour = parseInt(h, 10);
+    const min = parseInt(m || '0', 10);
+    if (period === 'PM' && hour !== 12) hour += 12;
+    else if (period === 'AM' && hour === 12) hour = 0;
+    return hour * 60 + min;
+  }
+  const [h, m] = time.split(':');
+  const hour = parseInt(h || '0', 10);
+  const min = parseInt(m || '0', 10);
+  return hour * 60 + min;
+}
+
+/**
+ * Sorts an array of time strings chronologically (earliest first)
+ * Handles both 24-hour (HH:mm) and 12-hour (h:mm AM/PM) formats
+ */
+export function sortTimesChronologically(times: string[]): string[] {
+  return [...times].sort((a, b) => parseTimeToMinutes(a) - parseTimeToMinutes(b));
+}
+
+/**
  * Formats nail tech name with "Ms." prefix
  * @param name - Name without prefix (e.g., "Jhen")
  * @returns Formatted name with "Ms." prefix (e.g., "Ms. Jhen")

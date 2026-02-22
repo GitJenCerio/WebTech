@@ -13,11 +13,11 @@ export default function HomePricingPreview() {
         transition={{ duration: 0.6 }}
         className="max-w-3xl mx-auto px-2 sm:px-4 text-center"
       >
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-acollia text-center mb-4 px-3">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading text-center mb-4 px-3">
           Pricing
         </h2>
         <p className="text-gray-600 mb-6 text-sm sm:text-base">
-          Transparent pricing for all our services. Base Russian manicure from ₱1,500. Deposit ₱500 to secure your slot.
+          Transparent pricing for all our services. Base Russian manicure from ₱1,500. Deposit ₱500 per slot to secure your appointment.
         </p>
         <Link
           href="/pricing"

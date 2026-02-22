@@ -747,7 +747,7 @@ export function ServiceCard({
 
 ## 🌟 FINAL NOTE
 
-**This document is the foundation of quality development for Glammed Nails by Jhen.**
+**This document is the foundation of quality development for glammednailsbyjhen.**
 
 When in doubt:
 1. Is it mobile-friendly? ✅
@@ -762,4 +762,4 @@ If all answers are YES, you're building it right! 🎯
 
 **Document Version:** 1.0  
 **Last Updated:** February 6, 2026  
-**Project:** Glammed Nails by Jhen Booking System
+**Project:** glammednailsbyjhen Booking System

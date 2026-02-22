@@ -139,7 +139,7 @@ export default function Pricing({ asPage }: PricingProps) {
         className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6"
       >
         {!asPage && <div id="pricing" style={{ scrollMarginTop: '180px', height: 0 }} />}
-        <HeadingTag className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-acollia text-center mb-3 sm:mb-4 px-2 sm:px-3">
+        <HeadingTag className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading text-center mb-3 sm:mb-4 px-2 sm:px-3">
           Pricing
         </HeadingTag>
         <p className="text-center text-gray-600 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-2 sm:px-3 text-sm sm:text-base">
@@ -156,9 +156,9 @@ export default function Pricing({ asPage }: PricingProps) {
               transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.3) }}
               className="bg-white p-4 sm:p-5 md:p-6 border-2 border-black hover:border-black/50 transition-all rounded-lg flex flex-col shadow-lg shadow-black/15"
             >
-              <h3 className="text-lg sm:text-xl md:text-2xl font-heading font-bold mb-1 sm:mb-1.5">{plan.name}</h3>
+              <h3 className="text-lg sm:text-xl md:text-2xl font-heading font-normal mb-1 sm:mb-1.5">{plan.name}</h3>
               <div className="mb-1.5 sm:mb-2">
-                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-black">{(plan as any).price}</div>
+                <div className="text-2xl sm:text-3xl md:text-4xl font-sans font-medium tabular-nums text-black">{(plan as any).price}</div>
                 {(plan as any).addOnPrice && (
                   <div className="text-xs text-gray-500 mt-1">
                     <div className="font-medium">Add-ons:</div>
@@ -184,7 +184,7 @@ export default function Pricing({ asPage }: PricingProps) {
               </ul>
               <div className="text-xs sm:text-sm mb-2 sm:mb-3">
                 <p className="mb-0 text-black text-center leading-tight sm:leading-snug">• All nail services come with 5 days warranty.</p>
-                <p className="text-[10px] sm:text-xs text-red-600 text-center leading-tight sm:leading-snug">• P500 advance deposit upon booking is required to secure the slot; non-refundable, but deductible from the total payment.</p>
+                <p className="text-[10px] sm:text-xs text-red-600 text-center leading-tight sm:leading-snug">• ₱500 per slot advance deposit upon booking is required to secure your slot(s); non-refundable, but deductible from the total payment.</p>
               </div>
               <Link
                 href="/booking"

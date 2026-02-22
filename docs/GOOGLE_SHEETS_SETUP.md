@@ -7,7 +7,7 @@ This guide explains how to set up Google Service Account credentials and configu
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Click on the project dropdown at the top
 3. Click **"New Project"**
-4. Enter a project name (e.g., "Glammed Nails Booking System")
+4. Enter a project name (e.g., "glammednailsbyjhen Booking System")
 5. Click **"Create"**
 6. Wait for the project to be created and select it
 
@@ -68,7 +68,7 @@ Open the downloaded JSON file. It will look like this:
 
 1. Go to [Google Sheets](https://sheets.google.com/)
 2. Click **"Blank"** to create a new spreadsheet
-3. Name it (e.g., "Glammed Nails Pricing")
+3. Name it (e.g., "glammednailsbyjhen Pricing")
 4. Create a pricing table with headers in the first row, for example:
    ```
    Service Name | Price | Location | Notes

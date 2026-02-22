@@ -10,6 +10,7 @@ interface Slot {
   nailTechId?: string;
   nailTechName?: string;
   nailTechRole?: string;
+  serviceLocation?: 'homebased_studio' | 'home_service';
   clientName?: string;
   clientEmail?: string;
   clientPhone?: string;
@@ -96,6 +97,7 @@ export default function SlotList({
                 nailTechId={slot.nailTechId}
                 nailTechName={slot.nailTechName}
                 nailTechRole={slot.nailTechRole}
+                serviceLocation={slot.serviceLocation}
                 clientName={slot.clientName}
                 clientEmail={slot.clientEmail}
                 clientPhone={slot.clientPhone}

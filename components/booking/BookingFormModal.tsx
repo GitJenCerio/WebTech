@@ -9,8 +9,10 @@ type ClientType = 'new' | 'repeat';
 
 interface BookingFormModalProps {
   isOpen: boolean;
+  slotCount?: number; // Total slots for deposit calc: ₱500 per slot
   clientType: ClientType;
   clientName?: string;
+  clientEmail?: string;
   clientContactNumber?: string;
   clientSocialMediaName?: string;
   onClose: () => void;
@@ -21,7 +23,7 @@ interface BookingFormModalProps {
     socialMediaName: string;
     howDidYouFindUs: string;
     howDidYouFindUsOther?: string;
-    currentNailPicture?: File;
+    currentNailPictures: File[];
     inspoPictures: File[];
     hasRussianManicure: string;
     hasGelOverlay: string;
@@ -37,10 +39,14 @@ interface BookingFormModalProps {
   isSubmitting?: boolean;
 }
 
+const DEPOSIT_PER_SLOT = 500;
+
 export default function BookingFormModal({
   isOpen,
+  slotCount = 1,
   clientType,
   clientName,
+  clientEmail,
   clientContactNumber,
   clientSocialMediaName,
   onClose,
@@ -54,7 +60,7 @@ export default function BookingFormModal({
   const [socialMediaName, setSocialMediaName] = useState(clientSocialMediaName || '');
   const [howDidYouFindUs, setHowDidYouFindUs] = useState('');
   const [howDidYouFindUsOther, setHowDidYouFindUsOther] = useState('');
-  const [currentNailPicture, setCurrentNailPicture] = useState<File | undefined>();
+  const [currentNailPictures, setCurrentNailPictures] = useState<File[]>([]);
   const [inspoPictures, setInspoPictures] = useState<File[]>([]);
   const [hasRussianManicure, setHasRussianManicure] = useState('');
   const [hasGelOverlay, setHasGelOverlay] = useState('');
@@ -68,7 +74,8 @@ export default function BookingFormModal({
   const [rulesAccepted, setRulesAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const totalSteps = 6;
+  const isRepeatFound = clientType === 'repeat' && !!clientName;
+  const totalSteps = isRepeatFound ? 5 : 6; // Repeat: Contact, Nail Pictures, Services, Waiver, Rules
 
   // Reset form state when modal opens with new data
   useEffect(() => {
@@ -77,10 +84,10 @@ export default function BookingFormModal({
       setName(clientName || '');
       setContactNumber(clientContactNumber || '');
       setSocialMediaName(clientSocialMediaName || '');
-      setEmail('');
+      setEmail(clientEmail || '');
       setHowDidYouFindUs('');
       setHowDidYouFindUsOther('');
-      setCurrentNailPicture(undefined);
+      setCurrentNailPictures([]);
       setInspoPictures([]);
       setHasRussianManicure('');
       setHasGelOverlay('');
@@ -95,17 +102,21 @@ export default function BookingFormModal({
       setError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, clientName, clientEmail, clientContactNumber, clientSocialMediaName]);
 
   if (!isOpen) return null;
-
-  const isRepeatFound = clientType === 'repeat' && !!clientName;
 
   const handleInspoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const fileArray = Array.from(files).slice(0, 3);
-      setInspoPictures(fileArray);
+      setInspoPictures(Array.from(files).slice(0, 3));
+    }
+  };
+
+  const handleCurrentNailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      setCurrentNailPictures(Array.from(files).slice(0, 3));
     }
   };
 
@@ -119,6 +130,32 @@ export default function BookingFormModal({
 
   const validateStep = (step: number): boolean => {
     setError(null);
+
+    if (isRepeatFound) {
+      // Repeat: 1=Contact, 2=Nail Pictures, 3=Services, 4=Waiver, 5=Rules
+      switch (step) {
+        case 1:
+          if (!name.trim()) { setError('Full name is required'); return false; }
+          if (!email.trim()) { setError('Email address is required'); return false; }
+          if (!contactNumber.trim()) { setError('Contact number is required'); return false; }
+          if (!socialMediaName.trim()) { setError('Facebook or Instagram name is required'); return false; }
+          return true;
+        case 2:
+          return true; // Nail Pictures (optional)
+        case 3:
+          if (services.length === 0) { setError('Please select at least one service'); return false; }
+          return true;
+        case 4:
+          if (!waiverAccepted) { setError('Please acknowledge the waiver'); return false; }
+          if (waiverAccepted === 'disagree') { setError('You must accept the waiver terms to proceed.'); return false; }
+          return true;
+        case 5:
+          if (!rulesAccepted) { setError('You must acknowledge and accept the rules'); return false; }
+          return true;
+        default:
+          return true;
+      }
+    }
 
     switch (step) {
       case 1: // Contact Information
@@ -232,16 +269,16 @@ export default function BookingFormModal({
         email: email.trim(),
         contactNumber: contactNumber.trim(),
         socialMediaName: socialMediaName.trim(),
-        howDidYouFindUs,
-        howDidYouFindUsOther: howDidYouFindUs === 'other' ? howDidYouFindUsOther.trim() : undefined,
-        currentNailPicture,
-        inspoPictures,
-        hasRussianManicure,
-        hasGelOverlay,
-        hasSoftgelExtensions,
-        allergies: allergies.trim() || 'None',
-        nailConcerns: nailConcerns.trim(),
-        nailDamageHistory: nailDamageHistory.trim() || 'None',
+        howDidYouFindUs: isRepeatFound ? 'repeat' : howDidYouFindUs,
+        howDidYouFindUsOther: isRepeatFound ? undefined : (howDidYouFindUs === 'other' ? howDidYouFindUsOther.trim() : undefined),
+        currentNailPictures: currentNailPictures,
+        inspoPictures: inspoPictures,
+        hasRussianManicure: isRepeatFound ? 'yes' : hasRussianManicure,
+        hasGelOverlay: isRepeatFound ? 'yes' : hasGelOverlay,
+        hasSoftgelExtensions: isRepeatFound ? 'yes' : hasSoftgelExtensions,
+        allergies: isRepeatFound ? 'None' : (allergies.trim() || 'None'),
+        nailConcerns: isRepeatFound ? 'None' : nailConcerns.trim(),
+        nailDamageHistory: isRepeatFound ? 'None' : (nailDamageHistory.trim() || 'None'),
         services,
         inspoDescription: inspoDescription.trim(),
         waiverAccepted,
@@ -304,10 +341,12 @@ export default function BookingFormModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-          {/* STEP 1: Contact Information */}
+          {/* STEP 1: Contact Information (both new and repeat) */}
           {currentStep === 1 && (
             <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">Contact Information</h4>
+              <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">
+                {isRepeatFound ? 'Confirm Your Details' : 'Contact Information'}
+              </h4>
               
               <div>
                 <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
@@ -384,49 +423,52 @@ export default function BookingFormModal({
                 />
               </div>
 
-              <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 block">
-                  How did you find out about us? <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  value={howDidYouFindUs || '_placeholder'}
-                  onValueChange={(v) => {
-                    setHowDidYouFindUs(v === '_placeholder' ? '' : v);
-                    setError(null);
-                  }}
-                  required
-                  disabled={isSubmitting}
-                >
-                  <SelectTrigger className="w-full h-9 sm:h-10 text-sm sm:text-base">
-                    <SelectValue placeholder="Select an option" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_placeholder">Select an option</SelectItem>
-                    <SelectItem value="facebook">Facebook</SelectItem>
-                    <SelectItem value="tiktok">TikTok</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="referral">Referred by someone</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {howDidYouFindUs === 'other' && (
-                  <input
-                    type="text"
-                    value={howDidYouFindUsOther}
-                    onChange={(e) => setHowDidYouFindUsOther(e.target.value)}
-                    placeholder="Please specify"
-                    className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors mt-2"
-                    disabled={isSubmitting}
+              {/* How did you find us - new clients only */}
+              {!isRepeatFound && (
+                <div>
+                  <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 block">
+                    How did you find out about us? <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={howDidYouFindUs || '_placeholder'}
+                    onValueChange={(v) => {
+                      setHowDidYouFindUs(v === '_placeholder' ? '' : v);
+                      setError(null);
+                    }}
                     required
-                  />
-                )}
-              </div>
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger className="w-full h-9 sm:h-10 text-sm sm:text-base">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_placeholder">Select an option</SelectItem>
+                      <SelectItem value="facebook">Facebook</SelectItem>
+                      <SelectItem value="tiktok">TikTok</SelectItem>
+                      <SelectItem value="instagram">Instagram</SelectItem>
+                      <SelectItem value="referral">Referred by someone</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {howDidYouFindUs === 'other' && (
+                    <input
+                      type="text"
+                      value={howDidYouFindUsOther}
+                      onChange={(e) => setHowDidYouFindUsOther(e.target.value)}
+                      placeholder="Please specify"
+                      className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors mt-2"
+                      disabled={isSubmitting}
+                      required
+                    />
+                  )}
+                </div>
+              )}
             </div>
           )}
 
-          {/* STEP 2: Nail History & Health */}
-          {currentStep === 2 && (
+          {/* STEP 2: Nail History & Health (new clients only) */}
+          {!isRepeatFound && currentStep === 2 && (
             <div className="space-y-3 sm:space-y-4">
               <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">Nail History & Health</h4>
               
@@ -590,23 +632,29 @@ export default function BookingFormModal({
             </div>
           )}
 
-          {/* STEP 3: Nail Pictures */}
-          {currentStep === 3 && (
+          {/* STEP 3: Nail Pictures (new clients) / STEP 2: Nail Pictures (repeat) */}
+          {currentStep === (isRepeatFound ? 2 : 3) && (
             <div className="space-y-3 sm:space-y-4">
               <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">Nail Pictures</h4>
               
               <div>
                 <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
                   <Upload className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
-                  Upload Current Picture of Nail
+                  Upload Current Nails (up to 3 images)
                 </label>
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setCurrentNailPicture(e.target.files?.[0])}
+                  multiple
+                  onChange={handleCurrentNailUpload}
                   className="w-full rounded-lg border-2 border-gray-300 bg-white px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors"
                   disabled={isSubmitting}
                 />
+                {currentNailPictures.length > 0 && (
+                  <p className="text-[10px] sm:text-xs text-gray-600 mt-1">
+                    {currentNailPictures.length} file(s) selected
+                  </p>
+                )}
               </div>
 
               <div>
@@ -656,8 +704,8 @@ export default function BookingFormModal({
             </div>
           )}
 
-          {/* STEP 4: Services */}
-          {currentStep === 4 && (
+          {/* STEP 4: Services (new) / STEP 3: Services (repeat) */}
+          {currentStep === (isRepeatFound ? 3 : 4) && (
             <div className="space-y-3 sm:space-y-4">
               <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">
                 Services <span className="text-red-500">*</span>
@@ -764,8 +812,8 @@ export default function BookingFormModal({
             </div>
           )}
 
-          {/* STEP 5: Waiver */}
-          {currentStep === 5 && (
+          {/* STEP 5: Waiver (new) / STEP 4: Waiver (repeat) */}
+          {currentStep === (isRepeatFound ? 4 : 5) && (
             <div className="space-y-3 sm:space-y-4">
               <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">
                 Waiver for Clients <span className="text-red-500">*</span>
@@ -817,8 +865,8 @@ export default function BookingFormModal({
             </div>
           )}
 
-          {/* STEP 6: Rules & Instructions */}
-          {currentStep === 6 && (
+          {/* STEP 6: Rules (new) / STEP 5: Rules (repeat) */}
+          {currentStep === (isRepeatFound ? 5 : 6) && (
             <div className="space-y-3 sm:space-y-4">
               <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">
                 Rules & Reservation Instructions
@@ -844,13 +892,12 @@ export default function BookingFormModal({
                 </div>
 
                 <div className="space-y-1.5 sm:space-y-2">
-                  <p><strong>💵 Reservation deposit:</strong> ₱500</p>
-                  <p className="text-[10px] sm:text-xs">Send proof via my FB Page: glammednailsbyjhen</p>
-                  <p className="text-[10px] sm:text-xs">📲 GCash: 09451781774 – Jennilyn C.</p>
-                  <p className="text-[10px] sm:text-xs">🏦 PNB: Jennilyn Cerio – 120110082823</p>
+                  <p><strong>💵 Reservation deposit:</strong> ₱{DEPOSIT_PER_SLOT} per slot — Total: ₱{(DEPOSIT_PER_SLOT * slotCount).toLocaleString()} ({slotCount} slot{slotCount !== 1 ? 's' : ''})</p>
+
                 </div>
 
                 <p><strong>📅 Your slot is confirmed only after the deposit is sent.</strong></p>
+
                 <p><strong>💖 Balance will be settled after your appointment.</strong></p>
                 
                 <p className="pt-1 sm:pt-2">Looking forward to glamming your nails!</p>
@@ -873,9 +920,12 @@ export default function BookingFormModal({
                 </span>
               </label>
 
-              <div className="rounded-lg border-2 border-blue-300 bg-blue-50 px-3 py-2 sm:px-4 sm:py-3">
+              <div className="rounded-lg border-2 border-blue-300 bg-blue-50 px-3 py-2 sm:px-4 sm:py-3 space-y-1.5">
                 <p className="text-xs sm:text-sm text-blue-900">
-                  <strong>📝 After Submission:</strong> Your booking is pending until you upload payment proof to confirm your slot.
+                  <strong>📝 After Submission:</strong> You will receive an email about your booking. Upload your proof of payment using the link provided in the email to confirm your slot.
+                </p>
+                <p className="text-xs sm:text-sm text-blue-900">
+                  <strong>⚠️ Important:</strong> Your slot will automatically be cancelled within 48 hours if no proof of payment has been uploaded.
                 </p>
               </div>
             </div>

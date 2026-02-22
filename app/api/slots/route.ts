@@ -144,6 +144,8 @@ export async function GET(request: Request) {
             adminNotes: booking.adminNotes || '',
             pricing: booking.pricing,
             payment: booking.payment,
+            clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
+            invoice: booking.invoice || null,
             completedAt: booking.completedAt || null,
           });
         }

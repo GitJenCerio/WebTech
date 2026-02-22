@@ -46,7 +46,7 @@ export default function RussianManicurePage() {
       <main className="min-h-screen bg-white pt-[72px] sm:pt-[88px] pb-12 sm:pb-16">
         <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
           <header className="text-center mb-10 sm:mb-14">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-acollia text-gray-900 mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-heading text-gray-900 mb-4">
               Russian Manicure
             </h1>
             <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
@@ -55,7 +55,7 @@ export default function RussianManicurePage() {
           </header>
 
           <section className="mb-12 sm:mb-16" aria-labelledby="before-after-heading">
-            <h2 id="before-after-heading" className="text-2xl sm:text-3xl font-heading font-semibold text-gray-900 mb-6 text-center">Before & After</h2>
+            <h2 id="before-after-heading" className="text-2xl sm:text-3xl font-heading font-normal text-gray-900 mb-6 text-center">Before & After</h2>
             <p className="text-gray-600 text-sm sm:text-base text-center mb-8 max-w-xl mx-auto">
               Real results from our studio. Clean cuticles, smooth nail beds, and a finish that lasts.
             </p>
@@ -72,7 +72,7 @@ export default function RussianManicurePage() {
           </section>
 
           <section className="mb-12 sm:mb-16" aria-labelledby="process-heading">
-            <h2 id="process-heading" className="text-2xl sm:text-3xl font-heading font-semibold text-gray-900 mb-6 text-center">The Russian Manicure Process</h2>
+            <h2 id="process-heading" className="text-2xl sm:text-3xl font-heading font-normal text-gray-900 mb-6 text-center">The Russian Manicure Process</h2>
             <p className="text-gray-600 text-sm sm:text-base text-center mb-8 max-w-2xl mx-auto">
               We use an e-file and precise bits to clean and refine the cuticle area—no harsh cutting, no guesswork.
             </p>
@@ -81,7 +81,7 @@ export default function RussianManicurePage() {
                 <li key={item.step} className="flex gap-4 sm:gap-6">
                   <span className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black text-white flex items-center justify-center text-sm sm:text-base font-semibold">{item.step}</span>
                   <div>
-                    <h3 className="font-heading font-semibold text-gray-900 mb-1">{item.title}</h3>
+                    <h3 className="font-heading font-normal text-gray-900 mb-1">{item.title}</h3>
                     <p className="text-gray-600 text-sm sm:text-base leading-relaxed">{item.text}</p>
                   </div>
                 </li>
@@ -90,7 +90,7 @@ export default function RussianManicurePage() {
           </section>
 
           <section className="mb-12 sm:mb-16" aria-labelledby="pricing-heading">
-            <h2 id="pricing-heading" className="text-2xl sm:text-3xl font-heading font-semibold text-gray-900 mb-6 text-center">Price Range</h2>
+            <h2 id="pricing-heading" className="text-2xl sm:text-3xl font-heading font-normal text-gray-900 mb-6 text-center">Price Range</h2>
             <p className="text-gray-600 text-sm sm:text-base text-center mb-4 max-w-xl mx-auto">
               Russian manicure services start from a base that reflects the time and skill involved. Add-ons (gel overlay, nail art) are priced separately.
             </p>
@@ -104,7 +104,7 @@ export default function RussianManicurePage() {
           </section>
 
           <section className="mb-12 sm:mb-16" aria-labelledby="ideal-heading">
-            <h2 id="ideal-heading" className="text-2xl sm:text-3xl font-heading font-semibold text-gray-900 mb-6 text-center">Who It’s Ideal For</h2>
+            <h2 id="ideal-heading" className="text-2xl sm:text-3xl font-heading font-normal text-gray-900 mb-6 text-center">Who It’s Ideal For</h2>
             <ul className="max-w-2xl mx-auto space-y-3 text-gray-600 text-sm sm:text-base">
               <li className="flex gap-2"><span className="text-black font-medium">•</span> Working professionals who want a low-maintenance, long-lasting look</li>
               <li className="flex gap-2"><span className="text-black font-medium">•</span> Anyone who’s had lifting or chipping with traditional manicures</li>
@@ -114,11 +114,11 @@ export default function RussianManicurePage() {
           </section>
 
           <section className="mb-12 sm:mb-16" aria-labelledby="faq-heading">
-            <h2 id="faq-heading" className="text-2xl sm:text-3xl font-heading font-semibold text-gray-900 mb-8 text-center">Russian Manicure FAQ</h2>
+            <h2 id="faq-heading" className="text-2xl sm:text-3xl font-heading font-normal text-gray-900 mb-8 text-center">Russian Manicure FAQ</h2>
             <ul className="space-y-8">
               {faqs.map((faq) => (
                 <li key={faq.q}>
-                  <h3 className="font-heading font-semibold text-gray-900 mb-2 text-lg">{faq.q}</h3>
+                  <h3 className="font-heading font-normal text-gray-900 mb-2 text-lg">{faq.q}</h3>
                   <p className="text-gray-600 text-sm sm:text-base leading-relaxed">{faq.a}</p>
                 </li>
               ))}

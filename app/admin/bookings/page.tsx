@@ -17,6 +17,12 @@ import { useNailTechs } from '@/lib/hooks/useNailTechs';
 
 const PAGE_SIZE = 10;
 
+interface ClientPhoto {
+  url?: string;
+  publicId?: string;
+  uploadedAt?: string;
+}
+
 interface Booking {
   id: string;
   bookingCode?: string;
@@ -26,12 +32,17 @@ interface Booking {
   time: string;
   clientName: string;
   service: string;
+  serviceLocation?: 'homebased_studio' | 'home_service';
   status: BookingStatus;
   amount?: number;
   clientNotes?: string;
   adminNotes?: string;
   socialName?: string;
   amountPaid?: number;
+  clientPhotos?: { inspiration: ClientPhoto[]; currentState: ClientPhoto[] };
+  paymentProofUrl?: string;
+  slotTimes?: string[];
+  invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
 }
 
 export default function BookingsPage() {
@@ -53,6 +64,7 @@ export default function BookingsPage() {
     clientPhone?: string;
     clientSocialMediaName?: string;
     service: string;
+    serviceLocation?: 'homebased_studio' | 'home_service';
     status: BookingStatus;
     notes?: string;
     adminNotes?: string;
@@ -62,6 +74,9 @@ export default function BookingsPage() {
     paidAmount?: number;
     depositRequired?: number;
     paymentProofUrl?: string;
+    clientPhotos?: { inspiration: { url?: string }[]; currentState: { url?: string }[] };
+    slotTimes?: string[];
+    invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -101,19 +116,6 @@ export default function BookingsPage() {
     }
   }, [invoiceItems, invoiceDiscountAmount, nailTechs, selectedBooking?.nailTechId]);
 
-  useEffect(() => {
-    if (!showInvoiceModal) return;
-    if (!selectedBooking?.service) return;
-    if (invoiceItems.length !== 1) return;
-    if (invoiceItems[0].unitPrice > 0) return;
-    const unitPrice = getUnitPriceForService(selectedBooking.service);
-    if (unitPrice === null) return;
-    setInvoiceItems([{
-      ...invoiceItems[0],
-      unitPrice,
-      total: unitPrice * (invoiceItems[0].quantity || 1),
-    }]);
-  }, [showInvoiceModal, selectedBooking?.service, invoiceItems, getUnitPriceForService]);
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -145,11 +147,16 @@ export default function BookingsPage() {
           clientName: booking.customerName || 'Unknown Client',
           socialName: booking.customerSocialMediaName || '',
           service: booking.service?.type || 'Nail Service',
+          serviceLocation: booking.service?.location,
           status: booking.status || 'booked',
           amount: booking.pricing?.total || 0,
           amountPaid: booking.pricing?.paidAmount || 0,
           clientNotes: booking.clientNotes || '',
           adminNotes: booking.adminNotes || '',
+          clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
+          paymentProofUrl: booking.payment?.paymentProofUrl,
+          slotTimes: booking.appointmentTimes || (apptTime ? [apptTime] : []),
+          invoice: booking.invoice || null,
         };
       });
       setBookings(rows);
@@ -165,6 +172,26 @@ export default function BookingsPage() {
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
+
+  // Fetch latest booking when details modal opens so we have fresh invoice data
+  useEffect(() => {
+    if (!showModal || !selectedBooking?.id) return;
+    let cancelled = false;
+    fetch(`/api/bookings/${selectedBooking.id}`)
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (cancelled || !data?.booking) return;
+        const b = data.booking;
+        setSelectedBooking((prev) => prev ? {
+          ...prev,
+          invoice: b.invoice ?? prev.invoice,
+          paymentStatus: b.paymentStatus ?? prev.paymentStatus,
+          adminNotes: b.adminNotes ?? prev.adminNotes,
+        } : null);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [showModal, selectedBooking?.id]);
 
 
   const handleViewClientProfile = () => {
@@ -237,11 +264,16 @@ export default function BookingsPage() {
             clientName: booking.customerName || 'Unknown Client',
             socialName: booking.customerSocialMediaName || '',
             service: booking.service?.type || 'Nail Service',
+            serviceLocation: booking.service?.location,
             status: booking.status || 'booked',
             amount: booking.pricing?.total || 0,
             amountPaid: booking.pricing?.paidAmount || 0,
             clientNotes: booking.clientNotes || '',
             adminNotes: booking.adminNotes || '',
+            clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
+            paymentProofUrl: booking.payment?.paymentProofUrl,
+            slotTimes: booking.appointmentTimes || (booking.appointmentTime ? [booking.appointmentTime] : []),
+            invoice: booking.invoice || null,
           };
         });
         setBookings(rows);
@@ -291,11 +323,16 @@ export default function BookingsPage() {
             clientName: booking.customerName || 'Unknown Client',
             socialName: booking.customerSocialMediaName || '',
             service: booking.service?.type || 'Nail Service',
+            serviceLocation: booking.service?.location,
             status: booking.status || 'booked',
             amount: booking.pricing?.total || 0,
             amountPaid: booking.pricing?.paidAmount || 0,
             clientNotes: booking.clientNotes || '',
             adminNotes: booking.adminNotes || '',
+            clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
+            paymentProofUrl: booking.payment?.paymentProofUrl,
+            slotTimes: booking.appointmentTimes || (booking.appointmentTime ? [booking.appointmentTime] : []),
+            invoice: booking.invoice || null,
           };
         });
         setBookings(rows);
@@ -398,10 +435,7 @@ export default function BookingsPage() {
     setInvoiceError(null);
     setInvoiceNotes('');
     setInvoiceDiscountAmount(0);
-    const defaultDescription = selectedBooking.service || 'Nail Service';
-    setInvoiceItems([
-      { description: defaultDescription, quantity: 1, unitPrice: 0, total: 0 },
-    ]);
+    setInvoiceItems([]);
     setCurrentQuotationId(null);
     setSelectedPricingService('');
     setShowInvoiceModal(true);
@@ -454,10 +488,11 @@ export default function BookingsPage() {
     }
   };
 
-  const handleAddInvoiceItemFromPricing = () => {
-    if (!selectedPricingService) return;
-    const unitPrice = getUnitPriceForService(selectedPricingService) ?? 0;
-    const description = selectedPricingService;
+  const handleAddInvoiceItemFromPricing = (serviceName?: string) => {
+    const name = serviceName ?? selectedPricingService;
+    if (!name) return;
+    const unitPrice = getUnitPriceForService(name) ?? 0;
+    const description = name;
     setInvoiceItems([
       ...invoiceItems,
       { description, quantity: 1, unitPrice, total: unitPrice },
@@ -501,9 +536,14 @@ export default function BookingsPage() {
       }
 
       const data = await response.json();
-      setCurrentQuotationId(data?.quotation?._id || data?.quotation?.id || currentQuotationId);
+      const newQuotationId = data?.quotation?._id || data?.quotation?.id || currentQuotationId;
+      setCurrentQuotationId(newQuotationId);
       toast.success(currentQuotationId ? 'Invoice updated successfully.' : 'Invoice created successfully.');
       setShowInvoiceModal(false);
+      if (selectedBooking && data?.booking?.invoice) {
+        setSelectedBooking({ ...selectedBooking, invoice: data.booking.invoice });
+      }
+      fetchBookings();
     } catch (error: any) {
       console.error('Error creating invoice:', error);
       setInvoiceError(error.message || 'Failed to create invoice');
@@ -680,12 +720,17 @@ export default function BookingsPage() {
                                 clientName: item.clientName,
                                 clientSocialMediaName: item.socialName,
                                 service: item.service,
+                                serviceLocation: item.serviceLocation,
                                 status: item.status,
                                 slotCount: 1,
                                 reservationAmount: 500,
                                 paidAmount: item.amountPaid ?? 0,
                                 notes: item.clientNotes,
                                 adminNotes: item.adminNotes,
+                                clientPhotos: item.clientPhotos,
+                                paymentProofUrl: item.paymentProofUrl,
+                                slotTimes: item.slotTimes,
+                                invoice: item.invoice,
                               });
                               setAdminNotesDraft(item.adminNotes || '');
                               setShowModal(true);
@@ -774,6 +819,10 @@ export default function BookingsPage() {
                         paidAmount: item.amountPaid ?? 0,
                         notes: item.clientNotes,
                         adminNotes: item.adminNotes,
+                        clientPhotos: item.clientPhotos,
+                        paymentProofUrl: item.paymentProofUrl,
+                        slotTimes: item.slotTimes,
+                        invoice: item.invoice,
                       });
                       setAdminNotesDraft(item.adminNotes || '');
                       setShowModal(true);
@@ -826,7 +875,6 @@ export default function BookingsPage() {
         adminNotesDraft={adminNotesDraft}
         onAdminNotesChange={setAdminNotesDraft}
         onSaveNotes={handleSaveNotes}
-        onViewClient={handleViewClientProfile}
         onMarkComplete={() => {
           handleBookingAction('mark_completed');
         }}

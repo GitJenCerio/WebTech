@@ -127,6 +127,7 @@ export default function BookingPage() {
     serviceLocation: ServiceLocation;
     customerId?: string;
     customerName?: string;
+    customerEmail?: string;
     contactNumber?: string;
     socialMediaName?: string;
   } | null>(null);
@@ -371,32 +372,6 @@ export default function BookingPage() {
 
   // Removed auto-select behavior - users must manually click on a time slot to open the modal
 
-  // Scroll to show both calendar and slots on mobile when date is selected
-  useEffect(() => {
-    if (selectedDate) {
-      // Only scroll on mobile/tablet (smaller screens)
-      const isMobile = window.innerWidth < 1024; // lg breakpoint
-      if (isMobile) {
-        // Small delay to ensure DOM is updated
-        setTimeout(() => {
-          const calendarElement = document.getElementById('booking-calendar');
-          if (calendarElement) {
-            // Scroll to calendar position but ensure slots are also visible
-            // Calculate position to show calendar with some space for slots below
-            const calendarTop = calendarElement.getBoundingClientRect().top + window.pageYOffset;
-            const headerOffset = 80; // Header height offset
-            const scrollPosition = Math.max(0, calendarTop - headerOffset);
-            
-            window.scrollTo({
-              top: scrollPosition,
-              behavior: 'smooth'
-            });
-          }
-        }, 100);
-      }
-    }
-  }, [selectedDate]);
-
   // Determine available days based on required consecutive slots for selected service
   const requiredSlots = getRequiredSlotCount(selectedService, clientInfo?.serviceLocation);
   
@@ -482,13 +457,14 @@ export default function BookingPage() {
   }
 
   async function uploadBookingPhotos(bookingId: string, formData: {
-    currentNailPicture?: File;
+    currentNailPictures: File[];
     inspoPictures: File[];
   }) {
     const uploads: Promise<void>[] = [];
 
-    if (formData.currentNailPicture) {
-      uploads.push(uploadBookingPhoto(bookingId, 'currentState', formData.currentNailPicture));
+    const currentFiles = (formData.currentNailPictures || []).slice(0, 3);
+    for (const file of currentFiles) {
+      uploads.push(uploadBookingPhoto(bookingId, 'currentState', file));
     }
 
     const inspoFiles = (formData.inspoPictures || []).slice(0, 3);
@@ -507,7 +483,7 @@ export default function BookingPage() {
     socialMediaName: string;
     howDidYouFindUs: string;
     howDidYouFindUsOther?: string;
-    currentNailPicture?: File;
+    currentNailPictures: File[];
     inspoPictures: File[];
     hasRussianManicure: string;
     hasGelOverlay: string;
@@ -572,6 +548,7 @@ export default function BookingPage() {
       }
 
       if (isExistingCustomer && customerId) {
+        // Repeat clients: only update contact info (nail history/health already on file)
         const updateResponse = await fetch(`/api/customers/${customerId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -580,20 +557,6 @@ export default function BookingPage() {
             email: formData.email,
             phone: formData.contactNumber,
             socialMediaName: formData.socialMediaName,
-            referralSource: formData.howDidYouFindUs,
-            referralSourceOther: formData.howDidYouFindUsOther,
-            nailHistory: {
-              hasRussianManicure: formData.hasRussianManicure === 'yes',
-              hasGelOverlay: formData.hasGelOverlay === 'yes',
-              hasSoftgelExtensions: formData.hasSoftgelExtensions === 'yes',
-            },
-            healthInfo: {
-              allergies: formData.allergies,
-              nailConcerns: formData.nailConcerns,
-              nailDamageHistory: formData.nailDamageHistory,
-            },
-            inspoDescription: formData.inspoDescription,
-            waiverAccepted: formData.waiverAccepted === 'accept',
           }),
         });
 
@@ -604,8 +567,9 @@ export default function BookingPage() {
       }
 
       const slotIds = [selectedSlot.id, ...linkedSlotIds];
+      const slotCount = slotIds.length;
       const basePrice = 1500;
-      const depositRequired = 500;
+      const depositRequired = 500 * slotCount; // ₱500 per slot
       const total = basePrice + (clientInfo.serviceLocation === 'home_service' ? 1000 : 0);
 
       const response = await fetch('/api/bookings', {
@@ -644,7 +608,7 @@ export default function BookingPage() {
       if (bookingId) {
         try {
           await uploadBookingPhotos(bookingId, {
-            currentNailPicture: formData.currentNailPicture,
+            currentNailPictures: formData.currentNailPictures,
             inspoPictures: formData.inspoPictures,
           });
         } catch (photoError) {
@@ -685,7 +649,7 @@ export default function BookingPage() {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-7xl mx-auto"
         >
-          <h1 id="booking-heading" className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-acollia text-center mb-3 sm:mb-4 px-2 sm:px-3 text-slate-900 scroll-mt-28 sm:scroll-mt-32 lg:scroll-mt-36">
+          <h1 id="booking-heading" className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-heading text-center mb-3 sm:mb-4 px-2 sm:px-3 text-slate-900 scroll-mt-28 sm:scroll-mt-32 lg:scroll-mt-36">
             Book Your Appointment
           </h1>
 
@@ -910,6 +874,7 @@ export default function BookingPage() {
         slotTime={selectedSlot?.time || ''}
         slotType={selectedSlot?.slotType}
         linkedSlotTimes={linkedSlots.map(s => s.time)}
+        slotCount={selectedSlot ? 1 + linkedSlots.length : 0}
         serviceName={serviceOptions.find(o => o.value === selectedService)?.label}
         onConfirm={() => {
           setShowSlotConfirmModal(false);
@@ -925,8 +890,10 @@ export default function BookingPage() {
       {/* Booking Form Modal - Collect customer info */}
       <BookingFormModal
         isOpen={showBookingFormModal}
+        slotCount={selectedSlot ? 1 + linkedSlots.length : 0}
         clientType={clientInfo?.clientType || 'new'}
         clientName={clientInfo?.customerName}
+        clientEmail={clientInfo?.customerEmail}
         clientContactNumber={clientInfo?.contactNumber}
         clientSocialMediaName={clientInfo?.socialMediaName}
         onClose={() => setShowBookingFormModal(false)}

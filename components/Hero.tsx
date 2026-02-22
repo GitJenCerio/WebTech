@@ -48,7 +48,7 @@ export default function Hero() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.35, duration: 0.8 }}
-            className="text-sm sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-heading font-semibold text-center text-black mb-1 sm:mb-2 drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]"
+            className="text-sm sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-balgor font-normal text-center text-black mb-1 sm:mb-2 drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]"
           >
             Russian Manicure Specialist
             <br />
@@ -58,7 +58,7 @@ export default function Hero() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.55, duration: 0.8 }}
-            className="text-[10px] sm:text-lg md:text-xl text-center text-black mb-4 sm:mb-8 drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]"
+            className="text-[10px] sm:text-base md:text-lg text-center text-black mb-4 sm:mb-8 drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]"
           >
             Precision dry technique. Clean cuticles. Long-lasting results.
           </motion.p>

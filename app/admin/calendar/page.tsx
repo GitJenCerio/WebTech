@@ -44,7 +44,7 @@ interface Slot {
     customerPhone?: string;
     customerSocialMediaName?: string;
     slotIds?: string[];
-    service?: { type?: string };
+    service?: { type?: string; location?: 'homebased_studio' | 'home_service' };
     status: string;
     paymentStatus?: string;
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number };
@@ -87,6 +87,7 @@ export default function CalendarPage() {
     clientPhone?: string;
     clientSocialMediaName?: string;
     service: string;
+    serviceLocation?: 'homebased_studio' | 'home_service';
     status: BookingStatus;
     notes?: string;
     adminNotes?: string;
@@ -96,6 +97,9 @@ export default function CalendarPage() {
     paidAmount?: number;
     depositRequired?: number;
     paymentProofUrl?: string;
+    clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
+    slotTimes?: string[];
+    invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -182,6 +186,7 @@ export default function CalendarPage() {
           paymentStatus: slot.booking.paymentStatus,
           pricing: slot.booking.pricing,
           payment: slot.booking.payment,
+          clientPhotos: slot.booking.clientPhotos,
         }
       : null,
   }), [mapSlotStatus, nailTechs]);
@@ -440,6 +445,11 @@ export default function CalendarPage() {
 
   const handleSlotClick = (slot: Slot) => {
     if (slot.booking?.id && slot.clientName) {
+      const bookingSlotTimes = slots
+        .filter((s) => s.booking?.id === slot.booking?.id)
+        .map((s) => s.time)
+        .filter(Boolean)
+        .sort((a, b) => (a || '').localeCompare(b || '', undefined, { numeric: true }));
       setSelectedBooking({
         id: slot.booking.id,
         bookingCode: slot.booking.bookingCode,
@@ -450,11 +460,13 @@ export default function CalendarPage() {
           day: 'numeric',
         }),
         time: slot.time,
+        slotTimes: bookingSlotTimes.length > 0 ? bookingSlotTimes : undefined,
         clientName: slot.clientName,
         clientEmail: slot.booking?.customerEmail,
         clientPhone: slot.booking?.customerPhone,
         clientSocialMediaName: slot.booking?.customerSocialMediaName,
         service: slot.service || 'Nail Service',
+        serviceLocation: slot.booking?.service?.location,
         status: slot.status,
         nailTechId: slot.nailTechId,
         slotType: slot.type,
@@ -466,6 +478,8 @@ export default function CalendarPage() {
         depositRequired: slot.booking.pricing?.depositRequired,
         paymentProofUrl: slot.booking.payment?.paymentProofUrl,
         adminNotes: slot.booking?.adminNotes || '',
+        clientPhotos: slot.booking?.clientPhotos,
+        invoice: slot.booking?.invoice || null,
       });
       setAdminNotesDraft(slot.booking?.adminNotes || '');
       setShowModal(true);
@@ -639,15 +653,32 @@ export default function CalendarPage() {
     }
   }, [invoiceItems, invoiceDiscountAmount, nailTechs, selectedBooking?.nailTechId]);
 
+  // Fetch latest booking when details modal opens so we have fresh invoice data
+  useEffect(() => {
+    if (!showModal || !selectedBooking?.id) return;
+    let cancelled = false;
+    fetch(`/api/bookings/${selectedBooking.id}`)
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (cancelled || !data?.booking) return;
+        const b = data.booking;
+        setSelectedBooking((prev) => prev ? {
+          ...prev,
+          invoice: b.invoice ?? prev.invoice,
+          paymentStatus: b.paymentStatus ?? prev.paymentStatus,
+          adminNotes: b.adminNotes ?? prev.adminNotes,
+        } : null);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [showModal, selectedBooking?.id]);
+
   const handleCreateInvoice = async () => {
     if (!selectedBooking?.id) return;
     setInvoiceError(null);
     setInvoiceNotes('');
     setInvoiceDiscountAmount(0);
-    const defaultDescription = selectedBooking.service || 'Nail Service';
-    setInvoiceItems([
-      { description: defaultDescription, quantity: 1, unitPrice: 0, total: 0 },
-    ]);
+    setInvoiceItems([]);
     setCurrentQuotationId(null);
     setSelectedPricingService('');
     setShowInvoiceModal(true);
@@ -700,10 +731,11 @@ export default function CalendarPage() {
     }
   };
 
-  const handleAddInvoiceItemFromPricing = () => {
-    if (!selectedPricingService) return;
-    const unitPrice = getUnitPriceForService(selectedPricingService) ?? 0;
-    const description = selectedPricingService;
+  const handleAddInvoiceItemFromPricing = (serviceName?: string) => {
+    const name = serviceName ?? selectedPricingService;
+    if (!name) return;
+    const unitPrice = getUnitPriceForService(name) ?? 0;
+    const description = name;
     setInvoiceItems([
       ...invoiceItems,
       { description, quantity: 1, unitPrice, total: unitPrice },
@@ -750,6 +782,11 @@ export default function CalendarPage() {
       setCurrentQuotationId(data?.quotation?._id || data?.quotation?.id || currentQuotationId);
       toast.success(currentQuotationId ? 'Invoice updated successfully.' : 'Invoice created successfully.');
       setShowInvoiceModal(false);
+      if (selectedBooking && data?.booking?.invoice) {
+        setSelectedBooking({ ...selectedBooking, invoice: data.booking.invoice });
+      }
+      await refreshSelectedDateSlots();
+      await refreshMonthlySlots();
     } catch (error: any) {
       console.error('Error creating invoice:', error);
       setInvoiceError(error.message || 'Failed to create invoice');
@@ -812,6 +849,7 @@ export default function CalendarPage() {
                 ...slot,
                 slotType: slot.type,
                 nailTechRole: nailTechs.find((t) => t.id === slot.nailTechId)?.role,
+                serviceLocation: (slot as Slot).booking?.service?.location as 'homebased_studio' | 'home_service' | undefined,
               }))}
               onSlotClick={(slot) => handleSlotClick(slot as Slot)}
               onView={(slot) => handleSlotClick(slot as Slot)}
@@ -853,7 +891,6 @@ export default function CalendarPage() {
         adminNotesDraft={adminNotesDraft}
         onAdminNotesChange={setAdminNotesDraft}
         onSaveNotes={handleSaveNotes}
-        onViewClient={handleViewClientProfile}
         onMarkComplete={() => {
           handleBookingAction('mark_completed');
         }}

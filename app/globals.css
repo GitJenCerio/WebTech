@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;500;600;700&display=swap');
+/* Jost & Cormorant Garamond loaded via next/font in layout.tsx */
 
 @tailwind base;
 @tailwind components;
@@ -27,9 +26,7 @@
     --border: hsl(30, 20%, 90%);
     --input: hsl(30, 20%, 90%);
     --ring: hsl(24, 40%, 26%);
-    --font-playfair: 'Playfair Display', serif;
-    --font-lato: 'Lato', sans-serif;
-    --font-inter: 'Inter', sans-serif;
+    /* Jost & Cormorant set by next/font on body */
     --font-balgor: 'Balgor', sans-serif;
     --font-acollia: 'Acollia', sans-serif;
     --font-ladinta: 'Ladinta', sans-serif;
@@ -92,6 +89,18 @@
   }
 }
 
+/* Force normal weight on Balgor/heading — override browser defaults for h1-h6 */
+.font-heading,
+.font-balgor,
+h1.font-heading,
+h2.font-heading,
+h3.font-heading,
+h4.font-heading,
+h5.font-heading,
+h6.font-heading {
+  font-weight: 400 !important;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -101,7 +110,8 @@
     @apply bg-background text-foreground;
     overflow-x: hidden;
     max-width: 100vw;
-    font-family: var(--font-inter);
+    font-family: var(--font-jost), 'Jost', sans-serif;
+    letter-spacing: 0.02em; /* Jost's spa-like airiness */
   }
 }
 
@@ -154,7 +164,7 @@
 
 /* Blog post content */
 .blog-content h2 {
-  @apply font-heading font-semibold text-foreground mt-8 mb-3 text-xl sm:text-2xl;
+  @apply font-heading font-normal text-foreground mt-8 mb-3 text-xl sm:text-2xl;
 }
 /* Remove ALL blue colors - most aggressive approach */
 .blog-content h2:first-child {

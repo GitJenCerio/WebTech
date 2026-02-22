@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import { useUserRole } from '@/lib/hooks/useUserRole';
 import { Card, CardContent } from '@/components/ui/Card';
 import AddUserModal from '@/components/admin/AddUserModal';
@@ -211,6 +212,7 @@ export default function StaffPage() {
                 <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Name</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Role</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Auth</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
                   <th className="px-5 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -218,7 +220,7 @@ export default function StaffPage() {
               <tbody className="divide-y divide-[#f5f5f5]">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="px-5 py-16 text-center">
+                    <td colSpan={5} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center gap-3 text-gray-400">
                         <Loader2 className="h-6 w-6 animate-spin" />
                         <span className="text-sm">Loading...</span>
@@ -227,7 +229,7 @@ export default function StaffPage() {
                   </tr>
                 ) : paginatedStaff.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-5 py-16 text-center">
+                    <td colSpan={5} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center gap-2 text-gray-400">
                         <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
                           <Search className="h-5 w-5" />
@@ -248,12 +250,14 @@ export default function StaffPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col gap-0.5">
-                          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500 capitalize">{item.role}</span>
+                          <Badge variant={item.role === 'admin' ? 'default' : 'secondary'}>{item.role}</Badge>
                           {item.assignedNailTechName && (
                             <span className="text-xs text-gray-400">Assigned: {item.assignedNailTechName}</span>
                           )}
-                          <span className="text-xs text-gray-400">{item.authMethod === 'google' ? 'Google OAuth' : 'Email/Password'}</span>
                         </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <Badge variant="outline">{item.authMethod === 'google' ? 'Google' : 'Email'}</Badge>
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col gap-0.5">
@@ -316,7 +320,8 @@ export default function StaffPage() {
                     {getStatusBadge(item.status)}
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500 capitalize">{item.role}</span>
+                    <Badge variant={item.role === 'admin' ? 'default' : 'secondary'}>{item.role}</Badge>
+                    <Badge variant="outline">{item.authMethod === 'google' ? 'Google' : 'Email'}</Badge>
                     {item.assignedNailTechName && (
                       <span className="text-xs text-gray-400">Assigned: {item.assignedNailTechName}</span>
                     )}

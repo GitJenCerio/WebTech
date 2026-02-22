@@ -34,7 +34,7 @@ export default function RussianManicureSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-10 sm:mb-12 md:mb-14"
         >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-acollia text-center mb-4 sm:mb-5 px-2 sm:px-3">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading text-center mb-4 sm:mb-5 px-2 sm:px-3">
             Russian Manicure Specialist in Metro Manila
           </h2>
           <p className="text-center text-gray-600 max-w-3xl mx-auto px-2 sm:px-3 text-sm sm:text-base md:text-lg">
@@ -52,7 +52,7 @@ export default function RussianManicureSection() {
               transition={{ duration: 0.4, delay: Math.min(index * 0.08, 0.24) }}
               className="px-2 sm:px-0"
             >
-              <h3 className="text-lg sm:text-xl font-heading font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg sm:text-xl font-heading font-normal text-gray-900 mb-2">
                 {item.title}
               </h3>
               <p className="text-gray-600 text-sm sm:text-base leading-relaxed">

@@ -1,5 +1,5 @@
 # Production System Analysis
-## Glammed Nails by Jhen - Booking System
+## glammednailsbyjhen - Booking System
 
 **Last Updated:** 2024  
 **Status:** Production-Ready Requirements

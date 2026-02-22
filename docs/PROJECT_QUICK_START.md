@@ -1,5 +1,5 @@
 # Project Quick Start Guide
-## Glammed Nails by Jhen - Getting Started
+## glammednailsbyjhen - Getting Started
 
 **Read this first!** ⚡
 

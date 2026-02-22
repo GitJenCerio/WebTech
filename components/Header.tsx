@@ -45,7 +45,7 @@ export default function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm font-medium text-gray-600 hover:text-black transition-colors duration-200 whitespace-nowrap"
+                className="text-sm font-medium text-gray-600 hover:text-black transition-colors duration-200 whitespace-nowrap tracking-[0.06em]"
               >
                 {link.label}
               </Link>
@@ -92,7 +92,7 @@ export default function Header() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setIsOpen(false)}
-                  className="block py-3 px-3 text-base font-medium text-gray-700 hover:text-black hover:bg-gray-50 rounded-lg transition-colors"
+                  className="block py-3 px-3 text-base font-medium text-gray-700 hover:text-black hover:bg-gray-50 rounded-lg transition-colors tracking-[0.04em]"
                 >
                   {link.label}
                 </Link>

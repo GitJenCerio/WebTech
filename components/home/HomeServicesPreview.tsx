@@ -35,7 +35,7 @@ export default function HomeServicesPreview() {
         transition={{ duration: 0.6 }}
         className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6"
       >
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-acollia text-center mb-4 px-2">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading text-center mb-4 px-2">
           Our Services
         </h2>
         <p className="text-center text-gray-600 mb-8 sm:mb-10 max-w-2xl mx-auto px-2 text-sm sm:text-base">
@@ -60,7 +60,7 @@ export default function HomeServicesPreview() {
                     sizes="(max-width: 640px) 100vw, 33vw"
                   />
                 </div>
-                <h3 className="text-lg sm:text-xl font-heading font-semibold mb-1">{item.title}</h3>
+                <h3 className="text-lg sm:text-xl font-heading font-normal mb-1">{item.title}</h3>
                 <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>
                 <span className="text-sm font-medium text-black group-hover:underline">
                   Learn more →

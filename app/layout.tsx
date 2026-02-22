@@ -1,11 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Jost, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { StructuredData } from "@/components/StructuredData";
 import SessionProvider from "@/components/providers/SessionProvider";
 import { Toaster } from "sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const jost = Jost({
+  subsets: ["latin"],
+  variable: "--font-jost",
+  display: "swap",
+});
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-cormorant",
+  display: "swap",
+});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.glammednailsbyjhen.com';
 const siteName = 'glammednailsbyjhen';
@@ -108,7 +118,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <StructuredData />
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${jost.variable} ${cormorant.variable} font-sans antialiased`}>
         <SessionProvider>{children}</SessionProvider>
         <Toaster position="top-right" richColors closeButton />
       </body>

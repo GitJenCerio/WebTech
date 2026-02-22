@@ -57,7 +57,7 @@ export default function Services() {
         className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-0"
       >
         <div id="services" style={{ scrollMarginTop: '180px', height: 0 }} />
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-4 sm:mb-5 font-acollia px-2 sm:px-3">Our Services</h2>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-4 sm:mb-5 font-heading px-2 sm:px-3">Our Services</h2>
         <p className="text-center text-gray-600 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-2 sm:px-3 text-sm sm:text-base">
           Professional nail care services tailored to your needs
         </p>
@@ -85,7 +85,7 @@ export default function Services() {
                   className="object-cover group-hover:scale-110 transition-transform duration-300 rounded-xl sm:rounded-2xl md:rounded-3xl"
                 />
               </div>
-              <h3 className="text-lg sm:text-xl md:text-2xl font-heading font-semibold mb-2">{service.title}</h3>
+              <h3 className="text-lg sm:text-xl md:text-2xl font-heading font-normal mb-2">{service.title}</h3>
               <p className="text-gray-600 text-xs sm:text-sm md:text-base text-justify leading-relaxed">{service.description}</p>
               {index === 0 && (
                 <Link
