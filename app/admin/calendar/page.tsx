@@ -151,7 +151,7 @@ export default function CalendarPage() {
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
 
   const mapSlotStatus = useCallback((slot: any): BookingStatus => {
-    if (slot.booking?.completedAt) return 'completed';
+    if (slot.booking?.status === 'completed' || slot.booking?.completedAt) return 'completed';
     if (slot.booking?.status === 'pending') return 'PENDING_PAYMENT';
     if (slot.booking?.status === 'confirmed') return 'CONFIRMED';
     if (slot.booking?.status === 'cancelled') return 'CANCELLED';

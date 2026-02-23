@@ -584,7 +584,8 @@ export default function BookingsPage() {
 
   const getStatusBadge = (status: BookingStatus) => {
     const cls =
-      status === 'completed' || status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
+      status === 'completed' ? 'bg-orange-50 text-orange-700' :
+      status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
       status === 'pending' || status === 'booked' ? 'bg-amber-50 text-amber-700' :
       status === 'cancelled' ? 'bg-red-50 text-red-600' :
       status === 'no_show' ? 'bg-gray-100 text-gray-500' :

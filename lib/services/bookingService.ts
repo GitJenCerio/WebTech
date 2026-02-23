@@ -240,7 +240,7 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
  * Check if booking is completed (read-only helper)
  */
 function isBookingCompleted(booking: IBooking): boolean {
-  return booking.status === 'confirmed' && booking.completedAt !== null;
+  return booking.status === 'completed' || (booking.status === 'confirmed' && booking.completedAt !== null);
 }
 
 /**
@@ -416,7 +416,7 @@ export async function cancelBooking(
  * Mark booking as completed (admin-only)
  * - Only allowed when: status = 'confirmed' AND completedAt = null
  * - Sets completedAt to current server time
- * - Does NOT change status
+ * - Sets status to 'completed'
  * - Does NOT modify payment fields
  * - Locks slotIds and service data from further edits
  */
@@ -437,8 +437,9 @@ export async function markBookingAsCompleted(bookingId: string): Promise<IBookin
     throw new Error('Booking is already completed');
   }
 
-  // Set completion timestamp
+  // Set completion timestamp and status
   booking.completedAt = new Date();
+  booking.status = 'completed';
   await booking.save();
   await recomputeCustomerStats(booking.customerId);
 
