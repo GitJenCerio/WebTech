@@ -226,22 +226,27 @@ export default function CalendarPanel({
     const map = new Map<string, {
       available: number;
       booked: number;
+      completed: number;
       pending: number;
       total: number;
       bookedNames: string[];
+      completedNames: string[];
       pendingNames: string[];
     }>();
     slots.forEach((slot) => {
       if (slot.isHidden || !slot.date) return; // Skip hidden or slots without date
       const dateStr = slot.date;
       if (!map.has(dateStr)) {
-        map.set(dateStr, { available: 0, booked: 0, pending: 0, total: 0, bookedNames: [], pendingNames: [] });
+        map.set(dateStr, { available: 0, booked: 0, completed: 0, pending: 0, total: 0, bookedNames: [], completedNames: [], pendingNames: [] });
       }
       const data = map.get(dateStr)!;
       data.total++;
       const name = (slot as Slot).clientName?.trim() || '';
       if (slot.status === 'available') data.available++;
-      else if (slot.status === 'booked' || slot.status === 'confirmed' || slot.status === 'CONFIRMED') {
+      else if (slot.status === 'completed' || slot.status === 'COMPLETED') {
+        data.completed++;
+        if (name) data.completedNames.push(name);
+      } else if (slot.status === 'booked' || slot.status === 'confirmed' || slot.status === 'CONFIRMED') {
         data.booked++;
         if (name) data.bookedNames.push(name);
       } else if (slot.status === 'pending' || slot.status === 'PENDING_PAYMENT') {
@@ -257,9 +262,11 @@ export default function CalendarPanel({
     return slotsByDate.get(dateStr) || {
       available: 0,
       booked: 0,
+      completed: 0,
       pending: 0,
       total: 0,
       bookedNames: [],
+      completedNames: [],
       pendingNames: [],
     };
   };
@@ -479,6 +486,9 @@ export default function CalendarPanel({
                     <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#212529', color: '#fff', fontSize: '0.8rem' }}>
                       {counts.booked} booked
                     </span>
+                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#ea580c', color: '#fff', fontSize: '0.8rem' }}>
+                      {counts.completed} completed
+                    </span>
                     <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#007bff', color: '#fff', fontSize: '0.8rem' }}>
                       {counts.pending} pending
                     </span>
@@ -486,6 +496,11 @@ export default function CalendarPanel({
                   {counts.bookedNames.length > 0 && (
                     <div>
                       <div className="text-muted small mb-1">Booked: {counts.bookedNames.join(', ')}</div>
+                    </div>
+                  )}
+                  {counts.completedNames.length > 0 && (
+                    <div>
+                      <div className="text-muted small mb-1">Completed: {counts.completedNames.join(', ')}</div>
                     </div>
                   )}
                   {counts.pendingNames.length > 0 && (
@@ -505,7 +520,7 @@ export default function CalendarPanel({
                             type="button"
                             className="d-flex align-items-center justify-content-between px-3 py-2 rounded-2 border-0 w-100 text-start"
                             style={{
-                              background: slot.status === 'available' ? '#d4edda' : slot.status === 'booked' || slot.status === 'confirmed' || slot.status === 'CONFIRMED' ? '#212529' : '#cce5ff',
+                              background: slot.status === 'available' ? '#d4edda' : slot.status === 'booked' || slot.status === 'confirmed' || slot.status === 'CONFIRMED' ? '#212529' : slot.status === 'completed' || slot.status === 'COMPLETED' ? '#ea580c' : '#cce5ff',
                               color: slot.status === 'available' ? '#155724' : '#fff',
                               fontSize: '0.875rem',
                               cursor: onSlotClick ? 'pointer' : 'default',
@@ -514,7 +529,7 @@ export default function CalendarPanel({
                           >
                             <span className="fw-medium">{slot.time}</span>
                             <span className="small opacity-90">
-                              {slot.status === 'available' ? 'Available' : (slot.clientName || slot.status)}
+                              {slot.status === 'available' ? 'Available' : (slot.clientName || (slot.status === 'completed' || slot.status === 'COMPLETED' ? 'Completed' : slot.status))}
                             </span>
                           </button>
                         ))
@@ -603,6 +618,31 @@ export default function CalendarPanel({
                         }}
                       >
                         {counts.available}
+                      </span>
+                    )}
+                    {counts.completed > 0 && (
+                      <span 
+                        className="slot-count-badge slot-count-completed"
+                        style={{ 
+                          color: '#fff',
+                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#ea580c',
+                          padding: '2px 4px',
+                          fontSize: '0.55rem',
+                          fontWeight: 700,
+                          lineHeight: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%',
+                          borderRadius: '6px',
+                          minHeight: '14px',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <span className="d-md-none">{counts.completed}</span>
+                        <span className="d-none d-md-inline" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={counts.completedNames?.join(', ') || ''}>
+                          {counts.completedNames?.length ? counts.completedNames.join(', ') : counts.completed}
+                        </span>
                       </span>
                     )}
                     {counts.booked > 0 && (

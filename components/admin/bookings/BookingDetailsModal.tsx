@@ -37,6 +37,7 @@ interface BookingDetailsModalProps {
     reservationAmount?: number;
     depositRequired?: number;
     paymentProofUrl?: string;
+    completedAt?: string | null;
     clientPhotos?: {
       inspiration?: Array<{ url?: string }>;
       currentState?: Array<{ url?: string }>;
@@ -72,6 +73,7 @@ export default function BookingDetailsModal({
   if (!booking) return null;
 
   const isPendingPayment = ['booked', 'PENDING_PAYMENT', 'pending'].includes(booking.status);
+  const isCompleted = Boolean(booking.completedAt) || ['completed', 'COMPLETED'].includes(booking.status);
   const canVerify = Boolean(booking.paymentProofUrl && onVerifyPaymentProof);
   const paymentStatusLabel = booking.paymentStatus?.toLowerCase() === 'paid'
     ? 'Paid'
@@ -253,6 +255,15 @@ export default function BookingDetailsModal({
                 <i className="bi bi-x-circle mr-2"></i>Cancel
               </Button>
             </>
+          ) : isCompleted ? (
+            <Button
+              variant="outline"
+              onClick={onCreateInvoice}
+              disabled={!onCreateInvoice}
+            >
+              <i className="bi bi-receipt mr-2"></i>
+              {booking.invoice?.quotationId ? 'View / Edit Invoice' : 'Create Invoice'}
+            </Button>
           ) : (
             ['CONFIRMED', 'confirmed'].includes(booking.status) && (
               <>

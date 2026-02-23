@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Trash2, ChevronDown } from 'lucide-react';
+import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
 
 export interface InvoiceItem {
   description: string;
@@ -28,6 +29,9 @@ export interface InvoiceModalBooking {
   service: string;
   slotType?: 'regular' | 'with_squeeze_fee' | null;
   paidAmount?: number;
+  date?: string;
+  time?: string;
+  slotTimes?: string[];
 }
 
 interface InvoiceModalProps {
@@ -119,13 +123,13 @@ export default function InvoiceModal({
     const link = document.createElement('a');
     const ts = new Date().toISOString().split('T')[0];
     link.href = imageData;
-    link.download = `Quotation_${booking.clientName.replace(/\s+/g, '_')}_${ts}.png`;
+    link.download = `Invoice_${booking.clientName.replace(/\s+/g, '_')}_${ts}.png`;
     link.click();
   };
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{currentQuotationId ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
         </DialogHeader>
@@ -313,46 +317,57 @@ export default function InvoiceModal({
           </div>
 
           <div className="mt-4">
-            <div ref={quotationRef} className="p-4 border border-gray-200 rounded-2xl bg-white" style={{ maxWidth: '680px', margin: '0 auto' }}>
+            <div ref={quotationRef} className="p-4 border border-gray-200 rounded-2xl bg-white min-w-0 w-full" style={{ width: '100%', maxWidth: '960px', margin: '0 auto' }}>
               <div className="text-center mb-3 pb-2 border-b-2 border-[#212529]">
-                <h5 className="mb-1 font-bold tracking-wider">QUOTATION</h5>
+                <h5 className="mb-1 font-bold tracking-wider">INVOICE</h5>
               </div>
               <div className="mb-3 space-y-1">
                 <div><strong>Client:</strong> {booking.clientName}</div>
-                <div><strong>Date:</strong> {new Date().toLocaleDateString('en-US')}</div>
+                <div><strong>Date:</strong> {booking.date || new Date().toLocaleDateString('en-US')}</div>
+                {(booking.slotTimes && booking.slotTimes.length > 0) || booking.time ? (
+                  <div><strong>Time:</strong> {(booking.slotTimes && booking.slotTimes.length > 0)
+                    ? sortTimesChronologically(booking.slotTimes).map(formatTime12Hour).join(' & ')
+                    : formatTime12Hour(booking.time || '')}
+                  </div>
+                ) : null}
               </div>
-              <div className="mb-3 space-y-1">
+              <div className="mb-3 space-y-3">
                 {invoiceItems.map((item, idx) => (
-                  <div key={idx} className="flex justify-between">
-                    <div>{item.description} x {item.quantity}</div>
-                    <div>PHP {(item.total || 0).toLocaleString()}</div>
+                  <div key={idx} className="flex justify-between gap-4 items-start">
+                    <div className="min-w-0 flex-1">
+                      <div className="break-words font-medium">{item.description}</div>
+                      <div className="text-sm text-gray-600 mt-0.5">
+                        PHP {(item.unitPrice || 0).toLocaleString()} x Qty. {item.quantity}
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 text-right tabular-nums whitespace-nowrap font-medium">PHP {(item.total || 0).toLocaleString()}</div>
                   </div>
                 ))}
               </div>
               <div className="space-y-1 pt-2 border-t-2 border-[#212529]">
-                <div className="flex justify-between font-semibold">
-                  <span>Subtotal</span>
-                  <span>PHP {subtotal.toLocaleString()}</span>
+                <div className="flex justify-between gap-4 font-semibold">
+                  <span className="min-w-0">Subtotal</span>
+                  <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Discount</span>
-                  <span>-PHP {discountAmount.toLocaleString()}</span>
+                <div className="flex justify-between gap-4">
+                  <span className="min-w-0">Discount</span>
+                  <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">-PHP {discountAmount.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Squeeze-in Fee</span>
-                  <span>PHP {squeeze.toLocaleString()}</span>
+                <div className="flex justify-between gap-4">
+                  <span className="min-w-0">Squeeze-in Fee</span>
+                  <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {squeeze.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between font-semibold pt-2 border-t border-[#212529]">
-                  <span>Total</span>
-                  <span>PHP {total.toLocaleString()}</span>
+                <div className="flex justify-between gap-4 font-semibold pt-2 border-t border-[#212529]">
+                  <span className="min-w-0">Total</span>
+                  <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {total.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Deposit Paid</span>
-                  <span>-PHP {depositPaid.toLocaleString()}</span>
+                <div className="flex justify-between gap-4">
+                  <span className="min-w-0">Deposit Paid</span>
+                  <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">-PHP {depositPaid.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between font-semibold pt-2 border-t border-[#212529]">
-                  <span>Balance Due</span>
-                  <span>PHP {balance.toLocaleString()}</span>
+                <div className="flex justify-between gap-4 font-semibold pt-2 border-t border-[#212529]">
+                  <span className="min-w-0">Balance Due</span>
+                  <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {balance.toLocaleString()}</span>
                 </div>
               </div>
             </div>

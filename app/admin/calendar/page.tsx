@@ -11,6 +11,7 @@ import AddSlotModal from '@/components/admin/bookings/AddSlotModal';
 import EditSlotModal from '@/components/admin/bookings/EditSlotModal';
 import DeleteConfirmationModal from '@/components/admin/DeleteConfirmationModal';
 import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
+import MarkCompleteModal from '@/components/admin/bookings/MarkCompleteModal';
 import { BookingStatus } from '@/components/admin/StatusBadge';
 import { useUserRole } from '@/lib/hooks/useUserRole';
 import { usePricing } from '@/lib/hooks/usePricing';
@@ -61,6 +62,8 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
   const [pendingBookingAction, setPendingBookingAction] = useState<'cancel' | 'reschedule' | 'mark_no_show' | null>(null);
+  const [showMarkCompleteModal, setShowMarkCompleteModal] = useState(false);
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showAddSlotModal, setShowAddSlotModal] = useState(false);
   const [selectedNailTechId, setSelectedNailTechId] = useState<string>('all');
@@ -94,12 +97,14 @@ export default function CalendarPage() {
     paymentStatus?: string;
     slotCount?: number;
     reservationAmount?: number;
+    amount?: number;
     paidAmount?: number;
     depositRequired?: number;
     paymentProofUrl?: string;
     clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
     slotTimes?: string[];
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
+    completedAt?: string | null;
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -146,6 +151,7 @@ export default function CalendarPage() {
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
 
   const mapSlotStatus = useCallback((slot: any): BookingStatus => {
+    if (slot.booking?.completedAt) return 'completed';
     if (slot.booking?.status === 'pending') return 'PENDING_PAYMENT';
     if (slot.booking?.status === 'confirmed') return 'CONFIRMED';
     if (slot.booking?.status === 'cancelled') return 'CANCELLED';
@@ -480,6 +486,7 @@ export default function CalendarPage() {
         adminNotes: slot.booking?.adminNotes || '',
         clientPhotos: slot.booking?.clientPhotos,
         invoice: slot.booking?.invoice || null,
+        completedAt: (slot.booking as { completedAt?: string | null } | null)?.completedAt ?? null,
       });
       setAdminNotesDraft(slot.booking?.adminNotes || '');
       setShowModal(true);
@@ -533,18 +540,31 @@ export default function CalendarPage() {
     }
   };
 
-  const handleMarkCompleted = async () => {
+  const handleMarkCompleted = async (amountReceived: number, tipFromExcess: number) => {
     if (!selectedBooking?.id) return;
+    const total = selectedBooking.amount ?? selectedBooking.invoice?.total ?? 0;
+    const currentPaid = selectedBooking.paidAmount ?? 0;
+    const remaining = Math.max(0, total - currentPaid);
+    const appliedToBalance = Math.min(amountReceived, remaining);
+    const finalPaidAmount = currentPaid + appliedToBalance;
+    const currentTip = (selectedBooking as { tipAmount?: number }).tipAmount ?? 0;
+    const finalTipAmount = currentTip + tipFromExcess;
     try {
+      setIsMarkingComplete(true);
       const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'mark_completed' }),
+        body: JSON.stringify({
+          action: 'mark_completed',
+          paidAmount: finalPaidAmount,
+          tipAmount: finalTipAmount,
+        }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to mark completed' }));
         throw new Error(errorData.error || 'Failed to mark completed');
       }
+      setShowMarkCompleteModal(false);
       setShowModal(false);
       setSelectedBooking(null);
       toast.success('Booking marked as completed');
@@ -552,12 +572,14 @@ export default function CalendarPage() {
       await refreshMonthlySlots();
     } catch (error: any) {
       toast.error(error.message || 'Failed to mark completed');
+    } finally {
+      setIsMarkingComplete(false);
     }
   };
 
   const handleBookingAction = (action: 'cancel' | 'reschedule' | 'mark_no_show' | 'mark_completed') => {
     if (action === 'mark_completed') {
-      handleMarkCompleted();
+      setShowMarkCompleteModal(true);
     } else {
       openReasonDialog(action);
     }
@@ -667,6 +689,7 @@ export default function CalendarPage() {
           invoice: b.invoice ?? prev.invoice,
           paymentStatus: b.paymentStatus ?? prev.paymentStatus,
           adminNotes: b.adminNotes ?? prev.adminNotes,
+          completedAt: b.completedAt ?? prev.completedAt,
         } : null);
       })
       .catch(() => {});
@@ -931,6 +954,14 @@ export default function CalendarPage() {
         placeholder="Enter reason..."
         confirmLabel={pendingBookingAction === 'reschedule' ? 'Reschedule' : 'Confirm'}
         onConfirm={handleReasonConfirm}
+      />
+
+      <MarkCompleteModal
+        open={showMarkCompleteModal}
+        onOpenChange={setShowMarkCompleteModal}
+        balanceDue={Math.max(0, (selectedBooking?.amount ?? selectedBooking?.invoice?.total ?? 0) - (selectedBooking?.paidAmount ?? 0))}
+        onConfirm={handleMarkCompleted}
+        isLoading={isMarkingComplete}
       />
 
       <InvoiceModal

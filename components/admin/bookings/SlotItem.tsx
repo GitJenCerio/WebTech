@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Eye, Pencil, Trash2, EyeOff, MoreVertical } from 'lucide-react';
+import React from 'react';
+import { EyeOff } from 'lucide-react';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
 import NailTechBadge from '../NailTechBadge';
 
@@ -57,40 +57,25 @@ export default function SlotItem({
   isHidden = false,
   onView,
   onEdit,
-  onCancel,
+  onCancel: _onCancel,
 }: SlotItemProps) {
-  const [showMobileDropdown, setShowMobileDropdown] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const canDeleteSlot = ['available', 'cancelled', 'CANCELLED', 'no_show', 'NO_SHOW'].includes(status);
   const canEditSlot = ['available', 'blocked', 'cancelled', 'CANCELLED', 'no_show', 'NO_SHOW'].includes(status);
-  
-  // Build actions array for mobile dropdown
-  const mobileActions = [];
-  if (['booked', 'pending', 'PENDING_PAYMENT', 'confirmed', 'CONFIRMED', 'no_show', 'NO_SHOW'].includes(status) && onView) {
-    mobileActions.push({ label: 'View', icon: Eye, onClick: onView });
-  }
-  if (onEdit && canEditSlot) {
-    mobileActions.push({ label: 'Edit', icon: Pencil, onClick: onEdit });
-  }
-  if (canDeleteSlot && onCancel) {
-    mobileActions.push({ label: 'Delete', icon: Trash2, onClick: onCancel, variant: 'danger' });
-  }
-
-  // Prevent body scroll when dropdown is open
-  useEffect(() => {
-    if (showMobileDropdown) {
-      document.body.classList.add('dropdown-open');
-      return () => {
-        document.body.classList.remove('dropdown-open');
-      };
-    }
-  }, [showMobileDropdown]);
+  const canViewSlot = ['booked', 'pending', 'PENDING_PAYMENT', 'confirmed', 'CONFIRMED', 'completed', 'COMPLETED', 'no_show', 'NO_SHOW'].includes(status);
+  const handleClick = () => {
+    if (canViewSlot && onView) onView();
+    else if (canEditSlot && onEdit) onEdit();
+  };
+  const isClickable = (canViewSlot && onView) || (canEditSlot && onEdit);
 
   const serviceBadge = getServiceBadge(service);
 
   return (
-    <div 
-      className={`card mb-2 ${isHidden ? 'border-warning' : ''}`}
+    <div
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={isClickable ? handleClick : undefined}
+      onKeyDown={isClickable ? (e) => e.key === 'Enter' && handleClick() : undefined}
+      className={`card mb-2 ${isHidden ? 'border-warning' : ''} ${isClickable ? 'cursor-pointer' : ''}`}
       style={{
         borderRadius: '20px',
         border: isHidden ? '2px solid #ffc107' : '1px solid #ced4da',
@@ -135,12 +120,39 @@ export default function SlotItem({
           SQ
         </span>
       )}
+      {['confirmed', 'CONFIRMED', 'completed', 'COMPLETED'].includes(status) && serviceLocation && (
+        <span
+          title={serviceLocation === 'home_service' ? 'Home Service' : 'Studio'}
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            width: '20px',
+            height: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.55rem',
+            fontWeight: 700,
+            backgroundColor: serviceLocation === 'home_service' ? '#fef3c7' : '#dbeafe',
+            color: serviceLocation === 'home_service' ? '#92400e' : '#1e40af',
+            border: `1px solid ${serviceLocation === 'home_service' ? '#fcd34d' : '#93c5fd'}`,
+            borderBottom: 'none',
+            borderRight: 'none',
+            borderRadius: '8px 0 0 0',
+            zIndex: 1,
+          }}
+        >
+          {serviceLocation === 'home_service' ? 'HS' : 'ST'}
+        </span>
+      )}
       <div 
         className="card-body py-2"
         style={{
           borderRadius: '20px',
           padding: '0.75rem 1rem',
           ...(slotType === 'with_squeeze_fee' ? { paddingRight: '2rem' } : {}),
+          ...(['confirmed', 'CONFIRMED', 'completed', 'COMPLETED'].includes(status) && serviceLocation ? { paddingBottom: '1.5rem' } : {}),
         }}
       >
         <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
@@ -156,19 +168,6 @@ export default function SlotItem({
                   style={{ ...serviceBadge.style }}
                 >
                   {serviceBadge.label}
-                </span>
-              )}
-              {['confirmed', 'CONFIRMED'].includes(status) && serviceLocation && (
-                <span
-                  title={serviceLocation === 'home_service' ? 'Home Service' : 'Studio'}
-                  className="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold min-h-[24px] box-border"
-                  style={{
-                    backgroundColor: serviceLocation === 'home_service' ? '#fef3c7' : '#dbeafe',
-                    color: serviceLocation === 'home_service' ? '#92400e' : '#1e40af',
-                    border: `1px solid ${serviceLocation === 'home_service' ? '#fcd34d' : '#93c5fd'}`,
-                  }}
-                >
-                  {serviceLocation === 'home_service' ? 'HS' : 'ST'}
                 </span>
               )}
               {isHidden && (
@@ -187,80 +186,6 @@ export default function SlotItem({
               )}
             </div>
           </div>
-          {/* Actions: single dropdown on all screens so card fits in narrow column */}
-          {mobileActions.length > 0 && (
-            <div className="position-relative flex-shrink-0">
-              <button
-                ref={buttonRef}
-                type="button"
-                className="btn btn-sm"
-                onClick={() => setShowMobileDropdown(!showMobileDropdown)}
-                title="Actions"
-                aria-label="Slot actions"
-                style={{
-                  borderRadius: '16px',
-                  background: 'linear-gradient(135deg, #495057 0%, #212529 100%)',
-                  border: 'none',
-                  color: '#ffffff',
-                  boxShadow: '0 2px 8px rgba(33, 37, 41, 0.3)',
-                  padding: '0.375rem 0.75rem',
-                }}
-              >
-                <MoreVertical size={16} />
-              </button>
-              {showMobileDropdown && (
-                <>
-                  <div 
-                    className="position-fixed inset-0"
-                    style={{ zIndex: 1049, backgroundColor: 'transparent' }}
-                    onClick={() => setShowMobileDropdown(false)}
-                    aria-hidden="true"
-                  />
-                  <div 
-                    className="bg-white border rounded-2xl shadow-lg position-absolute"
-                    style={{ 
-                      minWidth: '150px',
-                      zIndex: 1051,
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                      top: '100%',
-                      right: 0,
-                      marginTop: '4px',
-                    }}
-                  >
-                    {mobileActions.map((action, index) => {
-                      const Icon = action.icon;
-                      return (
-                        <button
-                          key={index}
-                          type="button"
-                          className={`w-100 text-start px-3 py-2 border-0 bg-transparent d-flex align-items-center gap-2 ${
-                            action.variant === 'danger' ? 'text-danger' : ''
-                          }`}
-                          style={{
-                            fontSize: '0.875rem',
-                            borderRadius: index === 0 ? '16px 16px 0 0' : index === mobileActions.length - 1 ? '0 0 16px 16px' : '0',
-                          }}
-                          onClick={() => {
-                            action.onClick?.();
-                            setShowMobileDropdown(false);
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#f8f9fa';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                        >
-                          <Icon size={16} />
-                          <span>{action.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>

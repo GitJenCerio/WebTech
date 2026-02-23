@@ -260,7 +260,8 @@ export async function updateBookingPayment(
   bookingId: string,
   paidAmount: number,
   tipAmount: number = 0,
-  method?: 'PNB' | 'CASH' | 'GCASH'
+  method?: 'PNB' | 'CASH' | 'GCASH',
+  options?: { allowCompletedBooking?: boolean }
 ): Promise<IBooking> {
   await connectDB();
 
@@ -273,7 +274,9 @@ export async function updateBookingPayment(
     throw new Error('Cannot update payment for a cancelled booking');
   }
 
-  validateBookingEditable(booking, 'update payment for');
+  if (!options?.allowCompletedBooking) {
+    validateBookingEditable(booking, 'update payment for');
+  }
 
   const totalPaid = paidAmount + tipAmount;
   const totalRequired = booking.pricing.total + booking.pricing.depositRequired;

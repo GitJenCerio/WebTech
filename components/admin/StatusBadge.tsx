@@ -34,7 +34,7 @@ export default function StatusBadge({ status, className = '' }: StatusBadgeProps
   const statusConfig: Record<BookingStatus, { label: string; variant: BadgeVariant }> = {
     PENDING_PAYMENT: { label: 'Pending Payment', variant: 'info' },
     CONFIRMED: { label: 'Confirmed', variant: 'default' },
-    COMPLETED: { label: 'Completed', variant: 'success' },
+    COMPLETED: { label: 'Completed', variant: 'completed' },
     CANCELLED: { label: 'Cancelled', variant: 'destructive' },
     NO_SHOW: { label: 'No Show', variant: 'destructive' },
     pending: { label: 'Pending Payment', variant: 'info' },
@@ -44,7 +44,7 @@ export default function StatusBadge({ status, className = '' }: StatusBadgeProps
     // Legacy status support: available=green, pending=blue, confirmed=black
     available: { label: 'Available', variant: 'success' },
     booked: { label: 'Booked', variant: 'info' },
-    completed: { label: 'Completed', variant: 'success' },
+    completed: { label: 'Completed', variant: 'completed' },
     cancelled: { label: 'Cancelled', variant: 'destructive' },
     'no-show': { label: 'No Show', variant: 'destructive' },
     disabled: { label: 'Disabled', variant: 'default' },

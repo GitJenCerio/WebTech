@@ -391,26 +391,23 @@ export default function FinancePage() {
 }
 
 function mapBookingToTransaction(booking: any): Transaction {
+  const invoiceTotal = booking.invoice?.total ?? booking.pricing?.total ?? 0;
+  const paidAmount = booking.pricing?.paidAmount ?? 0;
+  const tipAmount = booking.pricing?.tipAmount ?? 0;
+  const balance = Math.max(0, invoiceTotal - paidAmount);
+  const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
   const paymentStatus =
-    booking.paymentStatus === 'paid'
-      ? 'paid'
-      : booking.paymentStatus === 'partial'
-        ? 'partial'
-        : 'pending';
+    hasInvoice && balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'pending';
   return {
     id: booking.id,
     date: booking.completedAt || booking.createdAt || '',
     clientName: booking.customerName || 'Unknown Client',
     service: booking.service?.type || 'Nail Service',
-    total: (booking.invoice?.total ?? booking.pricing?.total ?? 0) + (booking.pricing?.tipAmount ?? 0),
-    paid: (booking.pricing?.paidAmount ?? 0) + (booking.pricing?.tipAmount ?? 0),
-    tip: booking.pricing?.tipAmount ?? 0,
+    total: invoiceTotal,
+    paid: paidAmount,
+    tip: tipAmount,
     discount: booking.pricing?.discountAmount ?? 0,
-    balance: Math.max(
-      0,
-      ((booking.invoice?.total ?? booking.pricing?.total ?? 0) + (booking.pricing?.tipAmount ?? 0)) -
-        ((booking.pricing?.paidAmount ?? 0) + (booking.pricing?.tipAmount ?? 0))
-    ),
+    balance,
     paymentStatus,
   };
 }

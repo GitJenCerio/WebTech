@@ -162,6 +162,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     if (action === 'mark_completed') {
       // Mark booking as completed (admin-only)
+      // Optionally accept paidAmount and tipAmount (final totals) to update payment before completing
+      const paidAmount = typeof body.paidAmount === 'number' ? body.paidAmount : undefined;
+      const tipAmount = typeof body.tipAmount === 'number' ? body.tipAmount : undefined;
+      if (paidAmount !== undefined || tipAmount !== undefined) {
+        const bookingForUpdate = await getBookingById(id);
+        if (bookingForUpdate) {
+          const newPaid = paidAmount ?? (bookingForUpdate.pricing?.paidAmount ?? 0);
+          const newTip = tipAmount ?? (bookingForUpdate.pricing?.tipAmount ?? 0);
+          await updateBookingPayment(id, newPaid, newTip, body.method, { allowCompletedBooking: true });
+        }
+      }
       const booking = await markBookingAsCompleted(id);
       if (booking.confirmedAt) {
         backupBooking(booking, 'update').catch(err =>
