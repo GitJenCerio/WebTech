@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, X, ChevronLeft, ChevronRight, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { useUserRole } from '@/lib/hooks/useUserRole';
 import { Button, Input } from '@/components/ui';
 import {
@@ -363,14 +363,17 @@ export default function NailTechsPage() {
               </thead>
               <tbody className="divide-y divide-[#f5f5f5]">
                 {loading ? (
-                  <tr>
-                    <td colSpan={7} className="px-5 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3 text-gray-400">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                        <span className="text-sm">Loading...</span>
-                      </div>
-                    </td>
-                  </tr>
+                  <>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 7 }).map((_, j) => (
+                          <td key={j} className="px-5 py-3.5">
+                            <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </>
                 ) : paginatedTechs.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-5 py-16 text-center">
@@ -437,10 +440,27 @@ export default function NailTechsPage() {
           {/* Mobile card view */}
           <div className="sm:hidden p-4 space-y-3">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="text-sm">Loading...</span>
-              </div>
+              <>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3">
+                    <div className="flex justify-between">
+                      <div className="space-y-1">
+                        <div className="h-5 w-28 animate-pulse rounded bg-[#e5e5e5]" />
+                        <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                      </div>
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[1, 2, 3, 4].map((j) => (
+                        <div key={j} className="space-y-1">
+                          <div className="h-3 w-12 animate-pulse rounded bg-[#e5e5e5]" />
+                          <div className="h-4 w-16 animate-pulse rounded bg-[#e5e5e5]" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </>
             ) : paginatedTechs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
                 <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">

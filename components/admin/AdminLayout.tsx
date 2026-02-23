@@ -20,6 +20,7 @@ import {
   Menu,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -45,6 +46,7 @@ const navItems: NavItem[] = [
   { path: '/admin/nail-techs', label: 'Nail Techs', icon: Scissors },
   { path: '/admin/staff', label: 'Staff / Users', icon: UserCog },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
+  { path: '/admin/audit', label: 'Audit Log', icon: ClipboardList },
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {

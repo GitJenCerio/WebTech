@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useUserRole } from '@/lib/hooks/useUserRole';
@@ -219,14 +219,17 @@ export default function StaffPage() {
               </thead>
               <tbody className="divide-y divide-[#f5f5f5]">
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-5 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3 text-gray-400">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                        <span className="text-sm">Loading...</span>
-                      </div>
-                    </td>
-                  </tr>
+                  <>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <td key={j} className="px-5 py-3.5">
+                            <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </>
                 ) : paginatedStaff.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-5 py-16 text-center">
@@ -294,10 +297,23 @@ export default function StaffPage() {
           {/* Mobile card view */}
           <div className="sm:hidden p-4 space-y-3">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="text-sm">Loading...</span>
-              </div>
+              <>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3">
+                    <div className="flex justify-between">
+                      <div className="space-y-1">
+                        <div className="h-5 w-32 animate-pulse rounded bg-[#e5e5e5]" />
+                        <div className="h-4 w-48 animate-pulse rounded bg-[#e5e5e5]" />
+                      </div>
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="h-6 w-14 animate-pulse rounded-full bg-[#e5e5e5]" />
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                    </div>
+                  </div>
+                ))}
+              </>
             ) : paginatedStaff.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
                 <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">

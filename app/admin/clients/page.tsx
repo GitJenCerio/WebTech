@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Search, X, ChevronLeft, ChevronRight, Loader2, FileText, Plus } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, FileText, Plus } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Badge } from '@/components/ui/Badge';
@@ -278,14 +278,17 @@ export default function ClientsPage() {
               </thead>
               <tbody className="divide-y divide-[#f5f5f5]">
                 {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-5 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3 text-gray-400">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                        <span className="text-sm">Loading...</span>
-                      </div>
-                    </td>
-                  </tr>
+                  <>
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 6 }).map((_, j) => (
+                          <td key={j} className="px-5 py-3.5">
+                            <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </>
                 ) : paginatedClients.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-5 py-16 text-center">
@@ -361,10 +364,24 @@ export default function ClientsPage() {
           {/* Mobile card view */}
           <div className="sm:hidden p-4 space-y-3">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="text-sm">Loading...</span>
-              </div>
+              <>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3">
+                    <div className="flex justify-between">
+                      <div className="h-5 w-32 animate-pulse rounded bg-[#e5e5e5]" />
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="h-4 w-48 animate-pulse rounded bg-[#e5e5e5]" />
+                      <div className="h-4 w-36 animate-pulse rounded bg-[#e5e5e5]" />
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="h-7 w-14 animate-pulse rounded bg-[#e5e5e5]" />
+                      <button className="h-7 w-14 animate-pulse rounded bg-[#e5e5e5]" />
+                    </div>
+                  </div>
+                ))}
+              </>
             ) : paginatedClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
                 <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">

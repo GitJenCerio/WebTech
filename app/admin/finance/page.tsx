@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Search, X, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import StatCard from '@/components/admin/StatCard';
 import { DateRangePicker } from '@/components/admin/DateRangePicker';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -20,6 +21,7 @@ interface Transaction {
   discount: number;
   balance: number;
   paymentStatus: 'paid' | 'pending' | 'partial';
+  nailTechId?: string;
 }
 
 export default function FinancePage() {
@@ -34,6 +36,7 @@ export default function FinancePage() {
   const [todayIncome, setTodayIncome] = useState(0);
   const [weekIncome, setWeekIncome] = useState(0);
   const [pendingPayments, setPendingPayments] = useState(0);
+  const { nailTechs } = useNailTechs();
 
   useEffect(() => {
     async function fetchSummary() {
@@ -112,6 +115,25 @@ export default function FinancePage() {
   const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / PAGE_SIZE));
   const totalItems = filteredTransactions.length;
 
+  const revenueByNailTech = useMemo(() => {
+    const paidTx = filteredTransactions.filter((t) => t.paymentStatus === 'paid');
+    const byTech = new Map<string, { name: string; total: number; count: number }>();
+    for (const t of paidTx) {
+      const techId = t.nailTechId || '_unknown';
+      const tech = nailTechs.find((n) => n.id === t.nailTechId);
+      const name = tech ? `Ms. ${tech.name}` : techId === '_unknown' ? 'Unassigned' : 'Unknown';
+      const current = byTech.get(techId) || { name, total: 0, count: 0 };
+      byTech.set(techId, {
+        name,
+        total: current.total + t.total,
+        count: current.count + 1,
+      });
+    }
+    return Array.from(byTech.entries())
+      .map(([id, data]) => ({ id, ...data }))
+      .sort((a, b) => b.total - a.total);
+  }, [filteredTransactions, nailTechs]);
+
   const exportToCsv = () => {
     const headers = ['Date', 'Client', 'Service', 'Total', 'Paid', 'Tip', 'Discount', 'Balance', 'Status'];
     const rows = filteredTransactions.map((t) => [
@@ -182,6 +204,27 @@ export default function FinancePage() {
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {error}
         </div>
+      )}
+
+      {/* Revenue by Nail Tech */}
+      {revenueByNailTech.length > 0 && (
+        <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-semibold text-[#1a1a1a] mb-3">Revenue by Nail Tech</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {revenueByNailTech.map(({ id, name, total, count }) => (
+                <div
+                  key={id}
+                  className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 flex flex-col"
+                >
+                  <p className="font-medium text-[#1a1a1a] truncate">{name}</p>
+                  <p className="text-lg font-semibold text-[#1a1a1a] mt-1">₱{total.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{count} appointment{count !== 1 ? 's' : ''}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Filter Card */}
@@ -267,14 +310,17 @@ export default function FinancePage() {
               </thead>
               <tbody className="divide-y divide-[#f5f5f5]">
                 {loading ? (
-                  <tr>
-                    <td colSpan={9} className="px-5 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3 text-gray-400">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                        <span className="text-sm">Loading...</span>
-                      </div>
-                    </td>
-                  </tr>
+                  <>
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <tr key={i}>
+                        {Array.from({ length: 9 }).map((_, j) => (
+                          <td key={j} className="px-5 py-3.5">
+                            <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </>
                 ) : paginatedTransactions.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-5 py-16 text-center">
@@ -311,10 +357,25 @@ export default function FinancePage() {
           {/* Mobile card view */}
           <div className="sm:hidden p-4 space-y-3">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="text-sm">Loading...</span>
-              </div>
+              <>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3">
+                    <div className="flex justify-between">
+                      <div className="h-5 w-32 animate-pulse rounded bg-[#e5e5e5]" />
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                    </div>
+                    <div className="h-4 w-24 animate-pulse rounded bg-[#e5e5e5]" />
+                    <div className="grid grid-cols-2 gap-2">
+                      {[1, 2, 3, 4].map((j) => (
+                        <div key={j} className="space-y-1">
+                          <div className="h-3 w-12 animate-pulse rounded bg-[#e5e5e5]" />
+                          <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </>
             ) : paginatedTransactions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
                 <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
@@ -409,6 +470,7 @@ function mapBookingToTransaction(booking: any): Transaction {
     discount: booking.pricing?.discountAmount ?? 0,
     balance,
     paymentStatus,
+    nailTechId: booking.nailTechId,
   };
 }
 

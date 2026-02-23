@@ -69,6 +69,9 @@ export { Separator } from './Separator';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
 export { Table, TableHeader, TableBody, TableFooter, TableRow, TableHead, TableCell, TableCaption } from './Table';
 
+// Loading
+export { Skeleton } from './Skeleton';
+
 // Optional / admin-style (export if present and you want them from @/components/ui)
 export { Tooltip } from './Tooltip';
 export { Popover } from './Popover';

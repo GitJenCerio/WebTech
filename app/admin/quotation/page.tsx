@@ -304,10 +304,27 @@ export default function QuotationPage() {
 
   if (loading) {
     return (
-      <div className="px-2 sm:px-4 py-6">
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1a1a1a] border-t-transparent" role="status" aria-label="Loading" />
-          <p className="mt-3 text-sm text-gray-500">Loading pricing data...</p>
+      <div className="px-2 sm:px-4 py-6 space-y-6">
+        <div className="flex justify-end">
+          <div className="h-9 w-32 animate-pulse rounded-xl bg-[#e5e5e5]" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="border border-[#e5e5e5] rounded-xl p-6 space-y-4">
+            <div className="h-6 w-40 animate-pulse rounded bg-[#e5e5e5]" />
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex gap-4">
+                  <div className="h-10 flex-1 animate-pulse rounded bg-[#e5e5e5]" />
+                  <div className="h-10 w-24 animate-pulse rounded bg-[#e5e5e5]" />
+                </div>
+              ))}
+            </div>
+            <div className="h-12 w-full animate-pulse rounded bg-[#e5e5e5] mt-4" />
+          </div>
+          <div className="border border-[#e5e5e5] rounded-xl p-6 space-y-4">
+            <div className="h-6 w-32 animate-pulse rounded bg-[#e5e5e5]" />
+            <div className="h-64 w-full animate-pulse rounded bg-[#e5e5e5]" />
+          </div>
         </div>
       </div>
     );
@@ -368,9 +385,29 @@ export default function QuotationPage() {
         <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
           <CardContent className="p-6">
             {quotationsLoading ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1a1a1a] border-t-transparent" role="status" aria-label="Loading" />
-                <p className="mt-2 text-sm text-gray-500">Loading saved quotations...</p>
+              <div className="overflow-hidden">
+                <div className="hidden sm:block">
+                  <div className="animate-pulse">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="flex gap-4 py-4 border-b border-[#f0f0f0]">
+                        <div className="h-4 w-24 rounded bg-[#e5e5e5]" />
+                        <div className="h-4 w-32 rounded bg-[#e5e5e5]" />
+                        <div className="h-4 w-20 rounded bg-[#e5e5e5]" />
+                        <div className="h-4 w-16 rounded bg-[#e5e5e5]" />
+                        <div className="h-4 w-20 rounded bg-[#e5e5e5]" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="sm:hidden space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="rounded-xl border border-[#e5e5e5] p-4 space-y-2">
+                      <div className="h-5 w-32 animate-pulse rounded bg-[#e5e5e5]" />
+                      <div className="h-4 w-full animate-pulse rounded bg-[#e5e5e5]" />
+                      <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : savedQuotations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16">

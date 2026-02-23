@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import StatCard from '@/components/admin/StatCard';
+import { StatCardSkeleton } from '@/components/admin/StatCardSkeleton';
+import { TableSkeleton } from '@/components/admin/TableSkeleton';
 import StatusBadge from '@/components/admin/StatusBadge';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -156,8 +158,40 @@ export default function OverviewPage() {
 
   if (loading && todayBookings.length === 0) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-gray-400 text-sm">Loading overview...</div>
+      <div className="w-full max-w-full space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 sm:mb-8">
+          {[1, 2, 3, 4].map((i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <div className="border border-[#e5e5e5] rounded-xl overflow-hidden h-[360px] flex flex-col">
+              <div className="p-4 border-b border-[#f0f0f0]">
+                <div className="h-5 w-40 bg-[#e5e5e5] animate-pulse rounded" />
+              </div>
+              <div className="flex-1 p-4 flex items-center justify-center">
+                <div className="h-[280px] w-full max-w-md bg-[#e5e5e5] animate-pulse rounded" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="border border-[#e5e5e5] rounded-xl overflow-hidden h-[360px] flex flex-col">
+              <div className="p-4 border-b border-[#f0f0f0]">
+                <div className="h-5 w-32 bg-[#e5e5e5] animate-pulse rounded" />
+              </div>
+              <div className="flex-1 p-4 flex items-center justify-center">
+                <div className="h-[200px] w-[200px] rounded-full bg-[#e5e5e5] animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="border border-[#e5e5e5] rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-[#f0f0f0]">
+            <div className="h-5 w-44 bg-[#e5e5e5] animate-pulse rounded" />
+          </div>
+          <TableSkeleton rows={5} cols={5} />
+        </div>
       </div>
     );
   }
