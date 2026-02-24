@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
@@ -104,55 +105,86 @@ export async function GET(request: Request) {
   }
 }
 
+const createCustomerSchema = z.object({
+  name: z.string().min(1, 'Name is required').transform((s) => s.trim()),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().optional(),
+  socialMediaName: z.string().optional(),
+  referralSource: z.string().optional(),
+  referralSourceOther: z.string().optional(),
+  howDidYouFindUs: z.string().optional(),
+  howDidYouFindUsOther: z.string().optional(),
+  clientType: z.enum(['NEW', 'REPEAT', 'new', 'repeat']).optional(),
+  notes: z.string().max(5000).optional(),
+  isVIP: z.boolean().optional(),
+  nailHistory: z.any().optional(),
+  healthInfo: z.any().optional(),
+  inspoDescription: z.string().optional(),
+  waiverAccepted: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+});
+
 export async function POST(request: Request) {
   try {
     await connectDB();
     await ensureLegacyFirebaseIdIndexRemoved();
     const body = await request.json();
 
-    if (!body.name || !body.name.trim()) {
+    const parsed = createCustomerSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const data = parsed.data;
+    const name = data.name;
+    if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
     // Check duplicate by phone or email
-    if (body.phone) {
-      const existing = await Customer.findOne({ phone: body.phone });
+    if (data.phone) {
+      const existing = await Customer.findOne({ phone: data.phone });
       if (existing) {
         return NextResponse.json({ error: 'Customer with this phone already exists' }, { status: 400 });
       }
     }
-    if (body.email) {
-      const existing = await Customer.findOne({ email: body.email.toLowerCase() });
+    if (data.email) {
+      const existing = await Customer.findOne({ email: data.email.toLowerCase() });
       if (existing) {
         return NextResponse.json({ error: 'Customer with this email already exists' }, { status: 400 });
       }
     }
 
     const customer = await Customer.create({
-      name: body.name.trim(),
-      firstName: body.firstName?.trim(),
-      lastName: body.lastName?.trim(),
-      email: body.email?.toLowerCase().trim(),
-      phone: body.phone?.trim(),
-      socialMediaName: body.socialMediaName?.trim(),
-      referralSource: body.referralSource?.trim() || body.howDidYouFindUs?.trim(),
-      referralSourceOther: body.referralSourceOther?.trim() || body.howDidYouFindUsOther?.trim(),
-      clientType: body.clientType?.toUpperCase() === 'REPEAT' ? 'REPEAT' : 'NEW',
+      name,
+      firstName: data.firstName?.trim(),
+      lastName: data.lastName?.trim(),
+      email: data.email ? data.email.toLowerCase().trim() : undefined,
+      phone: data.phone?.trim(),
+      socialMediaName: data.socialMediaName?.trim(),
+      referralSource: (data.referralSource?.trim() || data.howDidYouFindUs?.trim()) || undefined,
+      referralSourceOther: (data.referralSourceOther?.trim() || data.howDidYouFindUsOther?.trim()) || undefined,
+      clientType: (data.clientType || '').toString().toUpperCase() === 'REPEAT' ? 'REPEAT' : 'NEW',
       totalBookings: 0,
       completedBookings: 0,
       totalSpent: 0,
       totalTips: 0,
       totalDiscounts: 0,
       lastVisit: null,
-      notes: body.notes?.trim(),
-      isVIP: body.isVIP === true,
-      nailHistory: body.nailHistory,
-      healthInfo: body.healthInfo,
-      inspoDescription: body.inspoDescription?.trim(),
-      waiverAccepted: typeof body.waiverAccepted === 'boolean'
-        ? body.waiverAccepted
-        : body.waiverAccepted === 'accept',
-      isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
+      notes: data.notes?.trim(),
+      isVIP: data.isVIP === true,
+      nailHistory: data.nailHistory,
+      healthInfo: data.healthInfo,
+      inspoDescription: data.inspoDescription?.trim(),
+      waiverAccepted: typeof data.waiverAccepted === 'boolean'
+        ? data.waiverAccepted
+        : (body as { waiverAccepted?: string }).waiverAccepted === 'accept',
+      isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
     });
 
     return NextResponse.json({ customer }, { status: 201 });

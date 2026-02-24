@@ -9,10 +9,16 @@ import {
   updateBookingPayment,
   markBookingAsCompleted,
   markBookingAsNoShow,
-  markBookingAsRescheduled
+  markBookingAsRescheduled,
+  rescheduleBookingToSlots
 } from '@/lib/services/bookingService';
 import { backupBooking } from '@/lib/services/googleSheetsBackup';
+import { syncBookingToSheet, syncFinanceToSheet } from '@/lib/services/googleSheetsService';
 import Customer from '@/lib/models/Customer';
+import NailTech from '@/lib/models/NailTech';
+import Settings from '@/lib/models/Settings';
+import Slot from '@/lib/models/Slot';
+import connectDB from '@/lib/mongodb';
 import { sendBookingConfirmedEmail, sendBookingRescheduledEmail } from '@/lib/email';
 
 // Mark this route as dynamic to prevent static analysis during build
@@ -86,6 +92,36 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     }
 
+    function fireSheetsSync(bookingId: string) {
+      (async () => {
+        try {
+          await connectDB();
+          const [booking, settings] = await Promise.all([
+            getBookingById(bookingId) || getBookingByCode(bookingId),
+            Settings.findById('global').lean(),
+          ]);
+          if (!booking) return;
+          const b = booking as any;
+          const [cust, tech, slotList] = await Promise.all([
+            Customer.findById(b.customerId).lean(),
+            NailTech.findById(b.nailTechId).lean(),
+            Slot.find({ _id: { $in: b.slotIds || [] } }).sort({ date: 1, time: 1 }).lean(),
+          ]);
+          const customerName = (cust as { name?: string })?.name ?? 'Unknown';
+          const socialMediaName = (cust as { socialMediaName?: string })?.socialMediaName ?? '';
+          const nailTechName = (tech as { name?: string })?.name ? `Ms. ${(tech as { name: string }).name}` : '';
+          const slots = (slotList as { date?: string; time?: string }[]) ?? [];
+          const appointmentDate = slots[0]?.date ?? '';
+          const appointmentTimes = slots.map(s => s.time).filter(Boolean) as string[];
+          const commissionRate = (settings as { adminCommissionRate?: number })?.adminCommissionRate ?? 10;
+          await syncBookingToSheet(b, customerName, socialMediaName, nailTechName, appointmentDate, appointmentTimes);
+          await syncFinanceToSheet(b, socialMediaName, nailTechName, appointmentDate, appointmentTimes, commissionRate);
+        } catch (err) {
+          console.error('[Sheets] sync failed:', err);
+        }
+      })();
+    }
+
     if (action === 'confirm') {
       // Confirm booking (requires deposit or full payment)
       const booking = await confirmBooking(id);
@@ -100,6 +136,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           console.error('Failed to backup booking update to Google Sheets:', err)
         );
       }
+      fireSheetsSync(id);
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -122,6 +159,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           console.error('Failed to backup booking update to Google Sheets:', err)
         );
       }
+      fireSheetsSync(id);
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -149,6 +187,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           console.error('Failed to backup booking update to Google Sheets:', err)
         );
       }
+      fireSheetsSync(id);
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -179,6 +218,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           console.error('Failed to backup booking update to Google Sheets:', err)
         );
       }
+      fireSheetsSync(id);
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -205,12 +245,46 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           console.error('Failed to backup booking update to Google Sheets:', err)
         );
       }
+      fireSheetsSync(id);
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
           bookingCode: booking.bookingCode,
           status: booking.status,
           statusReason: booking.statusReason,
+        }
+      });
+    }
+
+    if (action === 'reschedule_to') {
+      const newSlotIds = Array.isArray(body.newSlotIds) ? body.newSlotIds.map(String) : [];
+      if (newSlotIds.length === 0) {
+        return NextResponse.json({ error: 'newSlotIds array is required' }, { status: 400 });
+      }
+      const booking = await rescheduleBookingToSlots(id, newSlotIds, body.reason);
+      const customer = await Customer.findById(booking.customerId).lean();
+      if (customer?.email) {
+        sendBookingRescheduledEmail(booking, customer, booking.statusReason || undefined).catch(err =>
+          console.error('Failed to send booking rescheduled email:', err)
+        );
+      }
+      if (booking.confirmedAt) {
+        backupBooking(booking, 'update').catch(err =>
+          console.error('Failed to backup booking update to Google Sheets:', err)
+        );
+      }
+      fireSheetsSync(id);
+      const slots = await Slot.find({ _id: { $in: booking.slotIds } }).sort({ date: 1, time: 1 }).lean();
+      const appointmentDate = (slots[0] as { date?: string })?.date ?? null;
+      const appointmentTimes = (slots as { time?: string }[]).map(s => s.time).filter(Boolean) as string[];
+      return NextResponse.json({
+        booking: {
+          id: booking._id.toString(),
+          bookingCode: booking.bookingCode,
+          status: booking.status,
+          slotIds: booking.slotIds,
+          appointmentDate,
+          appointmentTimes,
         }
       });
     }
@@ -226,6 +300,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           console.error('Failed to backup booking update to Google Sheets:', err)
         );
       }
+      fireSheetsSync(id);
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -253,6 +328,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           console.error('Failed to backup booking update to Google Sheets:', err)
         );
       }
+      fireSheetsSync(id);
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -264,7 +340,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     return NextResponse.json({ 
-      error: 'Invalid action. Supported actions: confirm, cancel, reschedule, update_payment, mark_completed, mark_no_show, update_notes' 
+      error: 'Invalid action. Supported actions: confirm, cancel, reschedule, reschedule_to, update_payment, mark_completed, mark_no_show, update_notes' 
     }, { status: 400 });
   } catch (error: any) {
     console.error('Error updating booking:', error);

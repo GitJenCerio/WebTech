@@ -12,6 +12,7 @@ import EditSlotModal from '@/components/admin/bookings/EditSlotModal';
 import DeleteConfirmationModal from '@/components/admin/DeleteConfirmationModal';
 import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
 import MarkCompleteModal from '@/components/admin/bookings/MarkCompleteModal';
+import RescheduleSlotModal from '@/components/admin/bookings/RescheduleSlotModal';
 import { BookingStatus } from '@/components/admin/StatusBadge';
 import { useUserRole } from '@/lib/hooks/useUserRole';
 import { usePricing } from '@/lib/hooks/usePricing';
@@ -62,6 +63,8 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
   const [pendingBookingAction, setPendingBookingAction] = useState<'cancel' | 'reschedule' | 'mark_no_show' | null>(null);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [showMarkCompleteModal, setShowMarkCompleteModal] = useState(false);
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -581,8 +584,37 @@ export default function CalendarPage() {
   const handleBookingAction = (action: 'cancel' | 'reschedule' | 'mark_no_show' | 'mark_completed') => {
     if (action === 'mark_completed') {
       setShowMarkCompleteModal(true);
+    } else if (action === 'reschedule') {
+      setShowModal(false);
+      setShowRescheduleModal(true);
     } else {
       openReasonDialog(action);
+    }
+  };
+
+  const handleRescheduleConfirm = async (newSlotIds: string[], reason?: string) => {
+    if (!selectedBooking?.id) return;
+    setRescheduleLoading(true);
+    try {
+      const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reschedule_to', newSlotIds, reason: reason || undefined }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to reschedule');
+      }
+      toast.success('Booking rescheduled');
+      setShowRescheduleModal(false);
+      setSelectedBooking(null);
+      await refreshSelectedDateSlots();
+      await refreshMonthlySlots();
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to reschedule');
+      throw e;
+    } finally {
+      setRescheduleLoading(false);
     }
   };
 
@@ -869,6 +901,7 @@ export default function CalendarPage() {
           ) : (
             <SlotList
               date={selectedDate}
+              emptyStateFiltered={!!(selectedNailTechId && selectedNailTechId !== 'all')}
               slots={slots.map((slot) => ({
                 ...slot,
                 slotType: slot.type,
@@ -930,6 +963,15 @@ export default function CalendarPage() {
         onCreateInvoice={handleCreateInvoice}
         onVerifyPaymentProof={handleVerifyPaymentProof}
         isVerifyingPaymentProof={isVerifyingPaymentProof}
+      />
+
+      <RescheduleSlotModal
+        open={showRescheduleModal}
+        onOpenChange={setShowRescheduleModal}
+        bookingId={selectedBooking?.id ?? ''}
+        nailTechId={selectedBooking?.nailTechId ?? ''}
+        onConfirm={handleRescheduleConfirm}
+        isLoading={rescheduleLoading}
       />
 
       <ReasonInputDialog

@@ -519,6 +519,59 @@ export async function markBookingAsRescheduled(bookingId: string, reason: string
 }
 
 /**
+ * Reschedule a booking to new slots (admin)
+ * - Validates new slots (same nail tech, available)
+ * - Releases current slots, reserves new slots
+ * - Updates booking.slotIds and optional statusReason
+ * - If booking was confirmed, confirms the new slots
+ */
+export async function rescheduleBookingToSlots(
+  bookingId: string,
+  newSlotIds: string[],
+  reason?: string
+): Promise<IBooking> {
+  await connectDB();
+
+  const booking = await Booking.findById(bookingId);
+  if (!booking) {
+    throw new Error('Booking not found');
+  }
+
+  validateBookingEditable(booking, 'reschedule');
+  if (booking.status === 'cancelled') {
+    throw new Error('Cannot reschedule a cancelled booking');
+  }
+
+  if (!newSlotIds || newSlotIds.length === 0) {
+    throw new Error('At least one new slot is required');
+  }
+
+  const nailTechId = String(booking.nailTechId);
+  await validateSlots(newSlotIds, nailTechId);
+
+  const oldSlotIds = [...(booking.slotIds || [])];
+  await releaseSlots(oldSlotIds);
+  try {
+    await reserveSlots(newSlotIds);
+  } catch (err) {
+    await reserveSlots(oldSlotIds);
+    throw err;
+  }
+
+  booking.slotIds = newSlotIds;
+  if (reason != null && String(reason).trim()) {
+    booking.statusReason = `Rescheduled: ${String(reason).trim()}`;
+  }
+  await booking.save();
+
+  if (booking.status === 'confirmed') {
+    await confirmSlots(newSlotIds);
+  }
+
+  return booking;
+}
+
+/**
  * Get booking by ID
  */
 export async function getBookingById(bookingId: string): Promise<IBooking | null> {

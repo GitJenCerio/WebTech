@@ -292,12 +292,16 @@ export default function ClientsPage() {
                 ) : paginatedClients.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-5 py-16 text-center">
-                      <div className="flex flex-col items-center gap-2 text-gray-400">
-                        <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-                          <Search className="h-5 w-5" />
+                      <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                        <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                          <Search className="h-6 w-6 text-gray-300" />
                         </div>
-                        <span className="text-sm font-medium">No results found</span>
-                        <span className="text-xs">Try adjusting your search or filters</span>
+                        <p className="text-sm font-medium text-gray-500">
+                          {searchQuery.trim() ? 'No clients match your search.' : 'No clients yet.'}
+                        </p>
+                        <p className="text-xs text-gray-400 max-w-[240px]">
+                          {searchQuery.trim() ? 'Try adjusting your search or clearing the search box.' : 'Clients are added when you create bookings, or you can add one manually.'}
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -383,12 +387,16 @@ export default function ClientsPage() {
                 ))}
               </>
             ) : paginatedClients.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
-                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-                  <Search className="h-5 w-5" />
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                  <Search className="h-6 w-6 text-gray-300" />
                 </div>
-                <span className="text-sm font-medium">No results found</span>
-                <span className="text-xs">Try adjusting your search or filters</span>
+                <p className="text-sm font-medium text-gray-500">
+                  {searchQuery.trim() ? 'No clients match your search.' : 'No clients yet.'}
+                </p>
+                <p className="text-xs text-gray-400 max-w-[240px]">
+                  {searchQuery.trim() ? 'Try adjusting your search or clearing the search box.' : 'Clients are added when you create bookings, or you can add one manually.'}
+                </p>
               </div>
             ) : (
               paginatedClients.map((item) => (

@@ -43,8 +43,10 @@ async function connectDB() {
 
     cached.promise = mongoose
       .connect(getMongoUri(), opts)
-      .then((mongoose) => {
+      .then(async (mongoose) => {
         console.log('✅ MongoDB connected successfully');
+        const { ensureIndexes } = await import('@/lib/db/ensureIndexes');
+        await ensureIndexes();
         return mongoose;
       })
       .catch((error) => {

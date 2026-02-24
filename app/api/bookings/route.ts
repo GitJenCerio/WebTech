@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { createBooking, listBookings, type CreateBookingInput } from '@/lib/services/bookingService';
 import type { BookingStatus, PaymentStatus } from '@/lib/types';
 import { sendBookingPendingEmail } from '@/lib/email';
 import Customer from '@/lib/models/Customer';
+import NailTech from '@/lib/models/NailTech';
+import Slot from '@/lib/models/Slot';
 import { createUploadProofToken } from '@/lib/uploadProofToken';
+import { syncBookingToSheet } from '@/lib/services/googleSheetsService';
 import connectDB from '@/lib/mongodb';
 
 // Mark this route as dynamic to prevent static analysis during build
@@ -21,22 +25,44 @@ export async function POST(request: Request) {
     const assignedNailTechId = session?.user?.assignedNailTechId;
 
     const body = await request.json();
-    const {
-      slotIds,
-      customerId,
-      nailTechId,
-      service, 
-      pricing,
-      customerEmail,
-      customer,
-      clientNotes,
-      adminNotes,
-    } = body;
 
-    // Validate required fields
-    if (!slotIds || !Array.isArray(slotIds) || slotIds.length === 0) {
-      return NextResponse.json({ error: 'At least one slot ID is required' }, { status: 400 });
+    const createBookingSchema = z.object({
+      slotIds: z.array(z.string()).min(1),
+      nailTechId: z.string().min(1),
+      customerId: z.string().optional(),
+      customer: z.object({
+        name: z.string().min(1),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        socialMediaName: z.string().optional(),
+      }).optional(),
+      service: z.object({
+        type: z.string().min(1),
+        location: z.enum(['homebased_studio', 'home_service']),
+        clientType: z.enum(['NEW', 'REPEAT', 'new', 'repeat']),
+      }),
+      pricing: z.object({
+        total: z.number().min(0),
+        depositRequired: z.number().min(0),
+      }).optional(),
+      clientNotes: z.string().max(1000).optional(),
+      adminNotes: z.string().max(1000).optional(),
+    });
+    const parsed = createBookingSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+
+    const { slotIds, nailTechId, service } = parsed.data;
+    const pricing = parsed.data.pricing ?? body.pricing;
+    const clientNotes = parsed.data.clientNotes ?? body.clientNotes;
+    const adminNotes = parsed.data.adminNotes ?? body.adminNotes;
+    const customerId = body.customerId;
+    const customer = body.customer;
+    const customerEmail = body.customerEmail;
 
     let resolvedCustomerId = customerId;
     if (!resolvedCustomerId) {
@@ -95,7 +121,7 @@ export async function POST(request: Request) {
       service: {
         type: service.type,
         location: service.location,
-        clientType: service.clientType,
+        clientType: (service.clientType || '').toLowerCase() === 'repeat' ? 'repeat' : 'new',
       },
       pricing: {
         total: pricingTotal,
@@ -137,6 +163,30 @@ export async function POST(request: Request) {
         }
       })
       .catch(err => console.error('Failed to fetch customer for email:', err));
+
+    (async () => {
+      try {
+        const [cust, tech, slotList] = await Promise.all([
+          Customer.findById(resolvedCustomerId).select('name socialMediaName').lean(),
+          NailTech.findById(nailTechId).select('name').lean(),
+          Slot.find({ _id: { $in: booking.slotIds } }).sort({ date: 1, time: 1 }).lean(),
+        ]);
+        const slots = slotList as { date?: string; time?: string }[] | undefined;
+        const appointmentDate = slots?.[0]?.date ?? '';
+        const appointmentTimes = (slots ?? []).map(s => s.time).filter(Boolean) as string[];
+        const nailTechName = (tech as { name?: string })?.name ? `Ms. ${(tech as { name: string }).name}` : '';
+        await syncBookingToSheet(
+          booking,
+          (cust as { name?: string })?.name ?? 'Unknown',
+          (cust as { socialMediaName?: string })?.socialMediaName ?? '',
+          nailTechName,
+          appointmentDate,
+          appointmentTimes
+        );
+      } catch (e) {
+        console.error('[Sheets] Booking sync failed:', e);
+      }
+    })();
 
     return NextResponse.json({
       booking: {
@@ -253,10 +303,10 @@ export async function GET(request: Request) {
 
     const slots = slotIds.length
       ? await (await import('@/lib/models/Slot')).default.find({ _id: { $in: slotIds } })
-          .select('_id date time')
+          .select('_id date time slotType')
           .lean()
       : [];
-    const slotById = new Map(slots.map((slot: any) => [String(slot._id), { date: slot.date, time: slot.time }]));
+    const slotById = new Map(slots.map((slot: any) => [String(slot._id), { date: slot.date, time: slot.time, slotType: slot.slotType ?? null }]));
 
     return NextResponse.json({
       bookings: bookings.map(booking => {
@@ -280,6 +330,7 @@ export async function GET(request: Request) {
         appointmentDate: slotInfo?.date || null,
         appointmentTime: slotInfo?.time || null,
         appointmentTimes: appointmentTimes.length > 0 ? appointmentTimes : (slotInfo?.time ? [slotInfo.time] : []),
+        slotType: slotInfo?.slotType ?? null,
         service: booking.service,
         status: booking.status,
         paymentStatus: booking.paymentStatus,

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import { Search } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 20;
 
 interface AuditEntry {
   id: string;
@@ -42,30 +44,37 @@ export default function AuditLogPage() {
   const [loading, setLoading] = useState(true);
   const [actionFilter, setActionFilter] = useState('all');
   const [resourceFilter, setResourceFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      params.set('limit', String(PAGE_SIZE));
+      params.set('skip', String((currentPage - 1) * PAGE_SIZE));
+      if (actionFilter !== 'all') params.set('action', actionFilter);
+      if (resourceFilter !== 'all') params.set('resource', resourceFilter);
+
+      const res = await fetch(`/api/audit-log?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setItems(data.items || []);
+      setTotal(data.total ?? 0);
+    } catch {
+      setItems([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, actionFilter, resourceFilter]);
 
   useEffect(() => {
-    async function fetchLogs() {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams();
-        params.set('limit', '100');
-        if (actionFilter !== 'all') params.set('action', actionFilter);
-        if (resourceFilter !== 'all') params.set('resource', resourceFilter);
-
-        const res = await fetch(`/api/audit-log?${params.toString()}`);
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data = await res.json();
-        setItems(data.items || []);
-        setTotal(data.total ?? 0);
-      } catch {
-        setItems([]);
-        setTotal(0);
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchLogs();
-  }, [actionFilter, resourceFilter]);
+  }, [fetchLogs]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const startItem = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endItem = Math.min(currentPage * PAGE_SIZE, total);
 
   return (
     <div className="space-y-6">
@@ -77,7 +86,7 @@ export default function AuditLogPage() {
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <Select value={actionFilter} onValueChange={setActionFilter}>
+            <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setCurrentPage(1); }}>
               <SelectTrigger className="w-full sm:w-[180px] h-9">
                 <SelectValue placeholder="Action" />
               </SelectTrigger>
@@ -89,7 +98,7 @@ export default function AuditLogPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={resourceFilter} onValueChange={setResourceFilter}>
+            <Select value={resourceFilter} onValueChange={(v) => { setResourceFilter(v); setCurrentPage(1); }}>
               <SelectTrigger className="w-full sm:w-[180px] h-9">
                 <SelectValue placeholder="Resource" />
               </SelectTrigger>
@@ -206,10 +215,45 @@ export default function AuditLogPage() {
             </div>
           </div>
 
-          {!loading && items.length > 0 && (
-            <p className="text-xs text-gray-500 mt-4">
-              Showing {items.length} of {total} entries
-            </p>
+          {!loading && total > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#f0f0f0] mt-4">
+              <p className="text-xs text-gray-400 order-2 sm:order-1">
+                Showing {startItem}–{endItem} of {total}
+              </p>
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
+                <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <div className="hidden sm:flex items-center gap-1">
+                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                      const page = i + 1;
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

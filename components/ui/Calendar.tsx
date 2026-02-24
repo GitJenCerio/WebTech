@@ -8,12 +8,11 @@ import { cn } from "./Utils";
 import { buttonVariants } from "./Button";
 
 function DayButtonWithWhiteSelected({ modifiers, className, ...props }: DayButtonProps) {
-  const isSelected =
-    modifiers.selected || modifiers.range_start || modifiers.range_end;
+  const isRangeEdge = modifiers.range_start || modifiers.range_end;
   return (
     <button
       {...props}
-      className={cn(className, isSelected && "!text-white")}
+      className={cn(className, isRangeEdge && "!text-white")}
     />
   );
 }
@@ -58,7 +57,7 @@ function Calendar({
         disabled: "text-gray-300 opacity-50",
         range_start: "rounded-l-2xl bg-[#1a1a1a] text-white",
         range_end: "rounded-r-2xl bg-[#1a1a1a] text-white",
-        range_middle: "bg-[#f5f5f5] text-[#1a1a1a] rounded-none",
+        range_middle: "bg-[#f5f5f5] !text-[#1a1a1a] rounded-none",
         hidden: "invisible",
         ...classNames,
       }}

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
@@ -8,6 +9,25 @@ import Booking from '@/lib/models/Booking';
 import Customer from '@/lib/models/Customer';
 import { cleanupPastSlotsIfDue } from '@/lib/services/cleanupPastSlots';
 
+const createSlotsSchema = z.object({
+  nailTechId: z.string().min(1),
+  date: z.string().optional(),
+  dates: z.array(z.string()).optional(),
+  time: z.string().optional(),
+  times: z.array(z.string()).optional(),
+  status: z.enum(['available', 'blocked']).optional(),
+  slotType: z.enum(['regular', 'with_squeeze_fee']).nullable().optional(),
+  notes: z.string().max(500).optional(),
+  isHidden: z.boolean().optional(),
+}).refine(
+  (data) => {
+    const dates = data.dates ?? (data.date ? [data.date] : []);
+    const times = data.times ?? (data.time ? [data.time] : []);
+    return dates.length > 0 && times.length > 0;
+  },
+  { message: 'At least one date and one time are required' }
+);
+
 export async function POST(request: Request) {
   try {
     await connectDB();
@@ -15,34 +35,33 @@ export async function POST(request: Request) {
     const assignedNailTechId = session?.user?.assignedNailTechId;
 
     const body = await request.json();
-
-    if (!body.nailTechId) {
-      return NextResponse.json({ error: 'Nail tech ID is required' }, { status: 400 });
+    const parsed = createSlotsSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
-    if (assignedNailTechId && body.nailTechId !== assignedNailTechId) {
+
+    const data = parsed.data;
+    if (assignedNailTechId && data.nailTechId !== assignedNailTechId) {
       return NextResponse.json({ error: 'You can only create slots for your assigned nail tech' }, { status: 403 });
     }
 
-    const nailTech = await NailTech.findById(body.nailTechId);
+    const nailTech = await NailTech.findById(data.nailTechId);
     if (!nailTech) {
       return NextResponse.json({ error: 'Nail tech not found' }, { status: 404 });
     }
 
-    // Support bulk creation
-    const dates = body.dates || [body.date];
-    const times = body.times || [body.time];
-
-    if (!dates.length || !times.length) {
-      return NextResponse.json({ error: 'Date and time are required' }, { status: 400 });
-    }
+    const dates = data.dates ?? (data.date ? [data.date] : []);
+    const times = data.times ?? (data.time ? [data.time] : []);
 
     const createdSlots = [];
     const errors = [];
 
     for (const date of dates) {
       for (const time of times) {
-        // Check duplicate
-        const existing = await Slot.findOne({ date, time, nailTechId: body.nailTechId });
+        const existing = await Slot.findOne({ date, time, nailTechId: data.nailTechId });
         if (existing) {
           errors.push(`Slot already exists: ${date} ${time}`);
           continue;
@@ -51,11 +70,11 @@ export async function POST(request: Request) {
         const slot = await Slot.create({
           date,
           time,
-          nailTechId: body.nailTechId,
-          status: body.status || 'available',
-          slotType: body.slotType || null,
-          notes: body.notes || '',
-          isHidden: body.isHidden || false,
+          nailTechId: data.nailTechId,
+          status: data.status || 'available',
+          slotType: data.slotType ?? null,
+          notes: data.notes || '',
+          isHidden: data.isHidden ?? false,
         });
         createdSlots.push(slot);
       }
@@ -99,7 +118,7 @@ export async function GET(request: Request) {
     const bookings = slotIds.length
       ? await Booking.find({
           slotIds: { $in: slotIds },
-          status: { $in: ['pending', 'confirmed', 'no_show'] },
+          status: { $in: ['pending', 'confirmed', 'completed', 'no_show'] },
         })
           .sort({ createdAt: -1 })
           .lean()

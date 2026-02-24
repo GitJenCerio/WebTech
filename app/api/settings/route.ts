@@ -1,10 +1,22 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 
 export const dynamic = 'force-dynamic';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Settings from '@/lib/models/Settings';
+
+const patchSettingsSchema = z.object({
+  businessName: z.string().max(200).optional(),
+  reservationFee: z.number().min(0).optional(),
+  adminCommissionRate: z.number().min(0).max(100).optional(),
+  emailNotifications: z.boolean().optional(),
+  smsNotifications: z.boolean().optional(),
+  reminderHoursBefore: z.number().min(0).max(168).optional(),
+  googleSheetsId: z.string().max(500).optional(),
+  googleSheetsEnabled: z.boolean().optional(),
+}).strict();
 
 export async function GET() {
   try {
@@ -35,6 +47,8 @@ export async function GET() {
       emailNotifications: settings.emailNotifications,
       smsNotifications: settings.smsNotifications,
       reminderHoursBefore: settings.reminderHoursBefore,
+      googleSheetsId: (settings as { googleSheetsId?: string }).googleSheetsId ?? '',
+      googleSheetsEnabled: (settings as { googleSheetsEnabled?: boolean }).googleSheetsEnabled ?? false,
     });
   } catch (error: unknown) {
     console.error('Settings GET error:', error);
@@ -53,17 +67,25 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
+    const parsed = patchSettingsSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
     await connectDB();
 
     const update: Record<string, unknown> = {};
-    if (typeof body.businessName === 'string') update.businessName = body.businessName;
-    if (typeof body.reservationFee === 'number') update.reservationFee = body.reservationFee;
-    if (typeof body.adminCommissionRate === 'number' && body.adminCommissionRate >= 0 && body.adminCommissionRate <= 100) {
-      update.adminCommissionRate = body.adminCommissionRate;
-    }
-    if (typeof body.emailNotifications === 'boolean') update.emailNotifications = body.emailNotifications;
-    if (typeof body.smsNotifications === 'boolean') update.smsNotifications = body.smsNotifications;
-    if (typeof body.reminderHoursBefore === 'number') update.reminderHoursBefore = body.reminderHoursBefore;
+    const data = parsed.data;
+    if (data.businessName !== undefined) update.businessName = data.businessName;
+    if (data.reservationFee !== undefined) update.reservationFee = data.reservationFee;
+    if (data.adminCommissionRate !== undefined) update.adminCommissionRate = data.adminCommissionRate;
+    if (data.emailNotifications !== undefined) update.emailNotifications = data.emailNotifications;
+    if (data.smsNotifications !== undefined) update.smsNotifications = data.smsNotifications;
+    if (data.reminderHoursBefore !== undefined) update.reminderHoursBefore = data.reminderHoursBefore;
+    if (data.googleSheetsId !== undefined) update.googleSheetsId = data.googleSheetsId;
+    if (data.googleSheetsEnabled !== undefined) update.googleSheetsEnabled = data.googleSheetsEnabled;
 
     const settings = await Settings.findByIdAndUpdate(
       'global',
@@ -78,6 +100,8 @@ export async function PATCH(request: Request) {
       emailNotifications: settings.emailNotifications,
       smsNotifications: settings.smsNotifications,
       reminderHoursBefore: settings.reminderHoursBefore,
+      googleSheetsId: (settings as { googleSheetsId?: string }).googleSheetsId ?? '',
+      googleSheetsEnabled: (settings as { googleSheetsEnabled?: boolean }).googleSheetsEnabled ?? false,
     });
   } catch (error: unknown) {
     console.error('Settings PATCH error:', error);

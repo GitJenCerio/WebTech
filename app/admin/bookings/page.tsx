@@ -8,11 +8,18 @@ import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
 import AddBookingModal from '@/components/admin/bookings/AddBookingModal';
 import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
 import MarkCompleteModal from '@/components/admin/bookings/MarkCompleteModal';
+import RescheduleSlotModal from '@/components/admin/bookings/RescheduleSlotModal';
 import { BookingStatus } from '@/components/admin/StatusBadge';
 import { DateRangePicker } from '@/components/admin/DateRangePicker';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import { Search, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Plus, RefreshCw, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { usePricing } from '@/lib/hooks/usePricing';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 
@@ -45,6 +52,7 @@ interface Booking {
   slotTimes?: string[];
   invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
   completedAt?: string | null;
+  slotType?: 'regular' | 'with_squeeze_fee' | null;
 }
 
 export default function BookingsPage() {
@@ -53,7 +61,9 @@ export default function BookingsPage() {
   const [showModal, setShowModal] = useState(false);
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
   const [pendingBookingAction, setPendingBookingAction] = useState<'cancel' | 'reschedule' | 'mark_no_show' | null>(null);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showMarkCompleteModal, setShowMarkCompleteModal] = useState(false);
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<{
     id?: string;
     bookingCode?: string;
@@ -98,6 +108,9 @@ export default function BookingsPage() {
   const [selectedPricingService, setSelectedPricingService] = useState('');
   const [currentQuotationId, setCurrentQuotationId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
+  const [lastUpdatedSeconds, setLastUpdatedSeconds] = useState<number | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -162,10 +175,12 @@ export default function BookingsPage() {
           paymentProofUrl: booking.payment?.paymentProofUrl,
           slotTimes: booking.appointmentTimes || (apptTime ? [apptTime] : []),
           invoice: booking.invoice || null,
+          slotType: booking.slotType ?? null,
         };
       });
       setBookings(rows);
       setCurrentPage(1);
+      setLastFetchedAt(Date.now());
     } catch (error: any) {
       console.error('Error fetching bookings:', error);
       setBookingsError(error.message || 'Failed to fetch bookings');
@@ -177,6 +192,21 @@ export default function BookingsPage() {
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
+
+  // Auto-refresh every 30s
+  useEffect(() => {
+    const interval = setInterval(fetchBookings, 30_000);
+    return () => clearInterval(interval);
+  }, [fetchBookings]);
+
+  // Update "last updated X seconds ago" every second
+  useEffect(() => {
+    if (lastFetchedAt == null) return;
+    const tick = () => setLastUpdatedSeconds(Math.floor((Date.now() - lastFetchedAt) / 1000));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [lastFetchedAt]);
 
   // Fetch latest booking when details modal opens so we have fresh invoice data
   useEffect(() => {
@@ -206,6 +236,47 @@ export default function BookingsPage() {
   };
 
   const openReasonDialog = (action: 'cancel' | 'reschedule' | 'mark_no_show') => {
+    setPendingBookingAction(action);
+    setReasonDialogOpen(true);
+  };
+
+  const handleInlineStatusChange = async (bookingId: string, action: 'confirm' | 'mark_completed') => {
+    setUpdatingStatusId(bookingId);
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Failed to update' }));
+        throw new Error(err.error || 'Failed to update');
+      }
+      toast.success(action === 'confirm' ? 'Booking confirmed' : 'Booking marked complete');
+      await fetchBookings();
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update booking');
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
+
+  const openReasonForInline = (item: Booking, action: 'cancel' | 'mark_no_show') => {
+    setSelectedBooking({
+      id: item.id,
+      bookingCode: item.bookingCode,
+      customerId: item.customerId,
+      nailTechId: item.nailTechId,
+      date: item.date,
+      time: item.time,
+      clientName: item.clientName,
+      clientSocialMediaName: item.socialName,
+      service: item.service,
+      serviceLocation: item.serviceLocation,
+      status: item.status,
+      slotType: item.slotType,
+      slotTimes: item.slotTimes,
+    });
     setPendingBookingAction(action);
     setReasonDialogOpen(true);
   };
@@ -371,8 +442,36 @@ export default function BookingsPage() {
   const handleBookingAction = (action: 'cancel' | 'reschedule' | 'mark_no_show' | 'mark_completed') => {
     if (action === 'mark_completed') {
       setShowMarkCompleteModal(true);
+    } else if (action === 'reschedule') {
+      setShowModal(false);
+      setShowRescheduleModal(true);
     } else {
       openReasonDialog(action);
+    }
+  };
+
+  const handleRescheduleConfirm = async (newSlotIds: string[], reason?: string) => {
+    if (!selectedBooking?.id) return;
+    setRescheduleLoading(true);
+    try {
+      const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reschedule_to', newSlotIds, reason: reason || undefined }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to reschedule');
+      }
+      toast.success('Booking rescheduled');
+      setShowRescheduleModal(false);
+      setSelectedBooking(null);
+      await fetchBookings();
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to reschedule');
+      throw e;
+    } finally {
+      setRescheduleLoading(false);
     }
   };
 
@@ -659,9 +758,24 @@ export default function BookingsPage() {
                 Clear
               </button>
             )}
+            {lastFetchedAt != null && (
+              <span className="text-xs text-gray-400 ml-auto mr-2">
+                Last updated {lastUpdatedSeconds != null ? `${lastUpdatedSeconds}s ago` : '…'}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => fetchBookings()}
+              disabled={bookingsLoading}
+              className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-2 disabled:opacity-60"
+              title="Refresh"
+            >
+              <RefreshCw className={`h-4 w-4 ${bookingsLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
             <button
               onClick={() => setShowAddBookingModal(true)}
-              className="h-9 px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2 ml-auto"
+              className="h-9 px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2"
             >
               <Plus className="h-4 w-4" />
               Add Booking
@@ -705,12 +819,16 @@ export default function BookingsPage() {
                 ) : paginatedBookings.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-5 py-16 text-center">
-                      <div className="flex flex-col items-center gap-2 text-gray-400">
-                        <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-                          <Search className="h-5 w-5" />
+                      <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                        <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                          <Search className="h-6 w-6 text-gray-300" />
                         </div>
-                        <span className="text-sm font-medium">No results found</span>
-                        <span className="text-xs">Try adjusting your search or filters</span>
+                        <p className="text-sm font-medium text-gray-500">
+                          {statusFilter !== 'all' || dateFrom || dateTo ? 'No bookings match your current filters.' : 'No bookings yet.'}
+                        </p>
+                        <p className="text-xs text-gray-400 max-w-[240px]">
+                          {statusFilter !== 'all' || dateFrom || dateTo ? 'Try adjusting the date range or clearing filters.' : "Click '+ Add Booking' to get started."}
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -732,7 +850,57 @@ export default function BookingsPage() {
                       <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">
                         {item.amountPaid && item.amountPaid > 0 ? `₱${item.amountPaid.toLocaleString()}` : '—'}
                       </td>
-                      <td className="px-5 py-3.5">{getStatusBadge(item.status)}</td>
+                      <td className="px-5 py-3.5">
+                        {(item.status === 'pending' || item.status === 'booked' || item.status === 'confirmed') ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 rounded-full border-0 bg-transparent p-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/20 focus:ring-offset-1 disabled:opacity-60"
+                                disabled={updatingStatusId === item.id}
+                              >
+                                {updatingStatusId === item.id ? (
+                                  <span className="inline-flex h-5 w-5 items-center justify-center">
+                                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-gray-400" />
+                                  </span>
+                                ) : (
+                                  <>
+                                    {getStatusBadge(item.status)}
+                                    <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+                                  </>
+                                )}
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="min-w-[140px]">
+                              {(item.status === 'pending' || item.status === 'booked') && (
+                                <>
+                                  <DropdownMenuItem onClick={() => handleInlineStatusChange(item.id, 'confirm')}>
+                                    Confirm
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openReasonForInline(item, 'cancel')}>
+                                    Cancel
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {item.status === 'confirmed' && (
+                                <>
+                                  <DropdownMenuItem onClick={() => handleInlineStatusChange(item.id, 'mark_completed')}>
+                                    Complete
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openReasonForInline(item, 'cancel')}>
+                                    Cancel
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openReasonForInline(item, 'mark_no_show')}>
+                                    No Show
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          getStatusBadge(item.status)
+                        )}
+                      </td>
                       <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">
                         {item.amount ? `₱${item.amount.toLocaleString()}` : '—'}
                       </td>
@@ -761,6 +929,7 @@ export default function BookingsPage() {
                                 clientPhotos: item.clientPhotos,
                                 paymentProofUrl: item.paymentProofUrl,
                                 slotTimes: item.slotTimes,
+                                slotType: item.slotType,
                                 invoice: item.invoice,
                                 completedAt: item.completedAt,
                               });
@@ -803,12 +972,16 @@ export default function BookingsPage() {
                 ))}
               </>
             ) : paginatedBookings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
-                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-                  <Search className="h-5 w-5" />
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                  <Search className="h-6 w-6 text-gray-300" />
                 </div>
-                <span className="text-sm font-medium">No results found</span>
-                <span className="text-xs">Try adjusting your search or filters</span>
+                <p className="text-sm font-medium text-gray-500">
+                  {statusFilter !== 'all' || dateFrom || dateTo ? 'No bookings match your current filters.' : 'No bookings yet.'}
+                </p>
+                <p className="text-xs text-gray-400 max-w-[240px]">
+                  {statusFilter !== 'all' || dateFrom || dateTo ? 'Try adjusting the date range or clearing filters.' : "Click '+ Add Booking' to get started."}
+                </p>
               </div>
             ) : (
               paginatedBookings.map((item) => (
@@ -824,6 +997,9 @@ export default function BookingsPage() {
                           const d = new Date(item.date);
                           return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                         })() : '—'} · {item.time || '—'}
+                        {item.slotType === 'with_squeeze_fee' && (
+                          <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-[10px] font-semibold ml-1">Squeeze</span>
+                        )}
                       </p>
                     </div>
                     {getStatusBadge(item.status)}
@@ -939,6 +1115,15 @@ export default function BookingsPage() {
         onCreateInvoice={handleCreateInvoice}
         onVerifyPaymentProof={handleVerifyPaymentProof}
         isVerifyingPaymentProof={isVerifyingPaymentProof}
+      />
+
+      <RescheduleSlotModal
+        open={showRescheduleModal}
+        onOpenChange={setShowRescheduleModal}
+        bookingId={selectedBooking?.id ?? ''}
+        nailTechId={selectedBooking?.nailTechId ?? ''}
+        onConfirm={handleRescheduleConfirm}
+        isLoading={rescheduleLoading}
       />
 
       <ReasonInputDialog

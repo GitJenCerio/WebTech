@@ -7,6 +7,8 @@ export interface ISettings extends mongoose.Document {
   emailNotifications: boolean;
   smsNotifications: boolean;
   reminderHoursBefore: number;
+  googleSheetsId: string;
+  googleSheetsEnabled: boolean;
 }
 
 const SettingsSchema = new mongoose.Schema(
@@ -18,6 +20,8 @@ const SettingsSchema = new mongoose.Schema(
     emailNotifications: { type: Boolean, default: true },
     smsNotifications: { type: Boolean, default: false },
     reminderHoursBefore: { type: Number, default: 24 },
+    googleSheetsId: { type: String, default: '' },
+    googleSheetsEnabled: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

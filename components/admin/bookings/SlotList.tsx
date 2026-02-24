@@ -33,6 +33,8 @@ interface SlotListProps {
   onView?: (slot: Slot) => void;
   onEdit?: (slot: Slot) => void;
   onCancel?: (slot: Slot) => void;
+  /** When true, empty state is due to nail tech filter (e.g. no slots for selected tech on this date). */
+  emptyStateFiltered?: boolean;
 }
 
 export default function SlotList({
@@ -42,6 +44,7 @@ export default function SlotList({
   onView,
   onEdit,
   onCancel,
+  emptyStateFiltered = false,
 }: SlotListProps) {
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -83,8 +86,13 @@ export default function SlotList({
         }}
       >
         {slots.length === 0 ? (
-          <div className="text-center text-muted py-4">
-            No slots available for this date
+          <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
+            <p className="text-sm font-medium text-gray-500">
+              {emptyStateFiltered ? 'No slots for the selected nail tech on this date.' : 'No slots for this date.'}
+            </p>
+            <p className="text-xs text-gray-400 max-w-[220px]">
+              {emptyStateFiltered ? 'Try another date or select All Techs.' : "Add slots using '+ Add Slot' or select another date."}
+            </p>
           </div>
         ) : (
           <div>

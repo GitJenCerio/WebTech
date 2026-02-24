@@ -22,6 +22,7 @@ interface BookingDetailsModalProps {
     date: string;
     time: string;
     slotTimes?: string[];
+    slotType?: 'regular' | 'with_squeeze_fee' | null;
     serviceLocation?: 'homebased_studio' | 'home_service';
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     clientName: string;
@@ -96,9 +97,14 @@ export default function BookingDetailsModal({
                 <div><strong>Booking Code:</strong> {booking.bookingCode}</div>
               )}
               <div><strong>Date:</strong> {booking.date}</div>
-              <div><strong>Time:</strong> {(booking.slotTimes && booking.slotTimes.length > 0)
-                ? sortTimesChronologically(booking.slotTimes).map(formatTime12Hour).join(' & ')
-                : formatTime12Hour(booking.time)}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span><strong>Time:</strong> {(booking.slotTimes && booking.slotTimes.length > 0)
+                  ? sortTimesChronologically(booking.slotTimes).map(formatTime12Hour).join(' & ')
+                  : formatTime12Hour(booking.time)}
+                </span>
+                {booking.slotType === 'with_squeeze_fee' && (
+                  <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-[10px] font-semibold">Squeeze</span>
+                )}
               </div>
               {booking.serviceLocation && (
                 <div>

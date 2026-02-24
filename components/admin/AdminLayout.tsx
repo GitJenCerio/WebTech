@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -171,23 +172,33 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Top Header */}
         <nav className="admin-navbar flex h-16 items-center justify-between border-b border-[#e5e5e5] bg-white px-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <button
-              ref={sidebarToggleRef}
-              className="admin-navbar-sidebar-toggle p-2 text-gray-500 hover:text-[#1a1a1a] rounded-lg hover:bg-[#f5f5f5]"
-              type="button"
-              onClick={handleMobileMenuClick}
-              aria-label={isRailMode ? (railExpanded ? 'Collapse sidebar' : 'Expand sidebar') : 'Open menu'}
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <span className="text-sm text-gray-500">
-              {session?.user?.name || 'Admin'} · {currentPageTitle}
-            </span>
+            {/* Hamburger only on small screens (sidebar is collapsible rail on desktop) */}
+            {!isRailMode && (
+              <button
+                ref={sidebarToggleRef}
+                className="admin-navbar-sidebar-toggle p-2 text-gray-500 hover:text-[#1a1a1a] rounded-lg hover:bg-[#f5f5f5]"
+                type="button"
+                onClick={handleMobileMenuClick}
+                aria-label="Open menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            )}
+            <span className="text-sm text-gray-500">{currentPageTitle}</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-gray-600 hover:text-[#1a1a1a]">
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa] text-gray-600"
+              title={session?.user?.name || session?.user?.email || 'Profile'}
+              aria-label={session?.user?.name || 'Profile'}
+            >
+              <User className="h-4 w-4" />
+            </span>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-gray-600 hover:text-[#1a1a1a]">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </nav>
 
         {/* Page Content */}

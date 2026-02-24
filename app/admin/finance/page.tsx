@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { Search, X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Download, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import StatCard from '@/components/admin/StatCard';
 import { DateRangePicker } from '@/components/admin/DateRangePicker';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const PAGE_SIZE = 10;
 
@@ -19,6 +22,7 @@ interface Transaction {
   clientName: string;
   customerSocialMediaName: string;
   service: string;
+  serviceLocation?: 'homebased_studio' | 'home_service';
   total: number;
   paid: number;
   tip: number;
@@ -28,10 +32,22 @@ interface Transaction {
   nailTechId?: string;
 }
 
+function serviceLocationBadge(loc?: 'homebased_studio' | 'home_service') {
+  if (loc !== 'home_service' && loc !== 'homebased_studio') return null;
+  const label = loc === 'home_service' ? 'HS' : 'ST';
+  const isHS = loc === 'home_service';
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${isHS ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
+      {label}
+    </span>
+  );
+}
+
 export default function FinancePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [nailTechFilter, setNailTechFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [quickSelect, setQuickSelect] = useState('custom');
@@ -116,8 +132,11 @@ export default function FinancePage() {
     if (statusFilter === 'paid' || statusFilter === 'pending' || statusFilter === 'partial') {
       out = out.filter((t) => t.paymentStatus === statusFilter);
     }
+    if (nailTechFilter !== 'all') {
+      out = out.filter((t) => t.nailTechId === nailTechFilter);
+    }
     return out;
-  }, [transactions, searchQuery, statusFilter]);
+  }, [transactions, searchQuery, statusFilter, nailTechFilter]);
 
   const paginatedTransactions = useMemo(
     () => paginateTransactions(filteredTransactions, currentPage, PAGE_SIZE),
@@ -154,9 +173,10 @@ export default function FinancePage() {
     }
     const [y, m] = value.split('-').map(Number);
     const fromDate = new Date(y, m - 1, 1);
-    const toDate = new Date(y, m, 1);
-    setDateFrom(fromDate.toISOString().slice(0, 10));
-    setDateTo(toDate.toISOString().slice(0, 10));
+    const toDate = new Date(y, m, 0); // last day of selected month
+    const pad = (n: number) => String(n).padStart(2, '0');
+    setDateFrom(`${fromDate.getFullYear()}-${pad(fromDate.getMonth() + 1)}-${pad(fromDate.getDate())}`);
+    setDateTo(`${toDate.getFullYear()}-${pad(toDate.getMonth() + 1)}-${pad(toDate.getDate())}`);
   };
 
   const handleDateFromChange = (v: string) => {
@@ -177,6 +197,35 @@ export default function FinancePage() {
     }
     return `Export CSV (${filteredTransactions.length})`;
   }, [quickSelect, filteredTransactions.length]);
+
+  const chartData = useMemo(() => {
+    const byDate = new Map<string, { date: string; total: number; paid: number; tip: number }>();
+    for (const t of filteredTransactions) {
+      const key = t.date ? (t.date.includes('T') ? t.date.slice(0, 10) : t.date) : '';
+      if (!key) continue;
+      const cur = byDate.get(key) || { date: key, total: 0, paid: 0, tip: 0 };
+      byDate.set(key, {
+        date: key,
+        total: cur.total + t.total,
+        paid: cur.paid + t.paid,
+        tip: cur.tip + t.tip,
+      });
+    }
+    return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }, [filteredTransactions]);
+
+  const totalTips = useMemo(() => {
+    return filteredTransactions
+      .filter((t) => t.paymentStatus === 'paid')
+      .reduce((sum, t) => sum + t.tip, 0);
+  }, [filteredTransactions]);
+
+  const adminCommission = useMemo(() => {
+    const rate = adminCommissionRate / 100;
+    return filteredTransactions
+      .filter((t) => t.paymentStatus === 'paid')
+      .reduce((sum, t) => sum + (t.paid + t.tip) * rate, 0);
+  }, [filteredTransactions, adminCommissionRate]);
 
   const revenueByNailTech = useMemo(() => {
     const paidTx = filteredTransactions.filter((t) => t.paymentStatus === 'paid');
@@ -200,31 +249,47 @@ export default function FinancePage() {
   const exportToCsv = () => {
     const dateLabel = dateFrom || dateTo ? `${dateFrom || 'all'}-to-${dateTo || 'all'}` : 'all';
     const headers = [
-      'Date',
-      'Date of Appointment',
+      'Appt Date',
       'Time',
       'Social Media Name',
+      'Service',
+      'ST/HS',
       'Total Invoice',
       'Paid Amount',
       'Tip',
       'Total Bill + Tip',
       `Admin Com ${adminCommissionRate}%`,
     ];
-    const rows = filteredTransactions.map((t) => {
+    const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
+    const rows = byDateAsc.map((t) => {
       const totalInvoice = t.total;
       const tipAmount = t.tip;
       const totalBillPlusTip = totalInvoice + tipAmount;
-      const adminCom = totalInvoice * (adminCommissionRate / 100);
-      const recordDate = t.date ? new Date(t.date).toISOString().slice(0, 10) : '';
+      const adminCom = (t.paid + t.tip) * (adminCommissionRate / 100);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '';
-      const timeStr = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
-        ? t.appointmentTimes.join(', ')
-        : t.appointmentTime || '';
+      const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
+        ? [...t.appointmentTimes].sort((a, b) => {
+            const toMins = (s: string) => {
+              const match = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+              if (!match) return 0;
+              let h = parseInt(match[1], 10);
+              const m = parseInt(match[2], 10);
+              const ampm = (match[3] || '').toUpperCase();
+              if (ampm === 'PM' && h !== 12) h += 12;
+              if (ampm === 'AM' && h === 12) h = 0;
+              return h * 60 + m;
+            };
+            return toMins(a) - toMins(b);
+          })
+        : [];
+      const timeStr = sortedTimes.length > 0 ? sortedTimes.join(', ') : (t.appointmentTime || '');
+      const stHs = t.serviceLocation === 'home_service' ? 'HS' : t.serviceLocation === 'homebased_studio' ? 'ST' : '';
       return [
-        recordDate,
         apptDate,
         `"${(timeStr || '').replace(/"/g, '""')}"`,
         `"${(t.customerSocialMediaName || '').replace(/"/g, '""')}"`,
+        `"${(t.service || '').replace(/"/g, '""')}"`,
+        stHs,
         totalInvoice,
         t.paid,
         tipAmount,
@@ -232,7 +297,15 @@ export default function FinancePage() {
         adminCom,
       ];
     });
-    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const sumTotal = filteredTransactions.reduce((s, t) => s + t.total, 0);
+    const sumPaid = filteredTransactions.reduce((s, t) => s + t.paid, 0);
+    const sumTip = filteredTransactions.reduce((s, t) => s + t.tip, 0);
+    const sumBillAndTip = filteredTransactions.reduce((s, t) => s + t.total + t.tip, 0);
+    const sumCommission = filteredTransactions
+      .filter((t) => t.paymentStatus === 'paid')
+      .reduce((s, t) => s + (t.paid + t.tip) * (adminCommissionRate / 100), 0);
+    const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumTip, sumBillAndTip, sumCommission];
+    const csv = [headers.join(','), ...rows.map((r) => r.join(',')), totalRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -240,6 +313,118 @@ export default function FinancePage() {
     a.download = `finance-export-${dateLabel}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const exportToPdf = () => {
+    const dateLabel = dateFrom || dateTo ? `${dateFrom || 'all'} to ${dateTo || 'all'}` : 'All Time';
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    const margin = 10;
+    const headerY = 10;
+    doc.setFontSize(14);
+    doc.text('Finance Report', margin, headerY);
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Period: ${dateLabel}`, margin, headerY + 5);
+    doc.text(`Generated: ${new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' })}`, margin, headerY + 10);
+    doc.setTextColor(0, 0, 0);
+
+    const headers = [
+      'Date (Appointment)',
+      'Time',
+      'Social Media Name',
+      'Service',
+      'ST/HS',
+      'Total Invoice',
+      'Paid Amount',
+      'Tip',
+      'Total Bill and Tip',
+      `Commission (${adminCommissionRate}%)`,
+    ];
+    const fmt = (n: number) => `PHP ${String(Number(n).toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 })).replace(/[^\d,.]/g, '')}`;
+    const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
+    const rows = byDateAsc.map((t) => {
+      const totalInvoice = t.total;
+      const tipAmount = t.tip;
+      const totalBillPlusTip = totalInvoice + tipAmount;
+      const commission = (t.paid + t.tip) * (adminCommissionRate / 100);
+      const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '—';
+      const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
+        ? [...t.appointmentTimes].sort((a, b) => {
+            const toMins = (s: string) => {
+              const match = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+              if (!match) return 0;
+              let h = parseInt(match[1], 10);
+              const m = parseInt(match[2], 10);
+              const ampm = (match[3] || '').toUpperCase();
+              if (ampm === 'PM' && h !== 12) h += 12;
+              if (ampm === 'AM' && h === 12) h = 0;
+              return h * 60 + m;
+            };
+            return toMins(a) - toMins(b);
+          })
+        : [];
+      const timeStr = sortedTimes.length > 0 ? sortedTimes.join(', ') : (t.appointmentTime || '');
+      const stHs = t.serviceLocation === 'home_service' ? 'HS' : t.serviceLocation === 'homebased_studio' ? 'ST' : '—';
+      return [
+        apptDate,
+        timeStr || '—',
+        t.customerSocialMediaName || '—',
+        t.service || '—',
+        stHs,
+        fmt(totalInvoice),
+        fmt(t.paid),
+        fmt(tipAmount),
+        fmt(totalBillPlusTip),
+        fmt(commission),
+      ];
+    });
+
+    const sumTotal = filteredTransactions.reduce((s, t) => s + t.total, 0);
+    const sumPaid = filteredTransactions.reduce((s, t) => s + t.paid, 0);
+    const sumTip = filteredTransactions.reduce((s, t) => s + t.tip, 0);
+    const sumBillAndTip = filteredTransactions.reduce((s, t) => s + t.total + t.tip, 0);
+    const sumCommission = filteredTransactions
+      .filter((t) => t.paymentStatus === 'paid')
+      .reduce((s, t) => s + (t.paid + t.tip) * (adminCommissionRate / 100), 0);
+    const totalsRow = [
+      'Total',
+      '',
+      '',
+      '',
+      '',
+      fmt(sumTotal),
+      fmt(sumPaid),
+      fmt(sumTip),
+      fmt(sumBillAndTip),
+      fmt(sumCommission),
+    ];
+    const bodyRows = rows.length > 0 ? [...rows, totalsRow] : rows;
+    const totalsRowIndex = rows.length;
+
+    const pageWidthMm = 297; // A4 landscape
+    const tableWidth = pageWidthMm - 2 * margin;
+    autoTable(doc, {
+      head: [headers],
+      footStyles: { fillColor: [255, 255, 255], fontStyle: 'bold', textColor: [0, 0, 0] },
+      body: bodyRows,
+      startY: 28,
+      tableWidth,
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 8, textColor: [0, 0, 0] },
+      headStyles: { fillColor: [26, 26, 26], textColor: [255, 255, 255] },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.row.index === totalsRowIndex) {
+          data.cell.styles.fillColor = [255, 255, 255];
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+    });
+
+    const finalY = (doc as any).lastAutoTable?.finalY ?? 28;
+
+    const filename = `finance-report-${dateFrom || 'all'}-${dateTo || 'all'}.pdf`.replace(/\//g, '-');
+    doc.save(filename);
   };
 
   const getPaymentStatusBadge = (status: string) => {
@@ -258,10 +443,10 @@ export default function FinancePage() {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <StatCard
           title="Today's Income"
-          value={`PHP ${todayIncome.toLocaleString()}`}
+          value={`₱${todayIncome.toLocaleString()}`}
           subtext="From completed appointments"
           icon="bi-cash-stack"
           variant="dark"
@@ -270,7 +455,7 @@ export default function FinancePage() {
         <StatCard
           title="This Week's Income"
           iconBgColor="#e9ecef"
-          value={`PHP ${weekIncome.toLocaleString()}`}
+          value={`₱${weekIncome.toLocaleString()}`}
           subtext="Last 7 days"
           icon="bi-calendar-week"
           className="flex-grow-1"
@@ -278,12 +463,60 @@ export default function FinancePage() {
         <StatCard
           title="Pending Payments"
           iconBgColor="#e9ecef"
-          value={`PHP ${pendingPayments.toLocaleString()}`}
+          value={`₱${pendingPayments.toLocaleString()}`}
           subtext="Awaiting payment"
           icon="bi-clock-history"
           className="flex-grow-1"
         />
+        <StatCard
+          title="Total Tips"
+          iconBgColor="#e9ecef"
+          value={`₱${totalTips.toLocaleString()}`}
+          subtext="From paid appointments"
+          icon="bi-heart"
+          className="flex-grow-1"
+        />
+        <StatCard
+          title="Admin Commission"
+          iconBgColor="#e9ecef"
+          value={`₱${adminCommission.toLocaleString()}`}
+          subtext={`${adminCommissionRate}% of total invoices`}
+          icon="bi-percent"
+          className="flex-grow-1"
+        />
       </div>
+
+      {/* Revenue Trend Chart */}
+      {chartData.length > 0 && (
+        <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-semibold text-[#1a1a1a] mb-3">Revenue Trend</h3>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={chartData.map((d) => ({ ...d, dateLabel: d.date ? new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '' }))} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: '#737373' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#737373' }} tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000) + 'k' : v}`} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const p = payload[0].payload as { date: string; total: number; paid: number; tip: number };
+                    return (
+                      <div className="rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 shadow-sm text-sm">
+                        <p className="font-medium text-[#1a1a1a] mb-1">{p.date ? new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</p>
+                        <p className="text-gray-600">Total: ₱{Number(p.total).toLocaleString()}</p>
+                        <p className="text-gray-600">Paid: ₱{Number(p.paid).toLocaleString()}</p>
+                        <p className="text-gray-600">Tip: ₱{Number(p.tip).toLocaleString()}</p>
+                      </div>
+                    );
+                  }}
+                />
+                <Line type="monotone" dataKey="total" name="Total Invoice" stroke="#1a1a1a" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="paid" name="Paid Amount" stroke="#a3a3a3" strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
@@ -352,6 +585,19 @@ export default function FinancePage() {
                 <SelectItem value="partial">Partial</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={nailTechFilter} onValueChange={setNailTechFilter}>
+              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[120px] w-auto max-w-[140px] h-9 px-3">
+                <SelectValue placeholder="All Nail Techs" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Nail Techs</SelectItem>
+                {nailTechs.map((n) => (
+                  <SelectItem key={n.id} value={n.id}>
+                    {n.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[140px]">
               <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Date range</label>
               <DateRangePicker
@@ -363,11 +609,12 @@ export default function FinancePage() {
                 className="flex-1 min-w-0"
               />
             </div>
-            {(searchQuery || statusFilter !== 'all' || dateFrom || dateTo || quickSelect) && (
+            {(searchQuery || statusFilter !== 'all' || nailTechFilter !== 'all' || dateFrom || dateTo || quickSelect) && (
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setStatusFilter('all');
+                  setNailTechFilter('all');
                   setDateFrom('');
                   setDateTo('');
                   setQuickSelect('custom');
@@ -378,6 +625,14 @@ export default function FinancePage() {
                 Clear
               </button>
             )}
+            <button
+              onClick={exportToPdf}
+              disabled={filteredTransactions.length === 0}
+              className="h-9 px-4 text-sm font-medium rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FileDown className="h-4 w-4" />
+              Export PDF
+            </button>
             <button
               onClick={exportToCsv}
               disabled={filteredTransactions.length === 0}
@@ -425,12 +680,20 @@ export default function FinancePage() {
                 ) : paginatedTransactions.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-5 py-16 text-center">
-                      <div className="flex flex-col items-center gap-2 text-gray-400">
-                        <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-                          <Search className="h-5 w-5" />
+                      <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+                        <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                          <Search className="h-6 w-6 text-gray-300" />
                         </div>
-                        <span className="text-sm font-medium">No results found</span>
-                        <span className="text-xs">Try adjusting your search or filters</span>
+                        <p className="text-sm font-medium text-gray-500">
+                          {searchQuery || statusFilter !== 'all' || nailTechFilter !== 'all' || dateFrom || dateTo || quickSelect !== 'custom'
+                            ? 'No transactions match your current filters.'
+                            : 'No transactions in this range.'}
+                        </p>
+                        <p className="text-xs text-gray-400 max-w-[240px]">
+                          {searchQuery || statusFilter !== 'all' || nailTechFilter !== 'all' || dateFrom || dateTo || quickSelect !== 'custom'
+                            ? 'Try adjusting the date range or clearing the search.'
+                            : 'Adjust your date range or add completed bookings.'}
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -441,7 +704,12 @@ export default function FinancePage() {
                         {item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                       </td>
                       <td className="px-5 py-3.5 font-medium text-[#1a1a1a]">{item.clientName}</td>
-                      <td className="px-5 py-3.5 text-[#1a1a1a]">{item.service}</td>
+                      <td className="px-5 py-3.5 text-[#1a1a1a]">
+                        <span className="inline-flex items-center gap-1.5">
+                          {item.service}
+                          {serviceLocationBadge(item.serviceLocation)}
+                        </span>
+                      </td>
                       <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString()}</td>
                       <td className="px-5 py-3.5 text-gray-500 tabular-nums">₱{item.paid.toLocaleString()}</td>
                       <td className="px-5 py-3.5 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
@@ -478,12 +746,20 @@ export default function FinancePage() {
                 ))}
               </>
             ) : paginatedTransactions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
-                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-                  <Search className="h-5 w-5" />
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                  <Search className="h-6 w-6 text-gray-300" />
                 </div>
-                <span className="text-sm font-medium">No results found</span>
-                <span className="text-xs">Try adjusting your search or filters</span>
+                <p className="text-sm font-medium text-gray-500">
+                  {searchQuery || statusFilter !== 'all' || nailTechFilter !== 'all' || dateFrom || dateTo || quickSelect !== 'custom'
+                    ? 'No transactions match your current filters.'
+                    : 'No transactions in this range.'}
+                </p>
+                <p className="text-xs text-gray-400 max-w-[240px]">
+                  {searchQuery || statusFilter !== 'all' || nailTechFilter !== 'all' || dateFrom || dateTo || quickSelect !== 'custom'
+                    ? 'Try adjusting the date range or clearing the search.'
+                    : 'Adjust your date range or add completed bookings.'}
+                </p>
               </div>
             ) : (
               paginatedTransactions.map((item) => (
@@ -501,7 +777,10 @@ export default function FinancePage() {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-gray-400 text-xs">Service</span>
-                      <p className="text-[#1a1a1a]">{item.service}</p>
+                      <p className="text-[#1a1a1a] flex items-center gap-1.5">
+                        {item.service}
+                        {serviceLocationBadge(item.serviceLocation)}
+                      </p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Total</span>
@@ -577,6 +856,7 @@ function mapBookingToTransaction(booking: any): Transaction {
     clientName: booking.customerName || 'Unknown Client',
     customerSocialMediaName: booking.customerSocialMediaName || '',
     service: booking.service?.type || 'Nail Service',
+    serviceLocation: booking.service?.location,
     total: invoiceTotal,
     paid: paidAmount,
     tip: tipAmount,

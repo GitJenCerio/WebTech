@@ -18,6 +18,8 @@ interface SettingsData {
   emailNotifications: boolean;
   smsNotifications: boolean;
   reminderHoursBefore: number;
+  googleSheetsId: string;
+  googleSheetsEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: SettingsData = {
@@ -27,12 +29,17 @@ const DEFAULT_SETTINGS: SettingsData = {
   emailNotifications: true,
   smsNotifications: false,
   reminderHoursBefore: 24,
+  googleSheetsId: '',
+  googleSheetsEnabled: false,
 };
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsData>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sheetUrl, setSheetUrl] = useState('');
+  const [sheetsSyncing, setSheetsSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -47,6 +54,8 @@ export default function SettingsPage() {
             emailNotifications: data.emailNotifications ?? DEFAULT_SETTINGS.emailNotifications,
             smsNotifications: data.smsNotifications ?? DEFAULT_SETTINGS.smsNotifications,
             reminderHoursBefore: data.reminderHoursBefore ?? DEFAULT_SETTINGS.reminderHoursBefore,
+            googleSheetsId: data.googleSheetsId ?? DEFAULT_SETTINGS.googleSheetsId,
+            googleSheetsEnabled: data.googleSheetsEnabled ?? DEFAULT_SETTINGS.googleSheetsEnabled,
           });
         }
       } catch {
@@ -127,6 +136,7 @@ export default function SettingsPage() {
           <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
@@ -264,6 +274,113 @@ export default function SettingsPage() {
                     <SettingsIcon className="h-4 w-4 mr-2" />
                     Nail Techs
                   </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-4">
+          <Card className="border border-[#e5e5e5] shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">Google Sheets Backup</CardTitle>
+              <CardDescription>Sync bookings and finance data to a Google Sheet in real time</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Enable Google Sheets Backup</Label>
+                  <p className="text-xs text-gray-500">When on, new and updated bookings sync to your Sheet</p>
+                </div>
+                <Switch
+                  checked={settings.googleSheetsEnabled}
+                  onCheckedChange={(v) => setSettings((s) => ({ ...s, googleSheetsEnabled: v }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sheetUrl">Google Sheet URL</Label>
+                <Input
+                  id="sheetUrl"
+                  type="url"
+                  placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
+                  value={sheetUrl}
+                  onChange={(e) => {
+                    const url = e.target.value;
+                    setSheetUrl(url);
+                    const id = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1];
+                    if (id) setSettings((s) => ({ ...s, googleSheetsId: id }));
+                  }}
+                  className="max-w-xl"
+                />
+                {settings.googleSheetsId && (
+                  <p className="text-xs text-gray-500">Spreadsheet ID: {settings.googleSheetsId}</p>
+                )}
+              </div>
+              {lastSyncedAt != null && (
+                <p className="text-xs text-gray-500">Last synced: {new Date(lastSyncedAt).toLocaleString()}</p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/integrations/sheets/test');
+                      const data = await res.json();
+                      if (data.success) toast.success('Connection successful');
+                      else toast.error(data.error || 'Connection failed');
+                    } catch {
+                      toast.error('Connection failed');
+                    }
+                  }}
+                >
+                  Test Connection
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={sheetsSyncing}
+                  onClick={async () => {
+                    setSheetsSyncing(true);
+                    try {
+                      const res = await fetch('/api/integrations/sheets/sync-all', { method: 'POST' });
+                      const data = await res.json();
+                      if (res.ok) {
+                        setLastSyncedAt(Date.now());
+                        toast.success(`Synced ${data.synced ?? 0} bookings successfully`);
+                      } else toast.error(data.error || 'Sync failed');
+                    } catch {
+                      toast.error('Sync failed');
+                    } finally {
+                      setSheetsSyncing(false);
+                    }
+                  }}
+                >
+                  {sheetsSyncing ? 'Syncing... (this may take a minute)' : 'Sync All Historical Data'}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    setSaving(true);
+                    try {
+                      const res = await fetch('/api/settings', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          googleSheetsId: settings.googleSheetsId,
+                          googleSheetsEnabled: settings.googleSheetsEnabled,
+                        }),
+                      });
+                      if (!res.ok) throw new Error('Failed to save');
+                      toast.success('Integrations saved');
+                    } catch {
+                      toast.error('Failed to save');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                >
+                  {saving ? 'Saving...' : 'Save'}
                 </Button>
               </div>
             </CardContent>
