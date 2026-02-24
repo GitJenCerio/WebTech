@@ -73,7 +73,7 @@ export default function OverviewPage() {
           clientName: b.customerName || 'Unknown Client',
           service: b.service?.type || 'Nail Service',
           status: (b.status || 'pending') as BookingStatus,
-          amount: b.pricing?.total ?? b.invoice?.total ?? 0,
+          amount: (b.invoice?.quotationId || b.invoice?.total != null) ? (b.invoice?.total ?? b.pricing?.total ?? 0) : 0,
           pricing: b.pricing,
         }));
         setTodayBookings(today);
@@ -106,7 +106,8 @@ export default function OverviewPage() {
     const income = todayBookings.reduce((sum, b) => {
       const s = String(b.status).toLowerCase();
       if (['completed', 'confirmed', 'pending', 'booked'].includes(s)) {
-        const amt = (b as any).amount ?? (b as any).pricing?.total ?? 0;
+        const hasInv = (b as any).invoice?.quotationId || (b as any).invoice?.total != null;
+        const amt = hasInv ? ((b as any).amount ?? (b as any).invoice?.total ?? (b as any).pricing?.total ?? 0) : 0;
         return sum + Number(amt) || 0;
       }
       return sum;

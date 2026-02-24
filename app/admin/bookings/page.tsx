@@ -154,7 +154,7 @@ export default function BookingsPage() {
           service: booking.service?.type || 'Nail Service',
           serviceLocation: booking.service?.location,
           status: booking.status || 'booked',
-          amount: booking.pricing?.total || 0,
+          amount: (booking.invoice?.quotationId || booking.invoice?.total != null) ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0,
           amountPaid: booking.pricing?.paidAmount || 0,
           clientNotes: booking.clientNotes || '',
           adminNotes: booking.adminNotes || '',
@@ -272,7 +272,7 @@ export default function BookingsPage() {
             service: booking.service?.type || 'Nail Service',
             serviceLocation: booking.service?.location,
             status: booking.status || 'booked',
-            amount: booking.pricing?.total || 0,
+            amount: (booking.invoice?.quotationId || booking.invoice?.total != null) ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0,
             amountPaid: booking.pricing?.paidAmount || 0,
             clientNotes: booking.clientNotes || '',
             adminNotes: booking.adminNotes || '',
@@ -295,7 +295,8 @@ export default function BookingsPage() {
 
   const handleMarkCompleted = async (amountReceived: number, tipFromExcess: number) => {
     if (!selectedBooking?.id) return;
-    const total = selectedBooking.amount ?? selectedBooking.invoice?.total ?? 0;
+    const hasInv = selectedBooking.invoice?.quotationId || selectedBooking.invoice?.total != null;
+    const total = hasInv ? (selectedBooking.invoice?.total ?? selectedBooking.amount ?? selectedBooking.pricing?.total ?? 0) : 0;
     const currentPaid = selectedBooking.paidAmount ?? 0;
     const remaining = Math.max(0, total - currentPaid);
     const appliedToBalance = Math.min(amountReceived, remaining);
@@ -347,7 +348,7 @@ export default function BookingsPage() {
             service: booking.service?.type || 'Nail Service',
             serviceLocation: booking.service?.location,
             status: booking.status || 'booked',
-            amount: booking.pricing?.total || 0,
+            amount: (booking.invoice?.quotationId || booking.invoice?.total != null) ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0,
             amountPaid: booking.pricing?.paidAmount || 0,
             clientNotes: booking.clientNotes || '',
             adminNotes: booking.adminNotes || '',
@@ -968,7 +969,7 @@ export default function BookingsPage() {
       <MarkCompleteModal
         open={showMarkCompleteModal}
         onOpenChange={setShowMarkCompleteModal}
-        balanceDue={Math.max(0, (selectedBooking?.amount ?? selectedBooking?.invoice?.total ?? 0) - (selectedBooking?.paidAmount ?? 0))}
+        balanceDue={Math.max(0, ((selectedBooking?.invoice?.quotationId || selectedBooking?.invoice?.total != null) ? (selectedBooking?.invoice?.total ?? selectedBooking?.amount ?? selectedBooking?.pricing?.total ?? 0) : 0) - (selectedBooking?.paidAmount ?? 0))}
         onConfirm={handleMarkCompleted}
         isLoading={isMarkingComplete}
       />

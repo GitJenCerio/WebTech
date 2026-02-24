@@ -118,17 +118,19 @@ export function getPaymentBreakdown(bookings: Booking[], range: TimeRange): {
   let unpaid = 0;
   
   filteredBookings.forEach((booking) => {
+    const hasInvoice = Boolean((booking as any).invoice?.quotationId || (booking as any).invoice?.total != null);
+    const effectiveTotal = hasInvoice ? ((booking as any).invoice?.total ?? (booking as any).pricing?.total ?? 0) : 0;
+
     if (booking.paymentStatus === 'paid') {
-      const invoiceTotal = booking.invoice?.total || 0;
       const tip = booking.tipAmount || 0;
-      paid += invoiceTotal + tip;
+      paid += effectiveTotal + tip;
     } else if (booking.paymentStatus === 'partial') {
       const deposit = booking.depositAmount || 0;
       partial += deposit;
     } else {
       // Unpaid: count the remaining balance
-      if (booking.invoice) {
-        const total = booking.invoice.total || 0;
+      if (hasInvoice) {
+        const total = effectiveTotal;
         const deposit = booking.depositAmount || 0;
         const paidAmount = booking.paidAmount || 0;
         const balance = total - deposit - paidAmount;

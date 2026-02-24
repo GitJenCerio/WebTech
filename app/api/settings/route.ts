@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+
+export const dynamic = 'force-dynamic';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Settings from '@/lib/models/Settings';
@@ -29,6 +31,7 @@ export async function GET() {
     return NextResponse.json({
       businessName: settings.businessName,
       reservationFee: settings.reservationFee,
+      adminCommissionRate: (settings as { adminCommissionRate?: number }).adminCommissionRate ?? 10,
       emailNotifications: settings.emailNotifications,
       smsNotifications: settings.smsNotifications,
       reminderHoursBefore: settings.reminderHoursBefore,
@@ -55,6 +58,9 @@ export async function PATCH(request: Request) {
     const update: Record<string, unknown> = {};
     if (typeof body.businessName === 'string') update.businessName = body.businessName;
     if (typeof body.reservationFee === 'number') update.reservationFee = body.reservationFee;
+    if (typeof body.adminCommissionRate === 'number' && body.adminCommissionRate >= 0 && body.adminCommissionRate <= 100) {
+      update.adminCommissionRate = body.adminCommissionRate;
+    }
     if (typeof body.emailNotifications === 'boolean') update.emailNotifications = body.emailNotifications;
     if (typeof body.smsNotifications === 'boolean') update.smsNotifications = body.smsNotifications;
     if (typeof body.reminderHoursBefore === 'number') update.reminderHoursBefore = body.reminderHoursBefore;
@@ -68,6 +74,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       businessName: settings.businessName,
       reservationFee: settings.reservationFee,
+      adminCommissionRate: (settings as { adminCommissionRate?: number }).adminCommissionRate ?? 10,
       emailNotifications: settings.emailNotifications,
       smsNotifications: settings.smsNotifications,
       reminderHoursBefore: settings.reminderHoursBefore,

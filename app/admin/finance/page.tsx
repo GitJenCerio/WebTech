@@ -13,7 +13,11 @@ const PAGE_SIZE = 10;
 interface Transaction {
   id: string;
   date: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  appointmentTimes: string[];
   clientName: string;
+  customerSocialMediaName: string;
   service: string;
   total: number;
   paid: number;
@@ -30,22 +34,29 @@ export default function FinancePage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [quickSelect, setQuickSelect] = useState('custom');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [todayIncome, setTodayIncome] = useState(0);
   const [weekIncome, setWeekIncome] = useState(0);
   const [pendingPayments, setPendingPayments] = useState(0);
+  const [adminCommissionRate, setAdminCommissionRate] = useState(10);
   const { nailTechs } = useNailTechs();
 
   useEffect(() => {
     async function fetchSummary() {
       try {
-        const [todayRes, weekRes] = await Promise.all([
+        const [todayRes, weekRes, settingsRes] = await Promise.all([
           fetch('/api/bookings?range=today'),
           fetch('/api/bookings?range=week'),
+          fetch('/api/settings'),
         ]);
         if (!todayRes.ok || !weekRes.ok) throw new Error('Failed to fetch finance summary');
+        if (settingsRes.ok) {
+          const s = await settingsRes.json();
+          setAdminCommissionRate(s.adminCommissionRate ?? 10);
+        }
 
         const todayData = await todayRes.json();
         const weekData = await weekRes.json();
@@ -80,7 +91,7 @@ export default function FinancePage() {
         const params = new URLSearchParams();
         if (dateFrom) params.set('startDate', dateFrom);
         if (dateTo) params.set('endDate', dateTo);
-        if (!dateFrom && !dateTo) params.set('range', 'month');
+        if (!dateFrom && !dateTo && quickSelect !== 'all') params.set('range', 'month');
 
         const response = await fetch(`/api/bookings?${params.toString()}`);
         if (!response.ok) throw new Error('Failed to fetch transactions');
@@ -98,7 +109,7 @@ export default function FinancePage() {
     }
 
     fetchTransactions();
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, quickSelect]);
 
   const filteredTransactions = useMemo(() => {
     let out = filterTransactions(transactions, searchQuery);
@@ -114,6 +125,58 @@ export default function FinancePage() {
   );
   const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / PAGE_SIZE));
   const totalItems = filteredTransactions.length;
+
+  const monthOptions = useMemo(() => {
+    const now = new Date();
+    const options: { value: string; label: string }[] = [
+      { value: 'custom', label: 'Custom Range' },
+      ...Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        return { value: `${y}-${m}`, label };
+      }),
+      { value: 'all', label: 'All Time' },
+    ];
+    return options;
+  }, []);
+
+  const handleQuickSelectChange = (value: string) => {
+    setQuickSelect(value);
+    if (value === 'custom') {
+      return;
+    }
+    if (value === 'all') {
+      setDateFrom('');
+      setDateTo('');
+      return;
+    }
+    const [y, m] = value.split('-').map(Number);
+    const fromDate = new Date(y, m - 1, 1);
+    const toDate = new Date(y, m, 1);
+    setDateFrom(fromDate.toISOString().slice(0, 10));
+    setDateTo(toDate.toISOString().slice(0, 10));
+  };
+
+  const handleDateFromChange = (v: string) => {
+    setDateFrom(v);
+    setQuickSelect('custom');
+  };
+  const handleDateToChange = (v: string) => {
+    setDateTo(v);
+    setQuickSelect('custom');
+  };
+
+  const exportButtonLabel = useMemo(() => {
+    if (quickSelect === 'all') return 'Export All';
+    if (quickSelect && quickSelect !== 'all' && quickSelect !== 'custom') {
+      const [y, m] = quickSelect.split('-').map(Number);
+      const label = new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      return `Export ${label}`;
+    }
+    return `Export CSV (${filteredTransactions.length})`;
+  }, [quickSelect, filteredTransactions.length]);
 
   const revenueByNailTech = useMemo(() => {
     const paidTx = filteredTransactions.filter((t) => t.paymentStatus === 'paid');
@@ -135,24 +198,46 @@ export default function FinancePage() {
   }, [filteredTransactions, nailTechs]);
 
   const exportToCsv = () => {
-    const headers = ['Date', 'Client', 'Service', 'Total', 'Paid', 'Tip', 'Discount', 'Balance', 'Status'];
-    const rows = filteredTransactions.map((t) => [
-      t.date ? new Date(t.date).toLocaleDateString('en-CA') : '',
-      `"${(t.clientName || '').replace(/"/g, '""')}"`,
-      `"${(t.service || '').replace(/"/g, '""')}"`,
-      t.total,
-      t.paid,
-      t.tip,
-      t.discount,
-      t.balance,
-      t.paymentStatus,
-    ]);
+    const dateLabel = dateFrom || dateTo ? `${dateFrom || 'all'}-to-${dateTo || 'all'}` : 'all';
+    const headers = [
+      'Date',
+      'Date of Appointment',
+      'Time',
+      'Social Media Name',
+      'Total Invoice',
+      'Paid Amount',
+      'Tip',
+      'Total Bill + Tip',
+      `Admin Com ${adminCommissionRate}%`,
+    ];
+    const rows = filteredTransactions.map((t) => {
+      const totalInvoice = t.total;
+      const tipAmount = t.tip;
+      const totalBillPlusTip = totalInvoice + tipAmount;
+      const adminCom = totalInvoice * (adminCommissionRate / 100);
+      const recordDate = t.date ? new Date(t.date).toISOString().slice(0, 10) : '';
+      const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '';
+      const timeStr = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
+        ? t.appointmentTimes.join(', ')
+        : t.appointmentTime || '';
+      return [
+        recordDate,
+        apptDate,
+        `"${(timeStr || '').replace(/"/g, '""')}"`,
+        `"${(t.customerSocialMediaName || '').replace(/"/g, '""')}"`,
+        totalInvoice,
+        t.paid,
+        tipAmount,
+        totalBillPlusTip,
+        adminCom,
+      ];
+    });
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `finance-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `finance-export-${dateLabel}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -241,6 +326,21 @@ export default function FinancePage() {
                 className="w-full pl-9 pr-4 h-9 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
               />
             </div>
+            <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[140px]">
+              <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Quick Select</label>
+              <Select value={quickSelect} onValueChange={handleQuickSelectChange}>
+                <SelectTrigger className="flex-1 min-w-0 h-9 px-3">
+                  <SelectValue placeholder="Custom Range" />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="flex-1 min-w-0 sm:min-w-[140px] h-9 px-3">
                 <SelectValue placeholder="All Statuses" />
@@ -257,19 +357,20 @@ export default function FinancePage() {
               <DateRangePicker
                 dateFrom={dateFrom}
                 dateTo={dateTo}
-                onDateFromChange={setDateFrom}
-                onDateToChange={setDateTo}
+                onDateFromChange={handleDateFromChange}
+                onDateToChange={handleDateToChange}
                 placeholder="From – To"
                 className="flex-1 min-w-0"
               />
             </div>
-            {(searchQuery || statusFilter !== 'all' || dateFrom || dateTo) && (
+            {(searchQuery || statusFilter !== 'all' || dateFrom || dateTo || quickSelect) && (
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setStatusFilter('all');
                   setDateFrom('');
                   setDateTo('');
+                  setQuickSelect('custom');
                 }}
                 className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:text-[#1a1a1a] hover:border-[#1a1a1a] transition-all flex items-center gap-1.5"
               >
@@ -283,7 +384,7 @@ export default function FinancePage() {
               className="h-9 px-4 text-sm font-medium rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="h-4 w-4" />
-              Export CSV
+              {exportButtonLabel}
             </button>
           </div>
         </CardContent>
@@ -451,18 +552,30 @@ export default function FinancePage() {
   );
 }
 
+function getEffectiveTotal(booking: any): number {
+  const hasInvoice = Boolean(booking?.invoice?.quotationId || booking?.invoice?.total != null);
+  return hasInvoice ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0;
+}
+
 function mapBookingToTransaction(booking: any): Transaction {
-  const invoiceTotal = booking.invoice?.total ?? booking.pricing?.total ?? 0;
+  const invoiceTotal = getEffectiveTotal(booking);
   const paidAmount = booking.pricing?.paidAmount ?? 0;
   const tipAmount = booking.pricing?.tipAmount ?? 0;
   const balance = Math.max(0, invoiceTotal - paidAmount);
   const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
   const paymentStatus =
     hasInvoice && balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'pending';
+  const apptDate = booking.appointmentDate || '';
+  const apptTime = booking.appointmentTime || '';
+  const apptTimes = Array.isArray(booking.appointmentTimes) ? booking.appointmentTimes : (apptTime ? [apptTime] : []);
   return {
     id: booking.id,
     date: booking.completedAt || booking.createdAt || '',
+    appointmentDate: apptDate,
+    appointmentTime: apptTime,
+    appointmentTimes: apptTimes,
     clientName: booking.customerName || 'Unknown Client',
+    customerSocialMediaName: booking.customerSocialMediaName || '',
     service: booking.service?.type || 'Nail Service',
     total: invoiceTotal,
     paid: paidAmount,

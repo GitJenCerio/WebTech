@@ -251,7 +251,10 @@ export async function sendPaymentReminderEmail(booking: any, customer: any) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     const uploadProofLink = getUploadProofLink(booking);
-    const amountDue = (booking.pricing?.total || 0) - (booking.pricing?.paidAmount || 0);
+    const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
+    const amountDue = hasInvoice
+      ? Math.max(0, (booking.invoice?.total ?? booking.pricing?.total ?? 0) - (booking.pricing?.paidAmount || 0))
+      : Math.max(0, (booking.pricing?.depositRequired ?? 0) - (booking.pricing?.paidAmount || 0));
 
     const content = `
       <h1 style="color: #1a1a1a; margin: 0 0 16px; font-size: 24px;">Payment Reminder</h1>
@@ -347,7 +350,10 @@ export async function sendPaymentUrgentEmail(booking: any, customer: any, subjec
     }
     const resend = new Resend(process.env.RESEND_API_KEY);
     const uploadProofLink = getUploadProofLink(booking);
-    const amountDue = (booking.pricing?.total || 0) - (booking.pricing?.paidAmount || 0);
+    const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
+    const amountDue = hasInvoice
+      ? Math.max(0, (booking.invoice?.total ?? booking.pricing?.total ?? 0) - (booking.pricing?.paidAmount || 0))
+      : Math.max(0, (booking.pricing?.depositRequired ?? 0) - (booking.pricing?.paidAmount || 0));
     const content = `
       <h1 style="color: #1a1a1a; margin: 0 0 16px; font-size: 24px;">${subjectLabel}</h1>
       <p style="margin: 0 0 16px;">Hi ${customer.name},</p>

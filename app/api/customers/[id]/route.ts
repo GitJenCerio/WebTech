@@ -18,7 +18,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
     const bookings = await Booking.find({ customerId: id }).sort({ createdAt: -1 }).lean();
     const lifetimeValue = bookings.reduce((total, booking: any) => {
-      const totalAmount = booking.pricing?.total || 0;
+      const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
+      const totalAmount = hasInvoice ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0;
       const tipAmount = booking.pricing?.tipAmount || 0;
       return total + totalAmount + tipAmount;
     }, 0);

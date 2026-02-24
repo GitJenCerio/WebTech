@@ -14,6 +14,7 @@ import Link from 'next/link';
 interface SettingsData {
   businessName: string;
   reservationFee: number;
+  adminCommissionRate: number;
   emailNotifications: boolean;
   smsNotifications: boolean;
   reminderHoursBefore: number;
@@ -22,6 +23,7 @@ interface SettingsData {
 const DEFAULT_SETTINGS: SettingsData = {
   businessName: 'Glammed Nails by Jhen',
   reservationFee: 500,
+  adminCommissionRate: 10,
   emailNotifications: true,
   smsNotifications: false,
   reminderHoursBefore: 24,
@@ -41,6 +43,7 @@ export default function SettingsPage() {
           setSettings({
             businessName: data.businessName ?? DEFAULT_SETTINGS.businessName,
             reservationFee: data.reservationFee ?? DEFAULT_SETTINGS.reservationFee,
+            adminCommissionRate: data.adminCommissionRate ?? DEFAULT_SETTINGS.adminCommissionRate,
             emailNotifications: data.emailNotifications ?? DEFAULT_SETTINGS.emailNotifications,
             smsNotifications: data.smsNotifications ?? DEFAULT_SETTINGS.smsNotifications,
             reminderHoursBefore: data.reminderHoursBefore ?? DEFAULT_SETTINGS.reminderHoursBefore,
@@ -64,6 +67,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           businessName: settings.businessName,
           reservationFee: settings.reservationFee,
+          adminCommissionRate: settings.adminCommissionRate,
         }),
       });
       if (!res.ok) throw new Error('Failed to save');
@@ -154,6 +158,21 @@ export default function SettingsPage() {
                   className="max-w-[140px]"
                 />
                 <p className="text-xs text-gray-500">Amount required as deposit for bookings</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="adminCommissionRate">Admin Commission Rate (%)</Label>
+                <Input
+                  id="adminCommissionRate"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={settings.adminCommissionRate}
+                  onChange={(e) => setSettings((s) => ({ ...s, adminCommissionRate: Number(e.target.value) || 0 }))}
+                  placeholder="10"
+                  className="max-w-[120px]"
+                />
+                <p className="text-xs text-gray-500">Applied to Total Invoice for commission calculation in finance exports</p>
               </div>
               <Button onClick={handleSaveGeneral} disabled={saving}>
                 {saving ? 'Saving...' : 'Save'}
