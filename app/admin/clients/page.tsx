@@ -494,7 +494,7 @@ export default function ClientsPage() {
       )}
 
       <Dialog open={showClientModal} onOpenChange={(open) => { if (!open) { setShowClientModal(false); setClientModalMode('view'); } }}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{clientModalMode === 'edit' ? 'Edit Client' : 'Client Details'}</DialogTitle>
           </DialogHeader>
@@ -683,7 +683,7 @@ export default function ClientsPage() {
 
       {/* Add Client Dialog */}
       <Dialog open={showAddClientModal} onOpenChange={(open) => !open && setShowAddClientModal(false)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg md:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Client</DialogTitle>
           </DialogHeader>

@@ -171,7 +171,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg md:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New User</DialogTitle>
         </DialogHeader>

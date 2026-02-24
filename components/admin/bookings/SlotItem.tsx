@@ -150,9 +150,10 @@ export default function SlotItem({
         className="card-body py-2"
         style={{
           borderRadius: '20px',
-          padding: '0.75rem 1rem',
-          ...(slotType === 'with_squeeze_fee' ? { paddingRight: '2rem' } : {}),
-          ...(['confirmed', 'CONFIRMED', 'completed', 'COMPLETED'].includes(status) && serviceLocation ? { paddingBottom: '1.5rem' } : {}),
+          paddingTop: '0.75rem',
+          paddingBottom: ['confirmed', 'CONFIRMED', 'completed', 'COMPLETED'].includes(status) && serviceLocation ? '1.5rem' : '0.75rem',
+          paddingLeft: '1rem',
+          paddingRight: slotType === 'with_squeeze_fee' ? '2rem' : '1rem',
         }}
       >
         <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">

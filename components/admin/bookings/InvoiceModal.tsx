@@ -129,7 +129,7 @@ export default function InvoiceModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{currentQuotationId ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
         </DialogHeader>
@@ -229,7 +229,7 @@ export default function InvoiceModal({
               )}
               {invoiceItems.map((item, idx) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-12 md:col-span-5">
+                  <div className="col-span-12 md:col-span-4">
                     <Label className="text-xs mb-1">Description</Label>
                     <Input
                       value={item.description}
@@ -240,7 +240,7 @@ export default function InvoiceModal({
                       }}
                     />
                   </div>
-                  <div className="col-span-6 md:col-span-2">
+                  <div className="col-span-4 md:col-span-2">
                     <Label className="text-xs mb-1">Qty</Label>
                     <Input
                       type="number"
@@ -255,7 +255,7 @@ export default function InvoiceModal({
                       }}
                     />
                   </div>
-                  <div className="col-span-6 md:col-span-2">
+                  <div className="col-span-4 md:col-span-2">
                     <Label className="text-xs mb-1">Unit Price</Label>
                     <Input
                       type="number"
@@ -270,11 +270,11 @@ export default function InvoiceModal({
                       }}
                     />
                   </div>
-                  <div className="col-span-10 md:col-span-2">
+                  <div className="col-span-2 md:col-span-2">
                     <Label className="text-xs mb-1">Total</Label>
                     <Input value={item.total} disabled />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-2 md:col-span-2">
                     <Button
                       type="button"
                       variant="outline"

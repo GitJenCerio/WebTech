@@ -85,7 +85,7 @@ export default function BookingDetailsModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Booking Details</DialogTitle>
         </DialogHeader>
@@ -238,10 +238,6 @@ export default function BookingDetailsModal({
         </div>
 
         <DialogFooter className="flex-wrap gap-2">
-          <Button variant="secondary" onClick={onHide}>
-            Close
-          </Button>
-
           {isPendingPayment ? (
             <>
               <Button

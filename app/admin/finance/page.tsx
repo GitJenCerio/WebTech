@@ -54,9 +54,8 @@ export default function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [todayIncome, setTodayIncome] = useState(0);
-  const [weekIncome, setWeekIncome] = useState(0);
-  const [pendingPayments, setPendingPayments] = useState(0);
+  const [todaySummaryTransactions, setTodaySummaryTransactions] = useState<Transaction[]>([]);
+  const [weekSummaryTransactions, setWeekSummaryTransactions] = useState<Transaction[]>([]);
   const [adminCommissionRate, setAdminCommissionRate] = useState(10);
   const { nailTechs } = useNailTechs();
 
@@ -80,16 +79,8 @@ export default function FinancePage() {
         const today = (todayData.bookings || []).map(mapBookingToTransaction);
         const week = (weekData.bookings || []).map(mapBookingToTransaction);
 
-        setTodayIncome(
-          today.filter((t: Transaction) => t.paymentStatus === 'paid').reduce((sum: number, t: Transaction) => sum + t.total, 0)
-        );
-        setWeekIncome(
-          week.filter((t: Transaction) => t.paymentStatus === 'paid').reduce((sum: number, t: Transaction) => sum + t.total, 0)
-        );
-        setPendingPayments(
-          week.filter((t: Transaction) => t.paymentStatus === 'pending' || t.paymentStatus === 'partial')
-            .reduce((sum: number, t: Transaction) => sum + t.balance, 0)
-        );
+        setTodaySummaryTransactions(today);
+        setWeekSummaryTransactions(week);
       } catch (err: any) {
         console.error('Finance summary error:', err);
       }
@@ -97,6 +88,34 @@ export default function FinancePage() {
 
     fetchSummary();
   }, []);
+
+  const todayFiltered = useMemo(() => {
+    if (nailTechFilter === 'all') return todaySummaryTransactions;
+    return todaySummaryTransactions.filter((t) => t.nailTechId === nailTechFilter);
+  }, [todaySummaryTransactions, nailTechFilter]);
+
+  const weekFiltered = useMemo(() => {
+    if (nailTechFilter === 'all') return weekSummaryTransactions;
+    return weekSummaryTransactions.filter((t) => t.nailTechId === nailTechFilter);
+  }, [weekSummaryTransactions, nailTechFilter]);
+
+  const todayIncome = useMemo(
+    () => todayFiltered.filter((t) => t.paymentStatus === 'paid').reduce((sum, t) => sum + t.total, 0),
+    [todayFiltered]
+  );
+
+  const weekIncome = useMemo(
+    () => weekFiltered.filter((t) => t.paymentStatus === 'paid').reduce((sum, t) => sum + t.total, 0),
+    [weekFiltered]
+  );
+
+  const pendingPayments = useMemo(
+    () =>
+      weekFiltered
+        .filter((t) => t.paymentStatus === 'pending' || t.paymentStatus === 'partial')
+        .reduce((sum, t) => sum + t.balance, 0),
+    [weekFiltered]
+  );
 
   useEffect(() => {
     async function fetchTransactions() {
@@ -441,9 +460,9 @@ export default function FinancePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 md:space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
         <StatCard
           title="Today's Income"
           value={`₱${todayIncome.toLocaleString()}`}
@@ -489,7 +508,7 @@ export default function FinancePage() {
       {/* Revenue Trend Chart */}
       {chartData.length > 0 && (
         <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
-          <CardContent className="p-4">
+          <CardContent className="p-3 md:p-4">
             <h3 className="text-sm font-semibold text-[#1a1a1a] mb-3">Revenue Trend</h3>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={chartData.map((d) => ({ ...d, dateLabel: d.date ? new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '' }))} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
@@ -527,9 +546,9 @@ export default function FinancePage() {
       {/* Revenue by Nail Tech */}
       {revenueByNailTech.length > 0 && (
         <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
-          <CardContent className="p-4">
+          <CardContent className="p-3 md:p-4">
             <h3 className="text-sm font-semibold text-[#1a1a1a] mb-3">Revenue by Nail Tech</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {revenueByNailTech.map(({ id, name, total, count }) => (
                 <div
                   key={id}
@@ -547,9 +566,9 @@ export default function FinancePage() {
 
       {/* Filter Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
-            <div className="relative flex-1 w-full sm:min-w-[200px]">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 md:gap-3">
+            <div className="relative flex-1 w-full sm:min-w-[180px] md:min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
@@ -559,7 +578,7 @@ export default function FinancePage() {
                 className="w-full pl-9 pr-4 h-9 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
               />
             </div>
-            <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[140px]">
+            <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[120px] md:min-w-[140px]">
               <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Quick Select</label>
               <Select value={quickSelect} onValueChange={handleQuickSelectChange}>
                 <SelectTrigger className="flex-1 min-w-0 h-9 px-3">
@@ -575,7 +594,7 @@ export default function FinancePage() {
               </Select>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[140px] h-9 px-3">
+              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[120px] md:min-w-[140px] h-9 px-3">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
@@ -598,7 +617,7 @@ export default function FinancePage() {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[140px]">
+            <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[120px] md:min-w-[140px]">
               <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Date range</label>
               <DateRangePicker
                 dateFrom={dateFrom}
@@ -670,7 +689,7 @@ export default function FinancePage() {
                     {Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
                         {Array.from({ length: 9 }).map((_, j) => (
-                          <td key={j} className="px-5 py-3.5">
+                          <td key={j} className="px-3 md:px-5 py-3.5">
                             <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
                           </td>
                         ))}
@@ -679,7 +698,7 @@ export default function FinancePage() {
                   </>
                 ) : paginatedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-5 py-16 text-center">
+                    <td colSpan={9} className="px-3 md:px-5 py-16 text-center">
                       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                         <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
                           <Search className="h-6 w-6 text-gray-300" />
@@ -700,22 +719,22 @@ export default function FinancePage() {
                 ) : (
                   paginatedTransactions.map((item) => (
                     <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100">
-                      <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap tabular-nums">
+                      <td className="px-3 md:px-5 py-3.5 text-gray-500 whitespace-nowrap tabular-nums">
                         {item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                       </td>
-                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a]">{item.clientName}</td>
-                      <td className="px-5 py-3.5 text-[#1a1a1a]">
+                      <td className="px-3 md:px-5 py-3.5 font-medium text-[#1a1a1a]">{item.clientName}</td>
+                      <td className="px-3 md:px-5 py-3.5 text-[#1a1a1a]">
                         <span className="inline-flex items-center gap-1.5">
                           {item.service}
                           {serviceLocationBadge(item.serviceLocation)}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString()}</td>
-                      <td className="px-5 py-3.5 text-gray-500 tabular-nums">₱{item.paid.toLocaleString()}</td>
-                      <td className="px-5 py-3.5 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
-                      <td className="px-5 py-3.5 text-gray-500 tabular-nums">₱{item.discount.toLocaleString()}</td>
-                      <td className="px-5 py-3.5 text-gray-500 tabular-nums">₱{item.balance.toLocaleString()}</td>
-                      <td className="px-5 py-3.5">{getPaymentStatusBadge(item.paymentStatus)}</td>
+                      <td className="px-3 md:px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString()}</td>
+                      <td className="px-3 md:px-5 py-3.5 text-gray-500 tabular-nums">₱{item.paid.toLocaleString()}</td>
+                      <td className="px-3 md:px-5 py-3.5 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
+                      <td className="px-3 md:px-5 py-3.5 text-gray-500 tabular-nums">₱{item.discount.toLocaleString()}</td>
+                      <td className="px-3 md:px-5 py-3.5 text-gray-500 tabular-nums">₱{item.balance.toLocaleString()}</td>
+                      <td className="px-3 md:px-5 py-3.5">{getPaymentStatusBadge(item.paymentStatus)}</td>
                     </tr>
                   ))
                 )}

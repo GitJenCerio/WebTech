@@ -558,7 +558,7 @@ export default function NailTechsPage() {
       )}
 
       <Dialog open={showAddModal} onOpenChange={(open) => !saving && setShowAddModal(open)}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto border-[#e5e5e5] bg-white">
+        <DialogContent className="sm:max-w-lg md:max-w-md max-h-[90vh] overflow-y-auto border-[#e5e5e5] bg-white">
           <DialogHeader>
             <DialogTitle className="text-[#1a1a1a]">
               {modalMode === 'add' ? 'Add Nail Technician' : modalMode === 'edit' ? 'Edit Nail Technician' : 'View Nail Technician'}

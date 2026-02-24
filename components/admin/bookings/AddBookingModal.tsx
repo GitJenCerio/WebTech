@@ -231,7 +231,7 @@ export default function AddBookingModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl md:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Booking</DialogTitle>
         </DialogHeader>

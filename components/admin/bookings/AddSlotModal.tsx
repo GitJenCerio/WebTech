@@ -198,7 +198,7 @@ export default function AddSlotModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg">
             {addMode === 'single' ? 'Add Slot' : 'Add Bulk Slots'}

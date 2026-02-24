@@ -45,7 +45,7 @@ export default function DeleteConfirmationModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-[#212529]" />

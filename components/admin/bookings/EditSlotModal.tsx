@@ -108,7 +108,7 @@ export default function EditSlotModal({
   return (
     <>
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg md:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Slot: {slot.time} on {slot.date}</DialogTitle>
         </DialogHeader>
