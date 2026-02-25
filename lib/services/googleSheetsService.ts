@@ -46,11 +46,12 @@ export async function getSpreadsheetId(): Promise<string | null> {
   }
 }
 
+/** Find 1-based row number in column A by Booking ID (booking code, e.g. NB-2024-001). */
 export async function findRowByBookingId(
   sheets: ReturnType<typeof google.sheets>,
   spreadsheetId: string,
   tab: string,
-  bookingId: string
+  bookingIdOrCode: string
 ): Promise<number | null> {
   try {
     const res = await sheets.spreadsheets.values.get({
@@ -59,9 +60,10 @@ export async function findRowByBookingId(
     });
     const rows = res.data.values as string[][] | undefined;
     if (!rows || !Array.isArray(rows)) return null;
+    const needle = String(bookingIdOrCode).trim();
     for (let i = 0; i < rows.length; i++) {
       const cell = rows[i]?.[0];
-      if (cell && String(cell).trim() === String(bookingId).trim()) {
+      if (cell && String(cell).trim() === needle) {
         return i + 1; // 1-based row number
       }
     }
@@ -78,18 +80,37 @@ function formatDate(d: Date | string | null | undefined): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** Format appointment date as "February 01, 2026" */
+function formatAppointmentDate(d: Date | string | null | undefined): string {
+  if (!d) return '';
+  const date = typeof d === 'string' ? new Date(d) : d;
+  if (isNaN(date.getTime())) return '';
+  const month = date.toLocaleString('en-US', { month: 'long' });
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month} ${day}, ${year}`;
+}
+
+/** Format as YYYY-MM-DD HH:mm:ss for Updated at column */
+function formatDateTime(d: Date | string | null | undefined): string {
+  if (!d) return '';
+  const date = typeof d === 'string' ? new Date(d) : d;
+  const s = date.toISOString();
+  return `${s.slice(0, 10)} ${s.slice(11, 19)}`;
+}
+
+/** Location label for sheet: home_service -> HS, homebased_studio -> ST */
+function locationLabel(loc?: 'homebased_studio' | 'home_service' | string): string {
+  if (loc === 'home_service') return 'HS';
+  if (loc === 'homebased_studio') return 'ST';
+  return '';
+}
+
 export async function syncBookingToSheet(
   booking: {
-    _id: unknown;
     bookingCode?: string;
-    createdAt?: Date;
-    service?: { type?: string };
+    service?: { type?: string; location?: 'homebased_studio' | 'home_service' };
     status?: string;
-    paymentStatus?: string;
-    pricing?: { total?: number; paidAmount?: number; tipAmount?: number };
-    invoice?: { total?: number };
-    clientNotes?: string;
-    adminNotes?: string;
     updatedAt?: Date;
   },
   customerName: string,
@@ -105,48 +126,53 @@ export async function syncBookingToSheet(
     const sheets = await getSheetsClient();
     if (!sheets) return;
 
-    const bookingId = String(booking._id);
-    const totalInvoice = booking.invoice?.total ?? booking.pricing?.total ?? 0;
-    const paidAmount = booking.pricing?.paidAmount ?? 0;
-    const tipAmount = booking.pricing?.tipAmount ?? 0;
-    const balance = Math.max(0, totalInvoice - paidAmount);
+    const bookingId = String(booking.bookingCode ?? '').trim();
+    if (!bookingId) return;
+
     const timeStr = Array.isArray(appointmentTimes) && appointmentTimes.length > 0
-      ? appointmentTimes.join(', ')
+      ? [...appointmentTimes].sort((a, b) => {
+          const toMins = (s: string) => {
+            const m = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+            if (!m) return 0;
+            let h = parseInt(m[1], 10);
+            const min = parseInt(m[2], 10);
+            const ap = (m[3] || '').toUpperCase();
+            if (ap === 'PM' && h !== 12) h += 12;
+            if (ap === 'AM' && h === 12) h = 0;
+            return h * 60 + min;
+          };
+          return toMins(a) - toMins(b);
+        }).join(', ')
       : '';
 
+    // Columns: Booking ID, Date, Time, Client, Social Name, Service, Location, Nail Tech, Status, Updated at
     const row: (string | number)[] = [
       bookingId,
-      booking.bookingCode ?? '',
-      formatDate(booking.createdAt),
-      formatDate(appointmentDate),
+      formatAppointmentDate(appointmentDate),
       timeStr,
       customerName ?? '',
       socialMediaName ?? '',
-      nailTechName ?? '',
       booking.service?.type ?? '',
+      locationLabel(booking.service?.location),
+      nailTechName ?? '',
       booking.status ?? '',
-      booking.paymentStatus ?? '',
-      totalInvoice,
-      paidAmount,
-      tipAmount,
-      balance,
-      (booking.clientNotes || booking.adminNotes || '').slice(0, 500),
-      formatDate(booking.updatedAt),
+      formatDateTime(booking.updatedAt),
     ];
 
     const rowIndex = await findRowByBookingId(sheets, spreadsheetId, BOOKINGS_TAB, bookingId);
+    const rangeCol = 'J'; // 10 columns
 
     if (rowIndex != null) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `'${BOOKINGS_TAB}'!A${rowIndex}:Q${rowIndex}`,
+        range: `'${BOOKINGS_TAB}'!A${rowIndex}:${rangeCol}${rowIndex}`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: [row] },
       });
     } else {
       await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: `'${BOOKINGS_TAB}'!A:Q`,
+        range: `'${BOOKINGS_TAB}'!A:${rangeCol}`,
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         requestBody: { values: [row] },
@@ -159,22 +185,26 @@ export async function syncBookingToSheet(
 
 export async function syncFinanceToSheet(
   booking: {
-    status?: string;
     bookingCode?: string;
+    status?: string;
     paymentStatus?: string;
+    service?: { type?: string };
     invoice?: { total?: number };
-    pricing?: { tipAmount?: number };
+    pricing?: { paidAmount?: number; tipAmount?: number; discountAmount?: number };
     completedAt?: Date | null;
     updatedAt?: Date;
   },
-  socialMediaName: string,
-  nailTechName: string,
+  customerName: string,
+  _socialMediaName: string,
+  _nailTechName: string,
   appointmentDate: string,
-  appointmentTimes: string[],
-  adminCommissionRate: number
+  _appointmentTimes: string[],
+  _adminCommissionRate: number
 ): Promise<void> {
   try {
-    if (booking.status !== 'completed') return;
+    // Sync when booking is completed, or when payment was received (paid/partial)
+    const hasPayment = booking.paymentStatus === 'paid' || booking.paymentStatus === 'partial';
+    if (booking.status !== 'completed' && !hasPayment) return;
 
     const spreadsheetId = await getSpreadsheetId();
     if (!spreadsheetId) return;
@@ -183,57 +213,43 @@ export async function syncFinanceToSheet(
     if (!sheets) return;
 
     const totalInvoice = booking.invoice?.total ?? 0;
-    const tipAmount = booking.pricing?.tipAmount ?? 0;
     const paidAmount = booking.pricing?.paidAmount ?? 0;
-    const totalBillPlusTip = totalInvoice + tipAmount;
-    const adminCom = (paidAmount + tipAmount) * (adminCommissionRate / 100);
-    const timeStr = Array.isArray(appointmentTimes) && appointmentTimes.length > 0
-      ? appointmentTimes.join(', ')
-      : '';
+    const tipAmount = booking.pricing?.tipAmount ?? 0;
+    const discountAmount = booking.pricing?.discountAmount ?? 0;
+    const balance = Math.max(0, totalInvoice - paidAmount);
 
+    const bookingId = String(booking.bookingCode ?? '').trim();
+    if (!bookingId) return;
+
+    // Columns: Booking ID (booking code), Date, Client, Service, Total, Paid, Tip, Discount, Balance, Status, Updated at
     const row: (string | number)[] = [
-      formatDate(booking.completedAt ?? booking.updatedAt),
-      formatDate(appointmentDate),
-      timeStr,
-      socialMediaName ?? '',
+      bookingId,
+      formatAppointmentDate(appointmentDate),
+      customerName ?? '',
+      booking.service?.type ?? '',
       totalInvoice,
-      booking.pricing?.paidAmount ?? 0,
+      paidAmount,
       tipAmount,
-      totalBillPlusTip,
-      adminCom,
-      nailTechName ?? '',
-      booking.bookingCode ?? '',
+      discountAmount,
+      balance,
       booking.paymentStatus ?? '',
+      formatDateTime(booking.updatedAt),
     ];
 
-    // Upsert by Booking Code in column K (11)
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: `'${FINANCE_TAB}'!K:K`,
-    });
-    const rows = res.data.values as string[][] | undefined;
-    let rowIndex: number | null = null;
-    if (rows && Array.isArray(rows)) {
-      for (let i = 0; i < rows.length; i++) {
-        const cell = rows[i]?.[0];
-        if (cell && String(cell).trim() === String(booking.bookingCode ?? '').trim()) {
-          rowIndex = i + 1;
-          break;
-        }
-      }
-    }
+    const rowIndex = await findRowByBookingId(sheets, spreadsheetId, FINANCE_TAB, bookingId);
+    const rangeCol = 'K'; // 11 columns
 
     if (rowIndex != null) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `'${FINANCE_TAB}'!A${rowIndex}:L${rowIndex}`,
+        range: `'${FINANCE_TAB}'!A${rowIndex}:${rangeCol}${rowIndex}`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: [row] },
       });
     } else {
       await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: `'${FINANCE_TAB}'!A:L`,
+        range: `'${FINANCE_TAB}'!A:${rangeCol}`,
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         requestBody: { values: [row] },

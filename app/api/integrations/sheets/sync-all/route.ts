@@ -49,7 +49,7 @@ export async function POST() {
           const appointmentTimes = (slots as any[])?.map((s: any) => s.time).filter(Boolean) || [];
 
           await syncBookingToSheet(b, customerName, socialMediaName, nailTechName, appointmentDate, appointmentTimes);
-          await syncFinanceToSheet(b, socialMediaName, nailTechName, appointmentDate, appointmentTimes, commissionRate);
+          await syncFinanceToSheet(b, customerName, socialMediaName, nailTechName, appointmentDate, appointmentTimes, commissionRate);
           synced++;
         } catch (err) {
           console.error('[Sheets] sync-all error for booking', b._id, err);

@@ -55,6 +55,7 @@ export default function RescheduleSlotModal({
 }: RescheduleSlotModalProps) {
   const { nailTechs, loading: nailTechsLoading } = useNailTechs();
   const [date, setDate] = useState('');
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [nailTechId, setNailTechId] = useState(initialNailTechId);
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -95,6 +96,7 @@ export default function RescheduleSlotModal({
     if (open) {
       setNailTechId(initialNailTechId);
       setDate('');
+      setDatePickerOpen(false);
       setAvailableSlots([]);
       setSelectedSlotId('');
       setReasonText('');
@@ -153,7 +155,7 @@ export default function RescheduleSlotModal({
           </div>
           <div>
             <Label className="text-xs text-gray-500">Date *</Label>
-            <Popover>
+            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
@@ -163,9 +165,7 @@ export default function RescheduleSlotModal({
                   )}
                 >
                   <CalendarIcon className="h-4 w-4 text-gray-500 shrink-0" />
-                  <span className="truncate">
-                    {date ? format(new Date(date), 'MMM d, yyyy') : 'Pick date'}
-                  </span>
+                  <span className="truncate">{date ? format(new Date(date), 'MMM d, yyyy') : 'Pick date'}</span>
                 </button>
               </PopoverTrigger>
               <PopoverContent
@@ -175,11 +175,17 @@ export default function RescheduleSlotModal({
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={(d) => d && setDate(format(d, 'yyyy-MM-dd'))}
+                  onSelect={(d) => {
+                  if (d) {
+                    setDate(format(d, 'yyyy-MM-dd'));
+                    setDatePickerOpen(false);
+                  }
+                }}
                   defaultMonth={selectedDate || new Date()}
                   disabled={(d) => d < today}
                   numberOfMonths={1}
                   showOutsideDays={false}
+                  navLayout="around"
                 />
               </PopoverContent>
             </Popover>

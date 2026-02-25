@@ -37,7 +37,7 @@ export default function NailTechBadge({ name, role, nailTechId, className = '' }
   return (
     <div className={`d-flex align-items-center gap-2 ${className}`}>
       <span
-        className="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-medium min-h-[24px] box-border border"
+        className="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium min-h-[20px] sm:min-h-[24px] box-border border sm:px-2.5"
         style={{ backgroundColor: bg, color: text, borderColor: border }}
       >
         {name}

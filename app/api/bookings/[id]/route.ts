@@ -115,7 +115,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           const appointmentTimes = slots.map(s => s.time).filter(Boolean) as string[];
           const commissionRate = (settings as { adminCommissionRate?: number })?.adminCommissionRate ?? 10;
           await syncBookingToSheet(b, customerName, socialMediaName, nailTechName, appointmentDate, appointmentTimes);
-          await syncFinanceToSheet(b, socialMediaName, nailTechName, appointmentDate, appointmentTimes, commissionRate);
+          await syncFinanceToSheet(b, customerName, socialMediaName, nailTechName, appointmentDate, appointmentTimes, commissionRate);
         } catch (err) {
           console.error('[Sheets] sync failed:', err);
         }

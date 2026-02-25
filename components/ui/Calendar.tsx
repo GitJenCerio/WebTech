@@ -7,12 +7,33 @@ import { DayPicker, type DayButtonProps } from "react-day-picker";
 import { cn } from "./Utils";
 import { buttonVariants } from "./Button";
 
+function MonthWithCaptionRow(props: { children: React.ReactNode; className?: string; style?: React.CSSProperties } & Record<string, unknown>) {
+  const { children, className, style, ...rest } = props;
+  const childArray = React.Children.toArray(children).filter(Boolean);
+  // With navLayout="around": [PreviousButton, MonthCaption, NextButton, MonthGrid]
+  const hasNavAround = childArray.length >= 4;
+  if (!hasNavAround) {
+    return <div className={cn("flex flex-col gap-4", className)} style={style} {...rest}>{children}</div>;
+  }
+  const [prev, caption, next, ...restChildren] = childArray;
+  return (
+    <div className={cn("flex flex-col gap-4", className)} style={style} {...rest}>
+      <div className="flex flex-row items-center justify-between gap-2 w-full">
+        {prev}
+        {caption}
+        {next}
+      </div>
+      {restChildren}
+    </div>
+  );
+}
+
 function DayButtonWithWhiteSelected({ modifiers, className, ...props }: DayButtonProps) {
-  const isRangeEdge = modifiers.range_start || modifiers.range_end;
+  const isSelected = modifiers.selected || modifiers.range_start || modifiers.range_end;
   return (
     <button
       {...props}
-      className={cn(className, isRangeEdge && "!text-white")}
+      className={cn(className, isSelected && "!text-white !bg-[#1a1a1a] hover:!text-white hover:!bg-[#2d2d2d]")}
     />
   );
 }
@@ -30,9 +51,9 @@ function Calendar({
       classNames={{
         months: "flex flex-col sm:flex-row gap-4",
         month: "flex flex-col gap-4",
-        month_caption: "flex justify-center pt-1 relative items-center w-full",
-        caption_label: "text-sm font-medium text-[#1a1a1a]",
-        nav: "flex items-center gap-1",
+        month_caption: "flex flex-row items-center justify-between gap-2 pt-1 w-full",
+        caption_label: "text-sm font-medium text-[#1a1a1a] flex-1 text-center shrink-0",
+        nav: "flex items-center gap-1 shrink-0",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
           "size-8 bg-transparent p-0 opacity-50 hover:opacity-100 rounded-2xl border-[#e5e5e5] hover:border-[#1a1a1a]",
@@ -51,7 +72,7 @@ function Calendar({
           "size-9 p-0 font-normal rounded-2xl text-[#1a1a1a] hover:bg-[#f5f5f5] hover:text-[#1a1a1a]",
         ),
         selected:
-          "bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] hover:text-white focus:bg-[#1a1a1a]",
+          "!text-white bg-[#1a1a1a] hover:bg-[#2d2d2d] hover:!text-white focus:bg-[#1a1a1a] focus:!text-white",
         today: "bg-[#f0f0f0] text-[#1a1a1a] font-semibold",
         outside: "text-gray-400 opacity-50",
         disabled: "text-gray-300 opacity-50",
@@ -62,6 +83,7 @@ function Calendar({
         ...classNames,
       }}
       components={{
+        Month: MonthWithCaptionRow,
         DayButton: DayButtonWithWhiteSelected,
         Chevron: ({ orientation, className, ...props }: { orientation?: "left" | "right" | "up" | "down"; className?: string; size?: number; disabled?: boolean }) => {
           const Icon = orientation === "left" ? ChevronLeft : ChevronRight;

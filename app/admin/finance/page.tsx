@@ -32,6 +32,22 @@ interface Transaction {
   nailTechId?: string;
 }
 
+function formatSlotTimes(slotTimes: string[] | undefined, fallback: string): string {
+  if (!slotTimes?.length) return fallback || '—';
+  const toMins = (s: string) => {
+    const m = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!m) return 0;
+    let h = parseInt(m[1], 10);
+    const min = parseInt(m[2], 10);
+    const ap = (m[3] || '').toUpperCase();
+    if (ap === 'PM' && h !== 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+    return h * 60 + min;
+  };
+  const sorted = [...slotTimes].sort((a, b) => toMins(a) - toMins(b));
+  return sorted.join(', ');
+}
+
 function serviceLocationBadge(loc?: 'homebased_studio' | 'home_service') {
   if (loc !== 'home_service' && loc !== 'homebased_studio') return null;
   const label = loc === 'home_service' ? 'HS' : 'ST';
@@ -349,15 +365,15 @@ export default function FinancePage() {
     doc.setTextColor(0, 0, 0);
 
     const headers = [
-      'Date (Appointment)',
+      'Date',
       'Time',
       'Social Media Name',
       'Service',
       'ST/HS',
-      'Total Invoice',
+      'Invoice',
       'Paid Amount',
       'Tip',
-      'Total Bill and Tip',
+      'Total Bill + Tip',
       `Commission (${adminCommissionRate}%)`,
     ];
     const fmt = (n: number) => `PHP ${String(Number(n).toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 })).replace(/[^\d,.]/g, '')}`;
@@ -672,15 +688,16 @@ export default function FinancePage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Client</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Service</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Total</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Paid</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Tip</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Discount</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Balance</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Time</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Social Media Name</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Service</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Invoice</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Paid Amount</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Tip</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Total Bill + Tip</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Commission</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f5f5f5]">
@@ -688,8 +705,8 @@ export default function FinancePage() {
                   <>
                     {Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
-                        {Array.from({ length: 9 }).map((_, j) => (
-                          <td key={j} className="px-3 md:px-5 py-3.5">
+                        {Array.from({ length: 10 }).map((_, j) => (
+                          <td key={j} className="px-4 py-3">
                             <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
                           </td>
                         ))}
@@ -698,7 +715,7 @@ export default function FinancePage() {
                   </>
                 ) : paginatedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-3 md:px-5 py-16 text-center">
+                    <td colSpan={10} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                         <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
                           <Search className="h-6 w-6 text-gray-300" />
@@ -717,26 +734,34 @@ export default function FinancePage() {
                     </td>
                   </tr>
                 ) : (
-                  paginatedTransactions.map((item) => (
+                  paginatedTransactions.map((item) => {
+                    const totalBillAndTip = item.total + item.tip;
+                    const paidAmountInclTip = item.paid + item.tip;
+                    const commission = (item.paid + item.tip) * (adminCommissionRate / 100);
+                    return (
                     <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100">
-                      <td className="px-3 md:px-5 py-3.5 text-gray-500 whitespace-nowrap tabular-nums">
-                        {item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                        {item.appointmentDate ? new Date(item.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                       </td>
-                      <td className="px-3 md:px-5 py-3.5 font-medium text-[#1a1a1a]">{item.clientName}</td>
-                      <td className="px-3 md:px-5 py-3.5 text-[#1a1a1a]">
+                      <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                        {formatSlotTimes(item.appointmentTimes, item.appointmentTime)}
+                      </td>
+                      <td className="px-4 py-3 text-[#1a1a1a]">{item.customerSocialMediaName || '—'}</td>
+                      <td className="px-4 py-3 text-[#1a1a1a]">
                         <span className="inline-flex items-center gap-1.5">
                           {item.service}
                           {serviceLocationBadge(item.serviceLocation)}
                         </span>
                       </td>
-                      <td className="px-3 md:px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString()}</td>
-                      <td className="px-3 md:px-5 py-3.5 text-gray-500 tabular-nums">₱{item.paid.toLocaleString()}</td>
-                      <td className="px-3 md:px-5 py-3.5 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
-                      <td className="px-3 md:px-5 py-3.5 text-gray-500 tabular-nums">₱{item.discount.toLocaleString()}</td>
-                      <td className="px-3 md:px-5 py-3.5 text-gray-500 tabular-nums">₱{item.balance.toLocaleString()}</td>
-                      <td className="px-3 md:px-5 py-3.5">{getPaymentStatusBadge(item.paymentStatus)}</td>
+                      <td className="px-4 py-3 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{paidAmountInclTip.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{totalBillAndTip.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{commission.toLocaleString()}</td>
+                      <td className="px-4 py-3">{getPaymentStatusBadge(item.paymentStatus)}</td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -791,9 +816,17 @@ export default function FinancePage() {
                     {getPaymentStatusBadge(item.paymentStatus)}
                   </div>
                   <p className="text-xs text-gray-500">
-                    {item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                    {item.appointmentDate ? new Date(item.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                    {(() => {
+                      const t = formatSlotTimes(item.appointmentTimes, item.appointmentTime);
+                      return t && t !== '—' ? ` · ${t}` : '';
+                    })()}
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-400 text-xs">Social Media Name</span>
+                      <p className="text-[#1a1a1a]">{item.customerSocialMediaName || '—'}</p>
+                    </div>
                     <div>
                       <span className="text-gray-400 text-xs">Service</span>
                       <p className="text-[#1a1a1a] flex items-center gap-1.5">
@@ -802,16 +835,24 @@ export default function FinancePage() {
                       </p>
                     </div>
                     <div>
-                      <span className="text-gray-400 text-xs">Total</span>
+                      <span className="text-gray-400 text-xs">Total Invoice</span>
                       <p className="text-[#1a1a1a] font-medium">₱{item.total.toLocaleString()}</p>
                     </div>
                     <div>
-                      <span className="text-gray-400 text-xs">Paid</span>
-                      <p className="text-[#1a1a1a]">₱{item.paid.toLocaleString()}</p>
+                      <span className="text-gray-400 text-xs">Paid Amount</span>
+                      <p className="text-[#1a1a1a]">₱{(item.paid + item.tip).toLocaleString()}</p>
                     </div>
                     <div>
-                      <span className="text-gray-400 text-xs">Balance</span>
-                      <p className="text-[#1a1a1a]">₱{item.balance.toLocaleString()}</p>
+                      <span className="text-gray-400 text-xs">Tip</span>
+                      <p className="text-[#1a1a1a]">₱{item.tip.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Total Bill and Tip</span>
+                      <p className="text-[#1a1a1a]">₱{(item.total + item.tip).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Commission</span>
+                      <p className="text-[#1a1a1a]">₱{((item.paid + item.tip) * (adminCommissionRate / 100)).toLocaleString()}</p>
                     </div>
                   </div>
                 </div>

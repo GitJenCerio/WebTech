@@ -16,7 +16,6 @@ const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   display: "swap",
 });
-
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.glammednailsbyjhen.com';
 const siteName = 'glammednailsbyjhen';
 const defaultTitle = `Russian Manicure & Pedicure in Manila | ${siteName}`;

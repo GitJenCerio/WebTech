@@ -32,12 +32,12 @@ interface StatusBadgeProps {
  */
 export default function StatusBadge({ status, className = '' }: StatusBadgeProps) {
   const statusConfig: Record<BookingStatus, { label: string; variant: BadgeVariant }> = {
-    PENDING_PAYMENT: { label: 'Pending Payment', variant: 'info' },
+    PENDING_PAYMENT: { label: 'Pending', variant: 'info' },
     CONFIRMED: { label: 'Confirmed', variant: 'default' },
     COMPLETED: { label: 'Completed', variant: 'completed' },
     CANCELLED: { label: 'Cancelled', variant: 'destructive' },
     NO_SHOW: { label: 'No Show', variant: 'destructive' },
-    pending: { label: 'Pending Payment', variant: 'info' },
+    pending: { label: 'Pending', variant: 'info' },
     confirmed: { label: 'Confirmed', variant: 'default' },
     no_show: { label: 'No Show', variant: 'destructive' },
     blocked: { label: 'Blocked', variant: 'default' },

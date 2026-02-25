@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +13,9 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover';
+import { Calendar } from '@/components/ui/Calendar';
+import { cn } from '@/components/ui/Utils';
 import {
   Select,
   SelectContent,
@@ -345,16 +350,40 @@ export default function AddBookingModal({
 
             <div>
               <Label className="text-xs text-gray-500">Date *</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => {
-                  setDate(e.target.value);
-                  setSelectedSlotId('');
-                }}
-                className="h-9 mt-1"
-                min={new Date().toISOString().split('T')[0]}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex items-center gap-2 w-full mt-1 min-w-[120px] rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] transition-all h-9 px-3 text-sm',
+                      'hover:border-[#1a1a1a]/30 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]'
+                    )}
+                  >
+                    <CalendarIcon className="h-4 w-4 text-gray-500 shrink-0" />
+                    <span className="truncate">{date ? format(new Date(date), 'MMM d, yyyy') : 'Pick date'}</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="admin-date-picker-popover w-auto p-0 rounded-2xl border-[#e5e5e5] shadow-lg bg-white"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={date ? new Date(date) : undefined}
+                    onSelect={(d) => {
+                      if (d) {
+                        setDate(format(d, 'yyyy-MM-dd'));
+                        setSelectedSlotId('');
+                      }
+                    }}
+                    defaultMonth={date ? new Date(date) : new Date()}
+                    disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                    numberOfMonths={1}
+                    showOutsideDays={false}
+                    navLayout="around"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {date && nailTechId && (

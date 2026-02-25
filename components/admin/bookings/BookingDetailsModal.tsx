@@ -1,4 +1,5 @@
 import React from 'react';
+import { Calendar, MapPin, Phone, AtSign, Sparkles, CreditCard, User } from 'lucide-react';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
 import {
   Dialog,
@@ -9,8 +10,20 @@ import {
 } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
-import { Badge } from '@/components/ui/Badge';
+import { format } from 'date-fns';
 import { sortTimesChronologically, formatTime12Hour } from '@/lib/utils';
+
+function formatDateYyyyMmDd(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return format(d, 'yyyy-MM-dd');
+  } catch {
+    return dateStr;
+  }
+}
+
+const iconSize = 14;
 
 interface BookingDetailsModalProps {
   show: boolean;
@@ -25,6 +38,7 @@ interface BookingDetailsModalProps {
     slotType?: 'regular' | 'with_squeeze_fee' | null;
     serviceLocation?: 'homebased_studio' | 'home_service';
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
+    nailTechName?: string;
     clientName: string;
     clientEmail?: string;
     clientPhone?: string;
@@ -82,62 +96,100 @@ export default function BookingDetailsModal({
       ? 'Partial'
       : 'Unpaid';
   const contactValue = booking.clientPhone || booking.clientEmail || '-';
+  const timeStr = (booking.slotTimes && booking.slotTimes.length > 0)
+    ? sortTimesChronologically(booking.slotTimes).map(formatTime12Hour).join(' & ')
+    : formatTime12Hour(booking.time);
+  const formattedDate = formatDateYyyyMmDd(booking.date);
+  const dateTimeStr = `${formattedDate} · ${timeStr}`;
+  const locationLabel = booking.serviceLocation === 'home_service' ? 'Home Service' : booking.serviceLocation === 'homebased_studio' ? 'Homebased Studio' : '';
+  const isConfirmed = ['CONFIRMED', 'confirmed'].includes(booking.status);
+  const isCompletedStatus = ['COMPLETED', 'completed'].includes(booking.status);
+
+  const getStatusBadge = () => {
+    const label = booking.status === 'CONFIRMED' || booking.status === 'confirmed' ? 'CONFIRMED'
+      : booking.status === 'COMPLETED' || booking.status === 'completed' ? 'COMPLETED'
+      : booking.status === 'PENDING_PAYMENT' || booking.status === 'pending' || booking.status === 'booked' ? 'PENDING'
+      : String(booking.status).toUpperCase().replace(/-/g, ' ');
+    if (isConfirmed) {
+      return <span className="inline-flex items-center rounded-lg px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-white bg-emerald-600">CONFIRMED</span>;
+    }
+    if (isCompletedStatus) {
+      return <span className="inline-flex items-center rounded-lg px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-white bg-gray-700">COMPLETED</span>;
+    }
+    return <StatusBadge status={booking.status} />;
+  };
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
-      <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Booking Details</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3" style={{ fontSize: '0.92rem' }}>
-          <div className="p-4 border border-gray-200 rounded-2xl bg-gray-50">
-            <div className="flex flex-col gap-2">
-              {booking.bookingCode && (
-                <div><strong>Booking Code:</strong> {booking.bookingCode}</div>
-              )}
-              <div><strong>Date:</strong> {booking.date}</div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span><strong>Time:</strong> {(booking.slotTimes && booking.slotTimes.length > 0)
-                  ? sortTimesChronologically(booking.slotTimes).map(formatTime12Hour).join(' & ')
-                  : formatTime12Hour(booking.time)}
-                </span>
+        <div className="space-y-3">
+          <div className="p-3 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm relative sm:p-3">
+            <div className="flex justify-between items-start gap-3 mb-2">
+              <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-gray-500">BOOKING</span>
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {booking.slotType === 'with_squeeze_fee' && (
-                  <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-[10px] font-semibold">Squeeze</span>
-                )}
-              </div>
-              {booking.serviceLocation && (
-                <div>
-                  <strong>Location:</strong>{' '}
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold ${
                     booking.serviceLocation === 'home_service'
                       ? 'bg-amber-100 text-amber-800 border border-amber-300'
                       : 'bg-blue-100 text-blue-800 border border-blue-300'
-                  }`}>
-                    {booking.serviceLocation === 'home_service' ? 'Home Service' : 'Studio'}
-                  </span>
+                  }`}>SQ</span>
+                )}
+                {getStatusBadge()}
+              </div>
+            </div>
+            <h3 className="text-sm sm:text-base font-semibold text-[#1a1a1a]">{booking.clientName}</h3>
+            {booking.bookingCode && (
+              <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">{booking.bookingCode}</p>
+            )}
+            <div className="flex flex-col gap-1.5 mt-3 text-xs sm:text-sm text-[#1a1a1a]">
+              <div className="flex items-center gap-2">
+                <Calendar size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                <span>{dateTimeStr}</span>
+              </div>
+              {booking.nailTechName && (
+                <div className="flex items-center gap-2">
+                  <User size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                  <span>Ms. {booking.nailTechName}</span>
                 </div>
               )}
-              <div><strong>Client:</strong> {booking.clientName}</div>
-                {booking.clientSocialMediaName && (
-                  <div><strong>Social:</strong> {booking.clientSocialMediaName}</div>
-                )}
-                <div><strong>Contact:</strong> {contactValue}</div>
-                <div><strong>Service:</strong> {booking.service}</div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span><strong>Reservation Fee:</strong></span>
-                  <Badge
-                    variant={
-                      paymentStatusLabel === 'Paid'
-                        ? 'success'
-                        : paymentStatusLabel === 'Partial'
-                          ? 'warning'
-                          : 'secondary'
-                    }
-                  >
-                    {paymentStatusLabel === 'Paid' || paymentStatusLabel === 'Partial' ? 'Paid' : 'Unpaid'}
-                  </Badge>
+              <div className="flex items-center gap-2">
+                <Phone size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                <span>{contactValue}</span>
+              </div>
+              {booking.clientSocialMediaName && (
+                <div className="flex items-center gap-2">
+                  <AtSign size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                  <span>{booking.clientSocialMediaName}</span>
                 </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Sparkles size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                <span>{booking.service}</span>
+              </div>
+              {locationLabel && (
+                <div className="flex items-center gap-2">
+                  <MapPin size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                  <span>{locationLabel}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <CreditCard size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                <span
+                    className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[11px] sm:text-xs font-medium ${
+                    paymentStatusLabel === 'Paid'
+                      ? 'bg-emerald-600 text-white'
+                      : paymentStatusLabel === 'Partial'
+                        ? 'bg-amber-50 text-amber-700'
+                        : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {paymentStatusLabel === 'Paid' || paymentStatusLabel === 'Partial' ? 'Paid' : 'Unpaid'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -171,7 +223,7 @@ export default function BookingDetailsModal({
                   <div>
                     <p className="text-xs text-gray-500 mb-1.5">Current nails</p>
                     <div className="flex flex-wrap gap-2">
-                      {booking.clientPhotos.currentState.filter(p => p.url).map((p, i) => (
+                      {(booking.clientPhotos?.currentState ?? []).filter(p => p.url).map((p, i) => (
                         <a
                           key={i}
                           href={p.url!}
@@ -189,7 +241,7 @@ export default function BookingDetailsModal({
                   <div>
                     <p className="text-xs text-gray-500 mb-1.5">Nail inspo</p>
                     <div className="flex flex-wrap gap-2">
-                      {booking.clientPhotos.inspiration.filter(p => p.url).map((p, i) => (
+                      {(booking.clientPhotos?.inspiration ?? []).filter(p => p.url).map((p, i) => (
                         <a
                           key={i}
                           href={p.url!}

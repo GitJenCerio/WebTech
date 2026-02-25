@@ -85,6 +85,7 @@ export default function CalendarPage() {
     bookingCode?: string;
     customerId?: string;
     nailTechId?: string;
+    nailTechName?: string;
     slotType?: 'regular' | 'with_squeeze_fee' | null;
     date: string;
     time: string;
@@ -463,6 +464,7 @@ export default function CalendarPage() {
         id: slot.booking.id,
         bookingCode: slot.booking.bookingCode,
         customerId: slot.booking.customerId,
+        nailTechName: slot.nailTechId ? nailTechs.find((t) => t.id === slot.nailTechId)?.name : undefined,
         date: selectedDate.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
@@ -477,7 +479,6 @@ export default function CalendarPage() {
         service: slot.service || 'Nail Service',
         serviceLocation: slot.booking?.service?.location,
         status: slot.status,
-        nailTechId: slot.nailTechId,
         slotType: slot.type,
         notes: slot.booking?.clientNotes || undefined,
         paymentStatus: slot.booking.paymentStatus,

@@ -88,6 +88,7 @@ export function DateRangePicker({
           onSelect={handleSelect}
           numberOfMonths={1}
           showOutsideDays={false}
+          navLayout="around"
         />
       </PopoverContent>
     </Popover>

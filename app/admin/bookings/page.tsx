@@ -25,6 +25,33 @@ import { useNailTechs } from '@/lib/hooks/useNailTechs';
 
 const PAGE_SIZE = 10;
 
+function formatSlotTimes(slotTimes: string[] | undefined, fallback: string): string {
+  if (!slotTimes?.length) return fallback || '—';
+  const toMins = (s: string) => {
+    const m = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!m) return 0;
+    let h = parseInt(m[1], 10);
+    const min = parseInt(m[2], 10);
+    const ap = (m[3] || '').toUpperCase();
+    if (ap === 'PM' && h !== 12) h += 12;
+    if (ap === 'AM' && h === 12) h = 0;
+    return h * 60 + min;
+  };
+  const sorted = [...slotTimes].sort((a, b) => toMins(a) - toMins(b));
+  return sorted.join(', ');
+}
+
+function locationBadge(loc?: 'homebased_studio' | 'home_service') {
+  if (loc !== 'home_service' && loc !== 'homebased_studio') return null;
+  const label = loc === 'home_service' ? 'HS' : 'ST';
+  const isHS = loc === 'home_service';
+  return (
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${isHS ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
+      {label}
+    </span>
+  );
+}
+
 interface ClientPhoto {
   url?: string;
   publicId?: string;
@@ -69,6 +96,7 @@ export default function BookingsPage() {
     bookingCode?: string;
     customerId?: string;
     nailTechId?: string;
+    nailTechName?: string;
     slotType?: 'regular' | 'with_squeeze_fee' | null;
     date: string;
     time: string;
@@ -113,6 +141,7 @@ export default function BookingsPage() {
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [nailTechFilter, setNailTechFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -142,8 +171,9 @@ export default function BookingsPage() {
       const params = new URLSearchParams();
       const urlCustomerId = searchParams.get('customerId');
       const urlTechId = searchParams.get('techId') || searchParams.get('nailTechId');
+      const techId = nailTechFilter !== 'all' ? nailTechFilter : urlTechId;
       if (urlCustomerId) params.set('customerId', urlCustomerId);
-      if (urlTechId) params.set('nailTechId', urlTechId);
+      if (techId) params.set('nailTechId', techId);
       if (statusFilter && statusFilter !== 'all') {
         params.set('status', statusFilter as any);
       }
@@ -187,7 +217,7 @@ export default function BookingsPage() {
     } finally {
       setBookingsLoading(false);
     }
-  }, [statusFilter, dateFrom, dateTo, searchParams]);
+  }, [statusFilter, nailTechFilter, dateFrom, dateTo, searchParams]);
 
   useEffect(() => {
     fetchBookings();
@@ -732,6 +762,19 @@ export default function BookingsPage() {
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={nailTechFilter} onValueChange={setNailTechFilter}>
+              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[120px] md:min-w-[140px] h-9 px-3">
+                <SelectValue placeholder="All Nail Techs" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Nail Techs</SelectItem>
+                {nailTechs.map((n) => (
+                  <SelectItem key={n.id} value={n.id}>
+                    {n.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[140px]">
               <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Date range</label>
               <DateRangePicker
@@ -744,11 +787,12 @@ export default function BookingsPage() {
                 className="flex-1 min-w-0"
               />
             </div>
-            {(searchQuery || statusFilter !== 'all' || dateFrom || dateTo) && (
+            {(searchQuery || statusFilter !== 'all' || nailTechFilter !== 'all' || dateFrom || dateTo) && (
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setStatusFilter('all');
+                  setNailTechFilter('all');
                   setDateFrom('');
                   setDateTo('');
                 }}
@@ -797,9 +841,9 @@ export default function BookingsPage() {
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Client</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Social Name</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Service</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Amount Paid</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Location</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Nail Tech</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Amount</th>
                   <th className="px-5 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -841,14 +885,15 @@ export default function BookingsPage() {
                           return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                         })() : '—'}
                       </td>
-                      <td className="px-5 py-3.5 text-gray-500">{item.time || '—'}</td>
+                      <td className="px-5 py-3.5 text-gray-500 text-xs">{formatSlotTimes(item.slotTimes, item.time)}</td>
                       <td className="px-5 py-3.5">
                         <span className="font-medium text-[#1a1a1a]">{item.clientName}</span>
                       </td>
                       <td className="px-5 py-3.5 text-gray-500">{item.socialName || '—'}</td>
                       <td className="px-5 py-3.5 text-[#1a1a1a]">{item.service}</td>
-                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">
-                        {item.amountPaid && item.amountPaid > 0 ? `₱${item.amountPaid.toLocaleString()}` : '—'}
+                      <td className="px-5 py-3.5">{locationBadge(item.serviceLocation)}</td>
+                      <td className="px-5 py-3.5 text-gray-600 text-sm">
+                        {item.nailTechId ? (nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—') : '—'}
                       </td>
                       <td className="px-5 py-3.5">
                         {(item.status === 'pending' || item.status === 'booked' || item.status === 'confirmed') ? (
@@ -901,9 +946,6 @@ export default function BookingsPage() {
                           getStatusBadge(item.status)
                         )}
                       </td>
-                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">
-                        {item.amount ? `₱${item.amount.toLocaleString()}` : '—'}
-                      </td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
@@ -913,12 +955,14 @@ export default function BookingsPage() {
                                 bookingCode: item.bookingCode,
                                 customerId: item.customerId,
                                 nailTechId: item.nailTechId,
+                                nailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
                                 date: item.date,
                                 time: item.time,
                                 clientName: item.clientName,
                                 clientSocialMediaName: item.socialName,
                                 service: item.service,
                                 serviceLocation: item.serviceLocation,
+                                slotType: item.slotType,
                                 status: item.status,
                                 slotCount: 1,
                                 reservationAmount: 500,
@@ -996,7 +1040,7 @@ export default function BookingsPage() {
                         {item.date ? (() => {
                           const d = new Date(item.date);
                           return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                        })() : '—'} · {item.time || '—'}
+                        })() : '—'} · {formatSlotTimes(item.slotTimes, item.time)}
                         {item.slotType === 'with_squeeze_fee' && (
                           <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-[10px] font-semibold ml-1">Squeeze</span>
                         )}
@@ -1004,24 +1048,21 @@ export default function BookingsPage() {
                     </div>
                     {getStatusBadge(item.status)}
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="text-sm space-y-1">
                     <div>
                       <span className="text-gray-400 text-xs">Service</span>
                       <p className="text-[#1a1a1a]">{item.service}</p>
                     </div>
                     {item.socialName && (
-                      <div>
-                        <span className="text-gray-400 text-xs">Social</span>
-                        <p className="text-[#1a1a1a] truncate">{item.socialName}</p>
-                      </div>
+                      <p className="text-xs text-gray-500 truncate">{item.socialName}</p>
                     )}
-                    <div>
-                      <span className="text-gray-400 text-xs">Amount</span>
-                      <p className="text-[#1a1a1a] font-medium">{item.amount ? `₱${item.amount.toLocaleString()}` : '—'}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 text-xs">Paid</span>
-                      <p className="text-[#1a1a1a]">{item.amountPaid && item.amountPaid > 0 ? `₱${item.amountPaid.toLocaleString()}` : '—'}</p>
+                    <div className="flex flex-wrap gap-2 items-center text-xs">
+                      {locationBadge(item.serviceLocation)}
+                      {item.nailTechId && (
+                        <span className="text-gray-500">
+                          Tech: {nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—'}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <button
@@ -1031,11 +1072,14 @@ export default function BookingsPage() {
                         bookingCode: item.bookingCode,
                         customerId: item.customerId,
                         nailTechId: item.nailTechId,
+                        nailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
                         date: item.date,
                         time: item.time,
                         clientName: item.clientName,
                         clientSocialMediaName: item.socialName,
                         service: item.service,
+                        serviceLocation: item.serviceLocation,
+                        slotType: item.slotType,
                         status: item.status,
                         slotCount: 1,
                         reservationAmount: 500,

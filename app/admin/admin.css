@@ -266,6 +266,19 @@
 
 /* React Day Picker — admin brand theme (rounded, monochrome) */
 /* Applied to admin-dashboard and date picker popover (portaled outside layout) */
+.admin-date-picker-popover {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+}
+.admin-date-picker-popover,
+.admin-date-picker-popover * {
+  --rdp-accent-color: #1a1a1a;
+  --rdp-accent-background-color: #1a1a1a;
+}
+.admin-date-picker-popover .rdp-root {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+}
 .admin-dashboard .rdp-root,
 .admin-date-picker-popover .rdp-root {
   --rdp-accent-color: #1a1a1a;
@@ -308,6 +321,26 @@
 .admin-dashboard .rdp-range_end .rdp-day_button,
 .admin-date-picker-popover .rdp-range_end .rdp-day_button {
   color: #ffffff !important;
+}
+
+/* Selected date number must be white on dark background */
+.admin-date-picker-popover .rdp-selected,
+.admin-date-picker-popover .rdp-selected .rdp-day_button,
+.admin-dashboard .rdp-selected,
+.admin-dashboard .rdp-selected .rdp-day_button {
+  color: #ffffff !important;
+}
+
+/* Ensure date picker caption (month/year), weekday headers, and day numbers are visible */
+.admin-date-picker-popover .rdp-caption_label,
+.admin-date-picker-popover .rdp-weekday,
+.admin-date-picker-popover .rdp-day_button:not(.rdp-selected):not(.rdp-range_start):not(.rdp-range_end) {
+  color: #1a1a1a !important;
+}
+.admin-date-picker-popover .rdp-button_previous,
+.admin-date-picker-popover .rdp-button_next,
+.admin-date-picker-popover .rdp-chevron {
+  color: #1a1a1a !important;
 }
 
 /* Calendar Grid */

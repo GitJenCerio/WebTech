@@ -3,23 +3,32 @@ import { EyeOff } from 'lucide-react';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
 import NailTechBadge from '../NailTechBadge';
 
-/** Map API service type to display label and style for slot service badge */
-const SERVICE_BADGE: Record<string, { label: string; style: React.CSSProperties }> = {
-  manicure: { label: 'Mani', style: { backgroundColor: '#ede9fe', color: '#5b21b6', border: '1px solid #c4b5fd' } },
-  pedicure: { label: 'Pedi', style: { backgroundColor: '#e0f2fe', color: '#0369a1', border: '1px solid #7dd3fc' } },
-  mani_pedi: { label: 'Mani + Pedi', style: { backgroundColor: '#e5e7eb', color: '#374151', border: '1px solid #d1d5db' } },
-  home_service_2slots: { label: 'Mani + Pedi (2)', style: { backgroundColor: '#e5e7eb', color: '#374151', border: '1px solid #d1d5db' } },
-  home_service_3slots: { label: 'Mani + Pedi (3)', style: { backgroundColor: '#e5e7eb', color: '#374151', border: '1px solid #d1d5db' } },
+const SERVICE_BADGE_STYLE: React.CSSProperties = {
+  backgroundColor: '#f3f4f6',
+  color: '#374151',
+  border: '1px solid #d1d5db',
+};
+
+/** Map API service type to display label for slot service badge */
+const SERVICE_LABELS: Record<string, string> = {
+  manicure: 'Mani',
+  pedicure: 'Pedi',
+  mani_pedi: 'Mani + Pedi',
+  home_service_2slots: 'Mani + Pedi (2)',
+  home_service_3slots: 'Mani + Pedi (3)',
 };
 
 function getServiceBadge(service?: string): { label: string; style: React.CSSProperties } | null {
   if (!service || !service.trim()) return null;
   const key = service.toLowerCase().trim().replace(/\s+/g, '_');
-  if (SERVICE_BADGE[key]) return SERVICE_BADGE[key];
-  if (key.includes('mani') && key.includes('pedi')) return SERVICE_BADGE.mani_pedi;
-  if (key.includes('manicure') || key === 'mani') return SERVICE_BADGE.manicure;
-  if (key.includes('pedicure') || key === 'pedi') return SERVICE_BADGE.pedicure;
-  return { label: service.trim(), style: { backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db' } };
+  let label = SERVICE_LABELS[key];
+  if (!label) {
+    if (key.includes('mani') && key.includes('pedi')) label = 'Mani + Pedi';
+    else if (key.includes('manicure') || key === 'mani') label = 'Mani';
+    else if (key.includes('pedicure') || key === 'pedi') label = 'Pedi';
+    else label = service.trim();
+  }
+  return { label, style: SERVICE_BADGE_STYLE };
 }
 
 interface SlotItemProps {
@@ -123,24 +132,12 @@ export default function SlotItem({
       {['confirmed', 'CONFIRMED', 'completed', 'COMPLETED'].includes(status) && serviceLocation && (
         <span
           title={serviceLocation === 'home_service' ? 'Home Service' : 'Studio'}
+          className="absolute bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[0.45rem] sm:text-[0.55rem] font-bold z-[1] border-b-0 border-r-0 rounded-tl-lg"
           style={{
-            position: 'absolute',
-            bottom: 0,
-            right: 0,
-            width: '20px',
-            height: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.55rem',
-            fontWeight: 700,
             backgroundColor: serviceLocation === 'home_service' ? '#fef3c7' : '#dbeafe',
             color: serviceLocation === 'home_service' ? '#92400e' : '#1e40af',
-            border: `1px solid ${serviceLocation === 'home_service' ? '#fcd34d' : '#93c5fd'}`,
-            borderBottom: 'none',
-            borderRight: 'none',
-            borderRadius: '8px 0 0 0',
-            zIndex: 1,
+            borderWidth: '1px',
+            borderColor: serviceLocation === 'home_service' ? '#fcd34d' : '#93c5fd',
           }}
         >
           {serviceLocation === 'home_service' ? 'HS' : 'ST'}
@@ -162,10 +159,10 @@ export default function SlotItem({
               <div className="fw-semibold" style={{ minWidth: '70px', flexShrink: 0 }}>
                 {time}
               </div>
-              <StatusBadge status={status} />
+              <StatusBadge status={status} className="!text-[10px] !px-2 !py-0.5 sm:!text-xs sm:!px-2.5 sm:!py-0.5" />
               {serviceBadge && (
                 <span
-                  className="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-medium min-h-[24px] box-border"
+                  className="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium min-h-[20px] sm:min-h-[24px] box-border sm:px-2.5"
                   style={{ ...serviceBadge.style }}
                 >
                   {serviceBadge.label}

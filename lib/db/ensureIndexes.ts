@@ -22,9 +22,9 @@ export async function ensureIndexes(): Promise<void> {
     await Slot.collection.createIndex({ date: 1, nailTechId: 1 }).catch((e) => console.error('[ensureIndexes] Slot date+nailTechId', e));
     await Slot.collection.createIndex({ status: 1, date: 1 }).catch((e) => console.error('[ensureIndexes] Slot status+date', e));
 
-    // Customer indexes
-    await Customer.collection.createIndex({ email: 1 }, { sparse: true }).catch((e) => console.error('[ensureIndexes] Customer email', e));
-    await Customer.collection.createIndex({ socialMediaName: 1 }, { sparse: true }).catch((e) => console.error('[ensureIndexes] Customer socialMediaName', e));
+    // Customer indexes (explicit names to avoid conflict with existing non-sparse index of same key)
+    await Customer.collection.createIndex({ email: 1 }, { sparse: true, name: 'customer_email_sparse' }).catch((e) => console.error('[ensureIndexes] Customer email', e));
+    await Customer.collection.createIndex({ socialMediaName: 1 }, { sparse: true, name: 'customer_socialMediaName_sparse' }).catch((e) => console.error('[ensureIndexes] Customer socialMediaName', e));
     await Customer.collection.createIndex({ isActive: 1 }).catch((e) => console.error('[ensureIndexes] Customer isActive', e));
 
     // AuditLog TTL index (auto-delete after 90 days)

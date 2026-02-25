@@ -38,6 +38,76 @@ const RESOURCES = [
   { value: 'NailTech', label: 'Nail Tech' },
 ];
 
+const ACTION_LABELS: Record<string, string> = {
+  LOGIN: 'Signed in',
+  LOGOUT: 'Signed out',
+  CREATE: 'Created',
+  UPDATE: 'Updated',
+  DELETE: 'Deleted',
+  CONFIRM: 'Confirmed',
+};
+
+const RESOURCE_LABELS: Record<string, string> = {
+  Booking: 'appointment',
+  Customer: 'client',
+  User: 'user account',
+  Slot: 'time slot',
+  NailTech: 'nail technician',
+};
+
+function getActivityDescription(entry: AuditEntry): string {
+  const actionLabel = ACTION_LABELS[entry.action] || entry.action;
+  const resourceLabel = RESOURCE_LABELS[entry.resource] || entry.resource.toLowerCase();
+  const d = entry.details || {};
+
+  if (entry.action === 'LOGIN') return 'Signed in to the admin panel';
+  if (entry.action === 'LOGOUT') return 'Signed out';
+
+  const withWhat = (verb: string, thing: string) => {
+    const parts: string[] = [];
+    if (typeof d.customerName === 'string') parts.push(`client "${d.customerName}"`);
+    if (typeof d.clientName === 'string') parts.push(`client "${d.clientName}"`);
+    if (typeof d.name === 'string') parts.push(`"${d.name}"`);
+    if (typeof d.email === 'string') parts.push(d.email);
+    if (typeof d.appointmentDate === 'string') parts.push(`on ${new Date(d.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`);
+    if (typeof d.date === 'string') parts.push(`on ${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`);
+    if (typeof d.bookingCode === 'string') parts.push(`(booking ${d.bookingCode})`);
+    const suffix = parts.length > 0 ? `: ${parts.join(', ')}` : '';
+    return `${verb} ${thing}${suffix}`;
+  };
+
+  if (entry.action === 'CREATE') return withWhat('Created', resourceLabel);
+  if (entry.action === 'UPDATE') return withWhat('Updated', resourceLabel);
+  if (entry.action === 'DELETE') return withWhat('Removed', resourceLabel);
+  if (entry.action === 'CONFIRM') return withWhat('Confirmed', resourceLabel);
+
+  return `${actionLabel} ${resourceLabel}`;
+}
+
+function formatDetailsForDisplay(details: Record<string, unknown> | undefined): string {
+  if (!details || Object.keys(details).length === 0) return '—';
+  const keyLabels: Record<string, string> = {
+    customerName: 'Client',
+    clientName: 'Client',
+    name: 'Name',
+    email: 'Email',
+    appointmentDate: 'Appointment date',
+    date: 'Date',
+    bookingCode: 'Booking code',
+    service: 'Service',
+    status: 'Status',
+    time: 'Time',
+  };
+  const parts = Object.entries(details)
+    .filter(([, v]) => v != null && v !== '')
+    .map(([k, v]) => {
+      const label = keyLabels[k] || k.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
+      const val = typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) ? new Date(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : String(v);
+      return `${label}: ${val}`;
+    });
+  return parts.join(' · ') || '—';
+}
+
 export default function AuditLogPage() {
   const [items, setItems] = useState<AuditEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -80,7 +150,7 @@ export default function AuditLogPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-[#1a1a1a]">Audit Log</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Track system activity and changes</p>
+        <p className="text-sm text-gray-500 mt-0.5">Who did what and when</p>
       </div>
 
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
@@ -139,8 +209,7 @@ export default function AuditLogPage() {
                     <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
                       <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Time</th>
                       <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">User</th>
-                      <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Action</th>
-                      <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Resource</th>
+                      <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Activity</th>
                       <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Details</th>
                     </tr>
                   </thead>
@@ -164,21 +233,11 @@ export default function AuditLogPage() {
                             <p className="text-xs text-gray-400">{entry.userEmail}</p>
                           )}
                         </td>
-                        <td className="px-5 py-3">
-                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-[#f0f0f0] text-[#1a1a1a]">
-                            {entry.action}
-                          </span>
-                        </td>
                         <td className="px-5 py-3 text-[#1a1a1a]">
-                          {entry.resource}
-                          {entry.resourceId && (
-                            <span className="text-gray-400 ml-1">({entry.resourceId.slice(-8)})</span>
-                          )}
+                          {getActivityDescription(entry)}
                         </td>
-                        <td className="px-5 py-3 text-gray-500 max-w-[200px] truncate">
-                          {entry.details && Object.keys(entry.details).length > 0
-                            ? JSON.stringify(entry.details).slice(0, 80) + (JSON.stringify(entry.details).length > 80 ? '…' : '')
-                            : '—'}
+                        <td className="px-5 py-3 text-gray-600 text-sm max-w-[280px]">
+                          {formatDetailsForDisplay(entry.details)}
                         </td>
                       </tr>
                     ))}
@@ -195,20 +254,15 @@ export default function AuditLogPage() {
                     key={entry.id}
                     className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-2"
                   >
-                    <div className="flex justify-between items-start">
+                    <div className="flex justify-between items-start gap-2">
                       <span className="font-medium text-[#1a1a1a]">{entry.userName || entry.userEmail || '—'}</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 shrink-0">
                         {entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '—'}
                       </span>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-[#f0f0f0]">
-                        {entry.action}
-                      </span>
-                      <span className="text-sm text-gray-600">{entry.resource}</span>
-                    </div>
-                    {entry.resourceId && (
-                      <p className="text-xs text-gray-400">ID: {entry.resourceId}</p>
+                    <p className="text-sm text-[#1a1a1a]">{getActivityDescription(entry)}</p>
+                    {entry.details && Object.keys(entry.details).length > 0 && (
+                      <p className="text-xs text-gray-600">{formatDetailsForDisplay(entry.details)}</p>
                     )}
                   </div>
                 ))}

@@ -47,6 +47,7 @@ export default function SettingsPage() {
         const res = await fetch('/api/settings');
         if (res.ok) {
           const data = await res.json();
+          const sheetsId = data.googleSheetsId ?? DEFAULT_SETTINGS.googleSheetsId;
           setSettings({
             businessName: data.businessName ?? DEFAULT_SETTINGS.businessName,
             reservationFee: data.reservationFee ?? DEFAULT_SETTINGS.reservationFee,
@@ -54,9 +55,10 @@ export default function SettingsPage() {
             emailNotifications: data.emailNotifications ?? DEFAULT_SETTINGS.emailNotifications,
             smsNotifications: data.smsNotifications ?? DEFAULT_SETTINGS.smsNotifications,
             reminderHoursBefore: data.reminderHoursBefore ?? DEFAULT_SETTINGS.reminderHoursBefore,
-            googleSheetsId: data.googleSheetsId ?? DEFAULT_SETTINGS.googleSheetsId,
+            googleSheetsId: sheetsId,
             googleSheetsEnabled: data.googleSheetsEnabled ?? DEFAULT_SETTINGS.googleSheetsEnabled,
           });
+          if (sheetsId) setSheetUrl(`https://docs.google.com/spreadsheets/d/${sheetsId}/edit`);
         }
       } catch {
         toast.error('Failed to load settings');
@@ -319,7 +321,32 @@ export default function SettingsPage() {
               {lastSyncedAt != null && (
                 <p className="text-xs text-gray-500">Last synced: {new Date(lastSyncedAt).toLocaleString()}</p>
               )}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    setSaving(true);
+                    try {
+                      const res = await fetch('/api/settings', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          googleSheetsId: settings.googleSheetsId,
+                          googleSheetsEnabled: settings.googleSheetsEnabled,
+                        }),
+                      });
+                      if (!res.ok) throw new Error('Failed to save');
+                      toast.success('Integrations saved');
+                    } catch {
+                      toast.error('Failed to save');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </Button>
+                <span className="text-xs text-gray-500">then</span>
                 <Button
                   variant="outline"
                   size="sm"
@@ -357,30 +384,6 @@ export default function SettingsPage() {
                   }}
                 >
                   {sheetsSyncing ? 'Syncing... (this may take a minute)' : 'Sync All Historical Data'}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={async () => {
-                    setSaving(true);
-                    try {
-                      const res = await fetch('/api/settings', {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          googleSheetsId: settings.googleSheetsId,
-                          googleSheetsEnabled: settings.googleSheetsEnabled,
-                        }),
-                      });
-                      if (!res.ok) throw new Error('Failed to save');
-                      toast.success('Integrations saved');
-                    } catch {
-                      toast.error('Failed to save');
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                >
-                  {saving ? 'Saving...' : 'Save'}
                 </Button>
               </div>
             </CardContent>
