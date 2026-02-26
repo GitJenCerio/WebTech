@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-02-26T15:38:45.486Z",
+  "totalBookingsChecked": 154,
+  "totalWithRealInvoices": 70,
+  "totalWithoutInvoices": 84,
+  "checks": {
+    "noFakeInvoiceTotal": {
+      "passed": true,
+      "violations": []
+    },
+    "invoiceTotalHasQuotationId": {
+      "passed": true,
+      "violations": []
+    },
+    "quotationIdExists": {
+      "passed": true,
+      "violations": []
+    },
+    "quotationMatchesBookingTotal": {
+      "passed": true,
+      "violations": []
+    },
+    "uniqueQuotationNumber": {
+      "passed": true,
+      "duplicates": []
+    }
+  },
+  "allPassed": true
+}

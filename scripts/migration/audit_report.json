@@ -1,0 +1,173 @@
+{
+  "generatedAt": "2026-02-26T15:12:04.265Z",
+  "collections": {
+    "bookings": {
+      "firestoreCollectionName": "bookings",
+      "documentCount": 155,
+      "uniqueFieldNames": [
+        "assistantCommissionRate",
+        "assistantName",
+        "bookingId",
+        "clientType",
+        "createdAt",
+        "customerData",
+        "customerData.Age",
+        "customerData.Appointment Date (Autofill)",
+        "customerData.Appointment Time (AutoFill)",
+        "customerData.Are there any specific nail concerns you would like to address?",
+        "customerData.Are you a;",
+        "customerData.Booking ID (Autofill)",
+        "customerData.Contact Number",
+        "customerData.Contact Number ( Autofill if repeat clients)",
+        "customerData.Do you have any allergies or sensitivities to nail products? If yes, please specify:",
+        "customerData.Email Address",
+        "customerData.FB Name",
+        "customerData.FOR MANICURE",
+        "customerData.FOR PEDICURE",
+        "customerData.Facebook or Instagram Name",
+        "customerData.Facebook or Instagram Name. (The one you used to inquire with me.)",
+        "customerData.Facebook or Instagram Name. (The one you used to inquire with me.) Autofill if repeat clients",
+        "customerData.Have you ever had Gel/Biab/Hardgel Overlay applied to your nails before?",
+        "customerData.Have you ever had Softgel Nail Extensions done before?",
+        "customerData.Have you ever had a Russian Technique Dry Manicure to your nails before?",
+        "customerData.Have you experienced any nail damage or infections in the past? If yes, please describe:",
+        "customerData.How did you find out about glammednailsbyjhen?",
+        "customerData.How did you find out about glammednailsbyjhen?  ( Autofill if repeat clients)",
+        "customerData.If this is for home service, please provide your location or complete address for the appointment.",
+        "customerData.If you don't have any nail inspo can you describe how you want it to be look like?",
+        "customerData.Is this appointment for home service or at my home-based studio?",
+        "customerData.Name",
+        "customerData.Name ( Autofill if repeat clients)",
+        "customerData.Please upload a current picture of your nails.",
+        "customerData.Social Media Name",
+        "customerData.Surname",
+        "customerData.Surname ( Autofill if repeat clients)",
+        "customerData.Timestamp",
+        "customerData.What nail services would you like to avail?",
+        "customerDataOrder",
+        "customerId",
+        "depositAmount",
+        "depositDate",
+        "depositPaymentMethod",
+        "expiresAt",
+        "formResponseId",
+        "googleFormUrl",
+        "invoice",
+        "invoice.createdAt",
+        "invoice.customerName",
+        "invoice.discountAmount",
+        "invoice.discountRate",
+        "invoice.items",
+        "invoice.notes",
+        "invoice.squeezeInFee",
+        "invoice.total",
+        "invoice.updatedAt",
+        "linkedSlotIds",
+        "nailTech",
+        "nailTechId",
+        "paidAmount",
+        "paidDate",
+        "paidPaymentMethod",
+        "pairedSlotId",
+        "paymentStatus",
+        "serviceLocation",
+        "serviceType",
+        "slotId",
+        "status",
+        "tipAmount",
+        "tipDate",
+        "updatedAt"
+      ]
+    },
+    "customers": {
+      "firestoreCollectionName": "customers",
+      "documentCount": 350,
+      "uniqueFieldNames": [
+        "createdAt",
+        "email",
+        "firstName",
+        "id",
+        "isRepeatClient",
+        "lastName",
+        "name",
+        "phone",
+        "referralSource",
+        "socialMediaName",
+        "updatedAt"
+      ]
+    },
+    "nailTechs": {
+      "firestoreCollectionName": "nailTechs",
+      "documentCount": 2,
+      "uniqueFieldNames": [
+        "commissionRate",
+        "createdAt",
+        "discount",
+        "fullName",
+        "name",
+        "role",
+        "serviceAvailability",
+        "status",
+        "updatedAt",
+        "workingDays"
+      ]
+    },
+    "slots": {
+      "firestoreCollectionName": "slots",
+      "documentCount": 327,
+      "uniqueFieldNames": [
+        "createdAt",
+        "date",
+        "isHidden",
+        "nailTech",
+        "nailTechId",
+        "notes",
+        "slotType",
+        "status",
+        "time",
+        "updatedAt"
+      ]
+    },
+    "users": {
+      "firestoreCollectionName": "users",
+      "documentCount": 4,
+      "uniqueFieldNames": [
+        "nailTechId",
+        "role",
+        "updatedAt"
+      ]
+    }
+  },
+  "bookingSpecialCases": {
+    "pendingFormOrMigrationNeeded": [
+      {
+        "id": "LHll6bpeaPhUgAg2gp3d",
+        "bookingCode": "GN-00153",
+        "customerId": "PENDING_FORM_SUBMISSION"
+      },
+      {
+        "id": "iz5F3GnfwIMfpM7QR5OQ",
+        "bookingCode": "GN-00155",
+        "customerId": "PENDING_FORM_SUBMISSION"
+      },
+      {
+        "id": "jh4c8ZfJQC8eWBIXbHE6",
+        "bookingCode": "GN-00058",
+        "customerId": "PENDING_FORM_SUBMISSION"
+      },
+      {
+        "id": "jqLo7ZXpLhr1AGNw4V0U",
+        "bookingCode": "GN-00146",
+        "customerId": "PENDING_FORM_SUBMISSION"
+      },
+      {
+        "id": "xhUtUcbN5SquqcBpgXAs",
+        "bookingCode": "GN-00149",
+        "customerId": "PENDING_FORM_SUBMISSION"
+      }
+    ],
+    "missingSlotId": [],
+    "missingCustomerId": [],
+    "missingNailTechId": []
+  }
+}

@@ -1,0 +1,134 @@
+[
+  {
+    "bookingCode": "GN-00016",
+    "firebaseId": "383o71gRHNyZYo8cxtP7",
+    "type": "slot_not_found",
+    "slotId": "6XRa0wnQt0oqP830lMeO"
+  },
+  {
+    "bookingCode": "GN-00085",
+    "firebaseId": "7lV17rKydnoipfhPeiPz",
+    "type": "slot_not_found",
+    "slotId": "DtCmGdrY2zzDQodgog91"
+  },
+  {
+    "bookingCode": "GN-00085",
+    "firebaseId": "7lV17rKydnoipfhPeiPz",
+    "type": "slot_not_found",
+    "slotId": "fN0iexZusvGJvXtwol9N"
+  },
+  {
+    "bookingCode": "GN-00060",
+    "firebaseId": "F5AHo6Nm2NSa6Xpr8QG2",
+    "type": "slot_not_found",
+    "slotId": "56XLHNb7ybXhk0MqxpfB"
+  },
+  {
+    "bookingCode": "GN-00008",
+    "firebaseId": "GIsidueYb5V2rXNBdu2E",
+    "type": "slot_not_found",
+    "slotId": "PiLQJ3ppcH6EiK5fMI5Y"
+  },
+  {
+    "bookingCode": "GN-00008",
+    "firebaseId": "GIsidueYb5V2rXNBdu2E",
+    "type": "slot_not_found",
+    "slotId": "gXRWjisagdfZExIAWj87"
+  },
+  {
+    "bookingCode": "GN-00011",
+    "firebaseId": "KTcvcdG6sPfO3AjgwJwv",
+    "type": "slot_not_found",
+    "slotId": "xVcH24zXszU8ibqFalnX"
+  },
+  {
+    "bookingCode": "GN-00011",
+    "firebaseId": "KTcvcdG6sPfO3AjgwJwv",
+    "type": "slot_not_found",
+    "slotId": "AFwmQPDqg5vITvrLIzUf"
+  },
+  {
+    "bookingCode": "GN-00153",
+    "firebaseId": "LHll6bpeaPhUgAg2gp3d",
+    "type": "customerId_placeholder",
+    "value": "PENDING_FORM_SUBMISSION"
+  },
+  {
+    "bookingCode": "GN-00104",
+    "firebaseId": "XbwT6FhQJcNyVEXQvOSE",
+    "type": "slot_not_found",
+    "slotId": "Wza5txcKKA7fBxo8y8gc"
+  },
+  {
+    "bookingCode": "GN-00017",
+    "firebaseId": "dMrxZ8DbpqpXnZyz8LtP",
+    "type": "slot_not_found",
+    "slotId": "klYzpSOGN5KdHBr2rFph"
+  },
+  {
+    "bookingCode": "GN-00109",
+    "firebaseId": "guANBxW8FwrbEff1TFKL",
+    "type": "slot_not_found",
+    "slotId": "OOleZxPLfTKahhy9V6pD"
+  },
+  {
+    "bookingCode": "GN-00155",
+    "firebaseId": "iz5F3GnfwIMfpM7QR5OQ",
+    "type": "customerId_placeholder",
+    "value": "PENDING_FORM_SUBMISSION"
+  },
+  {
+    "bookingCode": "GN-00058",
+    "firebaseId": "jh4c8ZfJQC8eWBIXbHE6",
+    "type": "customerId_placeholder",
+    "value": "PENDING_FORM_SUBMISSION"
+  },
+  {
+    "bookingCode": "GN-00146",
+    "firebaseId": "jqLo7ZXpLhr1AGNw4V0U",
+    "type": "customerId_placeholder",
+    "value": "PENDING_FORM_SUBMISSION"
+  },
+  {
+    "bookingCode": "GN-00076",
+    "firebaseId": "qKXexMQyeRyVwqjtoWh7",
+    "type": "customerId_not_found",
+    "value": "ekw6nMZojaRhIy4j6daT"
+  },
+  {
+    "bookingCode": "GN-00076",
+    "firebaseId": "qKXexMQyeRyVwqjtoWh7",
+    "type": "slot_not_found",
+    "slotId": "qubgfMhSLonDk5gZtqqA"
+  },
+  {
+    "bookingCode": "GN-00170",
+    "firebaseId": "qR4EZF723MILY8bLMjxA",
+    "type": "slot_not_found",
+    "slotId": "5w5UpHNFbzOejz9AGrZu"
+  },
+  {
+    "bookingCode": "GN-00056",
+    "firebaseId": "qqayAsGXgJlPO2zOOIvd",
+    "type": "slot_not_found",
+    "slotId": "oow5K4sSus3AcWXdCJj2"
+  },
+  {
+    "bookingCode": "GN-00164",
+    "firebaseId": "vcXu6nlBC39GQTV80oV4",
+    "type": "slot_not_found",
+    "slotId": "EzOYnRImnvo9wUIt4QYu"
+  },
+  {
+    "bookingCode": "GN-00149",
+    "firebaseId": "xhUtUcbN5SquqcBpgXAs",
+    "type": "customerId_placeholder",
+    "value": "PENDING_FORM_SUBMISSION"
+  },
+  {
+    "bookingCode": "GN-00163",
+    "firebaseId": "zVEnHS4mDTrQMuCQBESM",
+    "type": "slot_not_found",
+    "slotId": "PVnTfAbgw7msUR6rEZ8s"
+  }
+]

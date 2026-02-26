@@ -7,8 +7,8 @@ import { DayPicker, type DayButtonProps } from "react-day-picker";
 import { cn } from "./Utils";
 import { buttonVariants } from "./Button";
 
-function MonthWithCaptionRow(props: { children: React.ReactNode; className?: string; style?: React.CSSProperties } & Record<string, unknown>) {
-  const { children, className, style, ...rest } = props;
+function MonthWithCaptionRow(props: { children: React.ReactNode; className?: string; style?: React.CSSProperties; displayIndex?: number } & Record<string, unknown>) {
+  const { children, className, style, displayIndex: _displayIndex, ...rest } = props;
   const childArray = React.Children.toArray(children).filter(Boolean);
   // With navLayout="around": [PreviousButton, MonthCaption, NextButton, MonthGrid]
   const hasNavAround = childArray.length >= 4;

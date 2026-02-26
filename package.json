@@ -25,7 +25,9 @@
     "mark-paid-completed": "node scripts/mark-paid-bookings-completed.js",
     "mark-paid-completed:dry-run": "node scripts/mark-paid-bookings-completed.js --dry-run",
     "fix-blank-slot-times": "node scripts/fix-blank-slot-times.js",
-    "fix-blank-slot-times:dry-run": "node scripts/fix-blank-slot-times.js --dry-run"
+    "fix-blank-slot-times:dry-run": "node scripts/fix-blank-slot-times.js --dry-run",
+    "fix-booking-status-fully-paid": "node scripts/fix-booking-status-fully-paid.js",
+    "fix-booking-status-fully-paid:dry-run": "node scripts/fix-booking-status-fully-paid.js --dry-run"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",

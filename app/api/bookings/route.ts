@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { createBooking, listBookings, type CreateBookingInput } from '@/lib/services/bookingService';
-import type { BookingStatus, PaymentStatus } from '@/lib/types';
+import type { BookingStatus, PaymentStatus, ServiceType } from '@/lib/types';
 import { sendBookingPendingEmail } from '@/lib/email';
 import Customer from '@/lib/models/Customer';
 import NailTech from '@/lib/models/NailTech';
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       customerId: resolvedCustomerId,
       nailTechId,
       service: {
-        type: service.type,
+        type: service.type as ServiceType,
         location: service.location,
         clientType: (service.clientType || '').toLowerCase() === 'repeat' ? 'repeat' : 'new',
       },
@@ -313,7 +313,7 @@ export async function GET(request: Request) {
     const slotById = new Map(slots.map((slot: any) => [String(slot._id), { date: slot.date, time: slot.time, slotType: slot.slotType ?? null }]));
 
     return NextResponse.json({
-      bookings: bookings.map(booking => {
+      bookings: bookings.map((booking) => {
         const bidSlotIds = booking.slotIds || [];
         const firstSlotId = bidSlotIds[0];
         const slotInfo = firstSlotId ? slotById.get(String(firstSlotId)) : undefined;
@@ -321,35 +321,63 @@ export async function GET(request: Request) {
           .map((sid) => slotById.get(String(sid))?.time)
           .filter((t): t is string => !!t)
           .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+        const invoiceTotal = Number(booking.invoice?.total ?? 0);
+        const paidAmount = Number(booking.pricing?.paidAmount ?? 0);
+        const depositRequired = Number(booking.pricing?.depositRequired ?? 0);
+        const tipAmount = Number(booking.pricing?.tipAmount ?? 0);
+        const discountAmount = Number(booking.pricing?.discountAmount ?? 0);
+        const balance = Math.max(0, invoiceTotal - paidAmount);
+        const paymentMethod = booking.payment?.method ?? null;
+        const depositPaidAt = booking.payment?.depositPaidAt ?? null;
+        const fullyPaidAt = booking.payment?.fullyPaidAt ?? null;
+
+        const paymentStatus = booking.paymentStatus ?? 'pending';
+        const resolvedStatus =
+          paymentStatus === 'paid' && fullyPaidAt != null
+            ? 'completed'
+            : paymentStatus === 'partial'
+              ? 'confirmed'
+              : (booking.status ?? 'pending');
+
         return {
-        id: booking._id.toString(),
-        bookingCode: booking.bookingCode,
-        customerId: booking.customerId,
-        customerName: customerById.get(String(booking.customerId))?.name || 'Unknown Client',
-        customerEmail: customerById.get(String(booking.customerId))?.email || '',
-        customerPhone: customerById.get(String(booking.customerId))?.phone || '',
-        customerSocialMediaName: customerById.get(String(booking.customerId))?.socialMediaName || '',
-        nailTechId: booking.nailTechId,
-        slotIds: booking.slotIds,
-        appointmentDate: slotInfo?.date || null,
-        appointmentTime: slotInfo?.time || null,
-        appointmentTimes: appointmentTimes.length > 0 ? appointmentTimes : (slotInfo?.time ? [slotInfo.time] : []),
-        slotType: slotInfo?.slotType ?? null,
-        service: booking.service,
-        status: booking.status,
-        paymentStatus: booking.paymentStatus,
-        pricing: booking.pricing,
-        payment: booking.payment,
-        completedAt: booking.completedAt?.toISOString() || null,
-        confirmedAt: booking.confirmedAt?.toISOString() || null,
-        invoice: booking.invoice || null,
-        clientNotes: booking.clientNotes || '',
-        adminNotes: booking.adminNotes || '',
-        clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
-        createdAt: booking.createdAt.toISOString(),
-        updatedAt: booking.updatedAt.toISOString(),
-      };
-      })
+          id: booking._id.toString(),
+          bookingCode: booking.bookingCode,
+          customerId: booking.customerId,
+          customerName: customerById.get(String(booking.customerId))?.name || 'Unknown Client',
+          customerEmail: customerById.get(String(booking.customerId))?.email || '',
+          customerPhone: customerById.get(String(booking.customerId))?.phone || '',
+          customerSocialMediaName: customerById.get(String(booking.customerId))?.socialMediaName || '',
+          nailTechId: booking.nailTechId,
+          slotIds: booking.slotIds,
+          appointmentDate: slotInfo?.date || null,
+          appointmentTime: slotInfo?.time || null,
+          appointmentTimes: appointmentTimes.length > 0 ? appointmentTimes : (slotInfo?.time ? [slotInfo.time] : []),
+          slotType: slotInfo?.slotType ?? null,
+          service: booking.service,
+          status: resolvedStatus,
+          paymentStatus,
+          pricing: booking.pricing,
+          payment: booking.payment,
+          completedAt: booking.completedAt?.toISOString() || null,
+          confirmedAt: booking.confirmedAt?.toISOString() || null,
+          invoice: booking.invoice || null,
+          clientNotes: booking.clientNotes || '',
+          adminNotes: booking.adminNotes || '',
+          clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
+          createdAt: booking.createdAt.toISOString(),
+          updatedAt: booking.updatedAt.toISOString(),
+          invoiceTotal,
+          paidAmount,
+          depositRequired,
+          tipAmount,
+          discountAmount,
+          balance,
+          paymentMethod,
+          depositPaidAt: depositPaidAt ? (depositPaidAt instanceof Date ? depositPaidAt.toISOString() : String(depositPaidAt)) : null,
+          fullyPaidAt: fullyPaidAt ? (fullyPaidAt instanceof Date ? fullyPaidAt.toISOString() : String(fullyPaidAt)) : null,
+        };
+      }),
     });
   } catch (error: any) {
     console.error('Error listing bookings:', error);

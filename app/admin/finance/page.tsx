@@ -279,11 +279,11 @@ export default function FinancePage() {
       'Social Media Name',
       'Service',
       'ST/HS',
-      'Total Invoice',
+      'Invoice',
       'Paid Amount',
+      'Balance',
       'Tip',
       'Total Bill + Tip',
-      'Balance',
       `Admin Com ${adminCommissionRate}%`,
     ];
     const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
@@ -320,9 +320,9 @@ export default function FinancePage() {
         stHs,
         totalInvoice,
         t.paid,
+        t.balance,
         tipAmount,
         totalBillPlusTip,
-        t.balance,
         adminCom,
       ];
     });
@@ -334,7 +334,7 @@ export default function FinancePage() {
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
       .reduce((s, t) => s + (t.paid + t.tip) * (adminCommissionRate / 100), 0);
-    const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumTip, sumBillAndTip, sumBalance, sumCommission];
+    const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumBalance, sumTip, sumBillAndTip, sumCommission];
     const csv = [headers.join(','), ...rows.map((r) => r.join(',')), totalRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -367,8 +367,8 @@ export default function FinancePage() {
       'ST/HS',
       'Invoice',
       'Paid Amount',
-      'Tip',
       'Balance',
+      'Tip',
       'Total Bill + Tip',
       `Commission (${adminCommissionRate}%)`,
     ];
@@ -407,8 +407,8 @@ export default function FinancePage() {
         stHs,
         fmt(totalInvoice),
         fmt(t.paid),
-        fmt(tipAmount),
         fmt(t.balance),
+        fmt(tipAmount),
         fmt(totalBillPlusTip),
         fmt(commission),
       ];
@@ -430,8 +430,8 @@ export default function FinancePage() {
       '',
       fmt(sumTotal),
       fmt(sumPaid),
-      fmt(sumTip),
       fmt(sumBalance),
+      fmt(sumTip),
       fmt(sumBillAndTip),
       fmt(sumCommission),
     ];
@@ -483,7 +483,7 @@ export default function FinancePage() {
         <StatCard
           title="Today's Income"
           value={`₱${todayIncome.toLocaleString()}`}
-          subtext="From completed appointments"
+          subtext="By appointment date (today)"
           icon="bi-cash-stack"
           variant="dark"
           className="flex-grow-1"
@@ -492,7 +492,7 @@ export default function FinancePage() {
           title="This Week's Income"
           iconBgColor="#e9ecef"
           value={`₱${weekIncome.toLocaleString()}`}
-          subtext="Last 7 days"
+          subtext="By appointment date (this week)"
           icon="bi-calendar-week"
           className="flex-grow-1"
         />
@@ -500,7 +500,7 @@ export default function FinancePage() {
           title="Pending Payments"
           iconBgColor="#e9ecef"
           value={`₱${pendingPayments.toLocaleString()}`}
-          subtext="Awaiting payment"
+          subtext="By appointment date (this week)"
           icon="bi-clock-history"
           className="flex-grow-1"
         />
@@ -508,7 +508,7 @@ export default function FinancePage() {
           title="Total Tips"
           iconBgColor="#e9ecef"
           value={`₱${totalTips.toLocaleString()}`}
-          subtext="From paid appointments"
+          subtext="By appointment date (filtered range)"
           icon="bi-heart"
           className="flex-grow-1"
         />
@@ -516,7 +516,7 @@ export default function FinancePage() {
           title="Admin Commission"
           iconBgColor="#e9ecef"
           value={`₱${adminCommission.toLocaleString()}`}
-          subtext={`${adminCommissionRate}% of total invoices`}
+          subtext={`${adminCommissionRate}% of total invoices (by appointment date)`}
           icon="bi-percent"
           className="flex-grow-1"
         />
@@ -695,9 +695,9 @@ export default function FinancePage() {
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Service</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Invoice</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Paid Amount</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Balance</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Tip</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Total Bill + Tip</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Balance</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Commission</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
                 </tr>
@@ -757,13 +757,13 @@ export default function FinancePage() {
                       </td>
                       <td className="px-4 py-3 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString()}</td>
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{paidAmountInclTip.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{totalBillAndTip.toLocaleString()}</td>
                       <td className="px-4 py-3 tabular-nums">
                         <span className={item.balance > 0 ? 'text-amber-600 font-medium' : 'text-gray-500'}>
                           ₱{item.balance.toLocaleString()}
                         </span>
                       </td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{totalBillAndTip.toLocaleString()}</td>
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{commission.toLocaleString()}</td>
                       <td className="px-4 py-3">{getPaymentStatusBadge(item.paymentStatus)}</td>
                     </tr>
@@ -842,7 +842,7 @@ export default function FinancePage() {
                       </p>
                     </div>
                     <div>
-                      <span className="text-gray-400 text-xs">Total Invoice</span>
+                      <span className="text-gray-400 text-xs">Invoice</span>
                       <p className="text-[#1a1a1a] font-medium">₱{item.total.toLocaleString()}</p>
                     </div>
                     <div>
@@ -850,18 +850,18 @@ export default function FinancePage() {
                       <p className="text-[#1a1a1a]">₱{(item.paid + item.tip).toLocaleString()}</p>
                     </div>
                     <div>
-                      <span className="text-gray-400 text-xs">Tip</span>
-                      <p className="text-[#1a1a1a]">₱{item.tip.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 text-xs">Total Bill and Tip</span>
-                      <p className="text-[#1a1a1a]">₱{(item.total + item.tip).toLocaleString()}</p>
-                    </div>
-                    <div>
                       <span className="text-gray-400 text-xs">Balance</span>
                       <p className={item.balance > 0 ? 'text-amber-600 font-medium' : 'text-[#1a1a1a]'}>
                         ₱{item.balance.toLocaleString()}
                       </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Tip</span>
+                      <p className="text-[#1a1a1a]">₱{item.tip.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Total Bill + Tip</span>
+                      <p className="text-[#1a1a1a]">₱{(item.total + item.tip).toLocaleString()}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Commission</span>
@@ -886,14 +886,20 @@ export default function FinancePage() {
             <div className="flex items-center gap-1">
               <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
               <div className="hidden sm:flex items-center gap-1">
-                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                  const page = i + 1;
-                  return (
-                    <button key={page} onClick={() => setCurrentPage(page)}
-                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
-                    >{page}</button>
-                  );
-                })}
+                {(() => {
+                  const maxVisible = 7;
+                  let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                  let end = Math.min(totalPages, start + maxVisible - 1);
+                  if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+                  return Array.from({ length: end - start + 1 }, (_, i) => {
+                    const page = start + i;
+                    return (
+                      <button key={page} onClick={() => setCurrentPage(page)}
+                        className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                      >{page}</button>
+                    );
+                  });
+                })()}
               </div>
               <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
             </div>
@@ -934,7 +940,7 @@ function mapBookingToTransaction(booking: any): Transaction {
   const apptTimes = Array.isArray(booking.appointmentTimes) ? booking.appointmentTimes : (apptTime ? [apptTime] : []);
   return {
     id: booking.id,
-    date: booking.completedAt || booking.createdAt || '',
+    date: apptDate || booking.completedAt || booking.createdAt || '',
     appointmentDate: apptDate,
     appointmentTime: apptTime,
     appointmentTimes: apptTimes,

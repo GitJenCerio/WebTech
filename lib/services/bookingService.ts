@@ -621,13 +621,26 @@ export async function listBookings(filters: ListBookingsFilters = {}): Promise<I
     query.paymentStatus = filters.paymentStatus;
   }
 
+  // Filter by appointment date (slot date), not createdAt/updatedAt
   if (filters.startDate || filters.endDate) {
-    query.createdAt = {};
-    if (filters.startDate) {
-      query.createdAt.$gte = filters.startDate;
-    }
-    if (filters.endDate) {
-      query.createdAt.$lte = filters.endDate;
+    const toDateStr = (d: Date) => {
+      const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);
+      const y = parts.find((p) => p.type === 'year')?.value ?? '';
+      const m = parts.find((p) => p.type === 'month')?.value ?? '';
+      const day = parts.find((p) => p.type === 'day')?.value ?? '';
+      return `${y}-${m}-${day}`;
+    };
+    const startStr = filters.startDate ? toDateStr(filters.startDate) : null;
+    const endStr = filters.endDate ? toDateStr(filters.endDate) : null;
+    const slotDateQuery: { date?: { $gte?: string; $lte?: string } } = {};
+    if (startStr) slotDateQuery.date = { ...slotDateQuery.date, $gte: startStr };
+    if (endStr) slotDateQuery.date = { ...slotDateQuery.date, $lte: endStr };
+    const slotsInRange = await Slot.find(slotDateQuery).select('_id').lean();
+    const slotIdsInRange = slotsInRange.map((s) => String(s._id));
+    if (slotIdsInRange.length > 0) {
+      query.slotIds = { $in: slotIdsInRange };
+    } else {
+      query.slotIds = { $in: [] };
     }
   }
 

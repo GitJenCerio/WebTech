@@ -1,0 +1,86 @@
+{
+  "generatedAt": "2026-02-26T15:24:30.185Z",
+  "checks": {
+    "count_nailtechs": {
+      "firebaseCount": 2,
+      "mongoCount": 0,
+      "match": false,
+      "passed": false
+    },
+    "count_customers": {
+      "firebaseCount": 350,
+      "mongoCount": 350,
+      "match": true,
+      "passed": true
+    },
+    "count_slots": {
+      "firebaseCount": 327,
+      "mongoCount": 327,
+      "match": true,
+      "passed": true
+    },
+    "count_bookings": {
+      "firebaseCount": 155,
+      "mongoCount": 154,
+      "match": true,
+      "passed": true
+    },
+    "count_users": {
+      "firebaseCount": 4,
+      "mongoCount": 3,
+      "match": false,
+      "passed": false
+    },
+    "booking_customerId_not_null": {
+      "passed": false,
+      "exceptions": [
+        "GN-00153",
+        "GN-00155",
+        "GN-00058",
+        "GN-00146",
+        "GN-00076",
+        "GN-00149"
+      ],
+      "expectedMigrationOutcome": true
+    },
+    "booking_nailTechId_not_null": {
+      "passed": true,
+      "exceptions": []
+    },
+    "booking_slotIds_not_empty": {
+      "passed": false,
+      "exceptions": [
+        "GN-00085",
+        "GN-00008",
+        "GN-00011",
+        "GN-00104",
+        "GN-00017",
+        "GN-00109",
+        "GN-00076",
+        "GN-00170",
+        "GN-00056",
+        "GN-00164",
+        "GN-00163"
+      ],
+      "expectedMigrationOutcome": true
+    },
+    "booking_paid_implies_completed": {
+      "passed": true,
+      "exceptions": []
+    },
+    "booking_pricing_numbers": {
+      "passed": true,
+      "exceptions": []
+    },
+    "booking_invoice_total_number": {
+      "passed": true,
+      "exceptions": []
+    }
+  },
+  "summary": {
+    "totalChecked": 11,
+    "totalPassed": 9,
+    "totalFailed": 2,
+    "allPassed": false
+  }
+}

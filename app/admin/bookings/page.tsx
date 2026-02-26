@@ -70,6 +70,7 @@ interface Booking {
   invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
   completedAt?: string | null;
   slotType?: 'regular' | 'with_squeeze_fee' | null;
+  pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number; discountAmount?: number };
 }
 
 export default function BookingsPage() {
@@ -110,6 +111,7 @@ export default function BookingsPage() {
     slotTimes?: string[];
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     completedAt?: string | null;
+    pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number; discountAmount?: number };
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -196,6 +198,8 @@ export default function BookingsPage() {
           slotTimes: booking.appointmentTimes || (apptTime ? [apptTime] : []),
           invoice: booking.invoice || null,
           slotType: booking.slotType ?? null,
+          completedAt: booking.completedAt ?? null,
+          pricing: booking.pricing,
         };
       });
       setBookings(rows);
@@ -372,6 +376,8 @@ export default function BookingsPage() {
             slotTimes: booking.appointmentTimes || (booking.appointmentTime ? [booking.appointmentTime] : []),
             invoice: booking.invoice || null,
             completedAt: booking.completedAt || null,
+            slotType: booking.slotType ?? null,
+            pricing: booking.pricing,
           };
         });
         setBookings(rows);
@@ -448,6 +454,8 @@ export default function BookingsPage() {
             slotTimes: booking.appointmentTimes || (booking.appointmentTime ? [booking.appointmentTime] : []),
             invoice: booking.invoice || null,
             completedAt: booking.completedAt || null,
+            slotType: booking.slotType ?? null,
+            pricing: booking.pricing,
           };
         });
         setBookings(rows);
@@ -967,9 +975,9 @@ export default function BookingsPage() {
                                 clientPhotos: item.clientPhotos,
                                 paymentProofUrl: item.paymentProofUrl,
                                 slotTimes: item.slotTimes,
-                                slotType: item.slotType,
                                 invoice: item.invoice,
                                 completedAt: item.completedAt,
+                                pricing: item.pricing,
                               });
                               setAdminNotesDraft(item.adminNotes || '');
                               setShowModal(true);
