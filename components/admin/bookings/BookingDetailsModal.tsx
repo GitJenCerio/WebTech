@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar, MapPin, Phone, AtSign, Sparkles, CreditCard, User } from 'lucide-react';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
 import {
@@ -9,6 +9,8 @@ import {
   DialogFooter,
 } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Label } from '@/components/ui/Label';
 import { Textarea } from '@/components/ui/Textarea';
 import { format } from 'date-fns';
 import { sortTimesChronologically, formatTime12Hour } from '@/lib/utils';
@@ -65,6 +67,8 @@ interface BookingDetailsModalProps {
   onCreateInvoice?: () => void;
   onVerifyPaymentProof?: () => void;
   isVerifyingPaymentProof?: boolean;
+  onManualConfirmPayment?: (amountPaid: number) => Promise<void>;
+  isManualConfirming?: boolean;
   onAdminNotesChange?: (value: string) => void;
   onSaveNotes?: () => void;
   adminNotesDraft?: string;
@@ -81,10 +85,15 @@ export default function BookingDetailsModal({
   onCreateInvoice,
   onVerifyPaymentProof,
   isVerifyingPaymentProof = false,
+  onManualConfirmPayment,
+  isManualConfirming = false,
   onAdminNotesChange,
   onSaveNotes,
   adminNotesDraft = '',
 }: BookingDetailsModalProps) {
+  const [showManualConfirmDialog, setShowManualConfirmDialog] = useState(false);
+  const [manualAmount, setManualAmount] = useState<number>(0);
+
   if (!booking) return null;
 
   const isPendingPayment = ['booked', 'PENDING_PAYMENT', 'pending'].includes(booking.status);
@@ -120,6 +129,7 @@ export default function BookingDetailsModal({
   };
 
   return (
+    <>
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
       <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -148,7 +158,7 @@ export default function BookingDetailsModal({
             <div className="flex flex-col gap-1.5 mt-3 text-xs sm:text-sm text-[#1a1a1a]">
               <div className="flex items-center gap-2">
                 <Calendar size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
-                <span>{dateTimeStr}</span>
+                <span>{formattedDate} · <span className="whitespace-nowrap">{timeStr}</span></span>
               </div>
               {booking.nailTechName && (
                 <div className="flex items-center gap-2">
@@ -302,6 +312,17 @@ export default function BookingDetailsModal({
                 {isVerifyingPaymentProof ? 'Verifying...' : 'Verify Payment Proof'}
               </Button>
               <Button
+                variant="outline"
+                onClick={() => {
+                  setManualAmount(booking.reservationAmount ?? 0);
+                  setShowManualConfirmDialog(true);
+                }}
+                disabled={!onManualConfirmPayment || isManualConfirming}
+              >
+                <i className="bi bi-pencil-square mr-2"></i>
+                Manual confirmation
+              </Button>
+              <Button
                 variant="destructive"
                 onClick={onCancel}
                 disabled={!onCancel}
@@ -364,5 +385,45 @@ export default function BookingDetailsModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={showManualConfirmDialog} onOpenChange={setShowManualConfirmDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Manual confirmation</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-gray-600">
+          Confirm this booking without payment proof. Set how much the client paid (PHP). You can set 0 if you don’t require payment.
+        </p>
+        <div className="space-y-2">
+          <Label htmlFor="manual-amount">Amount paid (PHP)</Label>
+          <Input
+            id="manual-amount"
+            type="number"
+            min={0}
+            step={1}
+            value={manualAmount}
+            onChange={(e) => setManualAmount(Math.max(0, Number(e.target.value) || 0))}
+          />
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setShowManualConfirmDialog(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="default"
+            disabled={!onManualConfirmPayment || isManualConfirming}
+            loading={isManualConfirming}
+            onClick={async () => {
+              if (!onManualConfirmPayment) return;
+              await onManualConfirmPayment(manualAmount);
+              setShowManualConfirmDialog(false);
+            }}
+          >
+            {isManualConfirming ? 'Confirming...' : 'Confirm'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>
   );
 }

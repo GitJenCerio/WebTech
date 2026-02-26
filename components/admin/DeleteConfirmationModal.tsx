@@ -59,8 +59,8 @@ export default function DeleteConfirmationModal({
           </DialogDescription>
           {slotDate && slotTime && (
             <div className="bg-gray-100 p-3 rounded-2xl border-l-4 border-[#212529] mt-4">
-              <p className="text-sm font-medium text-[#212529] flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
+              <p className="text-sm font-medium text-[#212529] flex items-center gap-2 whitespace-nowrap">
+                <Calendar className="w-4 h-4 flex-shrink-0" />
                 {slotDetails}
               </p>
             </div>

@@ -13,13 +13,7 @@ import { BookingStatus } from '@/components/admin/StatusBadge';
 import { DateRangePicker } from '@/components/admin/DateRangePicker';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import { Search, X, ChevronLeft, ChevronRight, Plus, RefreshCw, ChevronDown } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Search, X, ChevronLeft, ChevronRight, Plus, RefreshCw } from 'lucide-react';
 import { usePricing } from '@/lib/hooks/usePricing';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
@@ -114,6 +108,7 @@ export default function BookingsPage() {
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number; discountAmount?: number };
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
+  const [isManualConfirming, setIsManualConfirming] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceItems, setInvoiceItems] = useState<Array<{ description: string; quantity: number; unitPrice: number; total: number }>>([]);
   const [invoiceNotes, setInvoiceNotes] = useState('');
@@ -130,7 +125,6 @@ export default function BookingsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
   const [lastUpdatedSeconds, setLastUpdatedSeconds] = useState<number | null>(null);
-  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [nailTechFilter, setNailTechFilter] = useState('all');
@@ -260,47 +254,6 @@ export default function BookingsPage() {
   };
 
   const openReasonDialog = (action: 'cancel' | 'reschedule' | 'mark_no_show') => {
-    setPendingBookingAction(action);
-    setReasonDialogOpen(true);
-  };
-
-  const handleInlineStatusChange = async (bookingId: string, action: 'confirm' | 'mark_completed') => {
-    setUpdatingStatusId(bookingId);
-    try {
-      const response = await fetch(`/api/bookings/${bookingId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: 'Failed to update' }));
-        throw new Error(err.error || 'Failed to update');
-      }
-      toast.success(action === 'confirm' ? 'Booking confirmed' : 'Booking marked complete');
-      await fetchBookings();
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to update booking');
-    } finally {
-      setUpdatingStatusId(null);
-    }
-  };
-
-  const openReasonForInline = (item: Booking, action: 'cancel' | 'mark_no_show') => {
-    setSelectedBooking({
-      id: item.id,
-      bookingCode: item.bookingCode,
-      customerId: item.customerId,
-      nailTechId: item.nailTechId,
-      date: item.date,
-      time: item.time,
-      clientName: item.clientName,
-      clientSocialMediaName: item.socialName,
-      service: item.service,
-      serviceLocation: item.serviceLocation,
-      status: item.status,
-      slotType: item.slotType,
-      slotTimes: item.slotTimes,
-    });
     setPendingBookingAction(action);
     setReasonDialogOpen(true);
   };
@@ -557,6 +510,43 @@ export default function BookingsPage() {
     }
   };
 
+  const handleManualConfirmPayment = async (amountPaid: number) => {
+    if (!selectedBooking?.id) return;
+    try {
+      setIsManualConfirming(true);
+      const res = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'manual_confirm',
+          paidAmount: amountPaid,
+          tipAmount: 0,
+        }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to confirm' }));
+        throw new Error(errorData.error || 'Failed to confirm');
+      }
+      const data = await res.json();
+      setSelectedBooking((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 'CONFIRMED',
+              paymentStatus: data.booking?.paymentStatus ?? 'paid',
+              paidAmount: data.booking?.pricing?.paidAmount ?? amountPaid,
+              pricing: { ...prev.pricing, paidAmount: data.booking?.pricing?.paidAmount ?? amountPaid },
+            }
+          : prev
+      );
+      toast.success('Booking confirmed. Amount paid set to PHP ' + amountPaid.toLocaleString());
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to confirm');
+    } finally {
+      setIsManualConfirming(false);
+    }
+  };
+
   const handleSaveNotes = async () => {
     if (!selectedBooking?.id) return;
     try {
@@ -710,9 +700,21 @@ export default function BookingsPage() {
     () => [...filteredBookings].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
     [filteredBookings]
   );
-  const paginatedBookings = paginateBookings(sortedBookings, currentPage, PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(filteredBookings.length / PAGE_SIZE));
   const totalItems = filteredBookings.length;
+
+  // Reset to page 1 when search changes; clamp page when filtered list shrinks
+  useEffect(() => {
+    setCurrentPage((p) => {
+      if (p > totalPages && totalPages >= 1) return totalPages;
+      return p;
+    });
+  }, [totalPages, totalItems]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const paginatedBookings = paginateBookings(sortedBookings, currentPage, PAGE_SIZE);
 
   const getStatusBadge = (status: BookingStatus) => {
     const cls =
@@ -887,7 +889,7 @@ export default function BookingsPage() {
                           return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                         })() : '—'}
                       </td>
-                      <td className="px-5 py-3.5 text-gray-500 text-xs">{formatSlotTimes(item.slotTimes, item.time)}</td>
+                      <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{formatSlotTimes(item.slotTimes, item.time)}</td>
                       <td className="px-5 py-3.5">
                         <span className="font-medium text-[#1a1a1a]">{item.clientName}</span>
                       </td>
@@ -898,55 +900,7 @@ export default function BookingsPage() {
                         {item.nailTechId ? (nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—') : '—'}
                       </td>
                       <td className="px-5 py-3.5">
-                        {(item.status === 'pending' || item.status === 'booked' || item.status === 'confirmed') ? (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                type="button"
-                                className="inline-flex items-center gap-1 rounded-full border-0 bg-transparent p-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/20 focus:ring-offset-1 disabled:opacity-60"
-                                disabled={updatingStatusId === item.id}
-                              >
-                                {updatingStatusId === item.id ? (
-                                  <span className="inline-flex h-5 w-5 items-center justify-center">
-                                    <RefreshCw className="h-3.5 w-3.5 animate-spin text-gray-400" />
-                                  </span>
-                                ) : (
-                                  <>
-                                    {getStatusBadge(item.status)}
-                                    <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
-                                  </>
-                                )}
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="min-w-[140px]">
-                              {(item.status === 'pending' || item.status === 'booked') && (
-                                <>
-                                  <DropdownMenuItem onClick={() => handleInlineStatusChange(item.id, 'confirm')}>
-                                    Confirm
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openReasonForInline(item, 'cancel')}>
-                                    Cancel
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {item.status === 'confirmed' && (
-                                <>
-                                  <DropdownMenuItem onClick={() => handleInlineStatusChange(item.id, 'mark_completed')}>
-                                    Complete
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openReasonForInline(item, 'cancel')}>
-                                    Cancel
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => openReasonForInline(item, 'mark_no_show')}>
-                                    No Show
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        ) : (
-                          getStatusBadge(item.status)
-                        )}
+                        {getStatusBadge(item.status)}
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -1042,7 +996,7 @@ export default function BookingsPage() {
                         {item.date ? (() => {
                           const d = new Date(item.date);
                           return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                        })() : '—'} · {formatSlotTimes(item.slotTimes, item.time)}
+                        })() : '—'} · <span className="whitespace-nowrap">{formatSlotTimes(item.slotTimes, item.time)}</span>
                         {item.slotType === 'with_squeeze_fee' && (
                           <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-700 px-2 py-0.5 text-[10px] font-semibold ml-1">Squeeze</span>
                         )}
@@ -1110,26 +1064,52 @@ export default function BookingsPage() {
       </Card>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalItems > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
           <p className="text-xs text-gray-400 order-2 sm:order-1">
-            Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems}
+            Showing {totalItems <= PAGE_SIZE ? 1 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems}
           </p>
           <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
             <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
             <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
               <div className="hidden sm:flex items-center gap-1">
-                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                  const page = i + 1;
-                  return (
-                    <button key={page} onClick={() => setCurrentPage(page)}
+                {(() => {
+                  const maxVisible = 5;
+                  let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                  let end = Math.min(totalPages, start + maxVisible - 1);
+                  if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+                  return Array.from({ length: end - start + 1 }, (_, i) => start + i).map((page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page)}
                       className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
-                    >{page}</button>
-                  );
-                })}
+                      aria-label={`Page ${page}`}
+                      aria-current={currentPage === page ? 'page' : undefined}
+                    >
+                      {page}
+                    </button>
+                  ));
+                })()}
               </div>
-              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                aria-label="Next page"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -1161,6 +1141,8 @@ export default function BookingsPage() {
         onCreateInvoice={handleCreateInvoice}
         onVerifyPaymentProof={handleVerifyPaymentProof}
         isVerifyingPaymentProof={isVerifyingPaymentProof}
+        onManualConfirmPayment={handleManualConfirmPayment}
+        isManualConfirming={isManualConfirming}
       />
 
       <RescheduleSlotModal

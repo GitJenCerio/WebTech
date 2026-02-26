@@ -158,7 +158,7 @@ export default function SlotItem({
           <div style={{ flex: 1 }}>
             <div className="d-flex flex-column gap-1">
               <div className="d-flex align-items-center gap-2 flex-wrap">
-                <div className="fw-semibold" style={{ minWidth: '70px', flexShrink: 0 }}>
+                <div className="fw-semibold whitespace-nowrap" style={{ minWidth: '70px', flexShrink: 0 }}>
                   {formatTime12Hour(time)}
                 </div>
                 <StatusBadge status={status} className="!text-[10px] !px-2 !py-0.5 sm:!text-xs sm:!px-2.5 sm:!py-0.5" />

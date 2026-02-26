@@ -325,9 +325,9 @@ export default function InvoiceModal({
                 <div><strong>Client:</strong> {booking.clientName}</div>
                 <div><strong>Date:</strong> {booking.date || new Date().toLocaleDateString('en-US')}</div>
                 {(booking.slotTimes && booking.slotTimes.length > 0) || booking.time ? (
-                  <div><strong>Time:</strong> {(booking.slotTimes && booking.slotTimes.length > 0)
+                  <div><strong>Time:</strong> <span className="whitespace-nowrap">{(booking.slotTimes && booking.slotTimes.length > 0)
                     ? sortTimesChronologically(booking.slotTimes).map(formatTime12Hour).join(' & ')
-                    : formatTime12Hour(booking.time || '')}
+                    : formatTime12Hour(booking.time || '')}</span>
                   </div>
                 ) : null}
               </div>
@@ -335,16 +335,16 @@ export default function InvoiceModal({
                 {invoiceItems.map((item, idx) => (
                   <div key={idx} className="flex justify-between gap-4 items-start">
                     <div className="min-w-0 flex-1">
-                      <div className="break-words font-medium">{item.description}</div>
-                      <div className="text-sm text-gray-600 mt-0.5">
+                      <div className="break-words font-medium text-xs">{item.description}</div>
+                      <div className="text-xs md:text-sm text-gray-600 mt-0.5">
                         PHP {(item.unitPrice || 0).toLocaleString()} x Qty. {item.quantity}
                       </div>
                     </div>
-                    <div className="flex-shrink-0 text-right tabular-nums whitespace-nowrap font-medium">PHP {(item.total || 0).toLocaleString()}</div>
+                    <div className="flex-shrink-0 text-right tabular-nums whitespace-nowrap font-medium text-xs md:text-base">PHP {(item.total || 0).toLocaleString()}</div>
                   </div>
                 ))}
               </div>
-              <div className="space-y-1 pt-2 border-t-2 border-[#212529]">
+              <div className="space-y-1 pt-2 border-t-2 border-[#212529] text-xs md:text-base">
                 <div className="flex justify-between gap-4 font-semibold">
                   <span className="min-w-0">Subtotal</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {subtotal.toLocaleString()}</span>

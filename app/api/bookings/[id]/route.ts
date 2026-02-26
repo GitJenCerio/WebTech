@@ -199,6 +199,33 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       });
     }
 
+    if (action === 'manual_confirm') {
+      // Admin bypass: set amount paid (including 0) and confirm without payment proof
+      const paidAmount = typeof body.paidAmount === 'number' ? body.paidAmount : 0;
+      const tipAmount = typeof body.tipAmount === 'number' ? body.tipAmount : 0;
+      if (paidAmount < 0 || tipAmount < 0) {
+        return NextResponse.json({ error: 'Payment amounts must be non-negative' }, { status: 400 });
+      }
+      const booking = await updateBookingPayment(id, paidAmount, tipAmount, body.method);
+      const confirmed = await confirmBooking(id, { skipDepositCheck: true });
+      if (confirmed.confirmedAt) {
+        backupBooking(confirmed, 'update').catch(err =>
+          console.error('Failed to backup booking update to Google Sheets:', err)
+        );
+      }
+      fireSheetsSync(id);
+      return NextResponse.json({
+        booking: {
+          id: confirmed._id.toString(),
+          bookingCode: confirmed.bookingCode,
+          status: confirmed.status,
+          paymentStatus: confirmed.paymentStatus,
+          pricing: confirmed.pricing,
+          payment: confirmed.payment,
+        }
+      });
+    }
+
     if (action === 'mark_completed') {
       // Mark booking as completed (admin-only)
       // Optionally accept paidAmount and tipAmount (final totals) to update payment before completing
@@ -340,7 +367,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     return NextResponse.json({ 
-      error: 'Invalid action. Supported actions: confirm, cancel, reschedule, reschedule_to, update_payment, mark_completed, mark_no_show, update_notes' 
+      error: 'Invalid action. Supported actions: confirm, cancel, reschedule, reschedule_to, update_payment, manual_confirm, mark_completed, mark_no_show, update_notes' 
     }, { status: 400 });
   } catch (error: any) {
     console.error('Error updating booking:', error);

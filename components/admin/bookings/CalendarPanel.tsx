@@ -229,19 +229,21 @@ export default function CalendarPanel({
       booked: number;
       completed: number;
       pending: number;
+      hidden: number;
       total: number;
       bookedNames: string[];
       completedNames: string[];
       pendingNames: string[];
     }>();
     slots.forEach((slot) => {
-      if (slot.isHidden || !slot.date) return; // Skip hidden or slots without date
+      if (!slot.date) return;
       const dateStr = slot.date;
       if (!map.has(dateStr)) {
-        map.set(dateStr, { available: 0, booked: 0, completed: 0, pending: 0, total: 0, bookedNames: [], completedNames: [], pendingNames: [] });
+        map.set(dateStr, { available: 0, booked: 0, completed: 0, pending: 0, hidden: 0, total: 0, bookedNames: [], completedNames: [], pendingNames: [] });
       }
       const data = map.get(dateStr)!;
       data.total++;
+      if (slot.isHidden) data.hidden++;
       const name = (slot as Slot).clientName?.trim() || '';
       if (slot.status === 'available') data.available++;
       else if (slot.status === 'completed' || slot.status === 'COMPLETED') {
@@ -265,6 +267,7 @@ export default function CalendarPanel({
       booked: 0,
       completed: 0,
       pending: 0,
+      hidden: 0,
       total: 0,
       bookedNames: [],
       completedNames: [],
@@ -476,7 +479,7 @@ export default function CalendarPanel({
             </div>
             {(() => {
               const counts = getSlotCounts(selectedDate);
-              const slotsForDay = daySlots.length > 0 ? daySlots : slots.filter((s) => s.date === format(selectedDate, 'yyyy-MM-dd') && !s.isHidden);
+              const slotsForDay = daySlots.length > 0 ? daySlots : slots.filter((s) => s.date === format(selectedDate, 'yyyy-MM-dd'));
               const sortedSlots = [...slotsForDay].sort((a, b) => a.time.localeCompare(b.time));
               return (
                 <div className="space-y-3">
@@ -524,16 +527,16 @@ export default function CalendarPanel({
                             type="button"
                             className="d-flex flex-column align-items-start gap-0 px-3 py-2 rounded-2 border-0 w-100 text-start"
                             style={{
-                              background: slot.status === 'available' ? '#d4edda' : slot.status === 'booked' || slot.status === 'confirmed' || slot.status === 'CONFIRMED' ? '#212529' : slot.status === 'completed' || slot.status === 'COMPLETED' ? '#ea580c' : '#cce5ff',
-                              color: slot.status === 'available' ? '#155724' : '#fff',
+                              background: (slot as Slot).isHidden ? '#e9ecef' : slot.status === 'available' ? '#d4edda' : slot.status === 'booked' || slot.status === 'confirmed' || slot.status === 'CONFIRMED' ? '#212529' : slot.status === 'completed' || slot.status === 'COMPLETED' ? '#ea580c' : '#cce5ff',
+                              color: (slot as Slot).isHidden ? '#6c757d' : slot.status === 'available' ? '#155724' : '#fff',
                               fontSize: '0.875rem',
                               cursor: onSlotClick ? 'pointer' : 'default',
                             }}
                             onClick={() => onSlotClick?.(slot)}
                           >
-                            <span className="fw-medium">{formatTime12Hour(slot.time)}</span>
+                            <span className="fw-medium whitespace-nowrap">{formatTime12Hour(slot.time)}</span>
                             <span className="small opacity-90" style={{ lineHeight: 1.3 }}>
-                              {slot.status === 'available' ? 'Available' : (slot.clientName || (slot.status === 'completed' || slot.status === 'COMPLETED' ? 'Completed' : slot.status))}
+                              {(slot as Slot).isHidden ? 'Hidden from clients' : (slot.status === 'available' ? 'Available' : (slot.clientName || (slot.status === 'completed' || slot.status === 'COMPLETED' ? 'Completed' : slot.status)))}
                             </span>
                           </button>
                         ))
@@ -694,6 +697,28 @@ export default function CalendarPanel({
                             <span key={i} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>{name}</span>
                           )) : counts.pending}
                         </span>
+                      </span>
+                    )}
+                    {counts.hidden > 0 && (
+                      <span
+                        className="slot-count-badge slot-count-hidden"
+                        style={{
+                          color: '#6c757d',
+                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.2)' : '#e9ecef',
+                          padding: '2px 4px',
+                          fontSize: '0.65rem',
+                          fontWeight: 400,
+                          lineHeight: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%',
+                          borderRadius: '6px',
+                          minHeight: '14px',
+                        }}
+                        title="Hidden from clients"
+                      >
+                        {counts.hidden} hidden
                       </span>
                     )}
                   </>

@@ -80,7 +80,7 @@ export default function SlotConfirmationModal({
               <Clock className="w-5 h-5 text-gray-700 flex-shrink-0" />
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wider">Time</p>
-                <p className="text-base font-semibold text-gray-900">
+                <p className="text-base font-semibold text-gray-900 whitespace-nowrap">
                   {slotTime ? formatTime12Hour(slotTime) : ''}
                   {linkedSlotTimes.length > 0 && (
                     <span className="text-base font-semibold text-gray-900">

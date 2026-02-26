@@ -320,11 +320,14 @@ export async function updateBookingPayment(
 
 /**
  * Confirm a booking
- * - Only allowed if deposit or full payment is received
+ * - Only allowed if deposit or full payment is received (unless skipDepositCheck)
  * - Sets booking status to 'confirmed'
  * - Sets slot statuses to 'confirmed'
  */
-export async function confirmBooking(bookingId: string): Promise<IBooking> {
+export async function confirmBooking(
+  bookingId: string,
+  options?: { skipDepositCheck?: boolean }
+): Promise<IBooking> {
   await connectDB();
 
   const booking = await Booking.findById(bookingId);
@@ -344,10 +347,12 @@ export async function confirmBooking(bookingId: string): Promise<IBooking> {
     return booking; // Already confirmed
   }
 
-  // Check if deposit or full payment is received
-  const totalPaid = booking.pricing.paidAmount + booking.pricing.tipAmount;
-  if (totalPaid < booking.pricing.depositRequired) {
-    throw new Error('Deposit or full payment is required to confirm booking');
+  // Check if deposit or full payment is received (skip when admin manually confirms)
+  if (!options?.skipDepositCheck) {
+    const totalPaid = booking.pricing.paidAmount + booking.pricing.tipAmount;
+    if (totalPaid < booking.pricing.depositRequired) {
+      throw new Error('Deposit or full payment is required to confirm booking');
+    }
   }
 
   // Confirm booking and slots

@@ -111,7 +111,7 @@ export default function EditSlotModal({
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
       <DialogContent className="sm:max-w-lg md:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Slot: {formatTime12Hour(slot.time)} on {slot.date}</DialogTitle>
+          <DialogTitle>Edit Slot: <span className="whitespace-nowrap">{formatTime12Hour(slot.time)}</span> on {slot.date}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-3">

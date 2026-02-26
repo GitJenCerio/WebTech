@@ -223,7 +223,7 @@ export default function RescheduleSlotModal({
                             : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
                         }`}
                       >
-                        {formatTime12Hour(slot.time)}
+                        <span className="whitespace-nowrap">{formatTime12Hour(slot.time)}</span>
                       </button>
                     );
                   })}

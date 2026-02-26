@@ -125,7 +125,7 @@ export default function AuditLogPage() {
       if (actionFilter !== 'all') params.set('action', actionFilter);
       if (resourceFilter !== 'all') params.set('resource', resourceFilter);
 
-      const res = await fetch(`/api/audit-log?${params.toString()}`);
+      const res = await fetch(`/api/audit?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       setItems(data.items || []);

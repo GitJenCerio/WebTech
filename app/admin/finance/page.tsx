@@ -826,7 +826,7 @@ export default function FinancePage() {
                     {item.appointmentDate ? new Date(item.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                     {(() => {
                       const t = formatSlotTimes(item.appointmentTimes, item.appointmentTime);
-                      return t && t !== '—' ? ` · ${t}` : '';
+                      return t && t !== '—' ? <> · <span className="whitespace-nowrap">{t}</span></> : '';
                     })()}
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-sm">

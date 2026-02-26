@@ -111,6 +111,7 @@ export default function CalendarPage() {
     completedAt?: string | null;
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
+  const [isManualConfirming, setIsManualConfirming] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceItems, setInvoiceItems] = useState<Array<{ description: string; quantity: number; unitPrice: number; total: number }>>([]);
   const [invoiceNotes, setInvoiceNotes] = useState('');
@@ -672,6 +673,44 @@ export default function CalendarPage() {
     }
   };
 
+  const handleManualConfirmPayment = async (amountPaid: number) => {
+    if (!selectedBooking?.id) return;
+    try {
+      setIsManualConfirming(true);
+      const res = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'manual_confirm',
+          paidAmount: amountPaid,
+          tipAmount: 0,
+        }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to confirm' }));
+        throw new Error(errorData.error || 'Failed to confirm');
+      }
+      const data = await res.json();
+      setSelectedBooking((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 'CONFIRMED',
+              paymentStatus: data.booking?.paymentStatus ?? 'paid',
+              paidAmount: data.booking?.pricing?.paidAmount ?? amountPaid,
+            }
+          : prev
+      );
+      toast.success('Booking confirmed. Amount paid set to PHP ' + amountPaid.toLocaleString());
+      await refreshSelectedDateSlots();
+      await refreshMonthlySlots();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to confirm');
+    } finally {
+      setIsManualConfirming(false);
+    }
+  };
+
   const handleSaveNotes = async () => {
     if (!selectedBooking?.id) return;
     try {
@@ -964,6 +1003,8 @@ export default function CalendarPage() {
         onCreateInvoice={handleCreateInvoice}
         onVerifyPaymentProof={handleVerifyPaymentProof}
         isVerifyingPaymentProof={isVerifyingPaymentProof}
+        onManualConfirmPayment={handleManualConfirmPayment}
+        isManualConfirming={isManualConfirming}
       />
 
       <RescheduleSlotModal
