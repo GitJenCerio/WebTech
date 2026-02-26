@@ -75,10 +75,11 @@ export async function GET(request: Request) {
       dateRange: `${startDate} to ${endDate}`
     });
     
-    // Query slots from MongoDB
+    // Query slots from MongoDB - client sees only available slots (no pending/confirmed/booked)
     let slots = await Slot.find({
       nailTechId: targetNailTechId,
       date: { $gte: startDate, $lte: endDate },
+      status: 'available',
       isHidden: { $ne: true } // Exclude hidden slots from public view
     }).lean();
 
