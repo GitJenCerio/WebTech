@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import bcrypt from 'bcryptjs';
@@ -25,7 +25,7 @@ function generateTempPassword(length = 12): string {
  */
 export async function POST(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -33,8 +33,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const resolvedParams = params instanceof Promise ? await params : params;
-    const userId = resolvedParams.id;
+    const { id: userId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });

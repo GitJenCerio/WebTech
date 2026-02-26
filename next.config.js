@@ -5,6 +5,8 @@ const path = require('path');
 const esToolkitGetPath = path.join(__dirname, 'node_modules', 'es-toolkit', 'compat', 'get.js').replace(/\\/g, '/');
 
 const nextConfig = {
+  // Use this project as the root for output file tracing (avoids multiple lockfile warning)
+  outputFileTracingRoot: path.join(__dirname),
   async headers() {
     return [
       {

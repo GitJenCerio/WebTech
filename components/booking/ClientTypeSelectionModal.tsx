@@ -38,7 +38,7 @@ export default function ClientTypeSelectionModal({
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupResult, setLookupResult] = useState<{
     found: boolean;
-    customer?: { id: string; name: string; phone: string; socialMediaName: string };
+    customer?: { id: string; name: string; email: string; phone: string; socialMediaName: string };
   } | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
 
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -17,9 +17,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Handle both Promise and direct params (for Next.js 14+ compatibility)
-    const resolvedParams = params instanceof Promise ? await params : params;
-    const userId = resolvedParams.id;
+    const { id: userId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -86,7 +84,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
@@ -95,9 +93,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Handle both Promise and direct params (for Next.js 14+ compatibility)
-    const resolvedParams = params instanceof Promise ? await params : params;
-    const userId = resolvedParams.id;
+    const { id: userId } = await params;
 
     // Prevent deleting last active admin
     const activeAdmins = await User.countDocuments({ role: 'admin', status: 'active' });

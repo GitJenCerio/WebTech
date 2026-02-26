@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth-options';
 import { createBooking, listBookings, type CreateBookingInput } from '@/lib/services/bookingService';
 import type { BookingStatus, PaymentStatus, ServiceType } from '@/lib/types';
 import { sendBookingPendingEmail } from '@/lib/email';

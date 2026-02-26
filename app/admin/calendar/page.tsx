@@ -53,6 +53,9 @@ interface Slot {
     payment?: { paymentProofUrl?: string };
     clientNotes?: string;
     adminNotes?: string;
+    clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
+    invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
+    completedAt?: string | null;
   } | null;
 }
 
@@ -105,6 +108,7 @@ export default function CalendarPage() {
     paidAmount?: number;
     depositRequired?: number;
     paymentProofUrl?: string;
+    pricing?: { total?: number; depositRequired?: number; paidAmount?: number };
     clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
     slotTimes?: string[];
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
@@ -485,8 +489,10 @@ export default function CalendarPage() {
         paymentStatus: slot.booking.paymentStatus,
         slotCount: (slot.booking.slotIds || []).length || 1,
         reservationAmount: (((slot.booking.slotIds || []).length || 1) * 500),
+        amount: slot.booking.pricing?.total ?? slot.booking.pricing?.paidAmount,
         paidAmount: slot.booking.pricing?.paidAmount ?? 0,
         depositRequired: slot.booking.pricing?.depositRequired,
+        pricing: slot.booking.pricing,
         paymentProofUrl: slot.booking.payment?.paymentProofUrl,
         adminNotes: slot.booking?.adminNotes || '',
         clientPhotos: slot.booking?.clientPhotos,
@@ -1084,7 +1090,7 @@ export default function CalendarPage() {
             onAdd={handleAddSlot}
             selectedDate={selectedDate}
             nailTechs={userRole.canManageAllTechs ? nailTechs : nailTechs.filter((t) => t.id === userRole.assignedNailTechId)}
-            defaultNailTechId={userRole.assignedNailTechId}
+            defaultNailTechId={userRole.assignedNailTechId ?? undefined}
             existingSlots={slots
               .filter((slot): slot is Slot & { date: string; nailTechId: string } =>
                 !!slot.date && !!slot.nailTechId
