@@ -5,6 +5,15 @@ import Customer from '@/lib/models/Customer';
 import Quotation from '@/lib/models/Quotation';
 import { recomputeCustomerStats } from '@/lib/services/bookingService';
 
+async function findQuotationById(id: string) {
+  if (!id?.trim()) return null;
+  const t = id.trim();
+  const isObjectId = /^[a-fA-F0-9]{24}$/.test(t);
+  let doc = isObjectId ? await Quotation.findById(t) : await Quotation.findOne({ firebaseId: t });
+  if (!doc && isObjectId) doc = await Quotation.findOne({ firebaseId: t });
+  return doc;
+}
+
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
@@ -44,9 +53,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     let quotation;
     if (booking.invoice?.quotationId) {
-      quotation = await Quotation.findByIdAndUpdate(
-        booking.invoice.quotationId,
-        {
+      const existing = await findQuotationById(booking.invoice.quotationId);
+      quotation = existing
+        ? await Quotation.findByIdAndUpdate(
+            existing._id,
+            {
           customerName,
           customerPhone,
           customerEmail,
@@ -60,7 +71,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           notes: body.notes?.trim() || (booking.bookingCode ? `Booking: ${booking.bookingCode}` : undefined),
         },
         { new: true }
-      );
+          )
+        : null;
       if (!quotation) {
         return NextResponse.json({ error: 'Quotation not found' }, { status: 404 });
       }

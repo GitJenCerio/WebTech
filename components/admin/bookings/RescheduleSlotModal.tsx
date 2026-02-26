@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover
 import { Calendar } from '@/components/ui/Calendar';
 import { cn } from '@/components/ui/Utils';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
+import { formatTime12Hour } from '@/lib/utils';
 
 interface Slot {
   _id: string;
@@ -222,7 +223,7 @@ export default function RescheduleSlotModal({
                             : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
                         }`}
                       >
-                        {slot.time}
+                        {formatTime12Hour(slot.time)}
                       </button>
                     );
                   })}

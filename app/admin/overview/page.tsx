@@ -30,7 +30,14 @@ function getManilaDateKey(): string {
 
 function formatTime(isoOrTime: string): string {
   if (!isoOrTime) return '—';
-  if (isoOrTime.includes(':')) return isoOrTime;
+  if (isoOrTime.includes(':')) {
+    const [h, m] = isoOrTime.split(':');
+    const hour = parseInt(h || '0', 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    const mins = (m || '00').padStart(2, '0');
+    return `${hour12}:${mins} ${ampm}`;
+  }
   const d = new Date(isoOrTime);
   return isNaN(d.getTime()) ? isoOrTime : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }

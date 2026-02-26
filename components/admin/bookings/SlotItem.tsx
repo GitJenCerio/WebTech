@@ -2,6 +2,7 @@ import React from 'react';
 import { EyeOff } from 'lucide-react';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
 import NailTechBadge from '../NailTechBadge';
+import { formatTime12Hour } from '@/lib/utils';
 
 const SERVICE_BADGE_STYLE: React.CSSProperties = {
   backgroundColor: '#f3f4f6',
@@ -155,32 +156,34 @@ export default function SlotItem({
       >
         <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
           <div style={{ flex: 1 }}>
-            <div className="d-flex align-items-center gap-2 flex-wrap">
-              <div className="fw-semibold" style={{ minWidth: '70px', flexShrink: 0 }}>
-                {time}
+            <div className="d-flex flex-column gap-1">
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                <div className="fw-semibold" style={{ minWidth: '70px', flexShrink: 0 }}>
+                  {formatTime12Hour(time)}
+                </div>
+                <StatusBadge status={status} className="!text-[10px] !px-2 !py-0.5 sm:!text-xs sm:!px-2.5 sm:!py-0.5" />
+                {serviceBadge && (
+                  <span
+                    className="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium min-h-[20px] sm:min-h-[24px] box-border sm:px-2.5"
+                    style={{ ...serviceBadge.style }}
+                  >
+                    {serviceBadge.label}
+                  </span>
+                )}
+                {isHidden && (
+                  <span
+                    className="inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium min-h-[24px] box-border border border-transparent text-white"
+                    style={{ backgroundColor: '#6c757d' }}
+                  >
+                    <EyeOff style={{ width: '12px', height: '12px', flexShrink: 0 }} />Hidden from Clients
+                  </span>
+                )}
+                {nailTechName && (
+                  <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
+                )}
               </div>
-              <StatusBadge status={status} className="!text-[10px] !px-2 !py-0.5 sm:!text-xs sm:!px-2.5 sm:!py-0.5" />
-              {serviceBadge && (
-                <span
-                  className="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium min-h-[20px] sm:min-h-[24px] box-border sm:px-2.5"
-                  style={{ ...serviceBadge.style }}
-                >
-                  {serviceBadge.label}
-                </span>
-              )}
-              {isHidden && (
-                <span
-                  className="inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium min-h-[24px] box-border border border-transparent text-white"
-                  style={{ backgroundColor: '#6c757d' }}
-                >
-                  <EyeOff style={{ width: '12px', height: '12px', flexShrink: 0 }} />Hidden from Clients
-                </span>
-              )}
-              {nailTechName && (
-                <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
-              )}
               {clientName && (
-                <span className="text-muted small fw-semibold">{clientName}</span>
+                <div className="text-muted small fw-semibold">{clientName}</div>
               )}
             </div>
           </div>

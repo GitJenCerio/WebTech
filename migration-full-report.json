@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-02-26T01:23:45.193Z",
+  "dryRun": false,
+  "collections": {
+    "nail_techs": {
+      "total": 2,
+      "ok": 0,
+      "fail": 0,
+      "skip": 2,
+      "errors": []
+    },
+    "users": {
+      "total": 4,
+      "ok": 0,
+      "fail": 0,
+      "skip": 4,
+      "errors": []
+    },
+    "customers": {
+      "total": 349,
+      "ok": 0,
+      "fail": 0,
+      "skip": 349,
+      "errors": []
+    },
+    "slots": {
+      "total": 315,
+      "ok": 0,
+      "fail": 0,
+      "skip": 315,
+      "errors": []
+    },
+    "quotations": {
+      "total": 0,
+      "ok": 0,
+      "fail": 0,
+      "skip": 0,
+      "errors": []
+    },
+    "bookings": {
+      "total": 153,
+      "ok": 0,
+      "fail": 1,
+      "skip": 152,
+      "errors": [
+        {
+          "id": "nfm5EY3M8YO0XSffoIAD",
+          "error": "E11000 duplicate key error collection: glammednails.bookings index: bookingCode_1 dup key: { bookingCode: \"GN-00010\" }"
+        }
+      ]
+    },
+    "blocks": {
+      "total": 0,
+      "ok": 0,
+      "fail": 0,
+      "skip": 0,
+      "errors": []
+    }
+  }
+}

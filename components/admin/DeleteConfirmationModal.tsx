@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, Calendar, Loader2 } from 'lucide-react';
+import { formatTime12Hour } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -41,7 +42,7 @@ export default function DeleteConfirmationModal({
     year: 'numeric',
   }) : '';
 
-  const slotDetails = `${dateFormatted} at ${slotTime}${nailTechName ? ` - ${nailTechName}` : ''}`;
+  const slotDetails = `${dateFormatted} at ${slotTime ? formatTime12Hour(slotTime) : ''}${nailTechName ? ` - ${nailTechName}` : ''}`;
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onCancel()}>

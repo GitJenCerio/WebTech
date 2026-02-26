@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
@@ -22,23 +22,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { usePricing } from '@/lib/hooks/usePricing';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
+import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
 
 const PAGE_SIZE = 10;
 
 function formatSlotTimes(slotTimes: string[] | undefined, fallback: string): string {
-  if (!slotTimes?.length) return fallback || '—';
-  const toMins = (s: string) => {
-    const m = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-    if (!m) return 0;
-    let h = parseInt(m[1], 10);
-    const min = parseInt(m[2], 10);
-    const ap = (m[3] || '').toUpperCase();
-    if (ap === 'PM' && h !== 12) h += 12;
-    if (ap === 'AM' && h === 12) h = 0;
-    return h * 60 + min;
-  };
-  const sorted = [...slotTimes].sort((a, b) => toMins(a) - toMins(b));
-  return sorted.join(', ');
+  if (!slotTimes?.length) return fallback ? formatTime12Hour(fallback) : '—';
+  return sortTimesChronologically(slotTimes).map(formatTime12Hour).join(', ');
 }
 
 function locationBadge(loc?: 'homebased_studio' | 'home_service') {
@@ -708,7 +698,11 @@ export default function BookingsPage() {
   };
 
   const filteredBookings = filterBookings(bookings, searchQuery);
-  const paginatedBookings = paginateBookings(filteredBookings, currentPage, PAGE_SIZE);
+  const sortedBookings = useMemo(
+    () => [...filteredBookings].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
+    [filteredBookings]
+  );
+  const paginatedBookings = paginateBookings(sortedBookings, currentPage, PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(filteredBookings.length / PAGE_SIZE));
   const totalItems = filteredBookings.length;
 

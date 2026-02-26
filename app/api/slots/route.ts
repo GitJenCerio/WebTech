@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
@@ -124,7 +125,8 @@ export async function GET(request: Request) {
           .lean()
       : [];
 
-    const customerIds = Array.from(new Set(bookings.map((booking: any) => booking.customerId).filter(Boolean)));
+    const rawCustomerIds = Array.from(new Set(bookings.map((booking: any) => booking.customerId).filter(Boolean)));
+    const customerIds = rawCustomerIds.filter((id) => mongoose.Types.ObjectId.isValid(id) && String(id).length === 24);
     const customers = customerIds.length
       ? await Customer.find({ _id: { $in: customerIds } })
           .select('_id name email phone socialMediaName')

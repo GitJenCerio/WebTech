@@ -44,14 +44,20 @@ This plan helps you **clean your current MongoDB** and then **migrate real data 
 
 ### 1.3 Environment check
 
-- Ensure `scripts/.env` (or the env used by migration scripts) has:
+- Run the environment check script:
+  ```bash
+  npm run migrate:check-env
+  ```
+- Ensure `.env` (or `scripts/.env`) has:
   - `MONGODB_URI` → the database you will clean and then migrate into.
   - `DRY_RUN=true` for the first migration run.
-  - Firebase credentials (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` or service account path).
+  - Firebase credentials (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` or `serviceAccountKey.json` in project root).
 
 ---
 
 ## Phase 2: Clean MongoDB (Before Migration)
+
+> **Important:** Phase 2 affects **MongoDB only**. Rollback and clean scripts connect to MongoDB only and run `deleteMany()` on MongoDB collections. **Firebase is never touched** – no Firebase connection is made.
 
 Goal: Remove data that migration will replace (and optionally other collections), so there are no duplicate or conflicting documents.
 
@@ -83,8 +89,9 @@ Create a single script that cleans only the collections you chose above, in a **
 
 **Option A – Use rollback of the migration script (recommended for you):**
 
-- The full migration script already supports `--rollback`, which deletes **only** from: nail_techs, users, customers, slots, bookings, blocks.
-- **It does NOT touch Settings** – your admin commission and other settings are preserved.
+- The full migration script already supports `--rollback`, which deletes **only from MongoDB** (nail_techs, users, customers, slots, bookings, blocks).
+- **Firebase is never touched** – rollback connects to MongoDB only and performs `deleteMany()` on MongoDB collections. No Firebase connection is made.
+- **Settings are not touched** – your admin commission and other settings are preserved in MongoDB.
 - So you can **treat “clean” as “run rollback”** before migrating:
   ```bash
   npm run migrate:all:rollback
@@ -196,6 +203,7 @@ Create a single script that cleans only the collections you chose above, in a **
 
 | Step              | Command |
 |-------------------|--------|
+| Env check (1.3)   | `npm run migrate:check-env` |
 | Backup Firestore  | `npm run backup-firestore` |
 | Clean MongoDB     | `npm run migrate:all:rollback` (or your custom clean script) |
 | Dry-run migration | `npm run migrate:all:dry-run` |

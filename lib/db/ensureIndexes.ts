@@ -24,7 +24,16 @@ export async function ensureIndexes(): Promise<void> {
 
     // Customer indexes (explicit names to avoid conflict with existing non-sparse index of same key)
     await Customer.collection.createIndex({ email: 1 }, { sparse: true, name: 'customer_email_sparse' }).catch((e) => console.error('[ensureIndexes] Customer email', e));
-    await Customer.collection.createIndex({ socialMediaName: 1 }, { sparse: true, name: 'customer_socialMediaName_sparse' }).catch((e) => console.error('[ensureIndexes] Customer socialMediaName', e));
+    try {
+      await Customer.collection.createIndex({ socialMediaName: 1 }, { sparse: true, name: 'customer_socialMediaName_sparse' });
+    } catch (e: unknown) {
+      if ((e as { code?: number })?.code === 85 /* IndexOptionsConflict */) {
+        await Customer.collection.dropIndex('socialMediaName_1').catch(() => {});
+        await Customer.collection.createIndex({ socialMediaName: 1 }, { sparse: true, name: 'customer_socialMediaName_sparse' }).catch((err) => console.error('[ensureIndexes] Customer socialMediaName', err));
+      } else {
+        console.error('[ensureIndexes] Customer socialMediaName', e);
+      }
+    }
     await Customer.collection.createIndex({ isActive: 1 }).catch((e) => console.error('[ensureIndexes] Customer isActive', e));
 
     // AuditLog TTL index (auto-delete after 90 days)

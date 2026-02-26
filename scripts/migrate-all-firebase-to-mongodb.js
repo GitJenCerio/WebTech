@@ -17,7 +17,7 @@
  *   node scripts/migrate-all-firebase-to-mongodb.js           # Migrate all
  *   node scripts/migrate-all-firebase-to-mongodb.js --dry-run # Preview only
  *   node scripts/migrate-all-firebase-to-mongodb.js --only=customers,slots  # Specific collections
- *   node scripts/migrate-all-firebase-to-mongodb.js --rollback # Remove migrated data
+ *   node scripts/migrate-all-firebase-to-mongodb.js --rollback # Remove migrated data (MongoDB ONLY, never touches Firebase)
  */
 
 require('dotenv').config();
@@ -40,10 +40,16 @@ const CONFIG = {
 };
 
 // Firebase collection → MongoDB model (order matters for FK dependencies)
-const COLLECTION_ORDER = ['nail_techs', 'users', 'customers', 'slots', 'bookings', 'blocks'];
+const COLLECTION_ORDER = ['nail_techs', 'users', 'customers', 'slots', 'quotations', 'bookings', 'blocks'];
 
 // Also try 'clients' as alias for customers (some apps use both)
 const CUSTOMER_COLLECTIONS = ['customers', 'clients'];
+
+// Also try 'nailTechs' as alias for nail_techs (Firestore may use camelCase)
+const NAIL_TECH_COLLECTIONS = ['nail_techs', 'nailTechs'];
+
+// Also try 'quotes' as alias for quotations
+const QUOTATION_COLLECTIONS = ['quotations', 'quotes'];
 
 // ============================================================================
 // MONGOOSE SCHEMAS (match lib/models)
@@ -100,6 +106,7 @@ const CustomerSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const SlotSchema = new mongoose.Schema({
+  firebaseId: { type: String, sparse: true },
   date: { type: String, required: true },
   time: { type: String, required: true },
   status: { type: String, required: true, enum: ['available', 'blocked', 'pending', 'confirmed'] },
@@ -120,7 +127,7 @@ const BookingSchema = new mongoose.Schema({
     location: { type: String, required: true, enum: ['homebased_studio', 'home_service'] },
     clientType: { type: String, required: true, enum: ['new', 'repeat'] },
   },
-  status: { type: String, required: true, enum: ['pending', 'confirmed', 'cancelled', 'no_show'], default: 'pending' },
+  status: { type: String, required: true, enum: ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'], default: 'pending' },
   paymentStatus: { type: String, required: true, enum: ['unpaid', 'partial', 'paid', 'refunded'], default: 'unpaid' },
   pricing: {
     total: { type: Number, required: true, default: 0 },
@@ -142,6 +149,31 @@ const BookingSchema = new mongoose.Schema({
   statusReason: String,
 }, { timestamps: true });
 
+// Quotations (invoices) - before bookings so idMap.quotations exists for invoice.quotationId
+const QuotationItemSchema = new mongoose.Schema({
+  description: { type: String, required: true },
+  quantity: { type: Number, default: 1 },
+  unitPrice: { type: Number, required: true },
+  total: { type: Number, required: true },
+}, { _id: false });
+
+const QuotationSchema = new mongoose.Schema({
+  firebaseId: { type: String, sparse: true },
+  quotationNumber: { type: String, sparse: true },
+  customerName: { type: String, required: true },
+  customerPhone: String,
+  customerEmail: String,
+  items: [QuotationItemSchema],
+  subtotal: { type: Number, required: true, default: 0 },
+  discountRate: { type: Number, default: 0 },
+  discountAmount: { type: Number, default: 0 },
+  squeezeInFee: { type: Number, default: 0 },
+  totalAmount: { type: Number, required: true, default: 0 },
+  notes: String,
+  status: { type: String, enum: ['draft', 'sent', 'accepted', 'expired'], default: 'draft' },
+  createdBy: String,
+}, { timestamps: true });
+
 // Blocked dates (simplified)
 const BlockSchema = new mongoose.Schema({
   startDate: String,
@@ -154,6 +186,7 @@ const NailTech = mongoose.model('NailTech', NailTechSchema);
 const User = mongoose.model('User', UserSchema);
 const Customer = mongoose.model('Customer', CustomerSchema);
 const Slot = mongoose.model('Slot', SlotSchema);
+const Quotation = mongoose.model('Quotation', QuotationSchema);
 const Booking = mongoose.model('Booking', BookingSchema);
 const Block = mongoose.model('Block', BlockSchema);
 
@@ -199,7 +232,10 @@ function mapClientType(fb) {
 }
 
 function mapStatus(s) {
-  const m = { pending_form: 'pending', pending_payment: 'pending', booked: 'confirmed' };
+  const m = {
+    pending_form: 'pending', pending_payment: 'pending', booked: 'confirmed',
+    completed: 'completed', done: 'completed', finished: 'completed',
+  };
   const v = String((s || 'pending').toLowerCase());
   return m[v] || v;
 }
@@ -221,9 +257,10 @@ function mapSlotStatus(s) {
 
 function transformNailTech(doc, idMap) {
   const d = doc.data();
+  const name = (d.name || d.displayName || d.fullName || d.clientName || 'Unknown').trim();
   return {
     firebaseId: doc.id,
-    name: d.name || d.displayName || 'Unknown',
+    name: name || 'Unknown',
     role: d.role || 'Junior Tech',
     serviceAvailability: d.serviceAvailability || 'Studio and Home Service',
     workingDays: Array.isArray(d.workingDays) ? d.workingDays : [],
@@ -235,13 +272,15 @@ function transformNailTech(doc, idMap) {
 
 function transformUser(doc, idMap) {
   const d = doc.data();
+  const role = mapUserRole(d.role);
+  const email = (d.email || d.userEmail || '').toLowerCase().trim() || `firebase-${doc.id}@placeholder.local`;
   const obj = {
     firebaseId: doc.id,
-    email: (d.email || '').toLowerCase().trim(),
-    name: d.name || d.displayName,
+    email,
+    name: (d.name || d.displayName || d.fullName || '').trim() || undefined,
     image: d.image || d.photoURL,
     emailVerified: !!d.emailVerified,
-    role: d.role || 'admin',
+    role,
     assignedNailTechId: idMap.nail_techs?.[d.assignedNailTechId] || d.assignedNailTechId,
     status: d.status || 'active',
   };
@@ -249,9 +288,15 @@ function transformUser(doc, idMap) {
   return obj;
 }
 
+function mapUserRole(fb) {
+  const v = String((fb || 'admin').toLowerCase());
+  if (v === 'viewer' || v === 'staff') return 'staff';
+  return v === 'admin' ? 'admin' : 'admin';
+}
+
 function transformCustomer(doc, idMap) {
   const d = doc.data();
-  const name = d.name || d.fullName || `${(d.firstName||'')} ${(d.lastName||'')}`.trim() || 'Unknown';
+  const name = (d.name || d.fullName || d.clientName || d.customerName || d.displayName || `${(d.firstName||'')} ${(d.lastName||'')}`.trim() || 'Unknown').trim();
   return {
     firebaseId: doc.id,
     name,
@@ -280,12 +325,49 @@ function transformCustomer(doc, idMap) {
   };
 }
 
+function slotTimeToString(v) {
+  if (v == null) return null;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (!s) return null;
+    if (/^\d{1,2}:\d{2}/.test(s)) return s;
+    if (/^\d{1,2}:\d{1}$/.test(s)) return s.replace(/^(\d):(\d)$/, '0$1:0$2');
+    if (/^\d{1,4}$/.test(s)) {
+      const n = parseInt(s, 10);
+      if (n >= 0 && n < 24) return `${String(n).padStart(2, '0')}:00`;
+      if (n >= 100 && n < 2400) return `${String(Math.floor(n / 100)).padStart(2, '0')}:${String(n % 100).padStart(2, '0')}`;
+    }
+    const iso = s.match(/T(\d{1,2}):(\d{2})/);
+    if (iso) return `${iso[1].padStart(2, '0')}:${iso[2]}`;
+  }
+  if (typeof v === 'object' && typeof v.toDate === 'function') {
+    const d = v.toDate();
+    const h = d.getHours();
+    const m = d.getMinutes();
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  if (typeof v === 'number' && !isNaN(v)) {
+    if (v >= 0 && v < 24) return `${String(Math.floor(v)).padStart(2, '0')}:00`;
+    if (v >= 100 && v < 2400) return `${String(Math.floor(v / 100)).padStart(2, '0')}:${String(Math.floor(v % 100)).padStart(2, '0')}`;
+  }
+  if (v instanceof Date) return `${String(v.getHours()).padStart(2, '0')}:${String(v.getMinutes()).padStart(2, '0')}`;
+  return null;
+}
+
 function transformSlot(doc, idMap) {
   const d = doc.data();
   const nailTechId = idMap.nail_techs?.[d.nailTechId] || d.nailTechId;
+  const rawTime = d.time ?? d.startTime ?? d.slotTime ?? d.timeSlot ?? d.appointmentTime ?? d.timeString;
+  const time = slotTimeToString(rawTime) || '09:00';
+  const rawDate = d.date || d.slotDate || d.appointmentDate;
+  let date = '';
+  if (typeof rawDate === 'string') date = rawDate;
+  else if (rawDate && typeof rawDate.toDate === 'function') date = rawDate.toDate().toISOString().slice(0, 10);
+  else if (rawDate instanceof Date) date = rawDate.toISOString().slice(0, 10);
   return {
-    date: d.date || '',
-    time: d.time || '09:00',
+    firebaseId: doc.id,
+    date: date || '',
+    time,
     status: mapSlotStatus(d.status),
     slotType: d.slotType || undefined,
     notes: d.notes,
@@ -303,14 +385,25 @@ function transformBooking(doc, idMap) {
   const linked = d.linkedSlotIds || d.pairedSlotId ? [d.pairedSlotId].filter(Boolean) : [];
   const allSlotIds = [...new Set([...slotIds, ...linked.map(id => idMap.slots?.[id] || id)])];
 
-  const customerId = idMap.customers?.[d.customerId] || d.customerId;
+  const rawCustomerId = d.customerId || d.customerID;
+  const customerId = idMap.customers?.[rawCustomerId] || rawCustomerId;
   const nailTechId = idMap.nail_techs?.[d.nailTechId] || d.nailTechId;
   const bookingCode = d.bookingCode || d.bookingId || `FB-${doc.id}`;
 
-  const paid = d.paidAmount ?? d.pricing?.paidAmount ?? 0;
-  const deposit = d.depositRequired ?? d.depositAmount ?? d.pricing?.depositRequired ?? 0;
+  const basePaid = d.paidAmount ?? d.totalPaid ?? d.amountPaid ?? d.pricing?.paidAmount ?? 0;
+  const depositRequired = d.depositRequired ?? d.depositAmount ?? d.pricing?.depositRequired ?? 0;
+  const depositAmt = d.depositPaid ?? d.depositAmount ?? d.amountDepositPaid ?? depositRequired;
+  const depositWasPaid = !!(d.payment?.depositPaidAt || d.depositDate || d.depositPaidAt);
+  // paidAmount often means total paid (including deposit); only add deposit when basePaid appears to be partial
+  const paidNum = typeof basePaid === 'number' ? basePaid : 0;
+  const depositNum = typeof depositAmt === 'number' ? depositAmt : 0;
+  const paid = (paidNum >= depositNum || paidNum >= depositRequired) ? paidNum : paidNum + (depositWasPaid ? depositNum : 0);
+  const deposit = depositRequired;
   const tip = d.tipAmount ?? d.pricing?.tipAmount ?? 0;
-  const total = d.total ?? d.pricing?.total ?? d.invoice?.total ?? 0;
+  let total = d.total ?? d.totalAmount ?? d.amount ?? d.price ?? d.cost ?? d.serviceTotal ?? d.totalPrice ?? d.pricing?.total ?? d.invoice?.total ?? d.invoice?.totalAmount ?? 0;
+  if (typeof total !== 'number' || total <= 0) total = 0;
+  // When Firebase has no total but has paid amount, use paid as total so finance table shows something
+  if (total <= 0 && paid > 0) total = paid;
 
   const serviceType = mapServiceType(d.serviceType || d.service?.type);
   const location = mapLocation(d.serviceLocation || d.service?.location);
@@ -356,8 +449,56 @@ function transformBooking(doc, idMap) {
     clientPhotos: { inspiration, currentState },
     completedAt: toDate(d.completedAt),
     confirmedAt: toDate(d.confirmedAt),
-    invoice: d.invoice,
+    invoice: d.invoice
+      ? (() => {
+          const fromItems = Array.isArray(d.invoice.items) ? d.invoice.items.reduce((s, i) => s + (Number(i.total) || (Number(i.unitPrice) || 0) * (Number(i.quantity) || 1)), 0) : 0;
+          const invTotal = typeof d.invoice.total === 'number' ? d.invoice.total : (typeof d.invoice.totalAmount === 'number' ? d.invoice.totalAmount : fromItems);
+          const finalTotal = (typeof invTotal === 'number' ? invTotal : 0) || total;
+          return {
+            quotationId: idMap.quotations?.[d.invoice.quotationId] || idMap._embedQuotation?.[doc.id] || d.invoice.quotationId,
+            total: finalTotal,
+            createdAt: toDate(d.invoice.createdAt) || new Date(),
+          };
+        })()
+      : undefined,
     statusReason: d.statusReason,
+  };
+}
+
+function transformQuotation(doc, idMap) {
+  const d = doc.data();
+  const items = Array.isArray(d.items)
+    ? d.items.map((item) => ({
+        description: String(item.description || item.name || '').trim() || 'Item',
+        quantity: typeof item.quantity === 'number' ? item.quantity : 1,
+        unitPrice: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
+        total: typeof item.total === 'number' ? item.total : (item.unitPrice || 0) * (item.quantity || 1),
+      }))
+    : [];
+  const subtotal = typeof d.subtotal === 'number' ? d.subtotal : items.reduce((s, i) => s + (i.total || 0), 0);
+  const discountRate = typeof d.discountRate === 'number' ? d.discountRate : 0;
+  const discountAmount = typeof d.discountAmount === 'number' ? d.discountAmount : Math.round(subtotal * (discountRate / 100));
+  const squeezeInFee = typeof d.squeezeInFee === 'number' ? d.squeezeInFee : 0;
+  const totalAmount = typeof d.totalAmount === 'number' ? d.totalAmount : (typeof d.total === 'number' ? d.total : subtotal - discountAmount + squeezeInFee);
+  const customerName = (d.customerName || d.clientName || d.customer?.name || '').trim() || 'Unknown';
+  const status = ['draft', 'sent', 'accepted', 'expired'].includes(String(d.status || '').toLowerCase())
+    ? String(d.status).toLowerCase()
+    : 'accepted';
+  return {
+    firebaseId: doc.id,
+    quotationNumber: d.quotationNumber || d.invoiceNumber || d.quotationId,
+    customerName,
+    customerPhone: d.customerPhone || d.customer?.phone || d.phone,
+    customerEmail: (d.customerEmail || d.customer?.email || d.email || '').toLowerCase().trim() || undefined,
+    items,
+    subtotal,
+    discountRate,
+    discountAmount,
+    squeezeInFee,
+    totalAmount,
+    notes: d.notes,
+    status,
+    createdBy: d.createdBy,
   };
 }
 
@@ -409,6 +550,8 @@ async function migrateCollection(firestore, collName, Model, transform, idMap, d
 
   let collectionsToRead = [collName];
   if (collName === 'customers') collectionsToRead = CUSTOMER_COLLECTIONS;
+  if (collName === 'nail_techs') collectionsToRead = NAIL_TECH_COLLECTIONS;
+  if (collName === 'quotations') collectionsToRead = QUOTATION_COLLECTIONS;
 
   const allDocs = [];
   for (const c of collectionsToRead) {
@@ -426,8 +569,60 @@ async function migrateCollection(firestore, collName, Model, transform, idMap, d
   results.total = allDocs.length;
   log(`Migrating ${collName}: ${results.total} documents`);
 
+  const QuotationModel = mongoose.models.Quotation;
+  idMap._embedQuotation = idMap._embedQuotation || {};
+
   for (const fd of allDocs) {
     try {
+      // For bookings: create Quotation from embedded invoice if no separate quotations collection
+      if (collName === 'bookings' && QuotationModel) {
+        const d = fd.data();
+        const inv = d.invoice;
+        const hasItems = inv && Array.isArray(inv.items) && inv.items.length > 0;
+        const hasQuotationRef = inv?.quotationId && idMap.quotations?.[inv.quotationId];
+        if (hasItems && !hasQuotationRef && !dryRun) {
+          try {
+            const embedKey = `embed_${fd.id}`;
+            const existing = await QuotationModel.findOne({ firebaseId: embedKey }).lean();
+            if (existing) {
+              idMap._embedQuotation[fd.id] = String(existing._id);
+            } else {
+            const items = inv.items.map((item) => ({
+              description: String(item.description || item.name || '').trim() || 'Item',
+              quantity: typeof item.quantity === 'number' ? item.quantity : 1,
+              unitPrice: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
+              total: typeof item.total === 'number' ? item.total : (item.unitPrice || 0) * (item.quantity || 1),
+            }));
+            const subtotal = typeof inv.subtotal === 'number' ? inv.subtotal : items.reduce((s, i) => s + (i.total || 0), 0);
+            const discountAmount = typeof inv.discountAmount === 'number' ? inv.discountAmount : 0;
+            const squeezeInFee = typeof inv.squeezeInFee === 'number' ? inv.squeezeInFee : 0;
+            const totalAmount = typeof inv.total === 'number' ? inv.total : (typeof inv.totalAmount === 'number' ? inv.totalAmount : subtotal - discountAmount + squeezeInFee);
+            const customerName = (inv.customerName || d.customerName || d.clientName || '').trim() || 'Unknown';
+            const q = new QuotationModel({
+              firebaseId: embedKey,
+              quotationNumber: inv.quotationNumber || inv.invoiceNumber || `INV-${fd.id.slice(-8)}`,
+              customerName: customerName,
+              customerPhone: inv.customerPhone || inv.phone,
+              customerEmail: (inv.customerEmail || inv.email || '').toLowerCase().trim() || undefined,
+              items,
+              subtotal,
+              discountRate: typeof inv.discountRate === 'number' ? inv.discountRate : 0,
+              discountAmount,
+              squeezeInFee,
+              totalAmount,
+              notes: inv.notes,
+              status: 'accepted',
+              createdBy: inv.createdBy,
+            });
+            await q.save();
+            idMap._embedQuotation[fd.id] = String(q._id);
+            }
+          } catch (e) {
+            log(`Embedded invoice Quotation for booking ${fd.id}: ${e.message}`, 'WARNING');
+          }
+        }
+      }
+
       const transformed = transform(fd, idMap);
       if (dryRun) {
         results.ok++;
@@ -440,6 +635,33 @@ async function migrateCollection(firestore, collName, Model, transform, idMap, d
         results.skip++;
         idMap[collName] = idMap[collName] || {};
         if (existing._id) idMap[collName][fd.id] = String(existing._id);
+        // For bookings: backfill invoice and/or pricing when we have better data from Firebase
+        if (collName === 'bookings') {
+          const existingBooking = await Model.findById(existing._id);
+          if (existingBooking) {
+            let saved = false;
+            if (idMap._embedQuotation?.[fd.id] && transformed.invoice && !existingBooking.invoice?.quotationId) {
+              existingBooking.invoice = {
+                quotationId: idMap._embedQuotation[fd.id],
+                total: transformed.invoice.total ?? existingBooking.invoice?.total ?? 0,
+                createdAt: existingBooking.invoice?.createdAt || transformed.invoice.createdAt || new Date(),
+              };
+              saved = true;
+            }
+            const currentTotal = existingBooking.pricing?.total ?? 0;
+            const currentPaid = existingBooking.pricing?.paidAmount ?? 0;
+            const newTotal = transformed.pricing?.total ?? 0;
+            if ((currentTotal == null || currentTotal <= 0) && (newTotal > 0 || currentPaid > 0)) {
+              existingBooking.pricing = existingBooking.pricing || {};
+              existingBooking.pricing.total = newTotal > 0 ? newTotal : currentPaid;
+              saved = true;
+            }
+            if (saved) {
+              await existingBooking.save();
+              log(`Updated booking ${fd.id} (invoice/pricing backfill)`, 'INFO');
+            }
+          }
+        }
         continue;
       }
       const doc = new Model(transformed);
@@ -471,8 +693,9 @@ async function runMigration() {
   const { collections, dryRun, rollback } = parseArgs();
 
   if (rollback) {
+    log('ROLLBACK: Deleting from MongoDB ONLY. Firebase is NOT touched.', 'WARNING');
     await connectMongo();
-    const models = { nail_techs: NailTech, users: User, customers: Customer, slots: Slot, bookings: Booking, blocks: Block };
+    const models = { nail_techs: NailTech, users: User, customers: Customer, slots: Slot, quotations: Quotation, bookings: Booking, blocks: Block };
     for (const c of collections) {
       const M = models[c];
       if (M) {
@@ -489,16 +712,17 @@ async function runMigration() {
   const firestore = await initFirebase();
   await connectMongo();
 
-  const idMap = { nail_techs: {}, users: {}, customers: {}, slots: {} };
+  const idMap = { nail_techs: {}, users: {}, customers: {}, slots: {}, quotations: {} };
   const transformers = {
     nail_techs: transformNailTech,
     users: transformUser,
     customers: transformCustomer,
     slots: transformSlot,
+    quotations: transformQuotation,
     bookings: transformBooking,
     blocks: transformBlock,
   };
-  const models = { nail_techs: NailTech, users: User, customers: Customer, slots: Slot, bookings: Booking, blocks: Block };
+  const models = { nail_techs: NailTech, users: User, customers: Customer, slots: Slot, quotations: Quotation, bookings: Booking, blocks: Block };
 
   const report = { timestamp: new Date().toISOString(), dryRun, collections: {} };
 

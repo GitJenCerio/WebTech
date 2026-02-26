@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/Select';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
+import { formatTime12Hour } from '@/lib/utils';
 import type { ServiceType } from '@/lib/types';
 
 const SERVICE_TYPES: ServiceType[] = [
@@ -414,7 +415,7 @@ export default function AddBookingModal({
                             : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
                         }`}
                       >
-                        {slot.time}
+                        {formatTime12Hour(slot.time)}
                       </button>
                     );})}
                   </div>

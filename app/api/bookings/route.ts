@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { createBooking, listBookings, type CreateBookingInput } from '@/lib/services/bookingService';
@@ -282,8 +283,10 @@ export async function GET(request: Request) {
     }
 
     const bookings = await listBookings(filters);
-    const customerIds = Array.from(new Set(bookings.map(b => String(b.customerId)).filter(Boolean)));
-    const slotIds = Array.from(new Set(bookings.flatMap((b) => (b.slotIds || []).map(String))));
+    const rawCustomerIds = Array.from(new Set(bookings.map(b => String(b.customerId)).filter(Boolean)));
+    const customerIds = rawCustomerIds.filter((id) => mongoose.Types.ObjectId.isValid(id) && String(id).length === 24);
+    const rawSlotIds = Array.from(new Set(bookings.flatMap((b) => (b.slotIds || []).map(String))));
+    const slotIds = rawSlotIds.filter((id) => mongoose.Types.ObjectId.isValid(id) && String(id).length === 24);
     const customers = customerIds.length
       ? await Customer.find({ _id: { $in: customerIds } })
           .select('_id name email phone socialMediaName')
@@ -301,8 +304,9 @@ export async function GET(request: Request) {
       ])
     );
 
+    const SlotModel = (await import('@/lib/models/Slot')).default;
     const slots = slotIds.length
-      ? await (await import('@/lib/models/Slot')).default.find({ _id: { $in: slotIds } })
+      ? await SlotModel.find({ _id: { $in: slotIds } })
           .select('_id date time slotType')
           .lean()
       : [];

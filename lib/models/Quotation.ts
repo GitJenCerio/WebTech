@@ -9,6 +9,7 @@ const QuotationItemSchema = new mongoose.Schema({
 
 const QuotationSchema = new mongoose.Schema(
   {
+    firebaseId: { type: String, sparse: true, index: true },
     quotationNumber: {
       type: String,
       unique: true,

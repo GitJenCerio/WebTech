@@ -20,7 +20,12 @@
     "migrate:rollback": "node scripts/migrate-firebase-to-mongodb.js --rollback",
     "migrate:all": "node scripts/migrate-all-firebase-to-mongodb.js",
     "migrate:all:dry-run": "node scripts/migrate-all-firebase-to-mongodb.js --dry-run",
-    "migrate:all:rollback": "node scripts/migrate-all-firebase-to-mongodb.js --rollback"
+    "migrate:all:rollback": "node scripts/migrate-all-firebase-to-mongodb.js --rollback",
+    "migrate:check-env": "node scripts/check-env-for-migration.js",
+    "mark-paid-completed": "node scripts/mark-paid-bookings-completed.js",
+    "mark-paid-completed:dry-run": "node scripts/mark-paid-bookings-completed.js --dry-run",
+    "fix-blank-slot-times": "node scripts/fix-blank-slot-times.js",
+    "fix-blank-slot-times:dry-run": "node scripts/fix-blank-slot-times.js --dry-run"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",

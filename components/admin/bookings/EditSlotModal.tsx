@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Label } from '@/components/ui/Label';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { formatTime12Hour } from '@/lib/utils';
 
 export type SlotType = 'regular' | 'with_squeeze_fee';
 
@@ -110,7 +111,7 @@ export default function EditSlotModal({
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
       <DialogContent className="sm:max-w-lg md:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Slot: {slot.time} on {slot.date}</DialogTitle>
+          <DialogTitle>Edit Slot: {formatTime12Hour(slot.time)} on {slot.date}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-3">

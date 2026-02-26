@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
+import { formatTime12Hour } from '@/lib/utils';
 import { Plus, Calendar as CalendarIcon, CalendarDays, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Button } from '@/components/ui/Button';
@@ -494,18 +495,21 @@ export default function CalendarPanel({
                     </span>
                   </div>
                   {counts.bookedNames.length > 0 && (
-                    <div>
-                      <div className="text-muted small mb-1">Booked: {counts.bookedNames.join(', ')}</div>
+                    <div className="text-muted small mb-1">
+                      <span className="fw-semibold">Booked:</span>
+                      {counts.bookedNames.map((name, i) => <div key={i} className="ms-1">{name}</div>)}
                     </div>
                   )}
                   {counts.completedNames.length > 0 && (
-                    <div>
-                      <div className="text-muted small mb-1">Completed: {counts.completedNames.join(', ')}</div>
+                    <div className="text-muted small mb-1">
+                      <span className="fw-semibold">Completed:</span>
+                      {counts.completedNames.map((name, i) => <div key={i} className="ms-1">{name}</div>)}
                     </div>
                   )}
                   {counts.pendingNames.length > 0 && (
-                    <div>
-                      <div className="text-muted small mb-1">Pending: {counts.pendingNames.join(', ')}</div>
+                    <div className="text-muted small mb-1">
+                      <span className="fw-semibold">Pending:</span>
+                      {counts.pendingNames.map((name, i) => <div key={i} className="ms-1">{name}</div>)}
                     </div>
                   )}
                   <div className="mt-3">
@@ -518,7 +522,7 @@ export default function CalendarPanel({
                           <button
                             key={slot.id}
                             type="button"
-                            className="d-flex align-items-center justify-content-between px-3 py-2 rounded-2 border-0 w-100 text-start"
+                            className="d-flex flex-column align-items-start gap-0 px-3 py-2 rounded-2 border-0 w-100 text-start"
                             style={{
                               background: slot.status === 'available' ? '#d4edda' : slot.status === 'booked' || slot.status === 'confirmed' || slot.status === 'CONFIRMED' ? '#212529' : slot.status === 'completed' || slot.status === 'COMPLETED' ? '#ea580c' : '#cce5ff',
                               color: slot.status === 'available' ? '#155724' : '#fff',
@@ -527,8 +531,8 @@ export default function CalendarPanel({
                             }}
                             onClick={() => onSlotClick?.(slot)}
                           >
-                            <span className="fw-medium">{slot.time}</span>
-                            <span className="small opacity-90">
+                            <span className="fw-medium">{formatTime12Hour(slot.time)}</span>
+                            <span className="small opacity-90" style={{ lineHeight: 1.3 }}>
                               {slot.status === 'available' ? 'Available' : (slot.clientName || (slot.status === 'completed' || slot.status === 'COMPLETED' ? 'Completed' : slot.status))}
                             </span>
                           </button>
@@ -606,8 +610,8 @@ export default function CalendarPanel({
                           color: dateSelected ? '#fff' : '#155724',
                           backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#d4edda',
                           padding: '2px 4px',
-                          fontSize: '0.55rem',
-                          fontWeight: 700,
+                          fontSize: '0.65rem',
+                          fontWeight: 400,
                           lineHeight: 1,
                           display: 'flex',
                           alignItems: 'center',
@@ -622,17 +626,14 @@ export default function CalendarPanel({
                     )}
                     {counts.completed > 0 && (
                       <span 
-                        className="slot-count-badge slot-count-completed"
+                        className="slot-count-badge slot-count-completed d-flex flex-column align-items-stretch"
                         style={{ 
                           color: '#fff',
                           backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#ea580c',
                           padding: '2px 4px',
-                          fontSize: '0.55rem',
-                          fontWeight: 700,
-                          lineHeight: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          fontSize: '0.65rem',
+                          fontWeight: 400,
+                          lineHeight: 1.2,
                           width: '100%',
                           borderRadius: '6px',
                           minHeight: '14px',
@@ -640,24 +641,23 @@ export default function CalendarPanel({
                         }}
                       >
                         <span className="d-md-none">{counts.completed}</span>
-                        <span className="d-none d-md-inline" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={counts.completedNames?.join(', ') || ''}>
-                          {counts.completedNames?.length ? counts.completedNames.join(', ') : counts.completed}
+                        <span className="d-none d-md-flex flex-column gap-0 text-start" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                          {counts.completedNames?.length ? counts.completedNames.map((name, i) => (
+                            <span key={i} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>{name}</span>
+                          )) : counts.completed}
                         </span>
                       </span>
                     )}
                     {counts.booked > 0 && (
                       <span 
-                        className="slot-count-badge slot-count-booked"
+                        className="slot-count-badge slot-count-booked d-flex flex-column align-items-stretch"
                         style={{ 
                           color: '#fff',
                           backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#212529',
                           padding: '2px 4px',
-                          fontSize: '0.55rem',
-                          fontWeight: 700,
-                          lineHeight: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          fontSize: '0.65rem',
+                          fontWeight: 400,
+                          lineHeight: 1.2,
                           width: '100%',
                           borderRadius: '6px',
                           minHeight: '14px',
@@ -665,24 +665,23 @@ export default function CalendarPanel({
                         }}
                       >
                         <span className="d-md-none">{counts.booked}</span>
-                        <span className="d-none d-md-inline" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={counts.bookedNames?.join(', ') || ''}>
-                          {counts.bookedNames?.length ? counts.bookedNames.join(', ') : counts.booked}
+                        <span className="d-none d-md-flex flex-column gap-0 text-start" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                          {counts.bookedNames?.length ? counts.bookedNames.map((name, i) => (
+                            <span key={i} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>{name}</span>
+                          )) : counts.booked}
                         </span>
                       </span>
                     )}
                     {counts.pending > 0 && (
                       <span 
-                        className="slot-count-badge slot-count-pending"
+                        className="slot-count-badge slot-count-pending d-flex flex-column align-items-stretch"
                         style={{ 
                           color: '#fff',
                           backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#007bff',
                           padding: '2px 4px',
-                          fontSize: '0.55rem',
-                          fontWeight: 700,
-                          lineHeight: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          fontSize: '0.65rem',
+                          fontWeight: 400,
+                          lineHeight: 1.2,
                           width: '100%',
                           borderRadius: '6px',
                           minHeight: '14px',
@@ -690,8 +689,10 @@ export default function CalendarPanel({
                         }}
                       >
                         <span className="d-md-none">{counts.pending}</span>
-                        <span className="d-none d-md-inline" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={counts.pendingNames?.join(', ') || ''}>
-                          {counts.pendingNames?.length ? counts.pendingNames.join(', ') : counts.pending}
+                        <span className="d-none d-md-flex flex-column gap-0 text-start" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                          {counts.pendingNames?.length ? counts.pendingNames.map((name, i) => (
+                            <span key={i} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>{name}</span>
+                          )) : counts.pending}
                         </span>
                       </span>
                     )}

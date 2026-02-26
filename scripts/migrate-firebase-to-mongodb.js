@@ -86,11 +86,10 @@ const CustomerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Indexes
+// Indexes (firebaseId already indexed via unique: true on field)
 CustomerSchema.index({ email: 1 });
 CustomerSchema.index({ phone: 1 });
 CustomerSchema.index({ name: 1 });
-CustomerSchema.index({ firebaseId: 1 });
 
 const Customer = mongoose.model('Customer', CustomerSchema);
 

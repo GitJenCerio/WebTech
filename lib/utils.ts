@@ -11,20 +11,28 @@ export function cn(...inputs: ClassValue[]) {
  * @param time24 - Time in 24-hour format (e.g., "14:30", "09:00") or already 12-hour (e.g., "2:30 PM")
  * @returns Time in 12-hour format (e.g., "2:30 PM", "9:00 AM")
  */
-export function formatTime12Hour(time24: string): string {
-  if (!time24) return '';
-  
-  // If already contains AM/PM, return as-is (avoid double formatting)
-  if (time24.toUpperCase().includes('AM') || time24.toUpperCase().includes('PM')) {
-    return time24;
+export function formatTime12Hour(time24: string | number | null | undefined): string {
+  if (time24 == null || time24 === '') return '';
+  const s = String(time24).trim();
+  if (!s) return '';
+  // Firebase Timestamp: convert to Date and format
+  if (typeof time24 === 'object' && typeof (time24 as { toDate?: () => Date }).toDate === 'function') {
+    const d = (time24 as { toDate: () => Date }).toDate();
+    const h = d.getHours();
+    const m = d.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 || 12;
+    return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
   }
-  
-  const [hours, minutes] = time24.split(':');
+  if (s.toUpperCase().includes('AM') || s.toUpperCase().includes('PM')) return s;
+  const parts = s.split(':');
+  const hours = parts[0] || '0';
+  const minutes = parts[1] ?? '0';
   const hour = parseInt(hours, 10);
+  if (isNaN(hour)) return s;
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const hour12 = hour % 12 || 12;
-  // Ensure minutes are always 2 digits
-  const mins = minutes.padStart(2, '0');
+  const mins = String(minutes).padStart(2, '0');
   return `${hour12}:${mins} ${ampm}`;
 }
 

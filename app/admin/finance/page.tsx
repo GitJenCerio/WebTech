@@ -10,6 +10,7 @@ import { DateRangePicker } from '@/components/admin/DateRangePicker';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
 
 const PAGE_SIZE = 10;
 
@@ -33,19 +34,8 @@ interface Transaction {
 }
 
 function formatSlotTimes(slotTimes: string[] | undefined, fallback: string): string {
-  if (!slotTimes?.length) return fallback || '—';
-  const toMins = (s: string) => {
-    const m = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-    if (!m) return 0;
-    let h = parseInt(m[1], 10);
-    const min = parseInt(m[2], 10);
-    const ap = (m[3] || '').toUpperCase();
-    if (ap === 'PM' && h !== 12) h += 12;
-    if (ap === 'AM' && h === 12) h = 0;
-    return h * 60 + min;
-  };
-  const sorted = [...slotTimes].sort((a, b) => toMins(a) - toMins(b));
-  return sorted.join(', ');
+  if (!slotTimes?.length) return fallback ? formatTime12Hour(fallback) : '—';
+  return sortTimesChronologically(slotTimes).map(formatTime12Hour).join(', ');
 }
 
 function serviceLocationBadge(loc?: 'homebased_studio' | 'home_service') {
@@ -170,7 +160,7 @@ export default function FinancePage() {
     if (nailTechFilter !== 'all') {
       out = out.filter((t) => t.nailTechId === nailTechFilter);
     }
-    return out;
+    return [...out].sort((a, b) => (b.appointmentDate || '').localeCompare(a.appointmentDate || ''));
   }, [transactions, searchQuery, statusFilter, nailTechFilter]);
 
   const paginatedTransactions = useMemo(
@@ -293,6 +283,7 @@ export default function FinancePage() {
       'Paid Amount',
       'Tip',
       'Total Bill + Tip',
+      'Balance',
       `Admin Com ${adminCommissionRate}%`,
     ];
     const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
@@ -317,7 +308,9 @@ export default function FinancePage() {
             return toMins(a) - toMins(b);
           })
         : [];
-      const timeStr = sortedTimes.length > 0 ? sortedTimes.join(', ') : (t.appointmentTime || '');
+      const timeStr = sortedTimes.length > 0
+        ? sortedTimes.map(formatTime12Hour).join(', ')
+        : (t.appointmentTime ? formatTime12Hour(t.appointmentTime) : '');
       const stHs = t.serviceLocation === 'home_service' ? 'HS' : t.serviceLocation === 'homebased_studio' ? 'ST' : '';
       return [
         apptDate,
@@ -329,6 +322,7 @@ export default function FinancePage() {
         t.paid,
         tipAmount,
         totalBillPlusTip,
+        t.balance,
         adminCom,
       ];
     });
@@ -336,10 +330,11 @@ export default function FinancePage() {
     const sumPaid = filteredTransactions.reduce((s, t) => s + t.paid, 0);
     const sumTip = filteredTransactions.reduce((s, t) => s + t.tip, 0);
     const sumBillAndTip = filteredTransactions.reduce((s, t) => s + t.total + t.tip, 0);
+    const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
       .reduce((s, t) => s + (t.paid + t.tip) * (adminCommissionRate / 100), 0);
-    const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumTip, sumBillAndTip, sumCommission];
+    const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumTip, sumBillAndTip, sumBalance, sumCommission];
     const csv = [headers.join(','), ...rows.map((r) => r.join(',')), totalRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -373,6 +368,7 @@ export default function FinancePage() {
       'Invoice',
       'Paid Amount',
       'Tip',
+      'Balance',
       'Total Bill + Tip',
       `Commission (${adminCommissionRate}%)`,
     ];
@@ -399,7 +395,9 @@ export default function FinancePage() {
             return toMins(a) - toMins(b);
           })
         : [];
-      const timeStr = sortedTimes.length > 0 ? sortedTimes.join(', ') : (t.appointmentTime || '');
+      const timeStr = sortedTimes.length > 0
+        ? sortedTimes.map(formatTime12Hour).join(', ')
+        : (t.appointmentTime ? formatTime12Hour(t.appointmentTime) : '');
       const stHs = t.serviceLocation === 'home_service' ? 'HS' : t.serviceLocation === 'homebased_studio' ? 'ST' : '—';
       return [
         apptDate,
@@ -410,6 +408,7 @@ export default function FinancePage() {
         fmt(totalInvoice),
         fmt(t.paid),
         fmt(tipAmount),
+        fmt(t.balance),
         fmt(totalBillPlusTip),
         fmt(commission),
       ];
@@ -422,6 +421,7 @@ export default function FinancePage() {
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
       .reduce((s, t) => s + (t.paid + t.tip) * (adminCommissionRate / 100), 0);
+    const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
     const totalsRow = [
       'Total',
       '',
@@ -431,6 +431,7 @@ export default function FinancePage() {
       fmt(sumTotal),
       fmt(sumPaid),
       fmt(sumTip),
+      fmt(sumBalance),
       fmt(sumBillAndTip),
       fmt(sumCommission),
     ];
@@ -696,6 +697,7 @@ export default function FinancePage() {
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Paid Amount</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Tip</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Total Bill + Tip</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Balance</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Commission</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
                 </tr>
@@ -705,7 +707,7 @@ export default function FinancePage() {
                   <>
                     {Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
-                        {Array.from({ length: 10 }).map((_, j) => (
+                        {Array.from({ length: 11 }).map((_, j) => (
                           <td key={j} className="px-4 py-3">
                             <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
                           </td>
@@ -715,7 +717,7 @@ export default function FinancePage() {
                   </>
                 ) : paginatedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-16 text-center">
+                    <td colSpan={11} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                         <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
                           <Search className="h-6 w-6 text-gray-300" />
@@ -757,6 +759,11 @@ export default function FinancePage() {
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{paidAmountInclTip.toLocaleString()}</td>
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{totalBillAndTip.toLocaleString()}</td>
+                      <td className="px-4 py-3 tabular-nums">
+                        <span className={item.balance > 0 ? 'text-amber-600 font-medium' : 'text-gray-500'}>
+                          ₱{item.balance.toLocaleString()}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{commission.toLocaleString()}</td>
                       <td className="px-4 py-3">{getPaymentStatusBadge(item.paymentStatus)}</td>
                     </tr>
@@ -851,6 +858,12 @@ export default function FinancePage() {
                       <p className="text-[#1a1a1a]">₱{(item.total + item.tip).toLocaleString()}</p>
                     </div>
                     <div>
+                      <span className="text-gray-400 text-xs">Balance</span>
+                      <p className={item.balance > 0 ? 'text-amber-600 font-medium' : 'text-[#1a1a1a]'}>
+                        ₱{item.balance.toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
                       <span className="text-gray-400 text-xs">Commission</span>
                       <p className="text-[#1a1a1a]">₱{((item.paid + item.tip) * (adminCommissionRate / 100)).toLocaleString()}</p>
                     </div>
@@ -892,14 +905,26 @@ export default function FinancePage() {
 }
 
 function getEffectiveTotal(booking: any): number {
-  const hasInvoice = Boolean(booking?.invoice?.quotationId || booking?.invoice?.total != null);
-  return hasInvoice ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0;
+  const inv = booking?.invoice;
+  const hasInvoice = Boolean(inv && (inv.quotationId || inv.total != null));
+  const fromInvoice = inv?.total ?? inv?.totalAmount;
+  const fromPricing = booking?.pricing?.total ?? 0;
+  // Prefer invoice.total when present and > 0; otherwise use pricing.total
+  return hasInvoice && typeof fromInvoice === 'number' && fromInvoice > 0 ? fromInvoice : fromPricing;
 }
 
 function mapBookingToTransaction(booking: any): Transaction {
-  const invoiceTotal = getEffectiveTotal(booking);
-  const paidAmount = booking.pricing?.paidAmount ?? 0;
+  let invoiceTotal = getEffectiveTotal(booking);
+  const paidAmount =
+    booking?.pricing?.paidAmount ??
+    (booking as any)?.paidAmount ??
+    (booking as any)?.totalPaid ??
+    0;
   const tipAmount = booking.pricing?.tipAmount ?? 0;
+  // When total is 0 but paid > 0 (common after migration), show paid as total so table isn't misleading
+  if (invoiceTotal <= 0 && paidAmount > 0) {
+    invoiceTotal = paidAmount;
+  }
   const balance = Math.max(0, invoiceTotal - paidAmount);
   const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
   const paymentStatus =
