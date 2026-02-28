@@ -5,16 +5,15 @@ import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import bcrypt from 'bcryptjs';
 import { sendInviteEmail } from '@/lib/email';
+import { requireCanManageUsers } from '@/lib/api-rbac';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Check authentication
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const forbid = await requireCanManageUsers(session, request);
+    if (forbid) return forbid;
 
     await connectDB();
 
@@ -29,7 +28,7 @@ export async function GET() {
       authMethod: user.password ? 'password' : 'google',
       emailVerified: user.emailVerified || false,
       image: user.image || null,
-      role: user.role || 'admin',
+      role: user.role || 'STAFF',
       assignedNailTechId: user.assignedNailTechId || null,
       status: user.status || 'active',
       createdAt: user.createdAt,
@@ -52,22 +51,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    // Check authentication
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Staff (users with assigned nail tech) cannot add users
-    const sessionAssignedTechId = (session.user as any)?.assignedNailTechId;
-    if (sessionAssignedTechId) {
-      return NextResponse.json({ error: 'You do not have permission to add users' }, { status: 403 });
-    }
+    const forbid = await requireCanManageUsers(session, request);
+    if (forbid) return forbid;
 
     const body = await request.json();
     const { email, password, name, authMethod, role: bodyRole, assignedNailTechId: bodyAssignedNailTechId } = body;
-    const role = bodyRole === 'staff' ? 'staff' : 'admin';
-    const assignedNailTechId = role === 'staff' ? (bodyAssignedNailTechId || null) : null;
+    const validRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF'] as const;
+    const role = validRoles.includes(bodyRole) ? bodyRole : 'STAFF';
+    const assignedNailTechId = role === 'STAFF' ? (bodyAssignedNailTechId || null) : null;
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -77,7 +69,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Password is required for password authentication' }, { status: 400 });
     }
 
-    if (role === 'staff' && !assignedNailTechId) {
+    if (role === 'STAFF' && !assignedNailTechId) {
       return NextResponse.json({ error: 'Staff must be assigned to a nail tech' }, { status: 400 });
     }
 
@@ -114,7 +106,7 @@ export async function POST(request: Request) {
           email: user.email,
           displayName: user.name || user.email.split('@')[0],
           resetLink: inviteLink,
-          role: role === 'admin' ? 'Admin' : 'Staff',
+          role: role,
         });
         emailSent = emailResult.success;
         emailError = emailResult.error;

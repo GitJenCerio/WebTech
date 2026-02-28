@@ -31,7 +31,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('google');
-  const [role, setRole] = useState<'admin' | 'staff'>('admin');
+  const [role, setRole] = useState<'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF'>('STAFF');
   const [assignedNailTechId, setAssignedNailTechId] = useState<string>('');
   const [nailTechs, setNailTechs] = useState<NailTech[]>([]);
   const [loadingNailTechs, setLoadingNailTechs] = useState(false);
@@ -90,7 +90,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
       }
     }
 
-    if (role === 'staff' && !assignedNailTechId) {
+    if (role === 'STAFF' && !assignedNailTechId) {
       setError('Staff must be assigned to a nail tech');
       setLoading(false);
       return;
@@ -108,7 +108,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
           password: authMethod === 'password' ? password : undefined,
           authMethod,
           role,
-          assignedNailTechId: role === 'staff' ? assignedNailTechId || null : null,
+          assignedNailTechId: role === 'STAFF' ? assignedNailTechId || null : null,
         }),
       });
 
@@ -138,7 +138,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
       setPassword('');
       setConfirmPassword('');
       setAuthMethod('google');
-      setRole('admin');
+      setRole('STAFF');
       setAssignedNailTechId('');
 
       // Notify parent and close modal after a delay
@@ -161,7 +161,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
       setPassword('');
       setConfirmPassword('');
       setAuthMethod('google');
-      setRole('admin');
+      setRole('STAFF');
       setAssignedNailTechId('');
       setError('');
       setSuccess('');
@@ -254,8 +254,9 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
               <Select
                 value={role}
                 onValueChange={(value) => {
-                  setRole(value as 'admin' | 'staff');
-                  if (value === 'admin') setAssignedNailTechId('');
+                  const v = value as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF';
+                  setRole(v);
+                  if (v !== 'STAFF') setAssignedNailTechId('');
                 }}
                 disabled={loading}
               >
@@ -263,13 +264,15 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                  <SelectItem value="MANAGER">Manager</SelectItem>
+                  <SelectItem value="STAFF">Staff</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {role === 'staff' && (
+            {role === 'STAFF' && (
               <div className="space-y-2">
                 <Label htmlFor="assignedNailTech">
                   Assigned Nail Tech <span className="text-red-500">*</span>

@@ -7,7 +7,7 @@ export interface IUser extends Document {
   name?: string;
   image?: string; // For Google OAuth profile picture
   emailVerified?: boolean;
-  role?: 'admin' | 'staff'; // User role
+  role?: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF'; // RBAC role
   assignedNailTechId?: string; // For staff members - assigned nail tech ID
   status?: 'active' | 'inactive'; // User status (plan: isActive = status === 'active')
   lastLogin?: Date; // Last successful login timestamp
@@ -23,7 +23,7 @@ const UserSchema = new Schema<IUser>(
     name: { type: String },
     image: { type: String },
     emailVerified: { type: Boolean, default: false },
-    role: { type: String, enum: ['admin', 'staff'], default: 'admin' },
+    role: { type: String, enum: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF'], default: 'STAFF' },
     assignedNailTechId: { type: String },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     lastLogin: { type: Date },

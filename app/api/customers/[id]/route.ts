@@ -5,6 +5,7 @@ import Customer from '@/lib/models/Customer';
 import Booking from '@/lib/models/Booking';
 import type { CustomerInput } from '@/lib/types';
 import { authOptions } from '@/lib/auth-options';
+import { requireCanDeleteCustomer } from '@/lib/api-rbac';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -200,13 +201,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { id } = await params;
+
+    const forbid = await requireCanDeleteCustomer(session, id, request);
+    if (forbid) return forbid;
 
     await connectDB();
-    const { id } = await params;
-    const assignedNailTechId = (session.user as { assignedNailTechId?: string })?.assignedNailTechId;
+    const assignedNailTechId = (session!.user as { assignedNailTechId?: string })?.assignedNailTechId;
 
     if (assignedNailTechId) {
       const hasBookingWithTech = await Booking.exists({

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -21,6 +23,7 @@ interface AuditEntry {
 
 const ACTIONS = [
   { value: 'all', label: 'All actions' },
+  { value: 'AUTH_FAILURE', label: 'Auth failure' },
   { value: 'LOGIN', label: 'Login' },
   { value: 'LOGOUT', label: 'Logout' },
   { value: 'CREATE', label: 'Create' },
@@ -39,6 +42,7 @@ const RESOURCES = [
 ];
 
 const ACTION_LABELS: Record<string, string> = {
+  AUTH_FAILURE: 'Authorization denied',
   LOGIN: 'Signed in',
   LOGOUT: 'Signed out',
   CREATE: 'Created',
@@ -62,6 +66,10 @@ function getActivityDescription(entry: AuditEntry): string {
 
   if (entry.action === 'LOGIN') return 'Signed in to the admin panel';
   if (entry.action === 'LOGOUT') return 'Signed out';
+  if (entry.action === 'AUTH_FAILURE') {
+    const attempted = (d as { attemptedAction?: string }).attemptedAction || 'action';
+    return `Authorization denied: attempted ${attempted} on ${entry.resource}`;
+  }
 
   const withWhat = (verb: string, thing: string) => {
     const parts: string[] = [];
@@ -109,7 +117,13 @@ function formatDetailsForDisplay(details: Record<string, unknown> | undefined): 
 }
 
 export default function AuditLogPage() {
+  const router = useRouter();
+  const userRole = useUserRole();
   const [items, setItems] = useState<AuditEntry[]>([]);
+
+  useEffect(() => {
+    if (!userRole.canViewAudit) router.replace('/admin/overview');
+  }, [userRole.canViewAudit, router]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [actionFilter, setActionFilter] = useState('all');

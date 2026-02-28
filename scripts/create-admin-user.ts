@@ -8,9 +8,16 @@
  *   # Create user for Google OAuth only (no password):
  *   npx tsx scripts/create-admin-user.ts <email> --google-only [name]
  * 
+ *   # Create SUPER_ADMIN for Google OAuth (use when locked out):
+ *   npx tsx scripts/create-admin-user.ts <email> --google-only --super-admin [name]
+ * 
+ *   # Fix existing user: set SUPER_ADMIN + active (use when locked out):
+ *   npx tsx scripts/create-admin-user.ts <email> --fix
+ * 
  * Examples:
  *   npx tsx scripts/create-admin-user.ts admin@example.com mypassword123 "Admin User"
  *   npx tsx scripts/create-admin-user.ts user@gmail.com --google-only "User Name"
+ *   npx tsx scripts/create-admin-user.ts cerio@gmail.com --google-only --super-admin
  */
 
 import bcrypt from 'bcryptjs';
@@ -33,24 +40,27 @@ async function createAdminUser() {
     console.log('  npx tsx scripts/create-admin-user.ts <email> <password> [name]');
     console.log('\n  # Create user for Google OAuth only:');
     console.log('  npx tsx scripts/create-admin-user.ts <email> --google-only [name]');
-    console.log('\nExamples:');
-    console.log('  npx tsx scripts/create-admin-user.ts admin@example.com mypassword123 "Admin User"');
-    console.log('  npx tsx scripts/create-admin-user.ts user@gmail.com --google-only "User Name"');
+    console.log('\n  # Create SUPER_ADMIN for Google OAuth (when locked out):');
+    console.log('  npx tsx scripts/create-admin-user.ts <email> --google-only --super-admin [name]');
+    console.log('\n  # Fix existing user (set SUPER_ADMIN + active):');
+    console.log('  npx tsx scripts/create-admin-user.ts <email> --fix');
     process.exit(1);
   }
 
   const email = args[0];
-  const isGoogleOnly = args[1] === '--google-only';
-  const password = isGoogleOnly ? undefined : args[1];
-  const name = isGoogleOnly ? args[2] : args[2];
+  const isFix = args[1] === '--fix';
+  const isGoogleOnly = args[1] === '--google-only' || (args[1] !== '--fix' && args[2] === '--google-only');
+  const isSuperAdmin = args.includes('--super-admin');
+  const password = isGoogleOnly || isFix ? undefined : (args[1] === '--google-only' ? undefined : args[1]);
+  const name = args.find((a) => !['--google-only', '--super-admin', '--fix'].includes(a) && a !== email && a !== password) || undefined;
 
   if (!email) {
     console.error('❌ Email is required');
     process.exit(1);
   }
 
-  if (!isGoogleOnly && !password) {
-    console.error('❌ Password is required (or use --google-only flag)');
+  if (!isGoogleOnly && !isFix && !password) {
+    console.error('❌ Password is required (or use --google-only or --fix flag)');
     process.exit(1);
   }
 
@@ -64,13 +74,28 @@ async function createAdminUser() {
     if (existingUser) {
       console.log(`⚠️  User with email ${email} already exists`);
       
+      if (isFix) {
+        (existingUser as any).role = 'SUPER_ADMIN';
+        (existingUser as any).status = 'active';
+        await existingUser.save();
+        console.log('✅ User updated: role=SUPER_ADMIN, status=active');
+        console.log('   You can now sign in with Google.');
+        process.exit(0);
+      }
+      
       if (isGoogleOnly) {
-        console.log('   User already exists. No changes needed for Google OAuth.');
-        if (name && name !== existingUser.name) {
+        if (isSuperAdmin) {
+          (existingUser as any).role = 'SUPER_ADMIN';
+          (existingUser as any).status = 'active';
+          if (name) (existingUser as any).name = name;
+          await existingUser.save();
+          console.log('   Updated: role=SUPER_ADMIN, status=active');
+        } else if (name && name !== existingUser.name) {
           existingUser.name = name;
           await existingUser.save();
           console.log(`   Updated name to: ${name}`);
         }
+        console.log('   User already exists. You can sign in with Google.');
         process.exit(0);
       }
       
@@ -90,18 +115,22 @@ async function createAdminUser() {
       }
     }
 
-    // Create new user
-    if (isGoogleOnly) {
-      console.log(`📝 Creating authorized user for Google OAuth: ${email}`);
+    // Create new user (or create for --fix when user doesn't exist)
+    if (isGoogleOnly || isFix) {
+      const role = isSuperAdmin || isFix ? 'SUPER_ADMIN' : 'STAFF';
+      console.log(`📝 Creating authorized user for Google OAuth: ${email} (role: ${role})`);
       const user = await User.create({
         email: email.toLowerCase(),
         name: name || email.split('@')[0],
         emailVerified: true,
+        role,
+        status: 'active',
       });
 
       console.log(`✅ User created successfully!`);
       console.log(`   Email: ${user.email}`);
       console.log(`   Name: ${user.name}`);
+      console.log(`   Role: ${role}`);
       console.log(`   ID: ${user._id}`);
       console.log('\n🎉 User can now sign in with Google OAuth!');
     } else {

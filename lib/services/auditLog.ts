@@ -36,3 +36,41 @@ export async function logAuditAction(params: LogActionParams): Promise<void> {
     console.error('Audit log error:', err);
   }
 }
+
+/**
+ * Log an authorization failure (403). Plan: audit logging of auth failures.
+ * Does not throw - failures are logged to console only.
+ */
+export async function logAuthFailure(params: {
+  userId?: string;
+  userEmail?: string;
+  userName?: string;
+  action: string;
+  resource: string;
+  resourceId?: string;
+  details?: Record<string, unknown>;
+  req?: Request;
+}): Promise<void> {
+  try {
+    await connectDB();
+    const headers = params.req?.headers;
+    const ip = headers?.get?.('x-forwarded-for')?.split(',')[0]?.trim() ?? undefined;
+    const userAgent = headers?.get?.('user-agent') ?? undefined;
+    await AuditLog.create({
+      userId: params.userId,
+      userEmail: params.userEmail,
+      userName: params.userName,
+      action: 'AUTH_FAILURE',
+      resource: params.resource,
+      resourceId: params.resourceId,
+      details: {
+        attemptedAction: params.action,
+        ...params.details,
+      },
+      ipAddress: ip,
+      userAgent: userAgent ?? undefined,
+    });
+  } catch (err) {
+    console.error('Audit log auth failure error:', err);
+  }
+}

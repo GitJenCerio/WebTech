@@ -3,13 +3,13 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/mongodb';
 import AuditLog from '@/lib/models/AuditLog';
+import { requireCanViewAudit } from '@/lib/api-rbac';
 
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const forbid = await requireCanViewAudit(session, request);
+    if (forbid) return forbid;
 
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get('limit') || '100', 10), 500);

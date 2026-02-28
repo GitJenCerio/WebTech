@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/mongodb';
 import Settings from '@/lib/models/Settings';
+import { requireCanManageSettings } from '@/lib/api-rbac';
 
 const patchSettingsSchema = z.object({
   businessName: z.string().max(200).optional(),
@@ -18,12 +19,11 @@ const patchSettingsSchema = z.object({
   googleSheetsEnabled: z.boolean().optional(),
 }).strict();
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const forbid = await requireCanManageSettings(session, request);
+    if (forbid) return forbid;
 
     await connectDB();
     let settings = await Settings.findById('global').lean();
@@ -62,9 +62,8 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const forbid = await requireCanManageSettings(session, request);
+    if (forbid) return forbid;
 
     const body = await request.json();
     const parsed = patchSettingsSchema.safeParse(body);

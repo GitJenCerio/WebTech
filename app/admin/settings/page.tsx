@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -34,8 +36,14 @@ const DEFAULT_SETTINGS: SettingsData = {
 };
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const userRole = useUserRole();
   const [settings, setSettings] = useState<SettingsData>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userRole.canManageSettings) router.replace('/admin/overview');
+  }, [userRole.canManageSettings, router]);
   const [saving, setSaving] = useState(false);
   const [sheetUrl, setSheetUrl] = useState('');
   const [sheetsSyncing, setSheetsSyncing] = useState(false);

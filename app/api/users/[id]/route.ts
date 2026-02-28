@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
+import { requireCanManageUsers } from '@/lib/api-rbac';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,11 +12,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Check authentication
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const forbid = await requireCanManageUsers(session, request);
+    if (forbid) return forbid;
 
     const { id: userId } = await params;
 
@@ -42,7 +41,8 @@ export async function PATCH(
       user.name = name;
     }
     if (role !== undefined) {
-      user.role = role;
+      const validRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF'];
+      user.role = validRoles.includes(role) ? role : user.role;
     }
     if (assignedNailTechId !== undefined) {
       user.assignedNailTechId = assignedNailTechId || null;
@@ -87,21 +87,23 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectDB();
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const forbid = await requireCanManageUsers(session, request);
+    if (forbid) return forbid;
 
+    await connectDB();
     const { id: userId } = await params;
 
-    // Prevent deleting last active admin
-    const activeAdmins = await User.countDocuments({ role: 'admin', status: 'active' });
     const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    if (user.role === 'admin' && activeAdmins <= 1) {
+    const adminRoles = ['SUPER_ADMIN', 'ADMIN'];
+    const activeAdmins = await User.countDocuments({
+      role: { $in: adminRoles },
+      status: 'active',
+    });
+    if (adminRoles.includes((user as any).role) && activeAdmins <= 1) {
       return NextResponse.json({ error: 'Cannot delete the last active admin' }, { status: 400 });
     }
 

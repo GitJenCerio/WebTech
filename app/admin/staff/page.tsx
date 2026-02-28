@@ -17,7 +17,7 @@ interface Staff {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'staff';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF';
   assignedNailTechId?: string | null;
   assignedNailTechName?: string;
   status: 'active' | 'inactive';
@@ -60,12 +60,12 @@ export default function StaffPage() {
   const [nailTechs, setNailTechs] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
-    if (!userRole.canManageAllTechs) {
+    if (!userRole.canManageUsers) {
       router.replace('/admin/overview');
       return;
     }
     fetchUsers();
-  }, [userRole.canManageAllTechs, router]);
+  }, [userRole.canManageUsers, router]);
 
   const fetchUsers = async () => {
     try {
@@ -100,7 +100,7 @@ export default function StaffPage() {
           id: user.id,
           name: user.name || user.email.split('@')[0],
           email: user.email,
-          role: (user.role || 'admin') as 'admin' | 'staff',
+          role: (user.role || 'STAFF') as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF',
           assignedNailTechId: user.assignedNailTechId || null,
           assignedNailTechName: assignedNailTech?.name,
           status: (user.status || 'active') as 'active' | 'inactive',
@@ -137,7 +137,7 @@ export default function StaffPage() {
     );
   };
 
-  if (!userRole.canManageAllTechs) {
+  if (!userRole.canManageUsers) {
     return null;
   }
 
@@ -253,7 +253,7 @@ export default function StaffPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col gap-0.5">
-                          <Badge variant={item.role === 'admin' ? 'default' : 'secondary'}>{item.role}</Badge>
+                          <Badge variant={['SUPER_ADMIN', 'ADMIN'].includes(item.role) ? 'default' : 'secondary'}>{item.role.replace(/_/g, ' ')}</Badge>
                           {item.assignedNailTechName && (
                             <span className="text-xs text-gray-400">Assigned: {item.assignedNailTechName}</span>
                           )}
@@ -336,7 +336,7 @@ export default function StaffPage() {
                     {getStatusBadge(item.status)}
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    <Badge variant={item.role === 'admin' ? 'default' : 'secondary'}>{item.role}</Badge>
+                    <Badge variant={['SUPER_ADMIN', 'ADMIN'].includes(item.role) ? 'default' : 'secondary'}>{item.role.replace(/_/g, ' ')}</Badge>
                     <Badge variant="outline">{item.authMethod === 'google' ? 'Google' : 'Email'}</Badge>
                     {item.assignedNailTechName && (
                       <span className="text-xs text-gray-400">Assigned: {item.assignedNailTechName}</span>

@@ -4,6 +4,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
 import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
+import { normalizeRole } from '@/lib/rbac';
 
 // In-memory rate limit: 5 attempts per minute per IP (plan: 5/min on login)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -53,7 +54,8 @@ export const authOptions: NextAuthOptions = {
 
         try {
           await connectDB();
-          const user = await User.findOne({ email: credentials.email }).select('+password');
+          const emailKey = credentials.email.toLowerCase().trim();
+          const user = await User.findOne({ email: emailKey }).select('+password');
 
           if (!user || !user.password) {
             recordLoginAttempt(key);
@@ -80,7 +82,7 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name || user.email.split('@')[0],
             image: user.image,
-            role: user.role,
+            role: normalizeRole(user.role),
             assignedNailTechId: user.assignedNailTechId?.toString() || null,
             isActive: user.status === 'active',
           } as any;
@@ -106,11 +108,12 @@ export const authOptions: NextAuthOptions = {
 
         try {
           await connectDB();
-          const existingUser = await User.findOne({ email: user.email });
+          const emailKey = (user.email || '').toLowerCase().trim();
+          const existingUser = await User.findOne({ email: emailKey });
 
           // RESTRICTED ACCESS: Only allow sign-in if user already exists in database
           if (!existingUser) {
-            console.warn(`🚫 Access denied: User ${user.email} is not authorized. User must be added to the database first.`);
+            console.warn(`🚫 Access denied: User ${user.email} (looked up as ${emailKey}) is not authorized. User must be added to the database first.`);
             return false; // Deny access - user must be pre-approved
           }
 
@@ -182,10 +185,11 @@ export const authOptions: NextAuthOptions = {
         if (user.email && !token.role) {
           try {
             await connectDB();
-            const dbUser = await User.findOne({ email: user.email }).select('role assignedNailTechId status');
+            const emailKey = (user.email || '').toLowerCase().trim();
+            const dbUser = await User.findOne({ email: emailKey }).select('role assignedNailTechId status');
             if (dbUser) {
               token.sub = dbUser._id.toString();
-              token.role = dbUser.role;
+              token.role = normalizeRole((dbUser as any).role);
               token.assignedNailTechId = dbUser.assignedNailTechId?.toString() || null;
               token.isActive = (dbUser as any).status === 'active';
             }

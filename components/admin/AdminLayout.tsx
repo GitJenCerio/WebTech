@@ -147,7 +147,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {/* Navigation */}
           <nav className="flex-1 p-2">
             <ul className="m-0 list-none p-0">
-              {navItems.filter((item) => item.path !== '/admin/staff' || userRole.canManageAllTechs).map((item) => {
+              {navItems
+                .filter((item) => {
+                  if (item.path === '/admin/staff') return userRole.canManageUsers;
+                  if (item.path === '/admin/audit') return userRole.canViewAudit;
+                  if (item.path === '/admin/settings') return userRole.canManageSettings;
+                  return true;
+                })
+                .map((item) => {
                 const isActive = pathname === item.path || (pathname.startsWith(item.path) && item.path !== '/admin/overview');
                 return (
                   <li key={item.path}>

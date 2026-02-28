@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { normalizeRole } from '@/lib/rbac';
 
 interface NailTech {
   id: string;
@@ -25,7 +26,7 @@ interface EditUserModalProps {
     id: string;
     name: string;
     email: string;
-    role: 'admin' | 'staff';
+    role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF';
     assignedNailTechId?: string | null;
     status: 'active' | 'inactive';
   } | null;
@@ -33,7 +34,7 @@ interface EditUserModalProps {
 
 export default function EditUserModal({ show, onHide, onUserUpdated, user }: EditUserModalProps) {
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'admin' | 'staff'>('admin');
+  const [role, setRole] = useState<'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF'>('STAFF');
   const [assignedNailTechId, setAssignedNailTechId] = useState<string>('');
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,7 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
   useEffect(() => {
     if (user) {
       setName(user.name || '');
-      setRole(user.role || 'admin');
+      setRole((normalizeRole(user.role) as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF') || 'STAFF');
       setAssignedNailTechId(user.assignedNailTechId || '');
       setStatus(user.status || 'active');
       setError('');
@@ -96,7 +97,7 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
       }
 
       // Handle assignedNailTechId
-      if (role === 'staff') {
+      if (role === 'STAFF') {
         updateData.assignedNailTechId = assignedNailTechId || null;
       } else {
         updateData.assignedNailTechId = null;
@@ -199,10 +200,9 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
               <Select
                 value={role}
                 onValueChange={(value) => {
-                  setRole(value as 'admin' | 'staff');
-                  if (value === 'admin') {
-                    setAssignedNailTechId('');
-                  }
+                  const v = value as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF';
+                  setRole(v);
+                  if (v !== 'STAFF') setAssignedNailTechId('');
                 }}
                 disabled={loading}
               >
@@ -210,13 +210,15 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                  <SelectItem value="MANAGER">Manager</SelectItem>
+                  <SelectItem value="STAFF">Staff</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {role === 'staff' && (
+            {role === 'STAFF' && (
               <div className="space-y-2">
                 <Label htmlFor="editAssignedNailTech">Assigned Nail Tech</Label>
                 {loadingNailTechs ? (
