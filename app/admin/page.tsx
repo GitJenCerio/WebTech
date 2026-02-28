@@ -26,7 +26,8 @@ function AdminLoginForm() {
     authError === 'OAuthSignin' ? 'Google sign-in could not be started. Check GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET.' :
     authError === 'OAuthCallback' ? 'Google sign-in failed during callback. Check NEXTAUTH_URL and Google OAuth redirect URI.' :
     authError === 'Configuration' ? 'Auth is not configured. Check NEXTAUTH_SECRET / NEXTAUTH_URL and provider env vars.' :
-    authError === 'AccessDenied' ? 'Access denied. This account is not authorized. Only pre-approved users can access the admin panel. Please contact an administrator to add your account.' :
+    authError === 'AccessDenied' ? 'Access denied. This account is not authorized or has been deactivated. Contact an administrator.' :
+    authError === 'SessionExpired' ? 'Your session has expired. Please sign in again.' :
     authError ? `Sign-in error: ${authError}` :
     '';
 

@@ -177,7 +177,7 @@ export const authOptions: NextAuthOptions = {
         token.sub = user.id;
         if ('role' in user && user.role) token.role = user.role;
         if ('assignedNailTechId' in user) token.assignedNailTechId = user.assignedNailTechId ?? null;
-        if ('isActive' in user) token.isActive = user.isActive ?? true;
+        if ('isActive' in user) token.isActive = Boolean(user.isActive ?? true);
         // For Google OAuth, user won't have role/assignedNailTechId - fetch from DB
         if (user.email && !token.role) {
           try {
