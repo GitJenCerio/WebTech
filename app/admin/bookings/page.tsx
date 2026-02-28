@@ -138,6 +138,68 @@ export default function BookingsPage() {
   const { getUnitPriceForService } = usePricing(pricingData, pricingHeaders);
   const { nailTechs, loading: nailTechsLoading } = useNailTechs();
 
+  const [todayBookings, setTodayBookings] = useState<Booking[]>([]);
+  const [weekBookings, setWeekBookings] = useState<Booking[]>([]);
+
+  const mapApiToBooking = useCallback((booking: any): Booking => {
+    const apptDate = booking.appointmentDate || booking.createdAt || '';
+    const apptTime = booking.appointmentTime || '';
+    return {
+      id: booking.id,
+      bookingCode: booking.bookingCode,
+      customerId: booking.customerId,
+      nailTechId: booking.nailTechId,
+      date: apptDate,
+      time: apptTime,
+      clientName: booking.customerName || 'Unknown Client',
+      socialName: booking.customerSocialMediaName || '',
+      service: booking.service?.type || 'Nail Service',
+      serviceLocation: booking.service?.location,
+      status: booking.status || 'booked',
+      amount: (booking.invoice?.quotationId || booking.invoice?.total != null) ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0,
+      amountPaid: booking.pricing?.paidAmount || 0,
+      clientNotes: booking.clientNotes || '',
+      adminNotes: booking.adminNotes || '',
+      clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
+      paymentProofUrl: booking.payment?.paymentProofUrl,
+      slotTimes: booking.appointmentTimes || (apptTime ? [apptTime] : []),
+      invoice: booking.invoice || null,
+      completedAt: booking.completedAt ?? null,
+      slotType: booking.slotType ?? null,
+      pricing: booking.pricing,
+    };
+  }, []);
+
+  useEffect(() => {
+    async function fetchTodayAndWeek() {
+      try {
+        const urlTechId = searchParams.get('techId') || searchParams.get('nailTechId');
+        const techId = nailTechFilter !== 'all' ? nailTechFilter : urlTechId;
+        const todayParams = new URLSearchParams();
+        todayParams.set('range', 'today');
+        if (techId) todayParams.set('nailTechId', techId);
+        const weekParams = new URLSearchParams();
+        weekParams.set('range', 'week');
+        if (techId) weekParams.set('nailTechId', techId);
+        const [todayRes, weekRes] = await Promise.all([
+          fetch(`/api/bookings?${todayParams.toString()}`),
+          fetch(`/api/bookings?${weekParams.toString()}`),
+        ]);
+        if (todayRes.ok) {
+          const data = await todayRes.json();
+          setTodayBookings((data.bookings || []).map(mapApiToBooking));
+        }
+        if (weekRes.ok) {
+          const data = await weekRes.json();
+          setWeekBookings((data.bookings || []).map(mapApiToBooking));
+        }
+      } catch (err) {
+        console.error('Failed to fetch today/week bookings:', err);
+      }
+    }
+    fetchTodayAndWeek();
+  }, [nailTechFilter, searchParams, mapApiToBooking]);
+
   useEffect(() => {
     const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
     const rate = typeof selectedBooking?.nailTechId === 'string'
@@ -199,13 +261,27 @@ export default function BookingsPage() {
       setBookings(rows);
       setCurrentPage(1);
       setLastFetchedAt(Date.now());
+      // Refresh today/week summaries
+      const todayParams = new URLSearchParams();
+      todayParams.set('range', 'today');
+      if (techId) todayParams.set('nailTechId', techId);
+      const weekParams = new URLSearchParams();
+      weekParams.set('range', 'upcoming');
+      if (techId) weekParams.set('nailTechId', techId);
+      Promise.all([
+        fetch(`/api/bookings?${todayParams}`).then((r) => r.ok ? r.json() : { bookings: [] }),
+        fetch(`/api/bookings?${weekParams}`).then((r) => r.ok ? r.json() : { bookings: [] }),
+      ]).then(([todayData, weekData]) => {
+        setTodayBookings((todayData.bookings || []).map((b: any) => mapApiToBooking(b)));
+        setWeekBookings((weekData.bookings || []).map((b: any) => mapApiToBooking(b)));
+      }).catch(() => {});
     } catch (error: any) {
       console.error('Error fetching bookings:', error);
       setBookingsError(error.message || 'Failed to fetch bookings');
     } finally {
       setBookingsLoading(false);
     }
-  }, [statusFilter, nailTechFilter, dateFrom, dateTo, searchParams]);
+  }, [statusFilter, nailTechFilter, dateFrom, dateTo, searchParams, mapApiToBooking]);
 
   useEffect(() => {
     fetchBookings();
@@ -731,6 +807,82 @@ export default function BookingsPage() {
     );
   };
 
+  const openBookingDetails = (item: Booking) => {
+    setSelectedBooking({
+      id: item.id,
+      bookingCode: item.bookingCode,
+      customerId: item.customerId,
+      nailTechId: item.nailTechId,
+      nailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
+      date: item.date,
+      time: item.time,
+      clientName: item.clientName,
+      clientSocialMediaName: item.socialName,
+      service: item.service,
+      serviceLocation: item.serviceLocation,
+      slotType: item.slotType,
+      status: item.status,
+      slotCount: 1,
+      reservationAmount: 500,
+      amount: item.amount,
+      paidAmount: item.amountPaid ?? 0,
+      notes: item.clientNotes,
+      adminNotes: item.adminNotes,
+      clientPhotos: item.clientPhotos,
+      paymentProofUrl: item.paymentProofUrl,
+      slotTimes: item.slotTimes,
+      invoice: item.invoice,
+      completedAt: item.completedAt,
+      pricing: item.pricing,
+    });
+    setAdminNotesDraft(item.adminNotes || '');
+    setShowModal(true);
+  };
+
+  const formatMiniDate = (dateStr: string | null) =>
+    dateStr ? (() => {
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    })() : '—';
+
+  const renderMiniBookingRow = (item: Booking) => (
+    <tr
+      key={item.id}
+      onClick={() => openBookingDetails(item)}
+      className="hover:bg-[#fafafa] transition-colors duration-100 cursor-pointer border-b border-[#f5f5f5] last:border-0"
+    >
+      <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">{formatMiniDate(item.date)}</td>
+      <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">{formatSlotTimes(item.slotTimes, item.time)}</td>
+      <td className="px-4 py-2.5 font-medium text-[#1a1a1a] text-sm">{item.clientName}</td>
+      <td className="px-4 py-2.5 text-gray-600 text-sm">{item.service}</td>
+      <td className="px-4 py-2.5 text-gray-600 text-sm">{item.nailTechId ? (nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—') : '—'}</td>
+      <td className="px-4 py-2.5">{getStatusBadge(item.status)}</td>
+    </tr>
+  );
+
+  const renderMiniBookingCard = (item: Booking) => (
+    <button
+      key={item.id}
+      type="button"
+      onClick={() => openBookingDetails(item)}
+      className="w-full text-left px-4 py-3 border-b border-[#f5f5f5] last:border-0 hover:bg-[#fafafa] transition-colors active:bg-[#f5f5f5]"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium text-[#1a1a1a] text-sm truncate">{item.clientName}</span>
+        {getStatusBadge(item.status)}
+      </div>
+      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+        <span>{formatMiniDate(item.date)}</span>
+        <span>•</span>
+        <span>{formatSlotTimes(item.slotTimes, item.time)}</span>
+      </div>
+      <p className="text-sm text-gray-600 mt-0.5 truncate">{item.service}</p>
+      {item.nailTechId && (
+        <p className="text-xs text-gray-400 mt-0.5">Tech: {nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—'}</p>
+      )}
+    </button>
+  );
+
   return (
     <div className="space-y-6">
       {bookingsError && (
@@ -738,6 +890,86 @@ export default function BookingsPage() {
           {bookingsError}
         </div>
       )}
+
+      {/* Today & Upcoming */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+          <CardContent className="p-0">
+            <div className="px-4 py-3 border-b border-[#f0f0f0]">
+              <h3 className="text-sm font-semibold text-[#1a1a1a]">Today&apos;s Bookings</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{todayBookings.length} appointment{todayBookings.length !== 1 ? 's' : ''}</p>
+            </div>
+            <div className="overflow-x-auto max-h-[240px] overflow-y-auto">
+              {/* Mobile: cards */}
+              <div className="sm:hidden">
+                {todayBookings.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-gray-400 text-sm">No appointments today</div>
+                ) : (
+                  todayBookings.sort((a, b) => (a.time || '').localeCompare(b.time || '')).map(renderMiniBookingCard)
+                )}
+              </div>
+              {/* Desktop: table */}
+              <table className="w-full text-sm hidden sm:table">
+                <thead className="sticky top-0 bg-[#fafafa]">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Date</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Time</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Client</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Service</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Tech</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {todayBookings.length === 0 ? (
+                    <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-sm">No appointments today</td></tr>
+                  ) : (
+                    todayBookings.sort((a, b) => (a.time || '').localeCompare(b.time || '')).map(renderMiniBookingRow)
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+          <CardContent className="p-0">
+            <div className="px-4 py-3 border-b border-[#f0f0f0]">
+              <h3 className="text-sm font-semibold text-[#1a1a1a]">Upcoming Bookings</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{weekBookings.length} appointment{weekBookings.length !== 1 ? 's' : ''}</p>
+            </div>
+            <div className="overflow-x-auto max-h-[240px] overflow-y-auto">
+              {/* Mobile: cards */}
+              <div className="sm:hidden">
+                {weekBookings.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-gray-400 text-sm">No upcoming appointments</div>
+                ) : (
+                  weekBookings.sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || '')).map(renderMiniBookingCard)
+                )}
+              </div>
+              {/* Desktop: table */}
+              <table className="w-full text-sm hidden sm:table">
+                <thead className="sticky top-0 bg-[#fafafa]">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Date</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Time</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Client</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Service</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Tech</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {weekBookings.length === 0 ? (
+                    <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-sm">No upcoming appointments</td></tr>
+                  ) : (
+                    weekBookings.sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '').localeCompare(b.time || '')).map(renderMiniBookingRow)
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Filter Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
@@ -905,37 +1137,7 @@ export default function BookingsPage() {
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
-                            onClick={() => {
-                              setSelectedBooking({
-                                id: item.id,
-                                bookingCode: item.bookingCode,
-                                customerId: item.customerId,
-                                nailTechId: item.nailTechId,
-                                nailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
-                                date: item.date,
-                                time: item.time,
-                                clientName: item.clientName,
-                                clientSocialMediaName: item.socialName,
-                                service: item.service,
-                                serviceLocation: item.serviceLocation,
-                                slotType: item.slotType,
-                                status: item.status,
-                                slotCount: 1,
-                                reservationAmount: 500,
-                                amount: item.amount,
-                                paidAmount: item.amountPaid ?? 0,
-                                notes: item.clientNotes,
-                                adminNotes: item.adminNotes,
-                                clientPhotos: item.clientPhotos,
-                                paymentProofUrl: item.paymentProofUrl,
-                                slotTimes: item.slotTimes,
-                                invoice: item.invoice,
-                                completedAt: item.completedAt,
-                                pricing: item.pricing,
-                              });
-                              setAdminNotesDraft(item.adminNotes || '');
-                              setShowModal(true);
-                            }}
+                            onClick={() => openBookingDetails(item)}
                             className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
                           >
                             View
@@ -1022,36 +1224,7 @@ export default function BookingsPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => {
-                      setSelectedBooking({
-                        id: item.id,
-                        bookingCode: item.bookingCode,
-                        customerId: item.customerId,
-                        nailTechId: item.nailTechId,
-                        nailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
-                        date: item.date,
-                        time: item.time,
-                        clientName: item.clientName,
-                        clientSocialMediaName: item.socialName,
-                        service: item.service,
-                        serviceLocation: item.serviceLocation,
-                        slotType: item.slotType,
-                        status: item.status,
-                        slotCount: 1,
-                        reservationAmount: 500,
-                        amount: item.amount,
-                        paidAmount: item.amountPaid ?? 0,
-                        notes: item.clientNotes,
-                        adminNotes: item.adminNotes,
-                        clientPhotos: item.clientPhotos,
-                        paymentProofUrl: item.paymentProofUrl,
-                        slotTimes: item.slotTimes,
-                        invoice: item.invoice,
-                        completedAt: item.completedAt,
-                      });
-                      setAdminNotesDraft(item.adminNotes || '');
-                      setShowModal(true);
-                    }}
+                    onClick={() => openBookingDetails(item)}
                     className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
                   >
                     View Details

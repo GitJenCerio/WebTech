@@ -56,7 +56,7 @@ export default function FinancePage() {
   const [nailTechFilter, setNailTechFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [quickSelect, setQuickSelect] = useState('custom');
+  const [quickSelect, setQuickSelect] = useState('all');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -283,14 +283,12 @@ export default function FinancePage() {
       'Paid Amount',
       'Balance',
       'Tip',
-      'Total Bill + Tip',
       `Admin Com ${adminCommissionRate}%`,
     ];
     const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
     const rows = byDateAsc.map((t) => {
       const totalInvoice = t.total;
       const tipAmount = t.tip;
-      const totalBillPlusTip = totalInvoice + tipAmount;
       const adminCom = t.total * (adminCommissionRate / 100);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '';
       const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
@@ -322,19 +320,17 @@ export default function FinancePage() {
         t.paid,
         t.balance,
         tipAmount,
-        totalBillPlusTip,
         adminCom,
       ];
     });
     const sumTotal = filteredTransactions.reduce((s, t) => s + t.total, 0);
     const sumPaid = filteredTransactions.reduce((s, t) => s + t.paid, 0);
     const sumTip = filteredTransactions.reduce((s, t) => s + t.tip, 0);
-    const sumBillAndTip = filteredTransactions.reduce((s, t) => s + t.total + t.tip, 0);
     const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
       .reduce((s, t) => s + t.total * (adminCommissionRate / 100), 0);
-    const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumBalance, sumTip, sumBillAndTip, sumCommission];
+    const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumBalance, sumTip, sumCommission];
     const csv = [headers.join(','), ...rows.map((r) => r.join(',')), totalRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -369,7 +365,6 @@ export default function FinancePage() {
       'Paid Amount',
       'Balance',
       'Tip',
-      'Total Bill + Tip',
       `Commission (${adminCommissionRate}%)`,
     ];
     const fmt = (n: number) => `PHP ${String(Number(n).toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 })).replace(/[^\d,.]/g, '')}`;
@@ -377,7 +372,6 @@ export default function FinancePage() {
     const rows = byDateAsc.map((t) => {
       const totalInvoice = t.total;
       const tipAmount = t.tip;
-      const totalBillPlusTip = totalInvoice + tipAmount;
       const commission = t.total * (adminCommissionRate / 100);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '—';
       const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
@@ -409,7 +403,6 @@ export default function FinancePage() {
         fmt(t.paid),
         fmt(t.balance),
         fmt(tipAmount),
-        fmt(totalBillPlusTip),
         fmt(commission),
       ];
     });
@@ -417,7 +410,6 @@ export default function FinancePage() {
     const sumTotal = filteredTransactions.reduce((s, t) => s + t.total, 0);
     const sumPaid = filteredTransactions.reduce((s, t) => s + t.paid, 0);
     const sumTip = filteredTransactions.reduce((s, t) => s + t.tip, 0);
-    const sumBillAndTip = filteredTransactions.reduce((s, t) => s + t.total + t.tip, 0);
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
       .reduce((s, t) => s + t.total * (adminCommissionRate / 100), 0);
@@ -432,7 +424,6 @@ export default function FinancePage() {
       fmt(sumPaid),
       fmt(sumBalance),
       fmt(sumTip),
-      fmt(sumBillAndTip),
       fmt(sumCommission),
     ];
     const bodyRows = rows.length > 0 ? [...rows, totalsRow] : rows;
@@ -697,7 +688,6 @@ export default function FinancePage() {
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Paid Amount</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Balance</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Tip</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Total Bill + Tip</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Commission</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
                 </tr>
@@ -707,7 +697,7 @@ export default function FinancePage() {
                   <>
                     {Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
-                        {Array.from({ length: 11 }).map((_, j) => (
+                        {Array.from({ length: 10 }).map((_, j) => (
                           <td key={j} className="px-4 py-3">
                             <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
                           </td>
@@ -717,7 +707,7 @@ export default function FinancePage() {
                   </>
                 ) : paginatedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="px-4 py-16 text-center">
+                    <td colSpan={10} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                         <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
                           <Search className="h-6 w-6 text-gray-300" />
@@ -737,7 +727,6 @@ export default function FinancePage() {
                   </tr>
                 ) : (
                   paginatedTransactions.map((item) => {
-                    const totalBillAndTip = item.total + item.tip;
                     const commission = item.total * (adminCommissionRate / 100);
                     return (
                     <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100">
@@ -762,7 +751,6 @@ export default function FinancePage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{totalBillAndTip.toLocaleString()}</td>
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{commission.toLocaleString()}</td>
                       <td className="px-4 py-3">{getPaymentStatusBadge(item.paymentStatus)}</td>
                     </tr>
@@ -857,10 +845,6 @@ export default function FinancePage() {
                     <div>
                       <span className="text-gray-400 text-xs">Tip</span>
                       <p className="text-[#1a1a1a]">₱{item.tip.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 text-xs">Total Bill + Tip</span>
-                      <p className="text-[#1a1a1a]">₱{(item.total + item.tip).toLocaleString()}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Commission</span>

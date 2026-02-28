@@ -430,6 +430,13 @@ function getManilaRange(range: string): { startDate?: Date; endDate?: Date } {
     return getManilaRangeFromStart(startOfWeek.year, startOfWeek.month, startOfWeek.day, 7);
   }
 
+  if (range === 'upcoming') {
+    const todayStart = manilaMidnightToUtc(year, month, day);
+    const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    const { year: ty, month: tm, day: td } = getManilaDateParts(tomorrowStart);
+    return getManilaRangeFromStart(ty, tm, td, 7);
+  }
+
   if (range === 'month') {
     const startDate = getManilaStartOfMonth(year, month);
     const endDate = getManilaStartOfMonth(month === 12 ? year + 1 : year, month === 12 ? 1 : month + 1);
