@@ -60,24 +60,10 @@ function AdminLoginForm() {
     setError('');
 
     try {
-      const result = await signIn('google', {
-        callbackUrl: '/admin/overview',
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError(oauthErrorMessage || 'Failed to sign in with Google. Please try again.');
-        setGoogleLoading(false);
-        return;
-      }
-
-      if (result?.url) {
-        window.location.href = result.url;
-        return;
-      }
-
+      // Use redirect flow (not popup) - required for iPhone/Safari compatibility.
+      // redirect: false uses a popup which iOS Safari blocks or mishandles.
       await signIn('google', { callbackUrl: '/admin/overview' });
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError('Failed to sign in with Google. Please try again.');
       setGoogleLoading(false);
     }
@@ -120,7 +106,15 @@ function AdminLoginForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password">Password</Label>
+                  <a
+                    href="/admin/forgot-password"
+                    className="text-xs text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
                 <Input
                   id="password"
                   type="password"

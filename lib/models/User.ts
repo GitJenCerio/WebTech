@@ -9,7 +9,8 @@ export interface IUser extends Document {
   emailVerified?: boolean;
   role?: 'admin' | 'staff'; // User role
   assignedNailTechId?: string; // For staff members - assigned nail tech ID
-  status?: 'active' | 'inactive'; // User status
+  status?: 'active' | 'inactive'; // User status (plan: isActive = status === 'active')
+  lastLogin?: Date; // Last successful login timestamp
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,14 +18,15 @@ export interface IUser extends Document {
 const UserSchema = new Schema<IUser>(
   {
     firebaseId: { type: String, sparse: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true }, // unique: true automatically creates an index
-    password: { type: String, select: false }, // Don't return password by default
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, select: false },
     name: { type: String },
     image: { type: String },
     emailVerified: { type: Boolean, default: false },
     role: { type: String, enum: ['admin', 'staff'], default: 'admin' },
     assignedNailTechId: { type: String },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    lastLogin: { type: Date },
   },
   { timestamps: true }
 );

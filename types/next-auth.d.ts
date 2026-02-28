@@ -15,6 +15,7 @@ declare module 'next-auth' {
       image?: string | null;
       role?: string;
       assignedNailTechId?: string | null;
+      isActive?: boolean;
     };
   }
 }
@@ -23,5 +24,6 @@ declare module 'next-auth/jwt' {
   interface JWT {
     role?: string;
     assignedNailTechId?: string | null;
+    isActive?: boolean;
   }
 }

@@ -15,18 +15,19 @@ export default function AdminLayoutWrapper({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Don't apply layout to login page
-  const isLoginPage = pathname === '/admin';
+  // Don't apply layout or auth redirect to login, forgot-password, reset-password
+  const isPublicAdminPage =
+    pathname === '/admin' ||
+    pathname === '/admin/forgot-password' ||
+    pathname === '/admin/reset-password';
 
   useEffect(() => {
-    // Only redirect if not on login page and not authenticated
-    if (!isLoginPage && status === 'unauthenticated') {
+    if (!isPublicAdminPage && status === 'unauthenticated') {
       router.push('/admin');
     }
-  }, [status, router, isLoginPage]);
+  }, [status, router, isPublicAdminPage]);
 
-  // If on login page, render without layout
-  if (isLoginPage) {
+  if (isPublicAdminPage) {
     return <div className="admin-dashboard min-h-screen bg-[#f5f5f5]">{children}</div>;
   }
 

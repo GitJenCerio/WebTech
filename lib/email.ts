@@ -118,6 +118,64 @@ export async function sendInviteEmail(params: SendInviteEmailParams): Promise<{ 
   return { success: true, error: 'Email service not configured - link logged to console' };
 }
 
+export interface SendPasswordResetParams {
+  email: string;
+  displayName: string;
+  resetLink: string;
+}
+
+/**
+ * Send password reset email
+ */
+export async function sendPasswordResetEmail(params: SendPasswordResetParams): Promise<{ success: boolean; error?: string }> {
+  const { email, displayName, resetLink } = params;
+
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+
+      const result = await resend.emails.send({
+        from: fromEmail,
+        to: email,
+        subject: `Reset your password - ${APP_NAME}`,
+        html: getPasswordResetEmailTemplate(displayName, resetLink),
+      });
+
+      if (result.data) {
+        return { success: true };
+      } else if (result.error) {
+        return { success: false, error: result.error.message || 'Failed to send email' };
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: msg };
+    }
+  }
+
+  console.log('\n📧 [Dev] Password reset link:', resetLink);
+  return { success: true };
+}
+
+function getPasswordResetEmailTemplate(displayName: string, resetLink: string): string {
+  const content = `
+    <p style="margin: 0 0 16px;">Hello ${displayName},</p>
+    <p style="margin: 0 0 16px;">You requested a password reset for your ${APP_NAME} admin account.</p>
+    <p style="margin: 0 0 24px;">Click the button below to reset your password. This link expires in 1 hour.</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${resetLink}" 
+         style="display: inline-block; background: #1a1a1a; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        Reset Password
+      </a>
+    </div>
+    <p style="font-size: 12px; color: #9ca3af; word-break: break-all; background: #f9fafb; padding: 12px; border-radius: 6px; margin: 16px 0 0;">
+      ${resetLink}
+    </p>
+    <p style="font-size: 14px; color: #6b7280; margin: 24px 0 0;">If you didn't request this, you can safely ignore this email.</p>
+  `;
+  return getBrandedEmailTemplate(content, `Reset Password - ${APP_NAME}`);
+}
+
 /**
  * Generate HTML email template for invitation
  */
