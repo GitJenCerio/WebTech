@@ -1,19 +1,39 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import Customer from '@/lib/models/Customer';
 import Booking from '@/lib/models/Booking';
 import type { CustomerInput } from '@/lib/types';
+import { authOptions } from '@/lib/auth-options';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     const { id } = await params;
+    const assignedNailTechId = (session.user as { assignedNailTechId?: string })?.assignedNailTechId;
+
     const customer = await Customer.findById(id).lean();
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found.' }, { status: 404 });
+    }
+
+    // Staff with assigned nail tech: only allow access if customer has bookings with that tech
+    if (assignedNailTechId) {
+      const hasBookingWithTech = await Booking.exists({
+        customerId: id,
+        nailTechId: assignedNailTechId,
+      });
+      if (!hasBookingWithTech) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+      }
     }
 
     const bookings = await Booking.find({ customerId: id }).sort({ createdAt: -1 }).lean();
@@ -78,7 +98,25 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
     const { id } = await params;
+    const assignedNailTechId = (session.user as { assignedNailTechId?: string })?.assignedNailTechId;
+
+    if (assignedNailTechId) {
+      const hasBookingWithTech = await Booking.exists({
+        customerId: id,
+        nailTechId: assignedNailTechId,
+      });
+      if (!hasBookingWithTech) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+      }
+    }
+
     const body = await request.json();
     const {
       name,
@@ -161,8 +199,24 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     const { id } = await params;
+    const assignedNailTechId = (session.user as { assignedNailTechId?: string })?.assignedNailTechId;
+
+    if (assignedNailTechId) {
+      const hasBookingWithTech = await Booking.exists({
+        customerId: id,
+        nailTechId: assignedNailTechId,
+      });
+      if (!hasBookingWithTech) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+      }
+    }
     const customer = await Customer.findById(id);
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });

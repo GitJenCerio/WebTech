@@ -8,14 +8,26 @@ cloudinary.config({
 
 export default cloudinary;
 
-export async function uploadImage(fileBuffer: Buffer, folder: string, publicId?: string) {
+export interface UploadImageOptions {
+  maxWidth?: number;
+  quality?: string;
+}
+
+export async function uploadImage(
+  fileBuffer: Buffer,
+  folder: string,
+  publicId?: string,
+  options?: UploadImageOptions
+) {
+  const maxWidth = options?.maxWidth ?? 1500;
+  const quality = options?.quality ?? 'auto:good';
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder,
         public_id: publicId,
         resource_type: 'image',
-        transformation: [{ width: 1500, crop: 'limit' }, { quality: 'auto:good', fetch_format: 'auto' }],
+        transformation: [{ width: maxWidth, crop: 'limit' as const }, { quality, fetch_format: 'auto' }],
       },
       (error, result) => {
         if (error) reject(error);

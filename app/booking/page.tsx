@@ -439,11 +439,13 @@ export default function BookingPage() {
   async function uploadBookingPhoto(
     bookingId: string,
     photoType: 'currentState' | 'inspiration',
-    file: File
+    file: File,
+    photoUploadToken: string
   ) {
     const photoData = new FormData();
     photoData.set('photoType', photoType);
     photoData.set('file', file);
+    photoData.set('token', photoUploadToken);
 
     const photoResponse = await fetch(`/api/bookings/${bookingId}/photos`, {
       method: 'POST',
@@ -456,7 +458,10 @@ export default function BookingPage() {
     }
   }
 
-  async function uploadBookingPhotos(bookingId: string, formData: {
+  async function uploadBookingPhotos(
+    bookingId: string,
+    photoUploadToken: string,
+    formData: {
     currentNailPictures: File[];
     inspoPictures: File[];
   }) {
@@ -464,12 +469,12 @@ export default function BookingPage() {
 
     const currentFiles = (formData.currentNailPictures || []).slice(0, 3);
     for (const file of currentFiles) {
-      uploads.push(uploadBookingPhoto(bookingId, 'currentState', file));
+      uploads.push(uploadBookingPhoto(bookingId, 'currentState', file, photoUploadToken));
     }
 
     const inspoFiles = (formData.inspoPictures || []).slice(0, 3);
     for (const inspoFile of inspoFiles) {
-      uploads.push(uploadBookingPhoto(bookingId, 'inspiration', inspoFile));
+      uploads.push(uploadBookingPhoto(bookingId, 'inspiration', inspoFile, photoUploadToken));
     }
 
     if (uploads.length === 0) return;
@@ -547,25 +552,6 @@ export default function BookingPage() {
         customerId = customerData.customer._id || customerData.customer.id;
       }
 
-      if (isExistingCustomer && customerId) {
-        // Repeat clients: only update contact info (nail history/health already on file)
-        const updateResponse = await fetch(`/api/customers/${customerId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.contactNumber,
-            socialMediaName: formData.socialMediaName,
-          }),
-        });
-
-        if (!updateResponse.ok) {
-          const errorData = await updateResponse.json().catch(() => ({ error: 'Failed to update customer' }));
-          throw new Error(errorData.error || 'Failed to update customer details');
-        }
-      }
-
       const slotIds = [selectedSlot.id, ...linkedSlotIds];
       const slotCount = slotIds.length;
       const basePrice = 1500;
@@ -579,6 +565,12 @@ export default function BookingPage() {
           slotIds,
           customerId,
           customerEmail: formData.email,
+          customerUpdates: isExistingCustomer && customerId ? {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.contactNumber,
+            socialMediaName: formData.socialMediaName,
+          } : undefined,
           nailTechId: selectedNailTechId || '',
           service: {
             type: selectedService,
@@ -605,16 +597,24 @@ export default function BookingPage() {
 
       let photoUploadWarning: string | null = null;
       const bookingId = data?.booking?.id;
-      if (bookingId) {
-        try {
-          await uploadBookingPhotos(bookingId, {
-            currentNailPictures: formData.currentNailPictures,
-            inspoPictures: formData.inspoPictures,
-          });
-        } catch (photoError) {
-          console.error('Booking created but photo upload failed:', photoError);
+      const photoUploadToken = data?.photoUploadToken;
+      const hasPhotos =
+        (formData.currentNailPictures?.length ?? 0) > 0 || (formData.inspoPictures?.length ?? 0) > 0;
+      if (bookingId && hasPhotos) {
+        if (!photoUploadToken) {
           photoUploadWarning =
-            'Your booking was saved, but some nail photos were not uploaded. You can upload them again later.';
+            'Your booking was saved, but photo upload could not be completed. Please contact us if you need to add nail photos.';
+        } else {
+          try {
+            await uploadBookingPhotos(bookingId, photoUploadToken, {
+              currentNailPictures: formData.currentNailPictures,
+              inspoPictures: formData.inspoPictures,
+            });
+          } catch (photoError) {
+            console.error('Booking created but photo upload failed:', photoError);
+            photoUploadWarning =
+              'Your booking was saved, but some nail photos were not uploaded. You can upload them again later.';
+          }
         }
       }
 

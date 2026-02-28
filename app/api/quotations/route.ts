@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import Quotation from '@/lib/models/Quotation';
+import { authOptions } from '@/lib/auth-options';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     const body = await request.json();
 
@@ -38,6 +47,11 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     const { searchParams } = new URL(request.url);
 

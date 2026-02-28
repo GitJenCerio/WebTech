@@ -9,7 +9,7 @@ import { sendBookingPendingEmail } from '@/lib/email';
 import Customer from '@/lib/models/Customer';
 import NailTech from '@/lib/models/NailTech';
 import Slot from '@/lib/models/Slot';
-import { createUploadProofToken } from '@/lib/uploadProofToken';
+import { createUploadProofToken, createPhotoUploadToken } from '@/lib/uploadProofToken';
 import { syncBookingToSheet } from '@/lib/services/googleSheetsService';
 import connectDB from '@/lib/mongodb';
 
@@ -31,6 +31,12 @@ export async function POST(request: Request) {
       slotIds: z.array(z.string()).min(1),
       nailTechId: z.string().min(1),
       customerId: z.string().optional(),
+      customerUpdates: z.object({
+        name: z.string().optional(),
+        email: z.string().email().optional().or(z.literal('')),
+        phone: z.string().optional(),
+        socialMediaName: z.string().optional(),
+      }).optional(),
       customer: z.object({
         name: z.string().min(1),
         email: z.string().email().optional(),
@@ -62,6 +68,7 @@ export async function POST(request: Request) {
     const clientNotes = parsed.data.clientNotes ?? body.clientNotes;
     const adminNotes = parsed.data.adminNotes ?? body.adminNotes;
     const customerId = body.customerId;
+    const customerUpdates = body.customerUpdates;
     const customer = body.customer;
     const customerEmail = body.customerEmail;
 
@@ -97,6 +104,16 @@ export async function POST(request: Request) {
         isActive: customer.isActive !== undefined ? Boolean(customer.isActive) : true,
       });
       resolvedCustomerId = createdCustomer._id.toString();
+    } else if (customerUpdates && Object.keys(customerUpdates).length > 0) {
+      await connectDB();
+      const existingCustomer = await Customer.findById(resolvedCustomerId);
+      if (existingCustomer) {
+        if (customerUpdates.name !== undefined) existingCustomer.name = String(customerUpdates.name).trim();
+        if (customerUpdates.email !== undefined) existingCustomer.email = customerUpdates.email ? String(customerUpdates.email).toLowerCase().trim() : undefined;
+        if (customerUpdates.phone !== undefined) existingCustomer.phone = customerUpdates.phone?.trim();
+        if (customerUpdates.socialMediaName !== undefined) existingCustomer.socialMediaName = customerUpdates.socialMediaName?.trim();
+        await existingCustomer.save();
+      }
     }
 
     if (!nailTechId) {
@@ -189,6 +206,8 @@ export async function POST(request: Request) {
       }
     })();
 
+    const photoUploadToken = createPhotoUploadToken(booking._id.toString());
+
     return NextResponse.json({
       booking: {
         id: booking._id.toString(),
@@ -210,6 +229,7 @@ export async function POST(request: Request) {
         updatedAt: booking.updatedAt.toISOString(),
       },
       uploadProofLink: uploadProofLink || undefined,
+      photoUploadToken,
     }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating booking:', error);

@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import Quotation from '@/lib/models/Quotation';
+import { authOptions } from '@/lib/auth-options';
+
+export const dynamic = 'force-dynamic';
 
 /** Resolve quotation by _id or firebaseId (migrated docs may reference either). */
 async function findQuotationById(id: string) {
@@ -14,6 +18,11 @@ async function findQuotationById(id: string) {
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     const { id } = await params;
     if (!id?.trim()) {
@@ -31,6 +40,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     const { id } = await params;
     const body = await request.json();
@@ -48,6 +62,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     const { id } = await params;
     const quotation = await findQuotationById(id);
