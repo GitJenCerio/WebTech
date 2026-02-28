@@ -249,7 +249,7 @@ export default function FinancePage() {
     const rate = adminCommissionRate / 100;
     return filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
-      .reduce((sum, t) => sum + (t.paid + t.tip) * rate, 0);
+      .reduce((sum, t) => sum + t.total * rate, 0);
   }, [filteredTransactions, adminCommissionRate]);
 
   const revenueByNailTech = useMemo(() => {
@@ -291,7 +291,7 @@ export default function FinancePage() {
       const totalInvoice = t.total;
       const tipAmount = t.tip;
       const totalBillPlusTip = totalInvoice + tipAmount;
-      const adminCom = (t.paid + t.tip) * (adminCommissionRate / 100);
+      const adminCom = t.total * (adminCommissionRate / 100);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '';
       const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
         ? [...t.appointmentTimes].sort((a, b) => {
@@ -333,7 +333,7 @@ export default function FinancePage() {
     const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
-      .reduce((s, t) => s + (t.paid + t.tip) * (adminCommissionRate / 100), 0);
+      .reduce((s, t) => s + t.total * (adminCommissionRate / 100), 0);
     const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumBalance, sumTip, sumBillAndTip, sumCommission];
     const csv = [headers.join(','), ...rows.map((r) => r.join(',')), totalRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -378,7 +378,7 @@ export default function FinancePage() {
       const totalInvoice = t.total;
       const tipAmount = t.tip;
       const totalBillPlusTip = totalInvoice + tipAmount;
-      const commission = (t.paid + t.tip) * (adminCommissionRate / 100);
+      const commission = t.total * (adminCommissionRate / 100);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '—';
       const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
         ? [...t.appointmentTimes].sort((a, b) => {
@@ -420,7 +420,7 @@ export default function FinancePage() {
     const sumBillAndTip = filteredTransactions.reduce((s, t) => s + t.total + t.tip, 0);
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
-      .reduce((s, t) => s + (t.paid + t.tip) * (adminCommissionRate / 100), 0);
+      .reduce((s, t) => s + t.total * (adminCommissionRate / 100), 0);
     const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
     const totalsRow = [
       'Total',
@@ -516,7 +516,7 @@ export default function FinancePage() {
           title="Admin Commission"
           iconBgColor="#e9ecef"
           value={`₱${adminCommission.toLocaleString()}`}
-          subtext={`${adminCommissionRate}% of total invoices (by appointment date)`}
+          subtext={`${adminCommissionRate}% of invoice total, excluding tips (by appointment date)`}
           icon="bi-percent"
           className="flex-grow-1"
         />
@@ -738,8 +738,7 @@ export default function FinancePage() {
                 ) : (
                   paginatedTransactions.map((item) => {
                     const totalBillAndTip = item.total + item.tip;
-                    const paidAmountInclTip = item.paid + item.tip;
-                    const commission = (item.paid + item.tip) * (adminCommissionRate / 100);
+                    const commission = item.total * (adminCommissionRate / 100);
                     return (
                     <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100">
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
@@ -756,7 +755,7 @@ export default function FinancePage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{paidAmountInclTip.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.paid.toLocaleString()}</td>
                       <td className="px-4 py-3 tabular-nums">
                         <span className={item.balance > 0 ? 'text-amber-600 font-medium' : 'text-gray-500'}>
                           ₱{item.balance.toLocaleString()}
@@ -847,7 +846,7 @@ export default function FinancePage() {
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Paid Amount</span>
-                      <p className="text-[#1a1a1a]">₱{(item.paid + item.tip).toLocaleString()}</p>
+                      <p className="text-[#1a1a1a]">₱{item.paid.toLocaleString()}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Balance</span>
@@ -865,7 +864,7 @@ export default function FinancePage() {
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Commission</span>
-                      <p className="text-[#1a1a1a]">₱{((item.paid + item.tip) * (adminCommissionRate / 100)).toLocaleString()}</p>
+                      <p className="text-[#1a1a1a]">₱{(item.total * (adminCommissionRate / 100)).toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
@@ -920,21 +919,22 @@ function getEffectiveTotal(booking: any): number {
 }
 
 function mapBookingToTransaction(booking: any): Transaction {
-  let invoiceTotal = getEffectiveTotal(booking);
+  const invoiceTotal = getEffectiveTotal(booking);
   const paidAmount =
     booking?.pricing?.paidAmount ??
     (booking as any)?.paidAmount ??
     (booking as any)?.totalPaid ??
     0;
   const tipAmount = booking.pricing?.tipAmount ?? 0;
-  // When total is 0 but paid > 0 (common after migration), show paid as total so table isn't misleading
-  if (invoiceTotal <= 0 && paidAmount > 0) {
-    invoiceTotal = paidAmount;
-  }
+  // Do NOT use paid amount as invoice when no invoice exists — invoice total comes only from actual invoice or pricing
   const balance = Math.max(0, invoiceTotal - paidAmount);
-  const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
+  // Only treat as "paid" when we have a real invoice (quotation or total > 0); no invoice yet → partial at best
+  const inv = booking?.invoice;
+  const hasRealInvoice = Boolean(
+    inv && (inv.quotationId || (typeof inv.total === 'number' && inv.total > 0))
+  );
   const paymentStatus =
-    hasInvoice && balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'pending';
+    hasRealInvoice && balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'pending';
   const apptDate = booking.appointmentDate || '';
   const apptTime = booking.appointmentTime || '';
   const apptTimes = Array.isArray(booking.appointmentTimes) ? booking.appointmentTimes : (apptTime ? [apptTime] : []);

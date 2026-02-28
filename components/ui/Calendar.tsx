@@ -8,7 +8,7 @@ import { cn } from "./Utils";
 import { buttonVariants } from "./Button";
 
 function MonthWithCaptionRow(props: React.HTMLAttributes<HTMLDivElement> & { calendarMonth?: unknown; displayIndex?: number }) {
-  const { children, className, style, displayIndex: _displayIndex, ...rest } = props;
+  const { children, className, style, displayIndex: _displayIndex, calendarMonth: _calendarMonth, ...rest } = props;
   const childArray = React.Children.toArray(children).filter(Boolean);
   // With navLayout="around": [PreviousButton, MonthCaption, NextButton, MonthGrid]
   const hasNavAround = childArray.length >= 4;

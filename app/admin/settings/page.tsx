@@ -192,7 +192,7 @@ export default function SettingsPage() {
                   placeholder="10"
                   className="max-w-[120px]"
                 />
-                <p className="text-xs text-gray-500">Applied to Total Invoice for commission calculation in finance exports</p>
+                <p className="text-xs text-gray-500">Applied to invoice total (excluding tips) for commission calculation in finance exports</p>
               </div>
               <Button onClick={handleSaveGeneral} disabled={saving}>
                 {saving ? 'Saving...' : 'Save'}

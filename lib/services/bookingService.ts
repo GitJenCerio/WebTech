@@ -280,10 +280,14 @@ export async function updateBookingPayment(
 
   const totalPaid = paidAmount + tipAmount;
   const totalRequired = booking.pricing.total + booking.pricing.depositRequired;
+  const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
 
   // Determine payment status
+  // If no invoice yet and deposit is paid → partial (never 'paid' until invoice exists and is fully paid)
   let paymentStatus: PaymentStatus = 'unpaid';
-  if (totalPaid >= totalRequired) {
+  if (!hasInvoice) {
+    paymentStatus = totalPaid > 0 ? 'partial' : 'unpaid';
+  } else if (totalPaid >= totalRequired) {
     paymentStatus = 'paid';
   } else if (totalPaid > 0) {
     paymentStatus = 'partial';
@@ -297,7 +301,8 @@ export async function updateBookingPayment(
     payment.depositPaidAt = now;
   }
   
-  if (totalPaid >= totalRequired && !payment.fullyPaidAt) {
+  // Only set fullyPaidAt when we have an invoice and full amount is paid
+  if (hasInvoice && totalPaid >= totalRequired && !payment.fullyPaidAt) {
     payment.fullyPaidAt = now;
   }
   

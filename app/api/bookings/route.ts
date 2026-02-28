@@ -342,7 +342,7 @@ export async function GET(request: Request) {
           .filter((t): t is string => !!t)
           .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-        const invoiceTotal = Number(booking.invoice?.total ?? 0);
+        const invoiceTotal = Number(booking.invoice?.total ?? booking.pricing?.total ?? 0);
         const paidAmount = Number(booking.pricing?.paidAmount ?? 0);
         const depositRequired = Number(booking.pricing?.depositRequired ?? 0);
         const tipAmount = Number(booking.pricing?.tipAmount ?? 0);
@@ -352,7 +352,16 @@ export async function GET(request: Request) {
         const depositPaidAt = booking.payment?.depositPaidAt ?? null;
         const fullyPaidAt = booking.payment?.fullyPaidAt ?? null;
 
-        const paymentStatus = booking.paymentStatus ?? 'pending';
+        // Derive payment status: no real invoice yet → never "paid", only "partial" at best
+        const inv = booking.invoice;
+        const hasRealInvoice = Boolean(
+          inv && (inv.quotationId || (typeof inv.total === 'number' && inv.total > 0))
+        );
+        const paymentStatus = hasRealInvoice && balance <= 0
+          ? 'paid'
+          : paidAmount > 0
+            ? 'partial'
+            : 'pending';
         const resolvedStatus =
           paymentStatus === 'paid' && fullyPaidAt != null
             ? 'completed'
