@@ -280,6 +280,12 @@ export async function sendBookingPendingEmail(booking: any, customer: any) {
       </p>
       <p style="color: #6b7280; font-size: 13px;">This link is valid for 14 days. Your slot is confirmed only after we receive your proof of payment.</p>
       ` : ''}
+
+      <div style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin: 24px 0;">
+        <p style="margin: 0 0 6px; font-weight: 600; color: #1e40af; font-size: 14px;">Friendly Reminder</p>
+        <p style="margin: 0; font-size: 14px; color: #1e3a8a;">Please avoid lotion or oils before your appointment. Dry manicure works best on clean, dry nails and gives better retention. You can moisturize after your service.</p>
+      </div>
+
       <p style="color: #6b7280; font-size: 14px; margin-top: 24px;">Thank you for choosing ${APP_NAME}!</p>
     `;
 
@@ -356,6 +362,12 @@ export async function sendBookingConfirmedEmail(booking: any, customer: any) {
       <p style="margin: 0 0 16px;">Hi ${customer.name},</p>
       <p style="margin: 0 0 16px;">Your booking has been confirmed by our team.</p>
       <p style="margin: 0 0 24px;"><strong>Booking Code:</strong> ${booking.bookingCode}</p>
+
+      <div style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin: 24px 0;">
+        <p style="margin: 0 0 6px; font-weight: 600; color: #1e40af; font-size: 14px;">Friendly Reminder</p>
+        <p style="margin: 0; font-size: 14px; color: #1e3a8a;">Please avoid lotion or oils before your appointment. Dry manicure works best on clean, dry nails and gives better retention. You can moisturize after your service.</p>
+      </div>
+
       <p style="color: #6b7280; font-size: 14px; margin: 0;">Thank you for choosing ${APP_NAME}!</p>
     `;
 

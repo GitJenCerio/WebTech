@@ -30,7 +30,7 @@ const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; labe
     { value: 'manicure', label: 'Manicure 2 pax (2 slots)' },
     { value: 'pedicure', label: 'Pedicure 2 pax (2 slots)' },
     { value: 'mani_pedi', label: 'Mani + Pedi (2 slots)' },
-    { value: 'home_service_2slots', label: 'Mani + Pedi 2 pax (2 slots)' },
+    { value: 'home_service_2slots', label: 'Mani + Pedi 2 pax (4 slots)' },
   ],
 };
 
@@ -43,8 +43,9 @@ function getRequiredSlotCount(serviceType: BookingServiceType | null, serviceLoc
   
   switch (serviceType) {
     case 'mani_pedi':
-    case 'home_service_2slots':
       return 2;
+    case 'home_service_2slots':
+      return 4;
     case 'home_service_3slots':
       return 3;
     default:

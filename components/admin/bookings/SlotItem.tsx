@@ -15,7 +15,7 @@ const SERVICE_LABELS: Record<string, string> = {
   manicure: 'Mani',
   pedicure: 'Pedi',
   mani_pedi: 'Mani + Pedi',
-  home_service_2slots: 'Mani + Pedi (2)',
+  home_service_2slots: 'Mani + Pedi (4)',
   home_service_3slots: 'Mani + Pedi (3)',
 };
 

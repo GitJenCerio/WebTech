@@ -58,6 +58,13 @@ export default function BookingSuccessModal({
           </div>
         ) : null}
 
+        <div className="rounded-lg border-2 border-blue-100 bg-blue-50 px-4 py-3 mb-5">
+          <p className="text-xs font-semibold text-blue-900 mb-1">Friendly Reminder</p>
+          <p className="text-xs sm:text-sm text-blue-800">
+            Please avoid lotion or oils before your appointment. Dry manicure works best on clean, dry nails and gives better retention. You can moisturize after your service.
+          </p>
+        </div>
+
         <button
           type="button"
           onClick={onClose}

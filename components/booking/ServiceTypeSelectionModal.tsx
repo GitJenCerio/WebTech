@@ -26,7 +26,7 @@ const servicesByLocation: Record<ServiceLocation, ServiceOption[]> = {
     { value: 'manicure', label: 'Manicure for 2', description: 'Professional manicure for 2 people at your home', slots: 2 },
     { value: 'pedicure', label: 'Pedicure for 2', description: 'Professional pedicure for 2 people at your home', slots: 2 },
     { value: 'mani_pedi', label: 'Mani + Pedi', description: 'Manicure and pedicure combo', slots: 2 },
-    { value: 'home_service_2slots', label: 'Mani + Pedi for 2', description: 'Mani + Pedi for 2 people', slots: 2 },
+    { value: 'home_service_2slots', label: 'Mani + Pedi for 2', description: 'Mani + Pedi for 2 people', slots: 4 },
   ],
 };
 
@@ -73,9 +73,16 @@ export default function ServiceTypeSelectionModal({
     >
       <div className="p-6 sm:p-8">
         <h3 className="text-2xl font-semibold mb-2 text-gray-900">What Service?</h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm text-gray-600 mb-4">
           Select the service you'd like to book. We'll show only available dates for your selection.
         </p>
+
+        {serviceLocation === 'home_service' && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-6 text-sm text-amber-900">
+            <p className="font-medium">Home Service charges</p>
+            <p className="text-amber-800 mt-0.5">Additional ₱1,000 per head + Grab transpo fee (back & forth)</p>
+          </div>
+        )}
 
         <div className="space-y-3">
           {services.map((service) => {

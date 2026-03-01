@@ -304,8 +304,10 @@ export default function ClientTypeSelectionModal({
               </OptionCard>
 
               <OptionCard selected={false} onClick={() => handleLocationSelect('home_service')}>
-                <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">+₱1,000</span></OptionCardTitle>
-                <OptionCardDescription>Service at your home</OptionCardDescription>
+                <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">+₱1,000 per head</span></OptionCardTitle>
+                <OptionCardDescription>
+                  Service at your home. Additional ₱1,000 per head + Grab transpo fee (back & forth).
+                </OptionCardDescription>
               </OptionCard>
             </div>
 
