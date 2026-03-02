@@ -153,6 +153,7 @@ export interface CreateBookingInput {
     type: ServiceType;
     location: 'homebased_studio' | 'home_service';
     clientType: 'new' | 'repeat';
+    chosenServices?: string[];
   };
   pricing: {
     total: number;
@@ -211,7 +212,10 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
       customerId: input.customerId,
       nailTechId: input.nailTechId,
       slotIds: input.slotIds,
-      service: input.service,
+      service: {
+        ...input.service,
+        chosenServices: (input.service.chosenServices?.length ?? 0) > 0 ? input.service.chosenServices : undefined,
+      },
       status: 'pending',
       paymentStatus: 'unpaid',
       clientNotes: input.clientNotes || '',

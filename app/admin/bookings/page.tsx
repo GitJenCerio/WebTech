@@ -51,6 +51,7 @@ interface Booking {
   time: string;
   clientName: string;
   service: string;
+  chosenServices?: string[];
   serviceLocation?: 'homebased_studio' | 'home_service';
   status: BookingStatus;
   amount?: number;
@@ -90,6 +91,7 @@ export default function BookingsPage() {
     clientPhone?: string;
     clientSocialMediaName?: string;
     service: string;
+    chosenServices?: string[];
     serviceLocation?: 'homebased_studio' | 'home_service';
     status: BookingStatus;
     notes?: string;
@@ -154,6 +156,7 @@ export default function BookingsPage() {
       clientName: booking.customerName || 'Unknown Client',
       socialName: booking.customerSocialMediaName || '',
       service: booking.service?.type || 'Nail Service',
+      chosenServices: booking.service?.chosenServices,
       serviceLocation: booking.service?.location,
       status: booking.status || 'booked',
       amount: (booking.invoice?.quotationId || booking.invoice?.total != null) ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0,
@@ -319,6 +322,7 @@ export default function BookingsPage() {
           paymentStatus: b.paymentStatus ?? prev.paymentStatus,
           adminNotes: freshAdminNotes,
           completedAt: b.completedAt ?? prev.completedAt,
+          chosenServices: b.service?.chosenServices ?? prev.chosenServices,
         } : null);
       })
       .catch(() => {});
@@ -821,6 +825,7 @@ export default function BookingsPage() {
       clientName: item.clientName,
       clientSocialMediaName: item.socialName,
       service: item.service,
+      chosenServices: item.chosenServices,
       serviceLocation: item.serviceLocation,
       slotType: item.slotType,
       status: item.status,

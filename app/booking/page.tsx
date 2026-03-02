@@ -577,6 +577,7 @@ export default function BookingPage() {
             type: selectedService,
             location: clientInfo.serviceLocation,
             clientType: clientInfo.clientType,
+            chosenServices: formData.services?.length ? formData.services : undefined,
           },
           pricing: {
             total,

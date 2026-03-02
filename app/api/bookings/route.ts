@@ -47,6 +47,7 @@ export async function POST(request: Request) {
         type: z.string().min(1),
         location: z.enum(['homebased_studio', 'home_service']),
         clientType: z.enum(['NEW', 'REPEAT', 'new', 'repeat']),
+        chosenServices: z.array(z.string()).optional(),
       }),
       pricing: z.object({
         total: z.number().min(0),
@@ -140,6 +141,7 @@ export async function POST(request: Request) {
         type: service.type as ServiceType,
         location: service.location,
         clientType: (service.clientType || '').toLowerCase() === 'repeat' ? 'repeat' : 'new',
+        chosenServices: Array.isArray(service.chosenServices) && service.chosenServices.length > 0 ? service.chosenServices : undefined,
       },
       pricing: {
         total: pricingTotal,

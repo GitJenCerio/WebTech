@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { getChosenServicesDisplay } from '@/lib/serviceLabels';
 import { X, Phone, Mail, User, AlertCircle, ArrowLeft, Upload, Info } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 
@@ -710,7 +711,12 @@ export default function BookingFormModal({
               <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">
                 Services <span className="text-red-500">*</span>
               </h4>
-              
+              {services.length > 0 && (
+                <div className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg">
+                  <p className="text-xs text-gray-500">Selected:</p>
+                  <p className="text-sm font-medium text-gray-900">{getChosenServicesDisplay(services)}</p>
+                </div>
+              )}
               <div className="p-2 sm:p-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
                 <p className="text-[10px] sm:text-xs text-yellow-900">
                   <strong>⏱️ Important:</strong> Detailed nail designs require time and precision. The entire procedure can take 3-4 hours. Rushing compromises quality.

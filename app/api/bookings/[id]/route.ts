@@ -42,6 +42,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
+    // Derive payment status: no real invoice yet → never "paid", only "partial" at best
+    const inv = booking.invoice;
+    const hasRealInvoice = Boolean(
+      inv && (inv.quotationId || (typeof inv.total === 'number' && inv.total > 0))
+    );
+    const invoiceTotal = Number(inv?.total ?? booking.pricing?.total ?? 0);
+    const paidAmount = Number(booking.pricing?.paidAmount ?? 0);
+    const balance = Math.max(0, invoiceTotal - paidAmount);
+    const fullyPaidAt = booking.payment?.fullyPaidAt ?? null;
+    const derivedPaymentStatus = hasRealInvoice && balance <= 0
+      ? 'paid'
+      : paidAmount > 0
+        ? 'partial'
+        : 'pending';
+
     return NextResponse.json({
       booking: {
         id: booking._id.toString(),
@@ -51,7 +66,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         slotIds: booking.slotIds,
         service: booking.service,
         status: booking.status,
-        paymentStatus: booking.paymentStatus,
+        paymentStatus: derivedPaymentStatus,
         pricing: booking.pricing,
         payment: booking.payment,
         completedAt: booking.completedAt?.toISOString() || null,

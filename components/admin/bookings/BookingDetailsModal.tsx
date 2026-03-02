@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/Label';
 import { Textarea } from '@/components/ui/Textarea';
 import { format } from 'date-fns';
 import { sortTimesChronologically, formatTime12Hour } from '@/lib/utils';
+import { getChosenServicesDisplay, getSlotServiceDisplay } from '@/lib/serviceLabels';
 
 function formatDateYyyyMmDd(dateStr: string): string {
   try {
@@ -46,6 +47,7 @@ interface BookingDetailsModalProps {
     clientPhone?: string;
     clientSocialMediaName?: string;
     service: string;
+    chosenServices?: string[];
     status: BookingStatus;
     notes?: string;
     adminNotes?: string;
@@ -180,7 +182,9 @@ export default function BookingDetailsModal({
               )}
               <div className="flex items-center gap-2">
                 <Sparkles size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
-                <span>{booking.service}</span>
+                <span>
+                  {[getSlotServiceDisplay(booking.service), getChosenServicesDisplay(booking.chosenServices)].filter(Boolean).join(' · ')}
+                </span>
               </div>
               {locationLabel && (
                 <div className="flex items-center gap-2">
@@ -199,7 +203,7 @@ export default function BookingDetailsModal({
                         : 'bg-gray-100 text-gray-600'
                   }`}
                 >
-                  {paymentStatusLabel === 'Paid' || paymentStatusLabel === 'Partial' ? 'Paid' : 'Unpaid'}
+                  {paymentStatusLabel}
                 </span>
               </div>
             </div>

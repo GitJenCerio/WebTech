@@ -11,6 +11,7 @@ export interface IBooking extends Document {
     type: ServiceType;
     location: 'homebased_studio' | 'home_service';
     clientType: 'new' | 'repeat';
+    chosenServices?: string[];
   };
   status: BookingStatus; // 'pending' | 'confirmed' | 'cancelled' | 'no_show'
   paymentStatus: PaymentStatus; // 'unpaid' | 'partial' | 'paid' | 'refunded'
@@ -91,6 +92,7 @@ const BookingSchema = new Schema<IBooking>(
         required: true,
         enum: ['new', 'repeat'],
       },
+      chosenServices: [{ type: String }],
     },
     status: {
       type: String,

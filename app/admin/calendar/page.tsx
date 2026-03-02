@@ -482,6 +482,7 @@ export default function CalendarPage() {
         clientPhone: slot.booking?.customerPhone,
         clientSocialMediaName: slot.booking?.customerSocialMediaName,
         service: slot.service || 'Nail Service',
+        chosenServices: slot.booking?.service?.chosenServices,
         serviceLocation: slot.booking?.service?.location,
         status: slot.status,
         slotType: slot.type,
