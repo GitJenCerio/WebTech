@@ -9,6 +9,7 @@ import AddBookingModal from '@/components/admin/bookings/AddBookingModal';
 import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
 import MarkCompleteModal from '@/components/admin/bookings/MarkCompleteModal';
 import RescheduleSlotModal from '@/components/admin/bookings/RescheduleSlotModal';
+import ChangeServiceModal from '@/components/admin/bookings/ChangeServiceModal';
 import { BookingStatus } from '@/components/admin/StatusBadge';
 import { DateRangePicker } from '@/components/admin/DateRangePicker';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -17,6 +18,7 @@ import { Search, X, ChevronLeft, ChevronRight, Plus, RefreshCw } from 'lucide-re
 import { usePricing } from '@/lib/hooks/usePricing';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
+import { getSlotServiceDisplay } from '@/lib/serviceLabels';
 
 const PAGE_SIZE = 10;
 
@@ -75,8 +77,10 @@ export default function BookingsPage() {
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
   const [pendingBookingAction, setPendingBookingAction] = useState<'cancel' | 'reschedule' | 'mark_no_show' | null>(null);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showChangeServiceModal, setShowChangeServiceModal] = useState(false);
   const [showMarkCompleteModal, setShowMarkCompleteModal] = useState(false);
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
+  const [changeServiceLoading, setChangeServiceLoading] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<{
     id?: string;
     bookingCode?: string;
@@ -513,14 +517,46 @@ export default function BookingsPage() {
     }
   };
 
-  const handleRescheduleConfirm = async (newSlotIds: string[], reason?: string) => {
+  const handleChangeService = () => {
+    setShowModal(false);
+    setShowChangeServiceModal(true);
+  };
+
+  const handleChangeServiceConfirm = async (service: { type: string; location?: string }) => {
+    if (!selectedBooking?.id) return;
+    setChangeServiceLoading(true);
+    try {
+      const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_service', service }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to update service');
+      }
+      const data = await response.json();
+      setSelectedBooking((prev) => prev && data?.booking?.service ? { ...prev, service: data.booking.service?.type, chosenServices: data.booking.service?.chosenServices } : prev);
+      setShowChangeServiceModal(false);
+      setSelectedBooking(null);
+      toast.success('Service updated');
+      await fetchBookings();
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update service');
+      throw e;
+    } finally {
+      setChangeServiceLoading(false);
+    }
+  };
+
+  const handleRescheduleConfirm = async (newSlotIds: string[], reason?: string, service?: { type: string; location?: string; clientType?: string }) => {
     if (!selectedBooking?.id) return;
     setRescheduleLoading(true);
     try {
       const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reschedule_to', newSlotIds, reason: reason || undefined }),
+        body: JSON.stringify({ action: 'reschedule_to', newSlotIds, reason: reason || undefined, service: service || undefined }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -829,7 +865,7 @@ export default function BookingsPage() {
       serviceLocation: item.serviceLocation,
       slotType: item.slotType,
       status: item.status,
-      slotCount: 1,
+      slotCount: item.slotTimes?.length || 1,
       reservationAmount: 500,
       amount: item.amount,
       paidAmount: item.amountPaid ?? 0,
@@ -861,7 +897,7 @@ export default function BookingsPage() {
       <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">{formatMiniDate(item.date)}</td>
       <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">{formatSlotTimes(item.slotTimes, item.time)}</td>
       <td className="px-4 py-2.5 font-medium text-[#1a1a1a] text-sm">{item.clientName}</td>
-      <td className="px-4 py-2.5 text-gray-600 text-sm">{item.service}</td>
+      <td className="px-4 py-2.5 text-gray-600 text-sm">{getSlotServiceDisplay(item.service)}</td>
       <td className="px-4 py-2.5 text-gray-600 text-sm">{item.nailTechId ? (nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—') : '—'}</td>
       <td className="px-4 py-2.5">{getStatusBadge(item.status)}</td>
     </tr>
@@ -883,7 +919,7 @@ export default function BookingsPage() {
         <span>•</span>
         <span>{formatSlotTimes(item.slotTimes, item.time)}</span>
       </div>
-      <p className="text-sm text-gray-600 mt-0.5 truncate">{item.service}</p>
+      <p className="text-sm text-gray-600 mt-0.5 truncate">{getSlotServiceDisplay(item.service)}</p>
       {item.nailTechId && (
         <p className="text-xs text-gray-400 mt-0.5">Tech: {nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—'}</p>
       )}
@@ -1133,7 +1169,7 @@ export default function BookingsPage() {
                         <span className="font-medium text-[#1a1a1a]">{item.clientName}</span>
                       </td>
                       <td className="px-5 py-3.5 text-gray-500">{item.socialName || '—'}</td>
-                      <td className="px-5 py-3.5 text-[#1a1a1a]">{item.service}</td>
+                      <td className="px-5 py-3.5 text-[#1a1a1a]">{getSlotServiceDisplay(item.service)}</td>
                       <td className="px-5 py-3.5">{locationBadge(item.serviceLocation)}</td>
                       <td className="px-5 py-3.5 text-gray-600 text-sm">
                         {item.nailTechId ? (nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—') : '—'}
@@ -1216,7 +1252,7 @@ export default function BookingsPage() {
                   <div className="text-sm space-y-1">
                     <div>
                       <span className="text-gray-400 text-xs">Service</span>
-                      <p className="text-[#1a1a1a]">{item.service}</p>
+                      <p className="text-[#1a1a1a]">{getSlotServiceDisplay(item.service)}</p>
                     </div>
                     {item.socialName && (
                       <p className="text-xs text-gray-500 truncate">{item.socialName}</p>
@@ -1315,6 +1351,7 @@ export default function BookingsPage() {
         onReschedule={() => {
           handleBookingAction('reschedule');
         }}
+        onChangeService={handleChangeService}
         onMarkNoShow={() => {
           handleBookingAction('mark_no_show');
         }}
@@ -1330,8 +1367,22 @@ export default function BookingsPage() {
         onOpenChange={setShowRescheduleModal}
         bookingId={selectedBooking?.id ?? ''}
         nailTechId={selectedBooking?.nailTechId ?? ''}
+        currentService={selectedBooking?.service}
+        currentServiceLocation={selectedBooking?.serviceLocation}
         onConfirm={handleRescheduleConfirm}
         isLoading={rescheduleLoading}
+      />
+      <ChangeServiceModal
+        open={showChangeServiceModal}
+        onOpenChange={(o) => {
+          setShowChangeServiceModal(o);
+          if (!o && selectedBooking) setShowModal(true);
+        }}
+        currentService={selectedBooking?.service}
+        currentServiceLocation={selectedBooking?.serviceLocation}
+        currentSlotCount={selectedBooking?.slotCount ?? 1}
+        onConfirm={handleChangeServiceConfirm}
+        isLoading={changeServiceLoading}
       />
 
       <ReasonInputDialog
@@ -1406,6 +1457,7 @@ function filterBookings(rows: Booking[], query: string): Booking[] {
   return rows.filter((row) =>
     row.clientName.toLowerCase().includes(q) ||
     row.service.toLowerCase().includes(q) ||
+    getSlotServiceDisplay(row.service).toLowerCase().includes(q) ||
     row.id.toLowerCase().includes(q)
   );
 }

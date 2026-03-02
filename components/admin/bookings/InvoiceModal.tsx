@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Trash2, ChevronDown } from 'lucide-react';
 import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
+import { getSlotServiceDisplay } from '@/lib/serviceLabels';
 
 export interface InvoiceItem {
   description: string;
@@ -141,7 +142,7 @@ export default function InvoiceModal({
                 <div><strong>Booking Code:</strong> {booking.bookingCode}</div>
               )}
               <div><strong>Client:</strong> {booking.clientName}</div>
-              <div><strong>Service:</strong> {booking.service}</div>
+              <div><strong>Service:</strong> {getSlotServiceDisplay(booking.service)}</div>
             </div>
           </div>
 

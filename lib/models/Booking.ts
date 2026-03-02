@@ -80,7 +80,7 @@ const BookingSchema = new Schema<IBooking>(
       type: {
         type: String,
         required: true,
-        enum: ['manicure', 'pedicure', 'mani_pedi', 'home_service_2slots', 'home_service_3slots'],
+        // Accept both client types (manicure, pedicure, mani_pedi) and admin types (Russian Manicure, etc.)
       },
       location: {
         type: String,

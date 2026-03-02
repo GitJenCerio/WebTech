@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import {
@@ -25,16 +25,20 @@ import {
 } from '@/components/ui/Select';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import { formatTime12Hour } from '@/lib/utils';
+import { normalizeSlotTime } from '@/lib/constants/slots';
+import { getRequiredSlotCountForService } from '@/lib/serviceSlotCount';
 import type { ServiceType } from '@/lib/types';
 
+const BOOKED_STATUSES = ['pending', 'confirmed'] as const;
+
 const SERVICE_TYPES: ServiceType[] = [
-  'Russian Manicure',
-  'Russian Pedicure',
-  'Russian Mani + Pedi',
-  'Russian Manicure for 2',
-  'Russian Pedicure for 2',
-  'Russian Mani + Pedi for 1',
-  'Russian Mani + Pedi for 2',
+  'Manicure',
+  'Pedicure',
+  'Manicure + Pedicure',
+  'Manicure for 2',
+  'Pedicure for 2',
+  'Manicure + Pedicure for 1',
+  'Manicure + Pedicure for 2',
 ];
 
 interface Slot {
@@ -67,7 +71,35 @@ export default function AddBookingModal({
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
+  const [allSlots, setAllSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+
+  const hasBookedBetween = useCallback((slots: Slot[], timeA: string, timeB: string) => {
+    const na = normalizeSlotTime(timeA);
+    const nb = normalizeSlotTime(timeB);
+    return slots.some((s) => {
+      const nt = normalizeSlotTime(s.time);
+      return nt > na && nt < nb && (BOOKED_STATUSES as readonly string[]).includes(s.status);
+    });
+  }, []);
+
+  const findNextConsecutiveAvailable = useCallback((slots: Slot[], avail: Slot[], fromSlot: Slot, count: number): Slot[] => {
+    if (count <= 0) return [];
+    const result: Slot[] = [fromSlot];
+    const sortedAvail = [...avail].sort((a, b) => normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time)));
+    let ref = fromSlot;
+    for (let i = 1; i < count; i++) {
+      const refTime = normalizeSlotTime(ref.time);
+      const next = sortedAvail.find((s) => {
+        const st = normalizeSlotTime(s.time);
+        return st > refTime && !hasBookedBetween(slots, ref.time, s.time);
+      });
+      if (!next) return [];
+      result.push(next);
+      ref = next;
+    }
+    return result;
+  }, [hasBookedBetween]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,9 +107,8 @@ export default function AddBookingModal({
   const [nailTechId, setNailTechId] = useState('');
   const [date, setDate] = useState('');
   const [selectedSlotId, setSelectedSlotId] = useState('');
-  const [serviceType, setServiceType] = useState<ServiceType>('Russian Manicure');
+  const [serviceType, setServiceType] = useState<ServiceType>('Manicure');
   const [location, setLocation] = useState<'homebased_studio' | 'home_service'>('homebased_studio');
-  const [clientType, setClientType] = useState<'new' | 'repeat'>('new');
   const [clientNotes, setClientNotes] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
 
@@ -105,12 +136,14 @@ export default function AddBookingModal({
 
   const fetchSlots = useCallback(async () => {
     if (!nailTechId || !date) {
+      setAllSlots([]);
       setAvailableSlots([]);
       setSelectedSlotId('');
       return;
     }
     try {
       setLoadingSlots(true);
+      setAllSlots([]);
       setAvailableSlots([]);
       setSelectedSlotId('');
       const params = new URLSearchParams({
@@ -121,12 +154,12 @@ export default function AddBookingModal({
       const res = await fetch(`/api/slots?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch slots');
       const data = await res.json();
-      const slots = (data.slots ?? []).filter(
-        (s: Slot) => s.status === 'available'
-      );
-      setAvailableSlots(slots);
+      const slots = data.slots ?? [];
+      setAllSlots(slots);
+      setAvailableSlots(slots.filter((s: Slot) => s.status === 'available'));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load slots');
+      setAllSlots([]);
       setAvailableSlots([]);
     } finally {
       setLoadingSlots(false);
@@ -141,9 +174,8 @@ export default function AddBookingModal({
       setNailTechId('');
       setDate('');
       setSelectedSlotId('');
-      setServiceType('Russian Manicure');
+      setServiceType('Manicure');
       setLocation('homebased_studio');
-      setClientType('new');
       setClientNotes('');
       setAdminNotes('');
       setCreateNewCustomer(false);
@@ -155,10 +187,39 @@ export default function AddBookingModal({
     if (open && nailTechId && date) {
       fetchSlots();
     } else {
+      setAllSlots([]);
       setAvailableSlots([]);
       setSelectedSlotId('');
     }
   }, [open, nailTechId, date, fetchSlots]);
+
+  const requiredSlots = useMemo(
+    () => getRequiredSlotCountForService(serviceType, location),
+    [serviceType, location]
+  );
+
+  const selectedSlotIds = useMemo(() => {
+    if (!selectedSlotId || availableSlots.length === 0) return [];
+    const first = availableSlots.find((s) => String((s as { _id?: string; id?: string })._id ?? (s as { id?: string }).id) === selectedSlotId);
+    if (!first) return [];
+    if (requiredSlots === 1) return [String((first as { _id?: string; id?: string })._id ?? (first as { id?: string }).id)];
+    const chain = findNextConsecutiveAvailable(allSlots, availableSlots, first, requiredSlots);
+    return chain.map((s) => String((s as { _id?: string; id?: string })._id ?? (s as { id?: string }).id));
+  }, [selectedSlotId, availableSlots, allSlots, requiredSlots, findNextConsecutiveAvailable]);
+
+  const compatibleSlots = useMemo(() => {
+    if (requiredSlots <= 1) return availableSlots;
+    return availableSlots.filter((slot) => {
+      const chain = findNextConsecutiveAvailable(allSlots, availableSlots, slot, requiredSlots);
+      return chain.length >= requiredSlots;
+    });
+  }, [availableSlots, allSlots, requiredSlots, findNextConsecutiveAvailable]);
+
+  useEffect(() => {
+    if (selectedSlotId && selectedSlotIds.length < requiredSlots) {
+      setSelectedSlotId('');
+    }
+  }, [requiredSlots, selectedSlotId, selectedSlotIds.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,22 +249,22 @@ export default function AddBookingModal({
       setError('Please select a nail tech');
       return;
     }
-    if (!selectedSlotId) {
-      setError('Please select an available slot');
+    if (selectedSlotIds.length === 0) {
+      setError(requiredSlots > 1 ? `Please select a slot with ${requiredSlots} consecutive slots (no slots booked in between)` : 'Please select an available slot');
       return;
     }
 
     try {
       setSubmitting(true);
       const body: Record<string, unknown> = {
-        slotIds: [selectedSlotId],
+        slotIds: selectedSlotIds,
         nailTechId,
         customerId: resolvedCustomerId || undefined,
         customer: customerPayload,
         service: {
           type: serviceType,
           location,
-          clientType,
+          clientType: createNewCustomer ? 'new' : 'repeat',
         },
         clientNotes: clientNotes.trim() || undefined,
         adminNotes: adminNotes.trim() || undefined,
@@ -232,17 +293,17 @@ export default function AddBookingModal({
   const canSubmit =
     (createNewCustomer ? newCustomer.name.trim() : customerId) &&
     nailTechId &&
-    selectedSlotId &&
+    selectedSlotIds.length >= requiredSlots &&
     !submitting;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-xl md:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-xl md:max-w-lg max-h-[90vh] flex flex-col overflow-hidden p-0">
+        <DialogHeader className="shrink-0 border-b border-[#e5e5e5] bg-[#f7f7f7] px-6 py-4">
           <DialogTitle>Add Booking</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="py-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4 min-h-0">
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
                 {error}
@@ -327,6 +388,47 @@ export default function AddBookingModal({
             )}
 
             <div>
+              <Label className="text-xs text-gray-500">Service Type *</Label>
+              <Select
+                value={serviceType}
+                onValueChange={(v) => {
+                  setServiceType(v as ServiceType);
+                  setSelectedSlotId('');
+                }}
+              >
+                <SelectTrigger className="h-9 mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SERVICE_TYPES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs text-gray-500">Location</Label>
+              <Select
+                value={location}
+                onValueChange={(v) => {
+                  setLocation(v as 'homebased_studio' | 'home_service');
+                  setSelectedSlotId('');
+                }}
+              >
+                <SelectTrigger className="h-9 mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="homebased_studio">Studio</SelectItem>
+                  <SelectItem value="home_service">Home Service</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label className="text-xs text-gray-500">Nail Tech *</Label>
               <Select
                 value={nailTechId}
@@ -380,7 +482,6 @@ export default function AddBookingModal({
                     defaultMonth={date ? new Date(date) : new Date()}
                     disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
                     numberOfMonths={1}
-                    showOutsideDays={false}
                     navLayout="around"
                   />
                 </PopoverContent>
@@ -390,15 +491,32 @@ export default function AddBookingModal({
             {date && nailTechId && (
               <div>
                 <Label className="text-xs text-gray-500">Available Slot *</Label>
+                {requiredSlots > 1 && (
+                  <p className="text-xs text-gray-500 mt-0.5">Select the first slot — {requiredSlots} consecutive slots (no slots booked in between) will be reserved.</p>
+                )}
                 {loadingSlots ? (
                   <p className="text-sm text-gray-500 mt-1">Loading slots...</p>
-                ) : availableSlots.length === 0 ? (
-                  <p className="text-sm text-amber-600 mt-1">
-                    No available slots for this date
-                  </p>
+                ) : compatibleSlots.length === 0 ? (
+                  <div className="mt-1 space-y-2">
+                    <p className="text-sm text-amber-600">
+                      {requiredSlots > 1
+                        ? availableSlots.length > 0
+                          ? `Need ${requiredSlots} consecutive slots (no slots booked in between). Available slots are not consecutive — try another date.`
+                          : `No ${requiredSlots} consecutive slots available for this date`
+                        : 'No available slots for this date'}
+                    </p>
+                    {requiredSlots > 1 && availableSlots.length > 0 && (
+                      <p className="text-xs text-gray-500">
+                        Available: {[...availableSlots]
+                          .sort((a, b) => normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time)))
+                          .map((s) => formatTime12Hour(s.time))
+                          .join(', ')}
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {availableSlots.map((slot) => {
+                    {compatibleSlots.map((slot) => {
                       const slotId = String((slot as { _id?: string; id?: string })._id ?? (slot as { id?: string }).id ?? '');
                       return (
                       <button
@@ -410,7 +528,7 @@ export default function AddBookingModal({
                           )
                         }
                         className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
-                          selectedSlotId === slotId
+                          selectedSlotIds.includes(slotId)
                             ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
                             : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
                         }`}
@@ -422,60 +540,6 @@ export default function AddBookingModal({
                 )}
               </div>
             )}
-
-            <div>
-              <Label className="text-xs text-gray-500">Service Type *</Label>
-              <Select
-                value={serviceType}
-                onValueChange={(v) => setServiceType(v as ServiceType)}
-              >
-                <SelectTrigger className="h-9 mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SERVICE_TYPES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-gray-500">Location</Label>
-                <Select
-                  value={location}
-                  onValueChange={(v) =>
-                    setLocation(v as 'homebased_studio' | 'home_service')
-                  }
-                >
-                  <SelectTrigger className="h-9 mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="homebased_studio">Studio</SelectItem>
-                    <SelectItem value="home_service">Home Service</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs text-gray-500">Client Type</Label>
-                <Select
-                  value={clientType}
-                  onValueChange={(v) => setClientType(v as 'new' | 'repeat')}
-                >
-                  <SelectTrigger className="h-9 mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="repeat">Repeat</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
             <div>
               <Label className="text-xs text-gray-500">Client Notes</Label>
@@ -496,7 +560,7 @@ export default function AddBookingModal({
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0 border-t border-[#e5e5e5] bg-[#f7f7f7] px-6 py-4">
             <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
               Cancel
             </Button>

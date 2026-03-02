@@ -586,6 +586,59 @@ export async function rescheduleBookingToSlots(
 }
 
 /**
+ * Update booking service (admin)
+ * - Updates service type, optionally location and chosenServices
+ * - When new service needs MORE slots than current, throws (use reschedule instead)
+ * - When new service needs FEWER slots, keeps first N slots and releases the rest
+ */
+export async function updateBookingService(
+  bookingId: string,
+  service: { type: string; location?: 'homebased_studio' | 'home_service'; clientType?: 'new' | 'repeat'; chosenServices?: string[] }
+): Promise<IBooking> {
+  await connectDB();
+
+  const { getRequiredSlotCountForService } = await import('../serviceSlotCount');
+
+  const booking = await Booking.findById(bookingId);
+  if (!booking) {
+    throw new Error('Booking not found');
+  }
+
+  validateBookingEditable(booking, 'update service');
+  if (booking.status === 'cancelled') {
+    throw new Error('Cannot update a cancelled booking');
+  }
+
+  const currentSlotCount = (booking.slotIds || []).length;
+  const requiredSlots = getRequiredSlotCountForService(service.type, service.location || booking.service?.location);
+
+  if (requiredSlots > currentSlotCount) {
+    throw new Error(
+      `New service requires ${requiredSlots} slot(s) but booking has ${currentSlotCount}. Please reschedule to select more slots.`
+    );
+  }
+
+  if (booking.service) {
+    (booking.service as { type: string }).type = service.type;
+    if (service.location) booking.service.location = service.location;
+    if (service.clientType) booking.service.clientType = service.clientType;
+    if (service.chosenServices !== undefined) booking.service.chosenServices = service.chosenServices;
+  }
+
+  // If new service needs fewer slots, release the extra ones
+  if (requiredSlots < currentSlotCount && booking.slotIds && booking.slotIds.length > requiredSlots) {
+    const keepIds = booking.slotIds.slice(0, requiredSlots);
+    const releaseIds = booking.slotIds.slice(requiredSlots);
+    await releaseSlots(releaseIds);
+    booking.slotIds = keepIds;
+  }
+
+  await booking.save();
+
+  return booking;
+}
+
+/**
  * Get booking by ID
  */
 export async function getBookingById(bookingId: string): Promise<IBooking | null> {

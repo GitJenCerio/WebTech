@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
+import { getSlotServiceDisplay } from '@/lib/serviceLabels';
 
 const PAGE_SIZE = 10;
 
@@ -739,7 +740,7 @@ export default function FinancePage() {
                       <td className="px-4 py-3 text-[#1a1a1a]">{item.customerSocialMediaName || '—'}</td>
                       <td className="px-4 py-3 text-[#1a1a1a]">
                         <span className="inline-flex items-center gap-1.5">
-                          {item.service}
+                          {getSlotServiceDisplay(item.service)}
                           {serviceLocationBadge(item.serviceLocation)}
                         </span>
                       </td>
@@ -824,7 +825,7 @@ export default function FinancePage() {
                     <div>
                       <span className="text-gray-400 text-xs">Service</span>
                       <p className="text-[#1a1a1a] flex items-center gap-1.5">
-                        {item.service}
+                        {getSlotServiceDisplay(item.service)}
                         {serviceLocationBadge(item.serviceLocation)}
                       </p>
                     </div>

@@ -3,6 +3,7 @@ import { EyeOff } from 'lucide-react';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
 import NailTechBadge from '../NailTechBadge';
 import { formatTime12Hour } from '@/lib/utils';
+import { getSlotServiceDisplay } from '@/lib/serviceLabels';
 
 const SERVICE_BADGE_STYLE: React.CSSProperties = {
   backgroundColor: '#f3f4f6',
@@ -10,25 +11,11 @@ const SERVICE_BADGE_STYLE: React.CSSProperties = {
   border: '1px solid #d1d5db',
 };
 
-/** Map API service type to display label for slot service badge */
-const SERVICE_LABELS: Record<string, string> = {
-  manicure: 'Mani',
-  pedicure: 'Pedi',
-  mani_pedi: 'Mani + Pedi',
-  home_service_2slots: 'Mani + Pedi (4)',
-  home_service_3slots: 'Mani + Pedi (3)',
-};
-
+/** Short labels for slot badges (Mani, Pedi, Mani + Pedi) */
 function getServiceBadge(service?: string): { label: string; style: React.CSSProperties } | null {
   if (!service || !service.trim()) return null;
-  const key = service.toLowerCase().trim().replace(/\s+/g, '_');
-  let label = SERVICE_LABELS[key];
-  if (!label) {
-    if (key.includes('mani') && key.includes('pedi')) label = 'Mani + Pedi';
-    else if (key.includes('manicure') || key === 'mani') label = 'Mani';
-    else if (key.includes('pedicure') || key === 'pedi') label = 'Pedi';
-    else label = service.trim();
-  }
+  const full = getSlotServiceDisplay(service);
+  const label = full === 'Manicure + Pedicure for 2' ? 'Mani + Pedi (2)' : full === 'Manicure + Pedicure for 1' ? 'Mani + Pedi (1)' : full.replace('Manicure', 'Mani').replace('Pedicure', 'Pedi');
   return { label, style: SERVICE_BADGE_STYLE };
 }
 

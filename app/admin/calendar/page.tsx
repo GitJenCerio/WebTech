@@ -13,6 +13,7 @@ import DeleteConfirmationModal from '@/components/admin/DeleteConfirmationModal'
 import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
 import MarkCompleteModal from '@/components/admin/bookings/MarkCompleteModal';
 import RescheduleSlotModal from '@/components/admin/bookings/RescheduleSlotModal';
+import ChangeServiceModal from '@/components/admin/bookings/ChangeServiceModal';
 import { BookingStatus } from '@/components/admin/StatusBadge';
 import { useUserRole } from '@/lib/hooks/useUserRole';
 import { usePricing } from '@/lib/hooks/usePricing';
@@ -67,7 +68,9 @@ export default function CalendarPage() {
   const [reasonDialogOpen, setReasonDialogOpen] = useState(false);
   const [pendingBookingAction, setPendingBookingAction] = useState<'cancel' | 'reschedule' | 'mark_no_show' | null>(null);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showChangeServiceModal, setShowChangeServiceModal] = useState(false);
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
+  const [changeServiceLoading, setChangeServiceLoading] = useState(false);
   const [showMarkCompleteModal, setShowMarkCompleteModal] = useState(false);
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -602,14 +605,45 @@ export default function CalendarPage() {
     }
   };
 
-  const handleRescheduleConfirm = async (newSlotIds: string[], reason?: string) => {
+  const handleChangeService = () => {
+    setShowModal(false);
+    setShowChangeServiceModal(true);
+  };
+
+  const handleChangeServiceConfirm = async (service: { type: string; location?: string }) => {
+    if (!selectedBooking?.id) return;
+    setChangeServiceLoading(true);
+    try {
+      const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_service', service }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to update service');
+      }
+      toast.success('Service updated');
+      setShowChangeServiceModal(false);
+      setSelectedBooking(null);
+      await refreshSelectedDateSlots();
+      await refreshMonthlySlots();
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update service');
+      throw e;
+    } finally {
+      setChangeServiceLoading(false);
+    }
+  };
+
+  const handleRescheduleConfirm = async (newSlotIds: string[], reason?: string, service?: { type: string; location?: string; clientType?: string }) => {
     if (!selectedBooking?.id) return;
     setRescheduleLoading(true);
     try {
       const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reschedule_to', newSlotIds, reason: reason || undefined }),
+        body: JSON.stringify({ action: 'reschedule_to', newSlotIds, reason: reason || undefined, service: service || undefined }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -1007,6 +1041,7 @@ export default function CalendarPage() {
         onReschedule={() => {
           handleBookingAction('reschedule');
         }}
+        onChangeService={handleChangeService}
         onMarkNoShow={() => {
           handleBookingAction('mark_no_show');
         }}
@@ -1022,8 +1057,22 @@ export default function CalendarPage() {
         onOpenChange={setShowRescheduleModal}
         bookingId={selectedBooking?.id ?? ''}
         nailTechId={selectedBooking?.nailTechId ?? ''}
+        currentService={selectedBooking?.service}
+        currentServiceLocation={selectedBooking?.serviceLocation}
         onConfirm={handleRescheduleConfirm}
         isLoading={rescheduleLoading}
+      />
+      <ChangeServiceModal
+        open={showChangeServiceModal}
+        onOpenChange={(o) => {
+          setShowChangeServiceModal(o);
+          if (!o && selectedBooking) setShowModal(true);
+        }}
+        currentService={selectedBooking?.service}
+        currentServiceLocation={selectedBooking?.serviceLocation}
+        currentSlotCount={selectedBooking?.slotCount ?? 1}
+        onConfirm={handleChangeServiceConfirm}
+        isLoading={changeServiceLoading}
       />
 
       <ReasonInputDialog

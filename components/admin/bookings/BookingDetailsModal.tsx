@@ -65,6 +65,7 @@ interface BookingDetailsModalProps {
   onMarkComplete?: () => void;
   onCancel?: () => void;
   onReschedule?: () => void;
+  onChangeService?: () => void;
   onMarkNoShow?: () => void;
   onCreateInvoice?: () => void;
   onVerifyPaymentProof?: () => void;
@@ -83,6 +84,7 @@ export default function BookingDetailsModal({
   onMarkComplete,
   onCancel,
   onReschedule,
+  onChangeService,
   onMarkNoShow,
   onCreateInvoice,
   onVerifyPaymentProof,
@@ -309,6 +311,13 @@ export default function BookingDetailsModal({
           {isPendingPayment ? (
             <>
               <Button
+                variant="outline"
+                onClick={onChangeService}
+                disabled={!onChangeService}
+              >
+                <i className="bi bi-pencil-square mr-2"></i>Change service
+              </Button>
+              <Button
                 variant="default"
                 onClick={onVerifyPaymentProof}
                 disabled={!canVerify || isVerifyingPaymentProof}
@@ -362,6 +371,13 @@ export default function BookingDetailsModal({
                   disabled={!onReschedule}
                 >
                   <i className="bi bi-calendar-event mr-2"></i>Reschedule
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={onChangeService}
+                  disabled={!onChangeService}
+                >
+                  <i className="bi bi-pencil-square mr-2"></i>Change service
                 </Button>
                 <Button
                   variant="outline"

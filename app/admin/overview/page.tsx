@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import type { BookingStatus } from '@/components/admin/StatusBadge';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
+import { getSlotServiceDisplay } from '@/lib/serviceLabels';
 
 interface TodayBooking {
   id: string;
@@ -395,7 +396,7 @@ export default function OverviewPage() {
                     <StatusBadge status={item.status} />
                   </div>
                   <p className="text-sm text-gray-500">{item.time}</p>
-                  <p className="text-sm text-[#1a1a1a]">{item.service}</p>
+                  <p className="text-sm text-[#1a1a1a]">{getSlotServiceDisplay(item.service)}</p>
                   {item.nailTechId && (
                     <p className="text-xs text-gray-500">
                       {nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—'}

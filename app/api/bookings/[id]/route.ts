@@ -10,7 +10,8 @@ import {
   markBookingAsCompleted,
   markBookingAsNoShow,
   markBookingAsRescheduled,
-  rescheduleBookingToSlots
+  rescheduleBookingToSlots,
+  updateBookingService
 } from '@/lib/services/bookingService';
 import { backupBooking } from '@/lib/services/googleSheetsBackup';
 import { syncBookingToSheet, syncFinanceToSheet } from '@/lib/services/googleSheetsService';
@@ -298,12 +299,46 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       });
     }
 
+    if (action === 'update_service') {
+      const service = body.service;
+      if (!service || typeof service.type !== 'string' || !service.type.trim()) {
+        return NextResponse.json({ error: 'service.type is required' }, { status: 400 });
+      }
+      const booking = await updateBookingService(id, {
+        type: service.type.trim(),
+        location: service.location,
+        clientType: service.clientType,
+        chosenServices: Array.isArray(service.chosenServices) ? service.chosenServices : undefined,
+      });
+      if (booking.confirmedAt) {
+        backupBooking(booking, 'update').catch(() => {});
+      }
+      fireSheetsSync(id);
+      return NextResponse.json({
+        booking: {
+          id: booking._id.toString(),
+          bookingCode: booking.bookingCode,
+          status: booking.status,
+          service: booking.service,
+        }
+      });
+    }
+
     if (action === 'reschedule_to') {
       const newSlotIds = Array.isArray(body.newSlotIds) ? body.newSlotIds.map(String) : [];
       if (newSlotIds.length === 0) {
         return NextResponse.json({ error: 'newSlotIds array is required' }, { status: 400 });
       }
-      const booking = await rescheduleBookingToSlots(id, newSlotIds, body.reason);
+      let booking = await rescheduleBookingToSlots(id, newSlotIds, body.reason);
+      // Optionally update service when rescheduling (e.g. manicure → mani+pedi)
+      if (body.service && typeof body.service.type === 'string' && body.service.type.trim()) {
+        booking = await updateBookingService(id, {
+          type: body.service.type.trim(),
+          location: body.service.location,
+          clientType: body.service.clientType,
+          chosenServices: Array.isArray(body.service.chosenServices) ? body.service.chosenServices : undefined,
+        });
+      }
       const customer = await Customer.findById(booking.customerId).lean();
       if (customer?.email) {
         sendBookingRescheduledEmail(booking, customer, booking.statusReason || undefined).catch(err =>
@@ -325,6 +360,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           bookingCode: booking.bookingCode,
           status: booking.status,
           slotIds: booking.slotIds,
+          service: booking.service,
           appointmentDate,
           appointmentTimes,
         }
@@ -382,7 +418,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     return NextResponse.json({ 
-      error: 'Invalid action. Supported actions: confirm, cancel, reschedule, reschedule_to, update_payment, manual_confirm, mark_completed, mark_no_show, update_notes' 
+      error: 'Invalid action. Supported actions: confirm, cancel, reschedule, reschedule_to, update_service, update_payment, manual_confirm, mark_completed, mark_no_show, update_notes' 
     }, { status: 400 });
   } catch (error: any) {
     console.error('Error updating booking:', error);
