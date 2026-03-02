@@ -112,7 +112,7 @@ export default function OverviewPage() {
             pricing: b.pricing,
           };
         });
-        today.sort((a, b) => a.timeSort.localeCompare(b.timeSort, undefined, { numeric: true }));
+        today.sort((a: { timeSort: string }, b: { timeSort: string }) => a.timeSort.localeCompare(b.timeSort, undefined, { numeric: true }));
         setTodayBookings(today);
 
         setWeekBookings(weekData.bookings || []);

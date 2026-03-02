@@ -46,7 +46,7 @@ interface Slot {
     customerPhone?: string;
     customerSocialMediaName?: string;
     slotIds?: string[];
-    service?: { type?: string; location?: 'homebased_studio' | 'home_service' };
+    service?: { type?: string; location?: 'homebased_studio' | 'home_service'; chosenServices?: string[] };
     status: string;
     paymentStatus?: string;
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number };
@@ -97,6 +97,7 @@ export default function CalendarPage() {
     clientPhone?: string;
     clientSocialMediaName?: string;
     service: string;
+    chosenServices?: string[];
     serviceLocation?: 'homebased_studio' | 'home_service';
     status: BookingStatus;
     notes?: string;
