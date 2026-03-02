@@ -214,29 +214,33 @@ export function CalendarGrid({
                 fontFamily: "'Lato', sans-serif"
               }}
             >
-              <div className="flex flex-col items-center justify-center h-full gap-0.5">
-                <span className="font-semibold">{format(date, 'd')}</span>
-                {status === 'blocked' ? (
-                  <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight">Blocked</span>
-                ) : slotCounts.total > 0 ? (
-                  <div className="flex flex-col items-center gap-0.5">
-                    {slotCounts.available > 0 && (
-                      <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#28a745' }}>
-                        {slotCounts.available}
-                      </span>
-                    )}
-                    {slotCounts.booked > 0 && (
-                      <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#212529' }}>
-                        {slotCounts.booked}
-                      </span>
-                    )}
-                    {slotCounts.pending > 0 && (
-                      <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#007bff' }}>
-                        {slotCounts.pending}
-                      </span>
-                    )}
-                  </div>
-                ) : null}
+              <div className="flex flex-col h-full w-full">
+                <div className="flex justify-center items-center shrink-0 pt-0.5">
+                  <span className="font-semibold text-center">{format(date, 'd')}</span>
+                </div>
+                <div className="flex-1 flex items-center justify-center min-h-0">
+                  {status === 'blocked' ? (
+                    <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight text-center">Blocked</span>
+                  ) : slotCounts.total > 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-0.5">
+                      {slotCounts.available > 0 && (
+                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#28a745' }}>
+                          {slotCounts.available}
+                        </span>
+                      )}
+                      {slotCounts.booked > 0 && (
+                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#212529' }}>
+                          {slotCounts.booked}
+                        </span>
+                      )}
+                      {slotCounts.pending > 0 && (
+                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#007bff' }}>
+                          {slotCounts.pending}
+                        </span>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </button>
           );
