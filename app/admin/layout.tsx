@@ -53,7 +53,7 @@ export default function AdminLayoutWrapper({
   }
 
   return (
-    <div className="admin-dashboard">
+    <div className="admin-dashboard h-screen overflow-hidden">
       <AdminLayout>{children}</AdminLayout>
     </div>
   );

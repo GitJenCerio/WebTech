@@ -85,12 +85,11 @@ export default function SlotItem({
       tabIndex={isClickable ? 0 : undefined}
       onClick={isClickable ? handleClick : undefined}
       onKeyDown={isClickable ? (e) => e.key === 'Enter' && handleClick() : undefined}
-      className={`card mb-2 ${isHidden ? 'border-warning' : ''} ${isClickable ? 'cursor-pointer' : ''}`}
+      className={`card mb-2 ${isHidden ? 'border-warning' : ''} ${isClickable ? 'cursor-pointer' : ''} ${['confirmed', 'CONFIRMED'].includes(status) ? 'slot-card-confirmed' : ''} ${['pending', 'PENDING_PAYMENT'].includes(status) ? 'slot-card-pending' : ''}`}
       style={{
         borderRadius: '20px',
         border: isHidden ? '2px solid #ffc107' : '1px solid #ced4da',
         boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04)',
-        background: '#ffffff',
         transition: 'all 0.3s ease',
         position: 'relative',
         overflow: 'visible',

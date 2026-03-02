@@ -521,14 +521,20 @@ export default function CalendarPanel({
                       {sortedSlots.length === 0 ? (
                         <div className="text-muted small py-2">No slots</div>
                       ) : (
-                        sortedSlots.map((slot) => (
+                        sortedSlots.map((slot) => {
+                            const isConfirmed = slot.status === 'confirmed' || slot.status === 'CONFIRMED';
+                            const isPending = slot.status === 'pending' || slot.status === 'PENDING_PAYMENT';
+                            const isBooked = slot.status === 'booked';
+                            const bg = (slot as Slot).isHidden ? '#e9ecef' : slot.status === 'available' ? '#d4edda' : isConfirmed ? '#9ca3af' : isPending ? '#3b82f6' : isBooked ? '#212529' : slot.status === 'completed' || slot.status === 'COMPLETED' ? '#ea580c' : '#cce5ff';
+                            const fg = (slot as Slot).isHidden ? '#6c757d' : slot.status === 'available' ? '#155724' : isConfirmed ? '#1a1a1a' : isBooked || slot.status === 'completed' || slot.status === 'COMPLETED' || slot.status === 'pending' || slot.status === 'PENDING_PAYMENT' ? '#fff' : '#1a1a1a';
+                            return (
                           <button
                             key={slot.id}
                             type="button"
                             className="d-flex flex-column align-items-start gap-0 px-3 py-2 rounded-2 border-0 w-100 text-start"
                             style={{
-                              background: (slot as Slot).isHidden ? '#e9ecef' : slot.status === 'available' ? '#d4edda' : slot.status === 'booked' || slot.status === 'confirmed' || slot.status === 'CONFIRMED' ? '#212529' : slot.status === 'completed' || slot.status === 'COMPLETED' ? '#ea580c' : '#cce5ff',
-                              color: (slot as Slot).isHidden ? '#6c757d' : slot.status === 'available' ? '#155724' : '#fff',
+                              background: bg,
+                              color: fg,
                               fontSize: '0.875rem',
                               cursor: onSlotClick ? 'pointer' : 'default',
                             }}
@@ -539,7 +545,8 @@ export default function CalendarPanel({
                               {(slot as Slot).isHidden ? 'Hidden from clients' : (slot.status === 'available' ? 'Available' : (slot.clientName || (slot.status === 'completed' || slot.status === 'COMPLETED' ? 'Completed' : slot.status)))}
                             </span>
                           </button>
-                        ))
+                            );
+                        })
                       )}
                     </div>
                   </div>

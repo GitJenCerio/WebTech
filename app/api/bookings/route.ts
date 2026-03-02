@@ -468,7 +468,8 @@ function manilaMidnightToUtc(year: number, month: number, day: number): Date {
 
 function getManilaDayRange(year: number, month: number, day: number): { startDate: Date; endDate: Date } {
   const startDate = manilaMidnightToUtc(year, month, day);
-  const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+  // End 1ms before next day so toDateStr() yields same day (excludes tomorrow's slots)
+  const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000 - 1);
   return { startDate, endDate };
 }
 

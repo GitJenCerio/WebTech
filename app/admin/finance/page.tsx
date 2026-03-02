@@ -897,9 +897,8 @@ function getEffectiveTotal(booking: any): number {
   const inv = booking?.invoice;
   const hasInvoice = Boolean(inv && (inv.quotationId || inv.total != null));
   const fromInvoice = inv?.total ?? inv?.totalAmount;
-  const fromPricing = booking?.pricing?.total ?? 0;
-  // Prefer invoice.total when present and > 0; otherwise use pricing.total
-  return hasInvoice && typeof fromInvoice === 'number' && fromInvoice > 0 ? fromInvoice : fromPricing;
+  // Invoice amount only from admin-created invoice; no fallback to pricing
+  return hasInvoice && typeof fromInvoice === 'number' && fromInvoice > 0 ? fromInvoice : 0;
 }
 
 function mapBookingToTransaction(booking: any): Transaction {

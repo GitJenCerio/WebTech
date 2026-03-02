@@ -10,12 +10,15 @@ import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import type { BookingStatus } from '@/components/admin/StatusBadge';
+import { useNailTechs } from '@/lib/hooks/useNailTechs';
 
 interface TodayBooking {
   id: string;
   time: string;
+  timeSort: string;
   clientName: string;
   service: string;
+  nailTechId?: string;
   status: BookingStatus;
 }
 
@@ -30,16 +33,36 @@ function getManilaDateKey(): string {
 
 function formatTime(isoOrTime: string): string {
   if (!isoOrTime) return '—';
-  if (isoOrTime.includes(':')) {
-    const [h, m] = isoOrTime.split(':');
-    const hour = parseInt(h || '0', 10);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const hour12 = hour % 12 || 12;
-    const mins = (m || '00').padStart(2, '0');
-    return `${hour12}:${mins} ${ampm}`;
+  const s = String(isoOrTime).trim();
+  let hour24 = 0;
+  let mins = '00';
+  if (s.toUpperCase().includes('AM') || s.toUpperCase().includes('PM')) {
+    const match = s.match(/(\d+):?(\d*)\s*(AM|PM)/i);
+    if (match) {
+      let [, h, m, period] = match;
+      let hour = parseInt(h || '0', 10);
+      const min = parseInt((m || '0').replace(/\D/g, '').slice(0, 2) || '0', 10);
+      if (period?.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+      else if (period?.toUpperCase() === 'AM' && hour === 12) hour = 0;
+      hour24 = hour;
+      mins = String(min).padStart(2, '0');
+    }
+  } else if (s.includes(':')) {
+    const [h, m] = s.split(':');
+    hour24 = parseInt(h || '0', 10);
+    mins = ((m || '00').replace(/\D/g, '').padStart(2, '0').slice(0, 2) || '00');
+  } else {
+    const d = new Date(isoOrTime);
+    if (!isNaN(d.getTime())) {
+      hour24 = d.getHours();
+      mins = String(d.getMinutes()).padStart(2, '0');
+    } else {
+      return isoOrTime;
+    }
   }
-  const d = new Date(isoOrTime);
-  return isNaN(d.getTime()) ? isoOrTime : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const ampm = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 || 12;
+  return `${String(hour12).padStart(2, '0')}:${mins} ${ampm}`;
 }
 
 const PIE_COLORS = ['#1a1a1a', '#e5e5e5', '#a3a3a3'];
@@ -54,6 +77,7 @@ export default function OverviewPage() {
   const [slots, setSlots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { nailTechs } = useNailTechs();
 
   const todayKey = getManilaDateKey();
   const todayYmd = `${todayKey.slice(0, 4)}-${todayKey.slice(4, 6)}-${todayKey.slice(6, 8)}`;
@@ -74,15 +98,21 @@ export default function OverviewPage() {
         const weekData = await weekRes.json();
         const slotsData = slotsRes.ok ? await slotsRes.json() : { slots: [] };
 
-        const today = (todayData.bookings || []).map((b: any) => ({
-          id: b.id,
-          time: formatTime(b.appointmentTime || b.createdAt || ''),
-          clientName: b.customerName || 'Unknown Client',
-          service: b.service?.type || 'Nail Service',
-          status: (b.status || 'pending') as BookingStatus,
-          amount: (b.invoice?.quotationId || b.invoice?.total != null) ? (b.invoice?.total ?? b.pricing?.total ?? 0) : 0,
-          pricing: b.pricing,
-        }));
+        const today = (todayData.bookings || []).map((b: any) => {
+          const rawTime = (b.appointmentTimes?.[0] || b.appointmentTime || '').toString();
+          return {
+            id: b.id,
+            time: formatTime(rawTime || b.createdAt || ''),
+            timeSort: rawTime || '99:99',
+            clientName: b.customerName || 'Unknown Client',
+            service: b.service?.type || 'Nail Service',
+            nailTechId: b.nailTechId,
+            status: (b.status || 'pending') as BookingStatus,
+            amount: (b.invoice?.quotationId || b.invoice?.total != null) ? (b.invoice?.total ?? b.pricing?.total ?? 0) : 0,
+            pricing: b.pricing,
+          };
+        });
+        today.sort((a, b) => a.timeSort.localeCompare(b.timeSort, undefined, { numeric: true }));
         setTodayBookings(today);
 
         setWeekBookings(weekData.bookings || []);
@@ -157,6 +187,11 @@ export default function OverviewPage() {
     { key: 'time' as const, header: 'Time' },
     { key: 'clientName' as const, header: 'Client' },
     { key: 'service' as const, header: 'Service' },
+    {
+      key: 'nailTech' as const,
+      header: 'Nail Tech',
+      render: (item: TodayBooking) => (item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—' : '—'),
+    },
     {
       key: 'status' as const,
       header: 'Status',
@@ -361,6 +396,11 @@ export default function OverviewPage() {
                   </div>
                   <p className="text-sm text-gray-500">{item.time}</p>
                   <p className="text-sm text-[#1a1a1a]">{item.service}</p>
+                  {item.nailTechId && (
+                    <p className="text-xs text-gray-500">
+                      {nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—'}
+                    </p>
+                  )}
                   <Button asChild variant="outline" size="sm" className="w-full mt-2">
                     <Link href="/admin/bookings">View Details</Link>
                   </Button>

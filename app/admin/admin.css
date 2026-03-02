@@ -546,3 +546,12 @@
   background-color: #ffffff !important;
   border-color: #e5e5e5 !important;
 }
+
+.admin-dashboard .card.slot-card-confirmed {
+  background-color: #9ca3af !important;
+}
+
+.admin-dashboard .card.slot-card-pending {
+  background-color: #3b82f6 !important;
+  color: #fff !important;
+}

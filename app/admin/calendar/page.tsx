@@ -754,7 +754,7 @@ export default function CalendarPage() {
     }
   }, [invoiceItems, invoiceDiscountAmount, nailTechs, selectedBooking?.nailTechId]);
 
-  // Fetch latest booking when details modal opens so we have fresh invoice data
+  // Fetch latest booking when details modal opens so we have fresh invoice data and admin notes
   useEffect(() => {
     if (!showModal || !selectedBooking?.id) return;
     let cancelled = false;
@@ -763,11 +763,13 @@ export default function CalendarPage() {
       .then((data) => {
         if (cancelled || !data?.booking) return;
         const b = data.booking;
+        const freshAdminNotes = b.adminNotes ?? '';
+        setAdminNotesDraft(freshAdminNotes);
         setSelectedBooking((prev) => prev ? {
           ...prev,
           invoice: b.invoice ?? prev.invoice,
           paymentStatus: b.paymentStatus ?? prev.paymentStatus,
-          adminNotes: b.adminNotes ?? prev.adminNotes,
+          adminNotes: freshAdminNotes,
           completedAt: b.completedAt ?? prev.completedAt,
         } : null);
       })

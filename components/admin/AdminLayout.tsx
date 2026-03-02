@@ -114,7 +114,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const currentPageTitle = navItems.find((n) => pathname === n.path || (pathname.startsWith(n.path) && n.path !== '/admin/overview'))?.label ?? 'Dashboard';
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-background admin-layout">
+    <div className="flex h-screen overflow-hidden flex-col md:flex-row bg-background admin-layout">
       {/* Sidebar: overlay on mobile; rail (icons-only, expand via toggle) on tablet and up */}
       <aside
         ref={sidebarRef}
@@ -175,9 +175,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className={`admin-main ${sidebarOpen ? 'sidebar-collapsed' : ''} ${iconsOnly ? 'sidebar-icons-only' : ''} ${sidebarExpanded ? 'sidebar-expanded' : ''}`}>
-        {/* Top Header */}
-        <nav className="admin-navbar flex h-16 items-center justify-between border-b border-[#e5e5e5] bg-white px-4 shadow-sm">
+      <div className={`admin-main flex min-h-0 flex-1 flex-col overflow-hidden ${sidebarOpen ? 'sidebar-collapsed' : ''} ${iconsOnly ? 'sidebar-icons-only' : ''} ${sidebarExpanded ? 'sidebar-expanded' : ''}`}>
+        {/* Top Header - fixed at top, never scrolls */}
+        <nav className="admin-navbar flex h-16 shrink-0 items-center justify-between border-b border-[#e5e5e5] bg-white px-4 shadow-sm">
           <div className="flex items-center gap-3">
             {/* Hamburger only on small screens (sidebar is collapsible rail on desktop) */}
             {!isRailMode && (
@@ -209,7 +209,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* Page Content */}
-        <div className="admin-content flex-1 overflow-auto bg-[#f5f5f5] p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-6 max-w-screen-xl mx-auto">{children}</div>
+        <div className="admin-content min-h-0 flex-1 overflow-auto bg-[#f5f5f5] p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-6 max-w-screen-xl mx-auto">{children}</div>
       </div>
 
       {/* Mobile only: sidebar overlay - tap to close */}
