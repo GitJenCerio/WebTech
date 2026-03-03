@@ -56,6 +56,8 @@ interface Slot {
     clientNotes?: string;
     adminNotes?: string;
     clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
+    clientPhotoUploadUrl?: string | null;
+    clientPhotoUploadExpiresAt?: string | null;
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     completedAt?: string | null;
   } | null;
