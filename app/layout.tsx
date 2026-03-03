@@ -57,20 +57,12 @@ export const metadata: Metadata = {
     siteName: siteName,
     title: defaultTitle,
     description: defaultDescription,
-    images: [
-      {
-        url: '/logo.png',
-        width: 400,
-        height: 400,
-        alt: 'Russian manicure & pedicure in Manila | glammednailsbyjhen',
-      },
-    ],
+    // og:image from app/opengraph-image.tsx (1200x630, logo properly sized)
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: defaultTitle,
     description: defaultDescription,
-    images: ['/logo.png'],
     creator: '@glammednailsbyjhen', // Update with your actual Twitter handle if you have one
   },
   robots: {
