@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
+import { handleApiError } from '@/lib/apiError';
 
 export const dynamic = 'force-dynamic';
-import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/mongodb';
 import Settings from '@/lib/models/Settings';
 import { requireCanManageSettings } from '@/lib/api-rbac';
@@ -50,12 +51,8 @@ export async function GET(request: Request) {
       googleSheetsId: (settings as { googleSheetsId?: string }).googleSheetsId ?? '',
       googleSheetsEnabled: (settings as { googleSheetsEnabled?: boolean }).googleSheetsEnabled ?? false,
     });
-  } catch (error: unknown) {
-    console.error('Settings GET error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch settings' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }
 
@@ -102,11 +99,7 @@ export async function PATCH(request: Request) {
       googleSheetsId: (settings as { googleSheetsId?: string }).googleSheetsId ?? '',
       googleSheetsEnabled: (settings as { googleSheetsEnabled?: boolean }).googleSheetsEnabled ?? false,
     });
-  } catch (error: unknown) {
-    console.error('Settings PATCH error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update settings' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }

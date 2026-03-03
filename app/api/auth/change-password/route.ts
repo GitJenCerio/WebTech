@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import { authOptions } from '@/lib/auth-options';
+import { handleApiError, UnauthorizedError, NotFoundError, ValidationError } from '@/lib/apiError';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,33 +17,22 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session?.user?.id) throw new UnauthorizedError();
 
     const body = await request.json();
-    const currentPassword = body?.currentPassword;
-    const newPassword = body?.newPassword;
-
-    if (!currentPassword || !newPassword || typeof newPassword !== 'string') {
-      return NextResponse.json(
-        { error: 'Current password and new password are required' },
-        { status: 400 }
-      );
+    const changePasswordSchema = z.object({
+      currentPassword: z.string().min(1, 'Current password is required'),
+      newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+    });
+    const parsed = changePasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new ValidationError('Validation failed', parsed.error.flatten());
     }
-
-    if (newPassword.length < 8) {
-      return NextResponse.json(
-        { error: 'New password must be at least 8 characters' },
-        { status: 400 }
-      );
-    }
+    const { currentPassword, newPassword } = parsed.data;
 
     await connectDB();
     const user = await User.findById(session.user.id).select('+password');
-    if (!user || !user.password) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    if (!user || !user.password) throw new NotFoundError('User not found');
 
     const isValid = await bcrypt.compare(currentPassword, user.password);
     if (!isValid) {
@@ -52,11 +43,7 @@ export async function POST(request: Request) {
     await user.save();
 
     return NextResponse.json({ success: true, message: 'Password changed successfully' });
-  } catch (err) {
-    console.error('[change-password]', err);
-    return NextResponse.json(
-      { error: 'An error occurred. Please try again.' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }

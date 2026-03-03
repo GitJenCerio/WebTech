@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import { requireCanManageUsers } from '@/lib/api-rbac';
+import { handleApiError } from '@/lib/apiError';
+
+const patchUserSchema = z.object({
+  name: z.string().min(1).optional(),
+  role: z.enum(['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF']).optional(),
+  assignedNailTechId: z.string().nullable().optional(),
+  status: z.enum(['active', 'inactive']).optional(),
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -23,13 +32,17 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { name, role, assignedNailTechId, status } = body;
-
-    console.log('Updating user:', { userId, body });
+    const parsed = patchUserSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+    const { name, role, assignedNailTechId, status } = parsed.data;
 
     await connectDB();
 
-    // Find user
     const user = await User.findById(userId);
     if (!user) {
       console.error('User not found:', userId);
@@ -68,17 +81,8 @@ export async function PATCH(
       },
       message: 'User updated successfully.',
     });
-  } catch (error: any) {
-    console.error('Error updating user:', error);
-    console.error('Error details:', {
-      message: error.message,
-      name: error.name,
-      stack: error.stack,
-    });
-    return NextResponse.json(
-      { error: error.message || 'Failed to update user' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }
 
@@ -110,7 +114,7 @@ export async function DELETE(
     // Soft delete
     await User.findByIdAndUpdate(userId, { status: 'inactive' });
     return NextResponse.json({ message: 'User deactivated successfully' });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to delete user' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }

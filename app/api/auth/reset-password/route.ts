@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
 import PasswordResetToken from '@/lib/models/PasswordResetToken';
+import { handleApiError } from '@/lib/apiError';
 
 export const dynamic = 'force-dynamic';
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token is required'),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+});
 
 /**
  * POST /api/auth/reset-password
@@ -14,22 +21,17 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const token = body?.token?.trim?.();
-    const newPassword = body?.newPassword;
-
-    if (!token || !newPassword || typeof newPassword !== 'string') {
+    const parsed = resetPasswordSchema.safeParse({
+      token: typeof body?.token === 'string' ? body.token.trim() : '',
+      newPassword: body?.newPassword ?? '',
+    });
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Token and new password are required' },
+        { error: 'Validation failed', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
-
-    if (newPassword.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
-        { status: 400 }
-      );
-    }
+    const { token, newPassword } = parsed.data;
 
     await connectDB();
 
@@ -56,11 +58,7 @@ export async function POST(request: Request) {
     await PasswordResetToken.deleteOne({ token });
 
     return NextResponse.json({ success: true, message: 'Password updated successfully' });
-  } catch (err) {
-    console.error('[reset-password]', err);
-    return NextResponse.json(
-      { error: 'An error occurred. Please try again.' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }

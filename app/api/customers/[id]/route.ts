@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import Customer from '@/lib/models/Customer';
@@ -6,16 +7,33 @@ import Booking from '@/lib/models/Booking';
 import type { CustomerInput } from '@/lib/types';
 import { authOptions } from '@/lib/auth-options';
 import { requireCanDeleteCustomer } from '@/lib/api-rbac';
+import { handleApiError, UnauthorizedError, NotFoundError, ValidationError } from '@/lib/apiError';
+
+const patchCustomerSchema = z.object({
+  name: z.string().min(1).optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().optional(),
+  socialMediaName: z.string().optional(),
+  referralSource: z.string().optional(),
+  referralSourceOther: z.string().optional(),
+  notes: z.string().max(5000).optional(),
+  nailHistory: z.any().optional(),
+  healthInfo: z.any().optional(),
+  inspoDescription: z.string().optional(),
+  waiverAccepted: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  isVIP: z.boolean().optional(),
+});
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session?.user) throw new UnauthorizedError();
 
     await connectDB();
     const { id } = await params;
@@ -92,17 +110,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       lifetimeValue,
       bookingCount: bookings.length,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message ?? 'Unable to get customer.' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session?.user) throw new UnauthorizedError();
 
     await connectDB();
     const { id } = await params;
@@ -119,40 +135,27 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     const body = await request.json();
-    const {
-      name,
-      firstName,
-      lastName,
-      email,
-      phone,
-      socialMediaName,
-      referralSource,
-      referralSourceOther,
-      notes,
-      nailHistory,
-      healthInfo,
-      inspoDescription,
-      waiverAccepted,
-      isActive,
-      isVIP,
-    } = body ?? {};
-
+    const parsed = patchCustomerSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new ValidationError('Validation failed', parsed.error.flatten());
+    }
+    const data = parsed.data;
     const updates: Partial<CustomerInput> = {};
-    if (name !== undefined) updates.name = name;
-    if (firstName !== undefined) updates.firstName = firstName;
-    if (lastName !== undefined) updates.lastName = lastName;
-    if (email !== undefined) updates.email = email;
-    if (phone !== undefined) updates.phone = phone;
-    if (socialMediaName !== undefined) updates.socialMediaName = socialMediaName;
-    if (referralSource !== undefined) updates.referralSource = referralSource;
-    if (referralSourceOther !== undefined) updates.referralSourceOther = referralSourceOther;
-    if (notes !== undefined) updates.notes = notes;
-    if (nailHistory !== undefined) updates.nailHistory = nailHistory;
-    if (healthInfo !== undefined) updates.healthInfo = healthInfo;
-    if (inspoDescription !== undefined) updates.inspoDescription = inspoDescription;
-    if (waiverAccepted !== undefined) updates.waiverAccepted = waiverAccepted;
-    if (isActive !== undefined) updates.isActive = isActive;
-    if (isVIP !== undefined) updates.isVIP = isVIP;
+    if (data.name !== undefined) updates.name = data.name;
+    if (data.firstName !== undefined) updates.firstName = data.firstName;
+    if (data.lastName !== undefined) updates.lastName = data.lastName;
+    if (data.email !== undefined) updates.email = data.email || undefined;
+    if (data.phone !== undefined) updates.phone = data.phone;
+    if (data.socialMediaName !== undefined) updates.socialMediaName = data.socialMediaName;
+    if (data.referralSource !== undefined) updates.referralSource = data.referralSource;
+    if (data.referralSourceOther !== undefined) updates.referralSourceOther = data.referralSourceOther;
+    if (data.notes !== undefined) updates.notes = data.notes;
+    if (data.nailHistory !== undefined) updates.nailHistory = data.nailHistory;
+    if (data.healthInfo !== undefined) updates.healthInfo = data.healthInfo;
+    if (data.inspoDescription !== undefined) updates.inspoDescription = data.inspoDescription;
+    if (data.waiverAccepted !== undefined) updates.waiverAccepted = data.waiverAccepted;
+    if (data.isActive !== undefined) updates.isActive = data.isActive;
+    if (data.isVIP !== undefined) updates.isVIP = data.isVIP;
 
     await connectDB();
     const customer = await Customer.findByIdAndUpdate(
@@ -193,8 +196,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         updatedAt: customer.updatedAt,
       }
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message ?? 'Unable to update customer.' }, { status: 400 });
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }
 
@@ -234,8 +237,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     await Customer.findByIdAndDelete(id);
     return NextResponse.json({ message: 'Customer deleted successfully' });
-  } catch (error: any) {
-    console.error('Error deleting customer:', error);
-    return NextResponse.json({ error: error.message || 'Failed to delete customer' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }

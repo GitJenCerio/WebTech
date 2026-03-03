@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/mongodb';
@@ -6,6 +7,7 @@ import User from '@/lib/models/User';
 import bcrypt from 'bcryptjs';
 import { sendInviteEmail } from '@/lib/email';
 import { requireCanManageUsers } from '@/lib/api-rbac';
+import { handleApiError } from '@/lib/apiError';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,14 +42,26 @@ export async function GET(request: Request) {
       users: usersData,
       count: usersData.length,
     });
-  } catch (error: any) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch users' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }
+
+const createUserSchema = z.object({
+  email: z.string().email('Valid email is required'),
+  password: z.string().optional(),
+  name: z.string().optional(),
+  authMethod: z.enum(['password', 'google']).default('google'),
+  role: z.enum(['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF']).default('STAFF'),
+  assignedNailTechId: z.string().nullable().optional(),
+}).refine((data) => {
+  if (data.authMethod === 'password') return !!data.password;
+  return true;
+}, { message: 'Password is required for password authentication', path: ['password'] })
+.refine((data) => {
+  if (data.role === 'STAFF') return !!data.assignedNailTechId;
+  return true;
+}, { message: 'Staff must be assigned to a nail tech', path: ['assignedNailTechId'] });
 
 export async function POST(request: Request) {
   try {
@@ -56,22 +70,14 @@ export async function POST(request: Request) {
     if (forbid) return forbid;
 
     const body = await request.json();
-    const { email, password, name, authMethod, role: bodyRole, assignedNailTechId: bodyAssignedNailTechId } = body;
-    const validRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF'] as const;
-    const role = validRoles.includes(bodyRole) ? bodyRole : 'STAFF';
-    const assignedNailTechId = role === 'STAFF' ? (bodyAssignedNailTechId || null) : null;
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    const parsed = createUserSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
-
-    if (authMethod === 'password' && !password) {
-      return NextResponse.json({ error: 'Password is required for password authentication' }, { status: 400 });
-    }
-
-    if (role === 'STAFF' && !assignedNailTechId) {
-      return NextResponse.json({ error: 'Staff must be assigned to a nail tech' }, { status: 400 });
-    }
+    const { email, password, name, authMethod, role, assignedNailTechId } = parsed.data;
 
     await connectDB();
 
@@ -160,18 +166,12 @@ export async function POST(request: Request) {
       });
     }
   } catch (error: any) {
-    console.error('Error creating user:', error);
-    
-    if (error.code === 11000) {
+    if (error?.code === 11000) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
         { status: 400 }
       );
     }
-
-    return NextResponse.json(
-      { error: error.message || 'Failed to create user' },
-      { status: 500 }
-    );
+    return handleApiError(error, request);
   }
 }

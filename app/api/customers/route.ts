@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
+import { handleApiError, UnauthorizedError } from '@/lib/apiError';
 import connectDB from '@/lib/mongodb';
 import Customer from '@/lib/models/Customer';
 import Booking from '@/lib/models/Booking';
@@ -34,9 +35,7 @@ async function ensureLegacyFirebaseIdIndexRemoved() {
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!session) throw new UnauthorizedError();
 
     await connectDB();
     const { searchParams } = new URL(request.url);
@@ -99,9 +98,8 @@ export async function GET(request: Request) {
     }));
 
     return NextResponse.json({ customers: list });
-  } catch (error: any) {
-    console.error('Error listing customers:', error);
-    return NextResponse.json({ error: error.message || 'Failed to list customers' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }
 
@@ -189,8 +187,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ customer }, { status: 201 });
   } catch (error: any) {
-    console.error('Error creating customer:', error);
-
     if (
       error?.code === 11000 &&
       (error?.keyPattern?.firebaseId === 1 || error?.message?.includes('firebaseId_1'))
@@ -200,7 +196,6 @@ export async function POST(request: Request) {
         { status: 409 }
       );
     }
-
-    return NextResponse.json({ error: error.message || 'Failed to create customer' }, { status: 500 });
+    return handleApiError(error, request);
   }
 }

@@ -1,47 +1,60 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import Quotation from '@/lib/models/Quotation';
 import { authOptions } from '@/lib/auth-options';
+import { handleApiError, UnauthorizedError, ValidationError } from '@/lib/apiError';
 
 export const dynamic = 'force-dynamic';
+
+const createQuotationSchema = z.object({
+  customerName: z.string().min(1, 'Customer name is required').transform((s) => s.trim()),
+  customerPhone: z.string().optional(),
+  customerEmail: z.string().email().optional().or(z.literal('')),
+  items: z.array(z.any()).min(1, 'At least one item is required'),
+  subtotal: z.number().optional(),
+  discountRate: z.number().optional(),
+  discountAmount: z.number().optional(),
+  squeezeInFee: z.number().optional(),
+  totalAmount: z.number().optional(),
+  notes: z.string().optional(),
+  status: z.enum(['draft', 'sent', 'accepted']).optional(),
+  createdBy: z.string().optional(),
+});
 
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new UnauthorizedError();
     }
 
     await connectDB();
     const body = await request.json();
-
-    if (!body.customerName?.trim()) {
-      return NextResponse.json({ error: 'Customer name is required' }, { status: 400 });
-    }
-    if (!body.items?.length) {
-      return NextResponse.json({ error: 'At least one item is required' }, { status: 400 });
+    const parsed = createQuotationSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new ValidationError('Validation failed', parsed.error.flatten());
     }
 
     const quotation = await Quotation.create({
-      customerName: body.customerName.trim(),
-      customerPhone: body.customerPhone?.trim(),
-      customerEmail: body.customerEmail?.trim(),
-      items: body.items,
-      subtotal: body.subtotal || 0,
-      discountRate: body.discountRate || 0,
-      discountAmount: body.discountAmount || 0,
-      squeezeInFee: body.squeezeInFee || 0,
-      totalAmount: body.totalAmount || 0,
-      notes: body.notes?.trim(),
-      status: body.status || 'draft',
-      createdBy: body.createdBy,
+      customerName: parsed.data.customerName,
+      customerPhone: parsed.data.customerPhone?.trim(),
+      customerEmail: parsed.data.customerEmail?.trim() || undefined,
+      items: parsed.data.items,
+      subtotal: parsed.data.subtotal ?? 0,
+      discountRate: parsed.data.discountRate ?? 0,
+      discountAmount: parsed.data.discountAmount ?? 0,
+      squeezeInFee: parsed.data.squeezeInFee ?? 0,
+      totalAmount: parsed.data.totalAmount ?? 0,
+      notes: parsed.data.notes?.trim(),
+      status: parsed.data.status ?? 'draft',
+      createdBy: parsed.data.createdBy,
     });
 
     return NextResponse.json({ quotation }, { status: 201 });
-  } catch (error: any) {
-    console.error('Error creating quotation:', error);
-    return NextResponse.json({ error: error.message || 'Failed to create quotation' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }
 
@@ -49,7 +62,7 @@ export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new UnauthorizedError();
     }
 
     await connectDB();
@@ -74,8 +87,7 @@ export async function GET(request: Request) {
       quotations,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
-  } catch (error: any) {
-    console.error('Error fetching quotations:', error);
-    return NextResponse.json({ error: error.message || 'Failed to fetch quotations' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }

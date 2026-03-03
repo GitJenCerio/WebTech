@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { Suspense, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { signIn, getCsrfToken } from 'next-auth/react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -16,10 +16,13 @@ function AdminLoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    getCsrfToken().then((token) => setCsrfToken(token));
+  }, []);
 
   const authError = searchParams.get('error');
   const oauthErrorMessage =
@@ -56,19 +59,6 @@ function AdminLoginForm() {
     }
   }
 
-  async function handleGoogleSignIn() {
-    setGoogleLoading(true);
-    setError('');
-
-    try {
-      // Use redirect flow (not popup) - required for iPhone/Safari compatibility.
-      // redirect: false uses a popup which iOS Safari blocks or mishandles.
-      await signIn('google', { callbackUrl: '/admin/overview' });
-    } catch (error: unknown) {
-      setError('Failed to sign in with Google. Please try again.');
-      setGoogleLoading(false);
-    }
-  }
 
   return (
     <div className="admin-login-page">
@@ -101,7 +91,7 @@ function AdminLoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled={loading || googleLoading}
+                  disabled={loading}
                   className="bg-[#f9f9f9] border-[#e5e5e5]"
                 />
               </div>
@@ -123,7 +113,7 @@ function AdminLoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={loading || googleLoading}
+                  disabled={loading}
                   className="bg-[#f9f9f9] border-[#e5e5e5]"
                 />
               </div>
@@ -141,7 +131,7 @@ function AdminLoginForm() {
               <Button
                 type="submit"
                 className="w-full bg-[#1a1a1a] text-white hover:bg-[#2d2d2d]"
-                disabled={loading || googleLoading}
+                disabled={loading}
               >
                 {loading ? (
                   <>
@@ -168,20 +158,26 @@ function AdminLoginForm() {
               </div>
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
+            <form
+              action="/api/auth/signin/google"
+              method="POST"
               className="w-full"
-              onClick={handleGoogleSignIn}
-              disabled={loading || googleLoading}
             >
-              {googleLoading ? (
+              <input type="hidden" name="callbackUrl" value="/admin/overview" />
+              {csrfToken && <input type="hidden" name="csrfToken" value={csrfToken} />}
+              <Button
+                type="submit"
+                variant="outline"
+                className="w-full"
+                disabled={loading || !csrfToken}
+              >
+              {!csrfToken ? (
                 <>
                   <span
                     className="animate-spin mr-2 inline-block h-4 w-4 rounded-full border-2 border-current border-t-transparent"
                     aria-hidden
                   />
-                  Signing in...
+                  Loading...
                 </>
               ) : (
                 <>
@@ -214,6 +210,7 @@ function AdminLoginForm() {
                 </>
               )}
             </Button>
+            </form>
           </CardContent>
         </Card>
       </div>

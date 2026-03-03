@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import crypto from 'crypto';
 import connectDB from '@/lib/mongodb';
 import User from '@/lib/models/User';
@@ -42,11 +43,15 @@ function recordAttempt(email: string): void {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const email = body?.email?.trim?.();
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    const emailSchema = z.object({ email: z.string().email('Valid email is required') });
+    const parsed = emailSchema.safeParse({ email: body?.email?.trim?.() || '' });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Email is required', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
+    const { email } = parsed.data;
 
     if (!checkRateLimit(email)) {
       return NextResponse.json(

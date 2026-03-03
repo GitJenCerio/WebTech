@@ -1,26 +1,32 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import connectDB from '@/lib/mongodb';
 import Booking from '@/lib/models/Booking';
 import { generateSignature } from '@/lib/cloudinary';
+import { handleApiError, NotFoundError } from '@/lib/apiError';
+
+const generateSignatureSchema = z.object({
+  bookingId: z.string().min(1, 'bookingId is required'),
+  photoType: z.enum(['inspiration', 'currentState']),
+});
 
 export async function POST(request: Request) {
   try {
     await connectDB();
-    const { bookingId, photoType } = await request.json();
-
-    if (!bookingId || !photoType) {
-      return NextResponse.json({ error: 'bookingId and photoType required' }, { status: 400 });
+    const body = await request.json();
+    const parsed = generateSignatureSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
-
-    const validPhotoTypes = ['inspiration', 'currentState'] as const;
-    if (!validPhotoTypes.includes(photoType as typeof validPhotoTypes[number])) {
-      return NextResponse.json({ error: 'Invalid photoType' }, { status: 400 });
-    }
+    const { bookingId, photoType } = parsed.data;
 
     const typedPhotoType = photoType as 'inspiration' | 'currentState';
 
     const booking = await Booking.findById(bookingId);
-    if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+    if (!booking) throw new NotFoundError('Booking not found');
 
     // Check photo limit (max 3 per type)
     const existing = booking.clientPhotos?.[typedPhotoType]?.length || 0;
@@ -43,7 +49,7 @@ export async function POST(request: Request) {
       uploadPreset: 'nail_photos',
       expiresIn: 900,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to generate signature' }, { status: 500 });
+  } catch (error) {
+    return handleApiError(error, request);
   }
 }
