@@ -209,7 +209,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* Page Content */}
-        <div className="admin-content min-h-0 flex-1 overflow-auto bg-[#f5f5f5] p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-6 max-w-screen-xl mx-auto">{children}</div>
+        <div className="admin-content min-h-0 flex-1 overflow-auto bg-[#f5f5f5] w-full min-w-0 p-4 sm:p-5 md:p-6 lg:p-8 space-y-4 sm:space-y-6">{children}</div>
       </div>
 
       {/* Mobile only: sidebar overlay - tap to close */}

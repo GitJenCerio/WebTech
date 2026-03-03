@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay } from 'date-fns';
 import type { Slot } from '@/lib/types';
+import { SLOT_TIMES, normalizeSlotTime } from '@/lib/constants/slots';
+import { formatTime12Hour } from '@/lib/utils';
 
 interface CalendarGridProps {
   referenceDate: Date;
@@ -45,6 +47,21 @@ export function CalendarGrid({
     });
     return map;
   }, [slots]);
+
+  const { slotsByDateAndTime, monthDays } = useMemo(() => {
+    const byDateAndTime = new Map<string, Map<string, Slot>>();
+    slots.forEach((slot) => {
+      const t = normalizeSlotTime(slot.time);
+      if (!byDateAndTime.has(slot.date)) {
+        byDateAndTime.set(slot.date, new Map());
+      }
+      byDateAndTime.get(slot.date)!.set(t, slot);
+    });
+    const mStart = startOfMonth(referenceDate);
+    const mEnd = endOfMonth(referenceDate);
+    const mDays = eachDayOfInterval({ start: mStart, end: mEnd }).map((d) => format(d, 'yyyy-MM-dd'));
+    return { slotsByDateAndTime: byDateAndTime, monthDays: mDays };
+  }, [slots, referenceDate]);
 
   const getSlotCounts = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -185,9 +202,9 @@ export function CalendarGrid({
           }
 
           if (isSelected) {
-            borderColorStyle = '#212529';
-            bgColorStyle = isCurrentMonth ? '#212529' : bgColorStyle;
-            textColorStyle = isCurrentMonth && isSelected ? '#ffffff' : textColorStyle;
+            borderColorStyle = '#9ca3af';
+            bgColorStyle = isCurrentMonth ? '#e5e7eb' : bgColorStyle;
+            textColorStyle = isCurrentMonth && isSelected ? '#374151' : textColorStyle;
           }
 
           if (isToday && !isSelected) {
@@ -224,17 +241,17 @@ export function CalendarGrid({
                   ) : slotCounts.total > 0 ? (
                     <div className="flex flex-col items-center justify-center gap-0.5">
                       {slotCounts.available > 0 && (
-                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#28a745' }}>
+                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: '#28a745' }}>
                           {slotCounts.available}
                         </span>
                       )}
                       {slotCounts.booked > 0 && (
-                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#212529' }}>
+                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: '#212529' }}>
                           {slotCounts.booked}
                         </span>
                       )}
                       {slotCounts.pending > 0 && (
-                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: isSelected ? '#ffffff' : '#007bff' }}>
+                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: '#007bff' }}>
                           {slotCounts.pending}
                         </span>
                       )}
@@ -246,6 +263,59 @@ export function CalendarGrid({
           );
         })}
       </div>
+
+      {monthDays.length > 0 && (
+        <div className="mt-4 sm:mt-6 border-t border-[#e5e5e5] pt-4 sm:pt-6 overflow-x-auto">
+          <p className="text-[10px] sm:text-xs uppercase tracking-wider mb-2 sm:mb-3" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>
+            Slots Overview — {format(referenceDate, 'MMMM yyyy')}
+          </p>
+          <table className="w-full text-[10px] sm:text-xs border-collapse min-w-[600px]" style={{ fontFamily: "'Lato', sans-serif" }}>
+            <thead>
+              <tr>
+                <th className="text-left py-1.5 sm:py-2 px-1 sm:px-2 font-semibold text-[#495057] border border-[#e5e5e5] bg-[#f8f9fa] whitespace-nowrap sticky left-0 z-10">
+                  Time
+                </th>
+                {monthDays.map((d) => (
+                  <th key={d} className="text-center py-1.5 sm:py-2 px-1 sm:px-2 font-semibold text-[#495057] border border-[#e5e5e5] bg-[#f8f9fa] min-w-[48px]">
+                    {format(new Date(d), 'd')}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {SLOT_TIMES.map((time) => (
+                <tr key={time}>
+                  <td className="py-1 sm:py-1.5 px-1 sm:px-2 border border-[#e5e5e5] bg-[#fafafa] font-medium text-[#495057] whitespace-nowrap sticky left-0 z-10">
+                    {formatTime12Hour(time)}
+                  </td>
+                  {monthDays.map((dateStr) => {
+                    const slot = slotsByDateAndTime.get(dateStr)?.get(normalizeSlotTime(time));
+                    if (!slot) {
+                      return (
+                        <td key={dateStr} className="py-1 sm:py-1.5 px-1 sm:px-2 border border-[#e5e5e5] bg-white text-gray-400 text-center">
+                          —
+                        </td>
+                      );
+                    }
+                    const status = slot.status;
+                    const isAvail = status === 'available';
+                    const isBooked = status === 'booked' || status === 'confirmed';
+                    const isPending = status === 'pending';
+                    const label = isAvail ? 'Available' : isBooked ? 'Booked' : isPending ? 'Pending' : status;
+                    const bg = isAvail ? '#d4edda' : isBooked ? '#fff3cd' : isPending ? '#cce5ff' : '#f8f9fa';
+                    const color = isAvail ? '#155724' : isBooked ? '#856404' : isPending ? '#004085' : '#6c757d';
+                    return (
+                      <td key={dateStr} className="py-1 sm:py-1.5 px-1 sm:px-2 border border-[#e5e5e5] text-center" style={{ backgroundColor: bg, color }}>
+                        {label}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

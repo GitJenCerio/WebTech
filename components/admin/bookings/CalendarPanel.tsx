@@ -439,7 +439,7 @@ export default function CalendarPanel({
         </div>
       </CardHeader>
       <CardContent 
-        className="flex-grow-1 min-h-0 min-w-0 overflow-hidden"
+        className="flex-grow-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto"
         style={{ 
           padding: 'clamp(0.65rem, 3vw, 1rem) clamp(0.5rem, 3vw, 0.9rem)',
         }}
@@ -573,7 +573,7 @@ export default function CalendarPanel({
                 className={`btn btn-sm calendar-day ${
                   !isCurrentMonth ? 'text-muted' : ''
                 } ${dateToday ? 'border border-dark' : ''} ${
-                  dateSelected ? 'bg-dark text-white' : ''
+                  dateSelected ? 'text-dark' : ''
                 }`}
                 onClick={() => isCurrentMonth && onDateSelect(date)}
                 disabled={!isCurrentMonth}
@@ -586,6 +586,7 @@ export default function CalendarPanel({
                   minHeight: 'clamp(44px, 11vw, 68px)',
                   lineHeight: '1.2',
                   gap: '2px',
+                  ...(dateSelected ? { backgroundColor: '#e5e7eb', color: '#374151' } : {}),
                 }}
               >
                 <span
@@ -617,8 +618,8 @@ export default function CalendarPanel({
                       <span 
                         className="slot-count-badge slot-count-available"
                         style={{ 
-                          color: dateSelected ? '#fff' : '#155724',
-                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#d4edda',
+                          color: '#155724',
+                          backgroundColor: '#d4edda',
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,
@@ -639,7 +640,7 @@ export default function CalendarPanel({
                         className="slot-count-badge slot-count-completed d-flex flex-column align-items-stretch"
                         style={{ 
                           color: '#fff',
-                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#ea580c',
+                          backgroundColor: '#ea580c',
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,
@@ -663,7 +664,7 @@ export default function CalendarPanel({
                         className="slot-count-badge slot-count-booked d-flex flex-column align-items-stretch"
                         style={{ 
                           color: '#fff',
-                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#212529',
+                          backgroundColor: '#212529',
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,
@@ -687,7 +688,7 @@ export default function CalendarPanel({
                         className="slot-count-badge slot-count-pending d-flex flex-column align-items-stretch"
                         style={{ 
                           color: '#fff',
-                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.25)' : '#007bff',
+                          backgroundColor: '#007bff',
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,
@@ -711,7 +712,7 @@ export default function CalendarPanel({
                         className="slot-count-badge slot-count-hidden"
                         style={{
                           color: '#6c757d',
-                          backgroundColor: dateSelected ? 'rgba(255,255,255,0.2)' : '#e9ecef',
+                          backgroundColor: '#e9ecef',
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,

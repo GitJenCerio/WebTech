@@ -34,7 +34,7 @@ function DayButtonWithWhiteSelected({ modifiers, className, ...props }: DayButto
   return (
     <button
       {...props}
-      className={cn(className, isSelected && "!text-white !bg-[#1a1a1a] hover:!text-white hover:!bg-[#2d2d2d]")}
+      className={cn(className, isSelected && "!text-[#374151] !bg-[#e5e7eb] hover:!text-[#374151] hover:!bg-[#d1d5db]")}
     />
   );
 }
@@ -75,12 +75,12 @@ function Calendar({
           "size-9 p-0 font-normal rounded-2xl text-[#1a1a1a] hover:bg-[#f5f5f5] hover:text-[#1a1a1a]",
         ),
         selected:
-          "!text-white bg-[#1a1a1a] hover:bg-[#2d2d2d] hover:!text-white focus:bg-[#1a1a1a] focus:!text-white",
+          "!text-[#374151] bg-[#e5e7eb] hover:bg-[#d1d5db] hover:!text-[#374151] focus:bg-[#e5e7eb] focus:!text-[#374151]",
         today: "bg-[#f0f0f0] text-[#1a1a1a] font-semibold",
         outside: "text-gray-400 opacity-50",
         disabled: "text-gray-300 opacity-50",
-        range_start: "rounded-l-2xl bg-[#1a1a1a] text-white",
-        range_end: "rounded-r-2xl bg-[#1a1a1a] text-white",
+        range_start: "rounded-l-2xl bg-[#e5e7eb] text-[#374151]",
+        range_end: "rounded-r-2xl bg-[#e5e7eb] text-[#374151]",
         range_middle: "bg-[#f5f5f5] !text-[#1a1a1a] rounded-none",
         hidden: "invisible",
         ...classNames,

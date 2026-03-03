@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import CalendarPanel from '@/components/admin/bookings/CalendarPanel';
 import SlotList from '@/components/admin/bookings/SlotList';
+import SlotsOverviewTable from '@/components/admin/bookings/SlotsOverviewTable';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
 import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
 import AddSlotModal from '@/components/admin/bookings/AddSlotModal';
@@ -55,6 +56,8 @@ interface Slot {
     clientNotes?: string;
     adminNotes?: string;
     clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
+    clientPhotoUploadUrl?: string | null;
+    clientPhotoUploadExpiresAt?: string | null;
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     completedAt?: string | null;
   } | null;
@@ -117,6 +120,8 @@ export default function CalendarPage() {
     slotTimes?: string[];
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     completedAt?: string | null;
+    clientPhotoUploadUrl?: string | null;
+    clientPhotoUploadExpiresAt?: string | null;
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [isManualConfirming, setIsManualConfirming] = useState(false);
@@ -462,23 +467,23 @@ export default function CalendarPage() {
     }
   };
 
-  const handleSlotClick = (slot: Slot) => {
+  const handleSlotClick = (slot: Slot, slotTimesOverride?: string[]) => {
     if (slot.booking?.id && slot.clientName) {
-      const bookingSlotTimes = slots
+      const bookingSlotTimes = slotTimesOverride ?? slots
         .filter((s) => s.booking?.id === slot.booking?.id)
         .map((s) => s.time)
         .filter(Boolean)
         .sort((a, b) => (a || '').localeCompare(b || '', undefined, { numeric: true }));
+      const displayDate = slot.date
+        ? new Date(slot.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : selectedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       setSelectedBooking({
         id: slot.booking.id,
         bookingCode: slot.booking.bookingCode,
         customerId: slot.booking.customerId,
+        nailTechId: slot.nailTechId,
         nailTechName: slot.nailTechId ? nailTechs.find((t) => t.id === slot.nailTechId)?.name : undefined,
-        date: selectedDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
+        date: displayDate,
         time: slot.time,
         slotTimes: bookingSlotTimes.length > 0 ? bookingSlotTimes : undefined,
         clientName: slot.clientName,
@@ -501,6 +506,8 @@ export default function CalendarPage() {
         paymentProofUrl: slot.booking.payment?.paymentProofUrl,
         adminNotes: slot.booking?.adminNotes || '',
         clientPhotos: slot.booking?.clientPhotos,
+        clientPhotoUploadUrl: slot.booking?.clientPhotoUploadUrl ?? null,
+        clientPhotoUploadExpiresAt: slot.booking?.clientPhotoUploadExpiresAt ?? null,
         invoice: slot.booking?.invoice || null,
         completedAt: (slot.booking as { completedAt?: string | null } | null)?.completedAt ?? null,
       });
@@ -610,7 +617,7 @@ export default function CalendarPage() {
     setShowChangeServiceModal(true);
   };
 
-  const handleChangeServiceConfirm = async (service: { type: string; location?: string }) => {
+  const handleChangeServiceConfirm = async (service: { type: string; location?: string; chosenServices?: string[] }) => {
     if (!selectedBooking?.id) return;
     setChangeServiceLoading(true);
     try {
@@ -807,6 +814,8 @@ export default function CalendarPage() {
           paymentStatus: b.paymentStatus ?? prev.paymentStatus,
           adminNotes: freshAdminNotes,
           completedAt: b.completedAt ?? prev.completedAt,
+          clientPhotoUploadUrl: b.clientPhotoUploadUrl ?? prev.clientPhotoUploadUrl,
+          clientPhotoUploadExpiresAt: b.clientPhotoUploadExpiresAt ?? prev.clientPhotoUploadExpiresAt,
         } : null);
       })
       .catch(() => {});
@@ -1021,6 +1030,13 @@ export default function CalendarPage() {
         )}
       </div>
 
+      {/* Slots Overview Table - full width, independent nail tech filter */}
+      <SlotsOverviewTable
+        currentMonth={currentMonth}
+        showNailTechFilter={userRole.canManageAllTechs && !nailTechsLoading}
+        onSlotClick={(slot, slotTimes) => handleSlotClick(slot as Slot, slotTimes)}
+      />
+
       {/* Booking Details Modal */}
       <BookingDetailsModal
         show={showModal}
@@ -1050,6 +1066,9 @@ export default function CalendarPage() {
         isVerifyingPaymentProof={isVerifyingPaymentProof}
         onManualConfirmPayment={handleManualConfirmPayment}
         isManualConfirming={isManualConfirming}
+        onLinkGenerated={(url, expiresAt) => {
+          setSelectedBooking((prev) => prev ? { ...prev, clientPhotoUploadUrl: url, clientPhotoUploadExpiresAt: expiresAt } : prev);
+        }}
       />
 
       <RescheduleSlotModal
@@ -1070,6 +1089,7 @@ export default function CalendarPage() {
         }}
         currentService={selectedBooking?.service}
         currentServiceLocation={selectedBooking?.serviceLocation}
+        currentChosenServices={selectedBooking?.chosenServices}
         currentSlotCount={selectedBooking?.slotCount ?? 1}
         onConfirm={handleChangeServiceConfirm}
         isLoading={changeServiceLoading}

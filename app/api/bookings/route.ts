@@ -396,6 +396,8 @@ export async function GET(request: Request) {
           clientNotes: booking.clientNotes || '',
           adminNotes: booking.adminNotes || '',
           clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
+          clientPhotoUploadUrl: booking.clientPhotoUploadUrl || null,
+          clientPhotoUploadExpiresAt: booking.clientPhotoUploadExpiresAt ? (booking.clientPhotoUploadExpiresAt instanceof Date ? booking.clientPhotoUploadExpiresAt.toISOString() : String(booking.clientPhotoUploadExpiresAt)) : null,
           createdAt: booking.createdAt.toISOString(),
           updatedAt: booking.updatedAt.toISOString(),
           invoiceTotal,

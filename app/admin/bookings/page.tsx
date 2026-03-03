@@ -68,6 +68,8 @@ interface Booking {
   completedAt?: string | null;
   slotType?: 'regular' | 'with_squeeze_fee' | null;
   pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number; discountAmount?: number };
+  clientPhotoUploadUrl?: string | null;
+  clientPhotoUploadExpiresAt?: string | null;
 }
 
 export default function BookingsPage() {
@@ -112,6 +114,8 @@ export default function BookingsPage() {
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     completedAt?: string | null;
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number; discountAmount?: number };
+    clientPhotoUploadUrl?: string | null;
+    clientPhotoUploadExpiresAt?: string | null;
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [isManualConfirming, setIsManualConfirming] = useState(false);
@@ -174,6 +178,8 @@ export default function BookingsPage() {
       completedAt: booking.completedAt ?? null,
       slotType: booking.slotType ?? null,
       pricing: booking.pricing,
+      clientPhotoUploadUrl: booking.clientPhotoUploadUrl ?? null,
+      clientPhotoUploadExpiresAt: booking.clientPhotoUploadExpiresAt ?? null,
     };
   }, []);
 
@@ -263,6 +269,8 @@ export default function BookingsPage() {
           slotType: booking.slotType ?? null,
           completedAt: booking.completedAt ?? null,
           pricing: booking.pricing,
+          clientPhotoUploadUrl: booking.clientPhotoUploadUrl ?? null,
+          clientPhotoUploadExpiresAt: booking.clientPhotoUploadExpiresAt ?? null,
         };
       });
       setBookings(rows);
@@ -327,6 +335,8 @@ export default function BookingsPage() {
           adminNotes: freshAdminNotes,
           completedAt: b.completedAt ?? prev.completedAt,
           chosenServices: b.service?.chosenServices ?? prev.chosenServices,
+          clientPhotoUploadUrl: b.clientPhotoUploadUrl ?? prev.clientPhotoUploadUrl,
+          clientPhotoUploadExpiresAt: b.clientPhotoUploadExpiresAt ?? prev.clientPhotoUploadExpiresAt,
         } : null);
       })
       .catch(() => {});
@@ -522,7 +532,7 @@ export default function BookingsPage() {
     setShowChangeServiceModal(true);
   };
 
-  const handleChangeServiceConfirm = async (service: { type: string; location?: string }) => {
+  const handleChangeServiceConfirm = async (service: { type: string; location?: string; chosenServices?: string[] }) => {
     if (!selectedBooking?.id) return;
     setChangeServiceLoading(true);
     try {
@@ -877,6 +887,8 @@ export default function BookingsPage() {
       invoice: item.invoice,
       completedAt: item.completedAt,
       pricing: item.pricing,
+      clientPhotoUploadUrl: item.clientPhotoUploadUrl ?? null,
+      clientPhotoUploadExpiresAt: item.clientPhotoUploadExpiresAt ?? null,
     });
     setAdminNotesDraft(item.adminNotes || '');
     setShowModal(true);
@@ -1360,6 +1372,9 @@ export default function BookingsPage() {
         isVerifyingPaymentProof={isVerifyingPaymentProof}
         onManualConfirmPayment={handleManualConfirmPayment}
         isManualConfirming={isManualConfirming}
+        onLinkGenerated={(url, expiresAt) => {
+          setSelectedBooking((prev) => prev ? { ...prev, clientPhotoUploadUrl: url, clientPhotoUploadExpiresAt: expiresAt } : prev);
+        }}
       />
 
       <RescheduleSlotModal
@@ -1380,6 +1395,7 @@ export default function BookingsPage() {
         }}
         currentService={selectedBooking?.service}
         currentServiceLocation={selectedBooking?.serviceLocation}
+        currentChosenServices={selectedBooking?.chosenServices}
         currentSlotCount={selectedBooking?.slotCount ?? 1}
         onConfirm={handleChangeServiceConfirm}
         isLoading={changeServiceLoading}

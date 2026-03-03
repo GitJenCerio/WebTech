@@ -272,8 +272,8 @@
 }
 .admin-date-picker-popover,
 .admin-date-picker-popover * {
-  --rdp-accent-color: #1a1a1a;
-  --rdp-accent-background-color: #1a1a1a;
+  --rdp-accent-color: #374151;
+  --rdp-accent-background-color: #e5e7eb;
 }
 .admin-date-picker-popover .rdp-root {
   background: #ffffff !important;
@@ -281,17 +281,17 @@
 }
 .admin-dashboard .rdp-root,
 .admin-date-picker-popover .rdp-root {
-  --rdp-accent-color: #1a1a1a;
-  --rdp-accent-background-color: #1a1a1a;
+  --rdp-accent-color: #374151;
+  --rdp-accent-background-color: #e5e7eb;
   --rdp-day_button-border-radius: 16px;
   --rdp-day_button-height: 40px;
   --rdp-day_button-width: 40px;
-  --rdp-range_start-background: #1a1a1a;
-  --rdp-range_end-background: #1a1a1a;
-  --rdp-range_start-color: #ffffff;
-  --rdp-range_end-color: #ffffff;
-  --rdp-range_start-date-background-color: #1a1a1a;
-  --rdp-range_end-date-background-color: #1a1a1a;
+  --rdp-range_start-background: #e5e7eb;
+  --rdp-range_end-background: #e5e7eb;
+  --rdp-range_start-color: #374151;
+  --rdp-range_end-color: #374151;
+  --rdp-range_start-date-background-color: #e5e7eb;
+  --rdp-range_end-date-background-color: #e5e7eb;
   --rdp-range_middle-background-color: #f5f5f5;
   --rdp-range_middle-color: #1a1a1a;
   --rdp-today-color: #1a1a1a;
@@ -308,27 +308,27 @@
 .admin-date-picker-popover .rdp-range_start,
 .admin-dashboard .rdp-range_end,
 .admin-date-picker-popover .rdp-range_end {
-  background-color: #1a1a1a !important;
-  color: #ffffff !important;
+  background-color: #e5e7eb !important;
+  color: #374151 !important;
   border-radius: 16px !important;
 }
 
-/* Ensure selected/range day buttons have white text */
+/* Ensure selected/range day buttons have dark text on light gray */
 .admin-dashboard .rdp-selected .rdp-day_button,
 .admin-date-picker-popover .rdp-selected .rdp-day_button,
 .admin-dashboard .rdp-range_start .rdp-day_button,
 .admin-date-picker-popover .rdp-range_start .rdp-day_button,
 .admin-dashboard .rdp-range_end .rdp-day_button,
 .admin-date-picker-popover .rdp-range_end .rdp-day_button {
-  color: #ffffff !important;
+  color: #374151 !important;
 }
 
-/* Selected date number must be white on dark background */
+/* Selected date number - dark text on light gray background */
 .admin-date-picker-popover .rdp-selected,
 .admin-date-picker-popover .rdp-selected .rdp-day_button,
 .admin-dashboard .rdp-selected,
 .admin-dashboard .rdp-selected .rdp-day_button {
-  color: #ffffff !important;
+  color: #374151 !important;
 }
 
 /* Ensure date picker caption (month/year), weekday headers, and day numbers are visible */

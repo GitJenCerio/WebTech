@@ -26,10 +26,13 @@ import {
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import { formatTime12Hour } from '@/lib/utils';
 import { normalizeSlotTime } from '@/lib/constants/slots';
+import { CHOSEN_SERVICE_LABELS } from '@/lib/serviceLabels';
 import { getRequiredSlotCountForService } from '@/lib/serviceSlotCount';
 import type { ServiceType } from '@/lib/types';
 
 const BOOKED_STATUSES = ['pending', 'confirmed'] as const;
+
+const CHOSEN_SERVICE_OPTIONS = Object.entries(CHOSEN_SERVICE_LABELS).map(([value, label]) => ({ value, label }));
 
 const SERVICE_TYPES: ServiceType[] = [
   'Manicure',
@@ -109,6 +112,7 @@ export default function AddBookingModal({
   const [selectedSlotId, setSelectedSlotId] = useState('');
   const [serviceType, setServiceType] = useState<ServiceType>('Manicure');
   const [location, setLocation] = useState<'homebased_studio' | 'home_service'>('homebased_studio');
+  const [chosenServices, setChosenServices] = useState<string[]>([]);
   const [clientNotes, setClientNotes] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
 
@@ -176,6 +180,7 @@ export default function AddBookingModal({
       setSelectedSlotId('');
       setServiceType('Manicure');
       setLocation('homebased_studio');
+      setChosenServices([]);
       setClientNotes('');
       setAdminNotes('');
       setCreateNewCustomer(false);
@@ -265,6 +270,7 @@ export default function AddBookingModal({
           type: serviceType,
           location,
           clientType: createNewCustomer ? 'new' : 'repeat',
+          chosenServices: chosenServices.length > 0 ? chosenServices : undefined,
         },
         clientNotes: clientNotes.trim() || undefined,
         adminNotes: adminNotes.trim() || undefined,
@@ -407,6 +413,30 @@ export default function AddBookingModal({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs text-gray-500">Specific / Add-ons</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {CHOSEN_SERVICE_OPTIONS.map(({ value, label }) => (
+                  <label
+                    key={value}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e5e5e5] bg-white cursor-pointer hover:border-[#1a1a1a]/30 transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={chosenServices.includes(value)}
+                      onChange={() => {
+                        setChosenServices((prev) =>
+                          prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
+                        );
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm text-[#1a1a1a]">{label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, Phone, AtSign, Sparkles, CreditCard, User } from 'lucide-react';
+import { Calendar, MapPin, Phone, AtSign, Sparkles, CreditCard, User, Link2 } from 'lucide-react';
+import { toast } from 'sonner';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
 import {
   Dialog,
@@ -8,6 +9,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/Dialog';
+import { ImageViewModal } from '@/components/ui/ImageViewModal';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -61,6 +64,8 @@ interface BookingDetailsModalProps {
       inspiration?: Array<{ url?: string }>;
       currentState?: Array<{ url?: string }>;
     };
+    clientPhotoUploadUrl?: string | null;
+    clientPhotoUploadExpiresAt?: string | null;
   } | null;
   onMarkComplete?: () => void;
   onCancel?: () => void;
@@ -75,6 +80,7 @@ interface BookingDetailsModalProps {
   onAdminNotesChange?: (value: string) => void;
   onSaveNotes?: () => void;
   adminNotesDraft?: string;
+  onLinkGenerated?: (url: string, expiresAt: string) => void;
 }
 
 export default function BookingDetailsModal({
@@ -94,9 +100,12 @@ export default function BookingDetailsModal({
   onAdminNotesChange,
   onSaveNotes,
   adminNotesDraft = '',
+  onLinkGenerated,
 }: BookingDetailsModalProps) {
   const [showManualConfirmDialog, setShowManualConfirmDialog] = useState(false);
   const [manualAmount, setManualAmount] = useState<number>(0);
+  const [generatingLink, setGeneratingLink] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   if (!booking) return null;
 
@@ -136,13 +145,10 @@ export default function BookingDetailsModal({
     <>
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
       <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[85vh] flex flex-col overflow-hidden p-0">
-        <div className="flex-none shrink-0 px-4 pt-4 pb-1 bg-[#f7f7f7] rounded-t-[24px]">
-          <DialogHeader className="p-0">
-            <DialogTitle>Booking Details</DialogTitle>
-          </DialogHeader>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
+        <VisuallyHidden.Root>
+          <DialogTitle>Booking Details</DialogTitle>
+        </VisuallyHidden.Root>
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-10 pr-12 pb-3 space-y-3">
           <div className="p-3 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm relative sm:p-3">
             <div className="flex justify-between items-start gap-3 mb-2">
               <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-gray-500">BOOKING</span>
@@ -222,35 +228,101 @@ export default function BookingDetailsModal({
                   style={{ maxHeight: '220px', objectFit: 'contain', background: '#f8f9fa' }}
                 />
               </div>
-              <a
-                href={booking.paymentProofUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-gray-600 hover:text-[#212529]"
+              <button
+                type="button"
+                onClick={() => setImagePreviewUrl(booking.paymentProofUrl!)}
+                className="text-sm text-gray-600 hover:text-[#212529] bg-transparent border-none cursor-pointer p-0 underline hover:no-underline"
               >
                 Open full image
-              </a>
+              </button>
             </div>
           )}
 
+          <div>
+            <label className="text-sm font-semibold mb-2 block">Client Photos</label>
+            {booking.id && (
+              <div className="mb-3">
+                {(() => {
+                  const hasValidLink = Boolean(
+                    booking.clientPhotoUploadUrl &&
+                    booking.clientPhotoUploadExpiresAt &&
+                    new Date(booking.clientPhotoUploadExpiresAt) > new Date()
+                  );
+                  if (hasValidLink) {
+                    return (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <p className="text-xs text-gray-600 mb-2">Client upload link (valid until {format(new Date(booking.clientPhotoUploadExpiresAt!), 'MMM d, yyyy')})</p>
+                        <div className="flex gap-2">
+                          <Input
+                            readOnly
+                            value={booking.clientPhotoUploadUrl!}
+                            className="text-sm font-mono"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(booking.clientPhotoUploadUrl!);
+                                toast.success('Link copied to clipboard');
+                              } catch {
+                                toast.error('Failed to copy');
+                              }
+                            }}
+                          >
+                            Copy
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          if (!booking?.id) return;
+                          setGeneratingLink(true);
+                          try {
+                            const res = await fetch(`/api/bookings/${booking.id}/generate-photo-upload-link`, { method: 'POST' });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Failed to generate link');
+                            onLinkGenerated?.(data.url, data.expiresAt);
+                            await navigator.clipboard.writeText(data.url);
+                            toast.success('Upload link generated and copied. It will show here for easy resending.');
+                          } catch (e: unknown) {
+                            toast.error(e instanceof Error ? e.message : 'Failed to generate link');
+                          } finally {
+                            setGeneratingLink(false);
+                          }
+                        }}
+                        disabled={generatingLink}
+                      >
+                        <Link2 size={14} className="mr-2" />
+                        {generatingLink ? 'Generating...' : 'Generate upload link for client'}
+                      </Button>
+                      <p className="text-xs text-gray-500 mt-1">Link valid 14 days. Client can upload inspo & current nails. Once generated, it stays here for resending.</p>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
           {((booking.clientPhotos?.currentState?.length ?? 0) > 0 || (booking.clientPhotos?.inspiration?.length ?? 0) > 0) && (
-            <div>
-              <label className="text-sm font-semibold mb-2 block">Client Photos</label>
               <div className="space-y-3">
                 {(booking.clientPhotos?.currentState?.length ?? 0) > 0 && (
                   <div>
                     <p className="text-xs text-gray-500 mb-1.5">Current nails</p>
                     <div className="flex flex-wrap gap-2">
                       {(booking.clientPhotos?.currentState ?? []).filter(p => p.url).map((p, i) => (
-                        <a
+                        <button
                           key={i}
-                          href={p.url!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-400 transition-colors"
+                          type="button"
+                          onClick={() => setImagePreviewUrl(p.url!)}
+                          className="inline-block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-400 transition-colors bg-transparent cursor-pointer p-0"
                         >
                           <img src={p.url!} alt={`Current nails ${i + 1}`} className="h-20 w-20 object-cover" />
-                        </a>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -260,22 +332,21 @@ export default function BookingDetailsModal({
                     <p className="text-xs text-gray-500 mb-1.5">Nail inspo</p>
                     <div className="flex flex-wrap gap-2">
                       {(booking.clientPhotos?.inspiration ?? []).filter(p => p.url).map((p, i) => (
-                        <a
+                        <button
                           key={i}
-                          href={p.url!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-400 transition-colors"
+                          type="button"
+                          onClick={() => setImagePreviewUrl(p.url!)}
+                          className="inline-block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-400 transition-colors bg-transparent cursor-pointer p-0"
                         >
                           <img src={p.url!} alt={`Nail inspo ${i + 1}`} className="h-20 w-20 object-cover" />
-                        </a>
+                        </button>
                       ))}
                     </div>
                   </div>
                 )}
               </div>
-            </div>
           )}
+          </div>
 
           {booking.notes && (
             <div>
@@ -407,6 +478,13 @@ export default function BookingDetailsModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <ImageViewModal
+      src={imagePreviewUrl ?? ''}
+      alt="Image"
+      open={!!imagePreviewUrl}
+      onOpenChange={(open) => !open && setImagePreviewUrl(null)}
+    />
 
     <Dialog open={showManualConfirmDialog} onOpenChange={setShowManualConfirmDialog}>
       <DialogContent className="sm:max-w-md">
