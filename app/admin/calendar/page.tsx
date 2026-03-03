@@ -504,6 +504,8 @@ export default function CalendarPage() {
         paymentProofUrl: slot.booking.payment?.paymentProofUrl,
         adminNotes: slot.booking?.adminNotes || '',
         clientPhotos: slot.booking?.clientPhotos,
+        clientPhotoUploadUrl: slot.booking?.clientPhotoUploadUrl ?? null,
+        clientPhotoUploadExpiresAt: slot.booking?.clientPhotoUploadExpiresAt ?? null,
         invoice: slot.booking?.invoice || null,
         completedAt: (slot.booking as { completedAt?: string | null } | null)?.completedAt ?? null,
       });

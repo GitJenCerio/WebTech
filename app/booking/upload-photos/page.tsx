@@ -42,6 +42,7 @@ function UploadSection({
   token,
   bookingId,
   onSuccess,
+  disabled = false,
 }: {
   label: string;
   description: string;
@@ -51,17 +52,19 @@ function UploadSection({
   token: string;
   bookingId: string;
   onSuccess: () => void;
+  disabled?: boolean;
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const slotsLeft = Math.max(0, maxCount - currentCount);
   const isFull = slotsLeft <= 0;
+  const canUpload = !disabled && !isFull;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    if (isFull) {
-      setError(`Maximum ${maxCount} photos allowed.`);
+    if (!canUpload) {
+      setError(disabled ? 'Please select and save at least one service first.' : `Maximum ${maxCount} photos allowed.`);
       return;
     }
 
@@ -112,14 +115,14 @@ function UploadSection({
         {currentCount} / {maxCount} uploaded. {isFull ? 'Maximum reached.' : `You can add ${slotsLeft} more.`}
       </p>
       {!isFull && (
-        <label className="block">
+        <label className={`block ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
           <span className="sr-only">Choose {label.toLowerCase()} images</span>
           <input
             type="file"
             accept={ALLOWED_TYPES.join(',')}
             multiple
             onChange={handleFileChange}
-            disabled={uploading}
+            disabled={uploading || disabled}
             className="block w-full rounded-lg border-2 border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-slate-800 file:font-medium disabled:opacity-50"
           />
         </label>
@@ -156,7 +159,9 @@ function UploadPhotosContent() {
         if (data.error) setError(data.error);
         else {
           setBooking(data);
-          setChosenServices(Array.isArray(data.chosenServices) ? data.chosenServices : []);
+          const services = Array.isArray(data.chosenServices) ? data.chosenServices : [];
+          setChosenServices(services);
+          if (services.length > 0) setServicesSaved(true);
         }
       })
       .catch(() => setError('Could not load booking'))
@@ -223,8 +228,12 @@ function UploadPhotosContent() {
       </div>
 
       <div className="mb-8">
-        <h3 className="text-lg font-semibold text-slate-900 mb-1">Specific services / Add-ons</h3>
-        <p className="text-sm text-slate-600 mb-3">Select the services you need for your appointment.</p>
+        <h3 className="text-lg font-semibold text-slate-900 mb-1">
+          Specific services / Add-ons <span className="text-red-600">*</span>
+        </h3>
+        <p className="text-sm text-slate-600 mb-3">
+          Select at least one service you need for your appointment. (Required)
+        </p>
         <div className="flex flex-wrap gap-2 mb-3">
           {CHOSEN_SERVICE_OPTIONS.map(({ value, label }) => (
             <label
@@ -251,7 +260,12 @@ function UploadPhotosContent() {
           type="button"
           onClick={async () => {
             if (!token) return;
+            if (chosenServices.length === 0) {
+              setServicesError('Please select at least one service.');
+              return;
+            }
             setSavingServices(true);
+            setServicesError(null);
             try {
               const res = await fetch('/api/bookings/upload-photos', {
                 method: 'PATCH',
@@ -282,6 +296,12 @@ function UploadPhotosContent() {
         )}
       </div>
 
+      {!servicesSaved && chosenServices.length === 0 && (
+        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-6">
+          Please select and save at least one service above before uploading photos.
+        </p>
+      )}
+
       <UploadSection
         label="Inspiration nails"
         description="Photos of nail designs you like (reference images)."
@@ -291,6 +311,7 @@ function UploadPhotosContent() {
         token={token}
         bookingId={booking.bookingId}
         onSuccess={() => fetchBooking(false)}
+        disabled={!servicesSaved || chosenServices.length === 0}
       />
 
       <UploadSection
@@ -302,14 +323,26 @@ function UploadPhotosContent() {
         token={token}
         bookingId={booking.bookingId}
         onSuccess={() => fetchBooking(false)}
+        disabled={!servicesSaved || chosenServices.length === 0}
       />
 
       <p className="text-sm text-slate-600 mb-4">
         Accepted formats: JPEG, PNG, WebP, HEIC. Max 10MB per image. Up to 3 photos per section.
       </p>
 
-      <Link href="/booking" className="inline-block text-slate-700 hover:text-black text-sm underline">
-        Back to booking
+      {(booking.inspirationCount > 0 || booking.currentStateCount > 0) && (
+        <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 px-4 py-4 mb-6">
+          <p className="text-base font-semibold text-emerald-800">
+            Thank you! Your details were uploaded successfully.
+          </p>
+          <p className="text-sm text-emerald-700 mt-1">
+            We&apos;ll use these to prepare for your appointment. See you soon!
+          </p>
+        </div>
+      )}
+
+      <Link href="/" className="inline-block text-slate-700 hover:text-black text-sm underline">
+        Return to home
       </Link>
     </Shell>
   );

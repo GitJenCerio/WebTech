@@ -166,6 +166,8 @@ export async function GET(request: Request) {
             pricing: booking.pricing,
             payment: booking.payment,
             clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
+            clientPhotoUploadUrl: booking.clientPhotoUploadUrl || null,
+            clientPhotoUploadExpiresAt: booking.clientPhotoUploadExpiresAt || null,
             invoice: booking.invoice || null,
             completedAt: booking.completedAt || null,
           });

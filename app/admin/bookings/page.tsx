@@ -68,6 +68,8 @@ interface Booking {
   completedAt?: string | null;
   slotType?: 'regular' | 'with_squeeze_fee' | null;
   pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number; discountAmount?: number };
+  clientPhotoUploadUrl?: string | null;
+  clientPhotoUploadExpiresAt?: string | null;
 }
 
 export default function BookingsPage() {
@@ -176,6 +178,8 @@ export default function BookingsPage() {
       completedAt: booking.completedAt ?? null,
       slotType: booking.slotType ?? null,
       pricing: booking.pricing,
+      clientPhotoUploadUrl: booking.clientPhotoUploadUrl ?? null,
+      clientPhotoUploadExpiresAt: booking.clientPhotoUploadExpiresAt ?? null,
     };
   }, []);
 
@@ -265,6 +269,8 @@ export default function BookingsPage() {
           slotType: booking.slotType ?? null,
           completedAt: booking.completedAt ?? null,
           pricing: booking.pricing,
+          clientPhotoUploadUrl: booking.clientPhotoUploadUrl ?? null,
+          clientPhotoUploadExpiresAt: booking.clientPhotoUploadExpiresAt ?? null,
         };
       });
       setBookings(rows);
@@ -881,6 +887,8 @@ export default function BookingsPage() {
       invoice: item.invoice,
       completedAt: item.completedAt,
       pricing: item.pricing,
+      clientPhotoUploadUrl: item.clientPhotoUploadUrl ?? null,
+      clientPhotoUploadExpiresAt: item.clientPhotoUploadExpiresAt ?? null,
     });
     setAdminNotesDraft(item.adminNotes || '');
     setShowModal(true);

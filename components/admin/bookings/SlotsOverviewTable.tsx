@@ -94,6 +94,8 @@ function mapApiSlotToViewSlot(slot: any, nailTechs: { id: string; name: string }
           clientNotes: slot.booking.clientNotes,
           adminNotes: slot.booking.adminNotes,
           clientPhotos: slot.booking.clientPhotos,
+          clientPhotoUploadUrl: slot.booking.clientPhotoUploadUrl,
+          clientPhotoUploadExpiresAt: slot.booking.clientPhotoUploadExpiresAt,
           invoice: slot.booking.invoice,
           completedAt: slot.booking.completedAt,
         }
