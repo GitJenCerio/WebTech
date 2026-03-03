@@ -7,6 +7,7 @@ import { getChosenServicesDisplay, getSlotServiceDisplay } from '@/lib/serviceLa
 import { formatTime12Hour } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { ImageViewModal } from '@/components/ui/ImageViewModal';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 
 interface Slot {
@@ -110,23 +111,33 @@ function serviceLocationLabel(loc?: 'homebased_studio' | 'home_service') {
 }
 
 const PhotoLinksCell = ({ urls }: { urls: Array<{ url?: string }> | undefined }) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const list = urls?.filter((u) => u?.url) ?? [];
   if (list.length === 0) return <span>—</span>;
   return (
-    <span className="flex flex-wrap gap-x-2 gap-y-0.5">
-      {list.map((item, i) => (
-        <a
-          key={i}
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="text-[#1a1a1a] underline hover:no-underline font-medium"
-        >
-          {list.length > 1 ? `View ${i + 1}` : 'View'}
-        </a>
-      ))}
-    </span>
+    <>
+      <span className="flex flex-wrap gap-x-2 gap-y-0.5">
+        {list.map((item, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (item.url) setPreviewUrl(item.url);
+            }}
+            className="text-[#1a1a1a] underline hover:no-underline font-medium bg-transparent border-none cursor-pointer p-0"
+          >
+            {list.length > 1 ? `View ${i + 1}` : 'View'}
+          </button>
+        ))}
+      </span>
+      <ImageViewModal
+        src={previewUrl ?? ''}
+        alt="Client photo"
+        open={!!previewUrl}
+        onOpenChange={(open) => !open && setPreviewUrl(null)}
+      />
+    </>
   );
 };
 

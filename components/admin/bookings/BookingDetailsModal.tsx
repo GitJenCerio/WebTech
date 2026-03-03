@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/Dialog';
+import { ImageViewModal } from '@/components/ui/ImageViewModal';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -104,6 +105,7 @@ export default function BookingDetailsModal({
   const [showManualConfirmDialog, setShowManualConfirmDialog] = useState(false);
   const [manualAmount, setManualAmount] = useState<number>(0);
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   if (!booking) return null;
 
@@ -226,14 +228,13 @@ export default function BookingDetailsModal({
                   style={{ maxHeight: '220px', objectFit: 'contain', background: '#f8f9fa' }}
                 />
               </div>
-              <a
-                href={booking.paymentProofUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-gray-600 hover:text-[#212529]"
+              <button
+                type="button"
+                onClick={() => setImagePreviewUrl(booking.paymentProofUrl!)}
+                className="text-sm text-gray-600 hover:text-[#212529] bg-transparent border-none cursor-pointer p-0 underline hover:no-underline"
               >
                 Open full image
-              </a>
+              </button>
             </div>
           )}
 
@@ -314,15 +315,14 @@ export default function BookingDetailsModal({
                     <p className="text-xs text-gray-500 mb-1.5">Current nails</p>
                     <div className="flex flex-wrap gap-2">
                       {(booking.clientPhotos?.currentState ?? []).filter(p => p.url).map((p, i) => (
-                        <a
+                        <button
                           key={i}
-                          href={p.url!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-400 transition-colors"
+                          type="button"
+                          onClick={() => setImagePreviewUrl(p.url!)}
+                          className="inline-block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-400 transition-colors bg-transparent cursor-pointer p-0"
                         >
                           <img src={p.url!} alt={`Current nails ${i + 1}`} className="h-20 w-20 object-cover" />
-                        </a>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -332,15 +332,14 @@ export default function BookingDetailsModal({
                     <p className="text-xs text-gray-500 mb-1.5">Nail inspo</p>
                     <div className="flex flex-wrap gap-2">
                       {(booking.clientPhotos?.inspiration ?? []).filter(p => p.url).map((p, i) => (
-                        <a
+                        <button
                           key={i}
-                          href={p.url!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-400 transition-colors"
+                          type="button"
+                          onClick={() => setImagePreviewUrl(p.url!)}
+                          className="inline-block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-400 transition-colors bg-transparent cursor-pointer p-0"
                         >
                           <img src={p.url!} alt={`Nail inspo ${i + 1}`} className="h-20 w-20 object-cover" />
-                        </a>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -479,6 +478,13 @@ export default function BookingDetailsModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <ImageViewModal
+      src={imagePreviewUrl ?? ''}
+      alt="Image"
+      open={!!imagePreviewUrl}
+      onOpenChange={(open) => !open && setImagePreviewUrl(null)}
+    />
 
     <Dialog open={showManualConfirmDialog} onOpenChange={setShowManualConfirmDialog}>
       <DialogContent className="sm:max-w-md">
