@@ -19,8 +19,10 @@ import {
   SelectValue,
 } from '@/components/ui/Select';
 import { getRequiredSlotCountForService } from '@/lib/serviceSlotCount';
-import { mapServiceToStandardDisplay } from '@/lib/serviceLabels';
+import { mapServiceToStandardDisplay, CHOSEN_SERVICE_LABELS } from '@/lib/serviceLabels';
 import type { ServiceType } from '@/lib/types';
+
+const CHOSEN_SERVICE_OPTIONS = Object.entries(CHOSEN_SERVICE_LABELS).map(([value, label]) => ({ value, label }));
 
 const SERVICE_TYPES: ServiceType[] = [
   'Manicure',
@@ -37,8 +39,9 @@ interface ChangeServiceModalProps {
   onOpenChange: (open: boolean) => void;
   currentService?: string;
   currentServiceLocation?: 'homebased_studio' | 'home_service';
+  currentChosenServices?: string[];
   currentSlotCount?: number;
-  onConfirm: (service: { type: string; location?: string }) => Promise<void>;
+  onConfirm: (service: { type: string; location?: string; chosenServices?: string[] }) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -47,18 +50,22 @@ export default function ChangeServiceModal({
   onOpenChange,
   currentService,
   currentServiceLocation = 'homebased_studio',
+  currentChosenServices = [],
   currentSlotCount = 1,
   onConfirm,
   isLoading = false,
 }: ChangeServiceModalProps) {
   const [selectedServiceType, setSelectedServiceType] = useState<string>(mapServiceToStandardDisplay(currentService));
+  const [chosenServices, setChosenServices] = useState<string[]>(currentChosenServices);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setSelectedServiceType(mapServiceToStandardDisplay(currentService));
+      setChosenServices(Array.isArray(currentChosenServices) ? currentChosenServices : []);
       setError(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentChosenServices excluded to avoid infinite loop (array ref changes every render)
   }, [open, currentService]);
 
   const requiredSlots = getRequiredSlotCountForService(selectedServiceType, currentServiceLocation);
@@ -68,7 +75,11 @@ export default function ChangeServiceModal({
     if (!canChange) return;
     setError(null);
     try {
-      await onConfirm({ type: selectedServiceType, location: currentServiceLocation });
+      await onConfirm({
+        type: selectedServiceType,
+        location: currentServiceLocation,
+        chosenServices: chosenServices.length > 0 ? chosenServices : undefined,
+      });
       onOpenChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update service');
@@ -104,6 +115,29 @@ export default function ChangeServiceModal({
                 This service requires {requiredSlots} slot(s). Use Reschedule to select more slots.
               </p>
             )}
+          </div>
+          <div>
+            <Label className="text-xs text-gray-500">Specific / Add-ons</Label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {CHOSEN_SERVICE_OPTIONS.map(({ value, label }) => (
+                <label
+                  key={value}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e5e5e5] bg-white cursor-pointer hover:border-[#1a1a1a]/30 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={chosenServices.includes(value)}
+                    onChange={() => {
+                      setChosenServices((prev) =>
+                        prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
+                      );
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm text-[#1a1a1a]">{label}</span>
+                </label>
+              ))}
+            </div>
           </div>
           {error && (
             <p className="text-sm text-red-600" role="alert">

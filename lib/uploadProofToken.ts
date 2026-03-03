@@ -20,6 +20,7 @@ export interface VerifyUploadProofResult {
 }
 
 const PHOTO_UPLOAD_VALID_HOURS = 2;
+const PHOTO_UPLOAD_LINK_VALID_DAYS = 14;
 
 /**
  * Create a short-lived token for adding client photos to a booking.
@@ -27,6 +28,19 @@ const PHOTO_UPLOAD_VALID_HOURS = 2;
  */
 export function createPhotoUploadToken(bookingId: string): string {
   const exp = Date.now() + PHOTO_UPLOAD_VALID_HOURS * 60 * 60 * 1000;
+  const payload = `photo|${bookingId}|${exp}`;
+  const sig = crypto.createHmac('sha256', SECRET).update(payload).digest('hex');
+  const token = Buffer.from(`${payload}|${sig}`).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return token;
+}
+
+/**
+ * Create a longer-lived token for the "upload nail photos" link.
+ * Admin can generate this link to send to clients who didn't upload inspo/current nails during booking.
+ * Valid for 14 days. Same format as createPhotoUploadToken, works with verifyPhotoUploadToken.
+ */
+export function createPhotoUploadLinkToken(bookingId: string): string {
+  const exp = Date.now() + PHOTO_UPLOAD_LINK_VALID_DAYS * 24 * 60 * 60 * 1000;
   const payload = `photo|${bookingId}|${exp}`;
   const sig = crypto.createHmac('sha256', SECRET).update(payload).digest('hex');
   const token = Buffer.from(`${payload}|${sig}`).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');

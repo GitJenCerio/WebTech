@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, Phone, AtSign, Sparkles, CreditCard, User } from 'lucide-react';
+import { Calendar, MapPin, Phone, AtSign, Sparkles, CreditCard, User, Link2 } from 'lucide-react';
+import { toast } from 'sonner';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
 import {
   Dialog,
@@ -62,6 +63,8 @@ interface BookingDetailsModalProps {
       inspiration?: Array<{ url?: string }>;
       currentState?: Array<{ url?: string }>;
     };
+    clientPhotoUploadUrl?: string | null;
+    clientPhotoUploadExpiresAt?: string | null;
   } | null;
   onMarkComplete?: () => void;
   onCancel?: () => void;
@@ -76,6 +79,7 @@ interface BookingDetailsModalProps {
   onAdminNotesChange?: (value: string) => void;
   onSaveNotes?: () => void;
   adminNotesDraft?: string;
+  onLinkGenerated?: (url: string, expiresAt: string) => void;
 }
 
 export default function BookingDetailsModal({
@@ -95,9 +99,11 @@ export default function BookingDetailsModal({
   onAdminNotesChange,
   onSaveNotes,
   adminNotesDraft = '',
+  onLinkGenerated,
 }: BookingDetailsModalProps) {
   const [showManualConfirmDialog, setShowManualConfirmDialog] = useState(false);
   const [manualAmount, setManualAmount] = useState<number>(0);
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   if (!booking) return null;
 
@@ -231,9 +237,77 @@ export default function BookingDetailsModal({
             </div>
           )}
 
+          <div>
+            <label className="text-sm font-semibold mb-2 block">Client Photos</label>
+            {booking.id && (
+              <div className="mb-3">
+                {(() => {
+                  const hasValidLink = Boolean(
+                    booking.clientPhotoUploadUrl &&
+                    booking.clientPhotoUploadExpiresAt &&
+                    new Date(booking.clientPhotoUploadExpiresAt) > new Date()
+                  );
+                  if (hasValidLink) {
+                    return (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <p className="text-xs text-gray-600 mb-2">Client upload link (valid until {format(new Date(booking.clientPhotoUploadExpiresAt!), 'MMM d, yyyy')})</p>
+                        <div className="flex gap-2">
+                          <Input
+                            readOnly
+                            value={booking.clientPhotoUploadUrl!}
+                            className="text-sm font-mono"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(booking.clientPhotoUploadUrl!);
+                                toast.success('Link copied to clipboard');
+                              } catch {
+                                toast.error('Failed to copy');
+                              }
+                            }}
+                          >
+                            Copy
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          if (!booking?.id) return;
+                          setGeneratingLink(true);
+                          try {
+                            const res = await fetch(`/api/bookings/${booking.id}/generate-photo-upload-link`, { method: 'POST' });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Failed to generate link');
+                            onLinkGenerated?.(data.url, data.expiresAt);
+                            await navigator.clipboard.writeText(data.url);
+                            toast.success('Upload link generated and copied. It will show here for easy resending.');
+                          } catch (e: unknown) {
+                            toast.error(e instanceof Error ? e.message : 'Failed to generate link');
+                          } finally {
+                            setGeneratingLink(false);
+                          }
+                        }}
+                        disabled={generatingLink}
+                      >
+                        <Link2 size={14} className="mr-2" />
+                        {generatingLink ? 'Generating...' : 'Generate upload link for client'}
+                      </Button>
+                      <p className="text-xs text-gray-500 mt-1">Link valid 14 days. Client can upload inspo & current nails. Once generated, it stays here for resending.</p>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
           {((booking.clientPhotos?.currentState?.length ?? 0) > 0 || (booking.clientPhotos?.inspiration?.length ?? 0) > 0) && (
-            <div>
-              <label className="text-sm font-semibold mb-2 block">Client Photos</label>
               <div className="space-y-3">
                 {(booking.clientPhotos?.currentState?.length ?? 0) > 0 && (
                   <div>
@@ -272,8 +346,8 @@ export default function BookingDetailsModal({
                   </div>
                 )}
               </div>
-            </div>
           )}
+          </div>
 
           {booking.notes && (
             <div>

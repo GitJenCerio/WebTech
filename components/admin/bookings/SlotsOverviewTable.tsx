@@ -228,7 +228,7 @@ export default function SlotsOverviewTable({ currentMonth, showNailTechFilter = 
               </thead>
               <tbody>
                 {slotsList.map(({ dateStr, time, slot }, idx) => {
-                  const dateTimeLabel = `${format(new Date(dateStr), 'MMM d, yyyy')} ${formatTime12Hour(time)}`;
+                  const dateTimeLabel = `${format(new Date(dateStr), 'EEEE, MMM d, yyyy')} ${formatTime12Hour(time)}`;
                   const isAvail = slot.status === 'available';
                   const isBooked = ['booked', 'confirmed', 'CONFIRMED', 'pending', 'PENDING_PAYMENT', 'completed', 'COMPLETED'].includes(slot.status);
                   const statusLabel = isAvail ? 'Available' : isBooked ? 'Booked' : slot.status;

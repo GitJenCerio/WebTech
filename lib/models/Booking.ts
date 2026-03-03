@@ -45,6 +45,8 @@ export interface IBooking extends Document {
   };
   completedAt: Date | null; // When appointment was completed (admin-only, settable once)
   confirmedAt?: Date | null; // When booking was confirmed
+  clientPhotoUploadUrl?: string; // Generated link for client to upload inspo/current nails
+  clientPhotoUploadExpiresAt?: Date | null; // Link expiry (14 days from generation)
   invoice?: {
     quotationId?: string;
     total?: number;
@@ -144,6 +146,8 @@ const BookingSchema = new Schema<IBooking>(
       default: null,
       index: true,
     },
+    clientPhotoUploadUrl: { type: String },
+    clientPhotoUploadExpiresAt: { type: Date, default: null },
     invoice: {
       quotationId: { type: String },
       total: { type: Number },

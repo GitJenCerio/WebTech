@@ -112,6 +112,8 @@ export default function BookingsPage() {
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     completedAt?: string | null;
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number; discountAmount?: number };
+    clientPhotoUploadUrl?: string | null;
+    clientPhotoUploadExpiresAt?: string | null;
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [isManualConfirming, setIsManualConfirming] = useState(false);
@@ -327,6 +329,8 @@ export default function BookingsPage() {
           adminNotes: freshAdminNotes,
           completedAt: b.completedAt ?? prev.completedAt,
           chosenServices: b.service?.chosenServices ?? prev.chosenServices,
+          clientPhotoUploadUrl: b.clientPhotoUploadUrl ?? prev.clientPhotoUploadUrl,
+          clientPhotoUploadExpiresAt: b.clientPhotoUploadExpiresAt ?? prev.clientPhotoUploadExpiresAt,
         } : null);
       })
       .catch(() => {});
@@ -522,7 +526,7 @@ export default function BookingsPage() {
     setShowChangeServiceModal(true);
   };
 
-  const handleChangeServiceConfirm = async (service: { type: string; location?: string }) => {
+  const handleChangeServiceConfirm = async (service: { type: string; location?: string; chosenServices?: string[] }) => {
     if (!selectedBooking?.id) return;
     setChangeServiceLoading(true);
     try {
@@ -1360,6 +1364,9 @@ export default function BookingsPage() {
         isVerifyingPaymentProof={isVerifyingPaymentProof}
         onManualConfirmPayment={handleManualConfirmPayment}
         isManualConfirming={isManualConfirming}
+        onLinkGenerated={(url, expiresAt) => {
+          setSelectedBooking((prev) => prev ? { ...prev, clientPhotoUploadUrl: url, clientPhotoUploadExpiresAt: expiresAt } : prev);
+        }}
       />
 
       <RescheduleSlotModal
@@ -1380,6 +1387,7 @@ export default function BookingsPage() {
         }}
         currentService={selectedBooking?.service}
         currentServiceLocation={selectedBooking?.serviceLocation}
+        currentChosenServices={selectedBooking?.chosenServices}
         currentSlotCount={selectedBooking?.slotCount ?? 1}
         onConfirm={handleChangeServiceConfirm}
         isLoading={changeServiceLoading}
