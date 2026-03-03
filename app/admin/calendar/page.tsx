@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import CalendarPanel from '@/components/admin/bookings/CalendarPanel';
 import SlotList from '@/components/admin/bookings/SlotList';
+import SlotsOverviewTable from '@/components/admin/bookings/SlotsOverviewTable';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
 import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
 import AddSlotModal from '@/components/admin/bookings/AddSlotModal';
@@ -462,23 +463,23 @@ export default function CalendarPage() {
     }
   };
 
-  const handleSlotClick = (slot: Slot) => {
+  const handleSlotClick = (slot: Slot, slotTimesOverride?: string[]) => {
     if (slot.booking?.id && slot.clientName) {
-      const bookingSlotTimes = slots
+      const bookingSlotTimes = slotTimesOverride ?? slots
         .filter((s) => s.booking?.id === slot.booking?.id)
         .map((s) => s.time)
         .filter(Boolean)
         .sort((a, b) => (a || '').localeCompare(b || '', undefined, { numeric: true }));
+      const displayDate = slot.date
+        ? new Date(slot.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : selectedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       setSelectedBooking({
         id: slot.booking.id,
         bookingCode: slot.booking.bookingCode,
         customerId: slot.booking.customerId,
+        nailTechId: slot.nailTechId,
         nailTechName: slot.nailTechId ? nailTechs.find((t) => t.id === slot.nailTechId)?.name : undefined,
-        date: selectedDate.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
+        date: displayDate,
         time: slot.time,
         slotTimes: bookingSlotTimes.length > 0 ? bookingSlotTimes : undefined,
         clientName: slot.clientName,
@@ -1020,6 +1021,13 @@ export default function CalendarPage() {
         </div>
         )}
       </div>
+
+      {/* Slots Overview Table - full width, independent nail tech filter */}
+      <SlotsOverviewTable
+        currentMonth={currentMonth}
+        showNailTechFilter={userRole.canManageAllTechs && !nailTechsLoading}
+        onSlotClick={(slot, slotTimes) => handleSlotClick(slot as Slot, slotTimes)}
+      />
 
       {/* Booking Details Modal */}
       <BookingDetailsModal

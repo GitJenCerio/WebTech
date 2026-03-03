@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/Dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -136,7 +137,9 @@ export default function BookingDetailsModal({
     <>
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
       <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[85vh] flex flex-col overflow-hidden p-0">
-        <DialogTitle className="sr-only">Booking Details</DialogTitle>
+        <VisuallyHidden.Root>
+          <DialogTitle>Booking Details</DialogTitle>
+        </VisuallyHidden.Root>
         <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-10 pr-12 pb-3 space-y-3">
           <div className="p-3 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm relative sm:p-3">
             <div className="flex justify-between items-start gap-3 mb-2">
