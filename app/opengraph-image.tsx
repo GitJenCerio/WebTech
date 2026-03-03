@@ -42,95 +42,75 @@ export default async function Image() {
     (
       <div
         style={{
-          width: '100%',
-          height: '100%',
+          width: 1200,
+          height: 630,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          padding: 0,
+          margin: 0,
           position: 'relative',
           overflow: 'hidden',
+          background: 'linear-gradient(135deg, #f5f3ef 0%, #ebe8e3 100%)',
         }}
       >
-        {/* Background: hero image or gradient */}
         {heroBgSrc ? (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-            }}
-          >
+          <div style={{ position: 'absolute', top: 0, left: 0, width: 1200, height: 630, display: 'flex' }}>
             <img
               src={heroBgSrc}
               alt=""
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
+              style={{ width: 1200, height: 630, objectFit: 'cover' }}
               width={1200}
               height={630}
             />
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              background: 'rgba(255, 255, 255, 0.55)',
-            }}
-          />
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: 1200,
+                height: 630,
+                display: 'flex',
+                background: 'rgba(255, 255, 255, 0.6)',
+              }}
+            />
           </div>
-        ) : (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              background: 'linear-gradient(135deg, #f5f3ef 0%, #ebe8e3 100%)',
-            }}
-          />
-        )}
-
-        {/* Center card - matches hero banner frame */}
+        ) : null}
         <div
           style={{
             position: 'relative',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            padding: '48px 64px',
-            background: 'rgba(255, 255, 255, 0.65)',
-            border: '4px solid white',
-            borderRadius: 4,
-            boxShadow: '0 0 0 3px #000000',
-            maxWidth: 880,
+            justifyContent: 'space-around',
+            padding: 0,
+            margin: 0,
+            width: '100%',
+            height: '100%',
           }}
         >
-          {/* Logo in header position */}
+          {/* Logo - bigger */}
           {logoSrc ? (
             <img
               src={logoSrc}
               alt=""
               style={{
-                width: 560,
-                height: 160,
+                width: 960,
+                height: 280,
                 objectFit: 'contain',
-                marginBottom: 20,
               }}
-              width={560}
-              height={160}
+              width={960}
+              height={280}
             />
           ) : (
             <div
               style={{
                 display: 'flex',
-                fontSize: 56,
+                fontSize: 80,
                 fontWeight: 600,
                 color: '#000000',
                 fontFamily: 'Georgia, serif',
-                marginBottom: 20,
               }}
             >
               glammednailsbyjhen
@@ -140,11 +120,10 @@ export default async function Image() {
           <div
             style={{
               display: 'flex',
-              fontSize: 20,
+              fontSize: 32,
               color: '#1a1a1a',
               fontFamily: 'system-ui, sans-serif',
               textAlign: 'center',
-              marginBottom: 28,
             }}
           >
             Precision dry technique. Clean cuticles. Long-lasting results.
@@ -153,15 +132,15 @@ export default async function Image() {
           <div
             style={{
               display: 'flex',
-              padding: '14px 32px',
+              padding: '20px 48px',
               background: '#000000',
               color: '#ffffff',
               fontFamily: 'system-ui, sans-serif',
               fontWeight: 600,
-              fontSize: 20,
-              border: '2px solid white',
-              boxShadow: '0 0 0 2px #000000',
-              borderRadius: 4,
+              fontSize: 32,
+              border: '3px solid white',
+              boxShadow: '0 0 0 3px #000000',
+              borderRadius: 6,
             }}
           >
             Book Now
@@ -170,10 +149,9 @@ export default async function Image() {
           <div
             style={{
               display: 'flex',
-              fontSize: 16,
+              fontSize: 24,
               color: 'rgba(0, 0, 0, 0.85)',
               fontFamily: 'system-ui, sans-serif',
-              marginTop: 20,
               textAlign: 'center',
             }}
           >
