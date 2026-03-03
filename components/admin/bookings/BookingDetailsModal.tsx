@@ -136,13 +136,8 @@ export default function BookingDetailsModal({
     <>
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
       <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[85vh] flex flex-col overflow-hidden p-0">
-        <div className="flex-none shrink-0 px-4 pt-4 pb-1 bg-[#f7f7f7] rounded-t-[24px]">
-          <DialogHeader className="p-0">
-            <DialogTitle>Booking Details</DialogTitle>
-          </DialogHeader>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
+        <DialogTitle className="sr-only">Booking Details</DialogTitle>
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-10 pr-12 pb-3 space-y-3">
           <div className="p-3 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm relative sm:p-3">
             <div className="flex justify-between items-start gap-3 mb-2">
               <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-gray-500">BOOKING</span>

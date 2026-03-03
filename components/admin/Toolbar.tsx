@@ -20,7 +20,7 @@ export function Toolbar({ searchPlaceholder = 'Search...', searchValue, onSearch
           className="h-10 w-full border-border/60"
         />
       </div>
-      {children ? <div className="grid grid-cols-2 gap-2 min-w-0 sm:flex sm:flex-wrap sm:gap-2">{children}</div> : null}
+      {children ? <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 min-w-0 [&>*]:min-h-8 [&>*]:text-xs sm:[&>*]:min-h-10 sm:[&>*]:text-sm">{children}</div> : null}
     </div>
   );
 }

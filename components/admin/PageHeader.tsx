@@ -16,7 +16,7 @@ export function PageHeader({ title, description, actions, children }: PageHeader
         {description && <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{description}</p>}
         {children}
       </div>
-      {actions ? <div className={cn('w-full max-w-full overflow-x-hidden grid grid-cols-2 gap-2 mt-2 lg:mt-0 lg:w-auto sm:flex sm:flex-wrap sm:gap-3')}>{actions}</div> : null}
+      {actions ? <div className={cn('w-full max-w-full overflow-x-hidden grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mt-2 lg:mt-0 lg:w-auto [&>*]:min-h-8 [&>*]:text-xs sm:[&>*]:min-h-10 sm:[&>*]:text-sm')}>{actions}</div> : null}
     </div>
   );
 }
