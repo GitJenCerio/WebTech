@@ -39,6 +39,8 @@ function isPublicApiRoute(pathname: string, method: string): boolean {
   // Public booking flow
   if (pathname === '/api/bookings' && method === 'POST') return true;
   if (pathname.startsWith('/api/bookings/upload-proof')) return true;
+  // Client upload inspo/current nails via generated link - validated by token in route
+  if (pathname.startsWith('/api/bookings/upload-photos')) return true;
   // Client photo upload/remove - validated by route (token or session)
   if (pathname.match(/^\/api\/bookings\/[^/]+\/photos$/)) return true;
 
