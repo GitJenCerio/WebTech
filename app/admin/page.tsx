@@ -21,7 +21,7 @@ function AdminLoginForm() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    getCsrfToken().then((token) => setCsrfToken(token));
+    getCsrfToken().then((token) => setCsrfToken(token ?? null));
   }, []);
 
   const authError = searchParams.get('error');
