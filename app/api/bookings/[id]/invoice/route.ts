@@ -24,8 +24,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    if (booking.status !== 'confirmed') {
-      return NextResponse.json({ error: 'Invoice can only be created for confirmed bookings' }, { status: 400 });
+    if (!['confirmed', 'completed'].includes(booking.status)) {
+      return NextResponse.json({ error: 'Invoice can only be created for confirmed or completed bookings' }, { status: 400 });
     }
 
     const body = await request.json().catch(() => ({}));

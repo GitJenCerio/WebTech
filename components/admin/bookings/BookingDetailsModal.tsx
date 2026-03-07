@@ -59,6 +59,8 @@ interface BookingDetailsModalProps {
     reservationAmount?: number;
     depositRequired?: number;
     paymentProofUrl?: string;
+    amountPaid?: number;
+    pricing?: { paidAmount?: number; tipAmount?: number; total?: number };
     completedAt?: string | null;
     clientPhotos?: {
       inspiration?: Array<{ url?: string }>;
@@ -77,6 +79,8 @@ interface BookingDetailsModalProps {
   isVerifyingPaymentProof?: boolean;
   onManualConfirmPayment?: (amountPaid: number) => Promise<void>;
   isManualConfirming?: boolean;
+  onUpdatePayment?: (paidAmount: number, tipAmount: number) => Promise<void>;
+  isUpdatingPayment?: boolean;
   onAdminNotesChange?: (value: string) => void;
   onSaveNotes?: () => void;
   adminNotesDraft?: string;
@@ -97,6 +101,8 @@ export default function BookingDetailsModal({
   isVerifyingPaymentProof = false,
   onManualConfirmPayment,
   isManualConfirming = false,
+  onUpdatePayment,
+  isUpdatingPayment = false,
   onAdminNotesChange,
   onSaveNotes,
   adminNotesDraft = '',
@@ -104,6 +110,9 @@ export default function BookingDetailsModal({
 }: BookingDetailsModalProps) {
   const [showManualConfirmDialog, setShowManualConfirmDialog] = useState(false);
   const [manualAmount, setManualAmount] = useState<number>(0);
+  const [showUpdatePaymentDialog, setShowUpdatePaymentDialog] = useState(false);
+  const [updatePaidAmount, setUpdatePaidAmount] = useState<string>('0');
+  const [updateTipAmount, setUpdateTipAmount] = useState<string>('0');
   const [generatingLink, setGeneratingLink] = useState(false);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
@@ -417,14 +426,30 @@ export default function BookingDetailsModal({
               </Button>
             </>
           ) : isCompleted ? (
-            <Button
-              variant="outline"
-              onClick={onCreateInvoice}
-              disabled={!onCreateInvoice}
-            >
-              <i className="bi bi-receipt mr-2"></i>
-              {booking.invoice?.quotationId ? 'View / Edit Invoice' : 'Create Invoice'}
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={onCreateInvoice}
+                disabled={!onCreateInvoice}
+              >
+                <i className="bi bi-receipt mr-2"></i>
+                {booking.invoice?.quotationId ? 'View / Edit Invoice' : 'Create Invoice'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const paid = booking.pricing?.paidAmount ?? booking.amountPaid ?? 0;
+                  const tip = booking.pricing?.tipAmount ?? 0;
+                  setUpdatePaidAmount(String(paid));
+                  setUpdateTipAmount(String(tip));
+                  setShowUpdatePaymentDialog(true);
+                }}
+                disabled={!onUpdatePayment}
+              >
+                <i className="bi bi-currency-dollar mr-2"></i>
+                Update Payment
+              </Button>
+            </>
           ) : (
             ['CONFIRMED', 'confirmed'].includes(booking.status) && (
               <>
@@ -435,6 +460,20 @@ export default function BookingDetailsModal({
                 >
                   <i className="bi bi-receipt mr-2"></i>
                   {booking.invoice?.quotationId ? 'View / Edit Invoice' : 'Create Invoice'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const paid = booking.pricing?.paidAmount ?? booking.amountPaid ?? 0;
+                    const tip = booking.pricing?.tipAmount ?? 0;
+                    setUpdatePaidAmount(String(paid));
+                    setUpdateTipAmount(String(tip));
+                    setShowUpdatePaymentDialog(true);
+                  }}
+                  disabled={!onUpdatePayment}
+                >
+                  <i className="bi bi-currency-dollar mr-2"></i>
+                  Update Payment
                 </Button>
                 <Button
                   variant="outline"
@@ -520,6 +559,64 @@ export default function BookingDetailsModal({
             }}
           >
             {isManualConfirming ? 'Confirming...' : 'Confirm'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={showUpdatePaymentDialog} onOpenChange={setShowUpdatePaymentDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Update Payment</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-gray-600">
+          Update the amount paid and tip for this booking.
+        </p>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="update-paid-amount">Amount paid (PHP)</Label>
+            <Input
+              id="update-paid-amount"
+              type="number"
+              min={0}
+              step={1}
+              value={updatePaidAmount}
+              onChange={(e) => setUpdatePaidAmount(e.target.value)}
+              placeholder="0"
+              disabled={isUpdatingPayment}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="update-tip-amount">Tip amount (PHP)</Label>
+            <Input
+              id="update-tip-amount"
+              type="number"
+              min={0}
+              step={1}
+              value={updateTipAmount}
+              onChange={(e) => setUpdateTipAmount(e.target.value)}
+              placeholder="0"
+              disabled={isUpdatingPayment}
+            />
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setShowUpdatePaymentDialog(false)} disabled={isUpdatingPayment}>
+            Cancel
+          </Button>
+          <Button
+            variant="default"
+            disabled={!onUpdatePayment || isUpdatingPayment}
+            loading={isUpdatingPayment}
+            onClick={async () => {
+              if (!onUpdatePayment) return;
+              const paid = Math.max(0, Number(updatePaidAmount) || 0);
+              const tip = Math.max(0, Number(updateTipAmount) || 0);
+              await onUpdatePayment(paid, tip);
+              setShowUpdatePaymentDialog(false);
+            }}
+          >
+            {isUpdatingPayment ? 'Updating...' : 'Update'}
           </Button>
         </DialogFooter>
       </DialogContent>

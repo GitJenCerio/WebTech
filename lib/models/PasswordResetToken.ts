@@ -16,7 +16,7 @@ const PasswordResetTokenSchema = new Schema<IPasswordResetToken>(
   { timestamps: true }
 );
 
-PasswordResetTokenSchema.index({ token: 1 });
+// token index created via unique: true in schema
 PasswordResetTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index for auto-cleanup
 
 const PasswordResetToken: Model<IPasswordResetToken> =

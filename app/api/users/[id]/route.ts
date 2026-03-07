@@ -58,7 +58,7 @@ export async function PATCH(
       user.role = validRoles.includes(role) ? role : user.role;
     }
     if (assignedNailTechId !== undefined) {
-      user.assignedNailTechId = assignedNailTechId || null;
+      user.assignedNailTechId = assignedNailTechId || undefined;
     }
     if (status !== undefined) {
       user.status = status;

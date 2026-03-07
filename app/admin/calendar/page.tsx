@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import CalendarPanel from '@/components/admin/bookings/CalendarPanel';
@@ -113,9 +113,10 @@ export default function CalendarPage() {
     reservationAmount?: number;
     amount?: number;
     paidAmount?: number;
+    amountPaid?: number;
     depositRequired?: number;
     paymentProofUrl?: string;
-    pricing?: { total?: number; depositRequired?: number; paidAmount?: number };
+    pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number };
     clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
     slotTimes?: string[];
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
@@ -125,12 +126,14 @@ export default function CalendarPage() {
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [isManualConfirming, setIsManualConfirming] = useState(false);
+  const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceItems, setInvoiceItems] = useState<Array<{ description: string; quantity: number; unitPrice: number; total: number }>>([]);
   const [invoiceNotes, setInvoiceNotes] = useState('');
   const [invoiceSaving, setInvoiceSaving] = useState(false);
   const [invoiceError, setInvoiceError] = useState<string | null>(null);
   const [invoiceDiscountAmount, setInvoiceDiscountAmount] = useState<number>(0);
+  const [discountManuallySet, setDiscountManuallySet] = useState(false);
   const [adminNotesDraft, setAdminNotesDraft] = useState('');
   const [pricingData, setPricingData] = useState<any[]>([]);
   const [pricingHeaders, setPricingHeaders] = useState<string[]>([]);
@@ -722,6 +725,49 @@ export default function CalendarPage() {
     }
   };
 
+  const handleUpdatePayment = async (paidAmount: number, tipAmount: number) => {
+    if (!selectedBooking?.id) return;
+    try {
+      setIsUpdatingPayment(true);
+      const res = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_payment',
+          paidAmount,
+          tipAmount,
+        }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to update payment' }));
+        throw new Error(errorData.error || 'Failed to update payment');
+      }
+      const data = await res.json();
+      setSelectedBooking((prev) =>
+        prev
+          ? {
+              ...prev,
+              paymentStatus: data.booking?.paymentStatus ?? prev.paymentStatus,
+              amountPaid: data.booking?.pricing?.paidAmount ?? paidAmount,
+              pricing: {
+                ...prev.pricing,
+                paidAmount: data.booking?.pricing?.paidAmount ?? paidAmount,
+                tipAmount: data.booking?.pricing?.tipAmount ?? tipAmount,
+              },
+            }
+          : prev
+      );
+      toast.success('Payment updated');
+      await refreshSelectedDateSlots();
+      await refreshMonthlySlots();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update payment');
+      throw error;
+    } finally {
+      setIsUpdatingPayment(false);
+    }
+  };
+
   const handleManualConfirmPayment = async (amountPaid: number) => {
     if (!selectedBooking?.id) return;
     try {
@@ -786,16 +832,20 @@ export default function CalendarPage() {
     }
   };
 
-  useEffect(() => {
+  const suggestedDiscountAmount = useMemo(() => {
     const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
     const rate = typeof selectedBooking?.nailTechId === 'string'
       ? (nailTechs.find((t) => t.id === selectedBooking.nailTechId)?.discount || 0)
       : 0;
-    const discountAmount = Math.round(subtotal * (rate / 100));
-    if (invoiceDiscountAmount !== discountAmount) {
-      setInvoiceDiscountAmount(discountAmount);
+    return Math.round(subtotal * (rate / 100));
+  }, [invoiceItems, nailTechs, selectedBooking?.nailTechId]);
+
+  useEffect(() => {
+    if (discountManuallySet) return;
+    if (invoiceDiscountAmount !== suggestedDiscountAmount) {
+      setInvoiceDiscountAmount(suggestedDiscountAmount);
     }
-  }, [invoiceItems, invoiceDiscountAmount, nailTechs, selectedBooking?.nailTechId]);
+  }, [invoiceItems, nailTechs, selectedBooking?.nailTechId, suggestedDiscountAmount, discountManuallySet, invoiceDiscountAmount]);
 
   // Fetch latest booking when details modal opens so we have fresh invoice data and admin notes
   useEffect(() => {
@@ -816,6 +866,8 @@ export default function CalendarPage() {
           completedAt: b.completedAt ?? prev.completedAt,
           clientPhotoUploadUrl: b.clientPhotoUploadUrl ?? prev.clientPhotoUploadUrl,
           clientPhotoUploadExpiresAt: b.clientPhotoUploadExpiresAt ?? prev.clientPhotoUploadExpiresAt,
+          amountPaid: b.pricing?.paidAmount ?? prev.amountPaid ?? prev.paidAmount ?? prev.pricing?.paidAmount,
+          pricing: b.pricing ?? prev.pricing,
         } : null);
       })
       .catch(() => {});
@@ -827,6 +879,7 @@ export default function CalendarPage() {
     setInvoiceError(null);
     setInvoiceNotes('');
     setInvoiceDiscountAmount(0);
+    setDiscountManuallySet(false);
     setInvoiceItems([]);
     setCurrentQuotationId(null);
     setSelectedPricingService('');
@@ -871,6 +924,7 @@ export default function CalendarPage() {
               );
               setInvoiceNotes(quotation.notes || '');
               setInvoiceDiscountAmount(quotation.discountAmount || 0);
+              setDiscountManuallySet(true);
             }
           }
         }
@@ -1066,6 +1120,8 @@ export default function CalendarPage() {
         isVerifyingPaymentProof={isVerifyingPaymentProof}
         onManualConfirmPayment={handleManualConfirmPayment}
         isManualConfirming={isManualConfirming}
+        onUpdatePayment={handleUpdatePayment}
+        isUpdatingPayment={isUpdatingPayment}
         onLinkGenerated={(url, expiresAt) => {
           setSelectedBooking((prev) => prev ? { ...prev, clientPhotoUploadUrl: url, clientPhotoUploadExpiresAt: expiresAt } : prev);
         }}
@@ -1137,6 +1193,7 @@ export default function CalendarPage() {
         invoiceSaving={invoiceSaving}
         currentQuotationId={currentQuotationId}
         invoiceDiscountAmount={invoiceDiscountAmount}
+        suggestedDiscountAmount={suggestedDiscountAmount}
         pricingData={pricingData}
         selectedPricingService={selectedPricingService}
         pricingLoading={pricingLoading}
@@ -1145,6 +1202,10 @@ export default function CalendarPage() {
         onSelectedPricingServiceChange={setSelectedPricingService}
         onInvoiceItemsChange={setInvoiceItems}
         onInvoiceNotesChange={setInvoiceNotes}
+        onInvoiceDiscountAmountChange={(amount) => {
+          setInvoiceDiscountAmount(amount);
+          setDiscountManuallySet(true);
+        }}
         onAddFromPricing={handleAddInvoiceItemFromPricing}
         onSave={handleSaveInvoice}
       />

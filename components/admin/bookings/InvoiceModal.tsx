@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Trash2, ChevronDown } from 'lucide-react';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
 import { getSlotServiceDisplay } from '@/lib/serviceLabels';
 
@@ -44,6 +45,8 @@ interface InvoiceModalProps {
   invoiceSaving: boolean;
   currentQuotationId: string | null;
   invoiceDiscountAmount: number;
+  /** Suggested discount from nail tech (used when user unchecks "Remove discount") */
+  suggestedDiscountAmount: number;
   pricingData: any[];
   selectedPricingService: string;
   pricingLoading: boolean;
@@ -52,6 +55,7 @@ interface InvoiceModalProps {
   onSelectedPricingServiceChange: (value: string) => void;
   onInvoiceItemsChange: (items: InvoiceItem[]) => void;
   onInvoiceNotesChange: (value: string) => void;
+  onInvoiceDiscountAmountChange: (amount: number) => void;
   onAddFromPricing: (serviceName?: string) => void;
   onSave: () => Promise<void>;
 }
@@ -65,6 +69,7 @@ export default function InvoiceModal({
   invoiceSaving,
   currentQuotationId,
   invoiceDiscountAmount,
+  suggestedDiscountAmount,
   pricingData,
   selectedPricingService,
   pricingLoading,
@@ -73,6 +78,7 @@ export default function InvoiceModal({
   onSelectedPricingServiceChange,
   onInvoiceItemsChange,
   onInvoiceNotesChange,
+  onInvoiceDiscountAmountChange,
   onAddFromPricing,
   onSave,
 }: InvoiceModalProps) {
@@ -306,6 +312,57 @@ export default function InvoiceModal({
               value={invoiceNotes}
               onChange={(e) => onInvoiceNotesChange(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-3 p-3 border border-gray-200 rounded-xl bg-gray-50">
+            <Label className="text-base font-semibold">Discount</Label>
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="remove-discount"
+                checked={invoiceDiscountAmount === 0}
+                onCheckedChange={(checked) => {
+                  onInvoiceDiscountAmountChange(checked ? 0 : suggestedDiscountAmount);
+                }}
+              />
+              <label htmlFor="remove-discount" className="text-sm font-medium cursor-pointer">
+                Remove discount
+              </label>
+            </div>
+            {invoiceDiscountAmount === 0 ? (
+              <div className="flex items-center gap-2">
+                <Label className="text-sm">Add discount (%)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  placeholder="0"
+                  value=""
+                  onChange={(e) => {
+                    const pct = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+                    const amt = subtotal > 0 ? Math.round(subtotal * (pct / 100)) : 0;
+                    onInvoiceDiscountAmountChange(amt);
+                  }}
+                  className="w-24"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Label className="text-sm">Discount (%)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={subtotal > 0 ? Math.round((invoiceDiscountAmount / subtotal) * 100) : 0}
+                  onChange={(e) => {
+                    const pct = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+                    const amt = subtotal > 0 ? Math.round(subtotal * (pct / 100)) : 0;
+                    onInvoiceDiscountAmountChange(amt);
+                  }}
+                  className="w-24"
+                />
+                <span className="text-xs text-gray-500">= PHP {invoiceDiscountAmount.toLocaleString()}</span>
+              </div>
+            )}
           </div>
 
           <div className="text-right space-y-1 font-semibold">

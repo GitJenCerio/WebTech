@@ -199,7 +199,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         }, { status: 400 });
       }
 
-      const booking = await updateBookingPayment(id, paidAmount, tipAmount, method);
+      const booking = await updateBookingPayment(id, paidAmount, tipAmount, method, { allowCompletedBooking: true });
       if (booking.confirmedAt) {
         backupBooking(booking, 'update').catch(err =>
           console.error('Failed to backup booking update to Google Sheets:', err)

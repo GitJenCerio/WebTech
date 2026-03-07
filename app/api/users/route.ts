@@ -142,7 +142,8 @@ export async function POST(request: Request) {
         emailConfigured: hasEmailService,
       });
     } else {
-      // Create user with password
+      // Create user with password (schema refine guarantees password when authMethod is 'password')
+      if (!password) throw new Error('Password required');
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await User.create({
         email: email.toLowerCase(),

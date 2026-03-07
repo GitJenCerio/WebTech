@@ -119,12 +119,14 @@ export default function BookingsPage() {
   } | null>(null);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [isManualConfirming, setIsManualConfirming] = useState(false);
+  const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceItems, setInvoiceItems] = useState<Array<{ description: string; quantity: number; unitPrice: number; total: number }>>([]);
   const [invoiceNotes, setInvoiceNotes] = useState('');
   const [invoiceSaving, setInvoiceSaving] = useState(false);
   const [invoiceError, setInvoiceError] = useState<string | null>(null);
   const [invoiceDiscountAmount, setInvoiceDiscountAmount] = useState<number>(0);
+  const [discountManuallySet, setDiscountManuallySet] = useState(false);
   const [adminNotesDraft, setAdminNotesDraft] = useState('');
   const [pricingData, setPricingData] = useState<any[]>([]);
   const [pricingHeaders, setPricingHeaders] = useState<string[]>([]);
@@ -213,16 +215,20 @@ export default function BookingsPage() {
     fetchTodayAndWeek();
   }, [nailTechFilter, searchParams, mapApiToBooking]);
 
-  useEffect(() => {
+  const suggestedDiscountAmount = useMemo(() => {
     const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
     const rate = typeof selectedBooking?.nailTechId === 'string'
       ? (nailTechs.find((t) => t.id === selectedBooking.nailTechId)?.discount || 0)
       : 0;
-    const discountAmount = Math.round(subtotal * (rate / 100));
-    if (invoiceDiscountAmount !== discountAmount) {
-      setInvoiceDiscountAmount(discountAmount);
+    return Math.round(subtotal * (rate / 100));
+  }, [invoiceItems, nailTechs, selectedBooking?.nailTechId]);
+
+  useEffect(() => {
+    if (discountManuallySet) return;
+    if (invoiceDiscountAmount !== suggestedDiscountAmount) {
+      setInvoiceDiscountAmount(suggestedDiscountAmount);
     }
-  }, [invoiceItems, invoiceDiscountAmount, nailTechs, selectedBooking?.nailTechId]);
+  }, [invoiceItems, nailTechs, selectedBooking?.nailTechId, suggestedDiscountAmount, discountManuallySet, invoiceDiscountAmount]);
 
 
   const fetchBookings = useCallback(async () => {
@@ -638,6 +644,48 @@ export default function BookingsPage() {
     }
   };
 
+  const handleUpdatePayment = async (paidAmount: number, tipAmount: number) => {
+    if (!selectedBooking?.id) return;
+    try {
+      setIsUpdatingPayment(true);
+      const res = await fetch(`/api/bookings/${selectedBooking.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_payment',
+          paidAmount,
+          tipAmount,
+        }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to update payment' }));
+        throw new Error(errorData.error || 'Failed to update payment');
+      }
+      const data = await res.json();
+      setSelectedBooking((prev) =>
+        prev
+          ? {
+              ...prev,
+              paymentStatus: data.booking?.paymentStatus ?? prev.paymentStatus,
+              amountPaid: data.booking?.pricing?.paidAmount ?? paidAmount,
+              pricing: {
+                ...prev.pricing,
+                paidAmount: data.booking?.pricing?.paidAmount ?? paidAmount,
+                tipAmount: data.booking?.pricing?.tipAmount ?? tipAmount,
+              },
+            }
+          : prev
+      );
+      toast.success('Payment updated');
+      fetchBookings();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update payment');
+      throw error;
+    } finally {
+      setIsUpdatingPayment(false);
+    }
+  };
+
   const handleManualConfirmPayment = async (amountPaid: number) => {
     if (!selectedBooking?.id) return;
     try {
@@ -706,6 +754,7 @@ export default function BookingsPage() {
     setInvoiceError(null);
     setInvoiceNotes('');
     setInvoiceDiscountAmount(0);
+    setDiscountManuallySet(false);
     setInvoiceItems([]);
     setCurrentQuotationId(null);
     setSelectedPricingService('');
@@ -750,6 +799,7 @@ export default function BookingsPage() {
               );
               setInvoiceNotes(quotation.notes || '');
               setInvoiceDiscountAmount(quotation.discountAmount || 0);
+              setDiscountManuallySet(true);
             }
           }
         }
@@ -1372,6 +1422,8 @@ export default function BookingsPage() {
         isVerifyingPaymentProof={isVerifyingPaymentProof}
         onManualConfirmPayment={handleManualConfirmPayment}
         isManualConfirming={isManualConfirming}
+        onUpdatePayment={handleUpdatePayment}
+        isUpdatingPayment={isUpdatingPayment}
         onLinkGenerated={(url, expiresAt) => {
           setSelectedBooking((prev) => prev ? { ...prev, clientPhotoUploadUrl: url, clientPhotoUploadExpiresAt: expiresAt } : prev);
         }}
@@ -1443,6 +1495,7 @@ export default function BookingsPage() {
         invoiceSaving={invoiceSaving}
         currentQuotationId={currentQuotationId}
         invoiceDiscountAmount={invoiceDiscountAmount}
+        suggestedDiscountAmount={suggestedDiscountAmount}
         pricingData={pricingData}
         selectedPricingService={selectedPricingService}
         pricingLoading={pricingLoading}
@@ -1451,6 +1504,10 @@ export default function BookingsPage() {
         onSelectedPricingServiceChange={setSelectedPricingService}
         onInvoiceItemsChange={setInvoiceItems}
         onInvoiceNotesChange={setInvoiceNotes}
+        onInvoiceDiscountAmountChange={(amount) => {
+          setInvoiceDiscountAmount(amount);
+          setDiscountManuallySet(true);
+        }}
         onAddFromPricing={handleAddInvoiceItemFromPricing}
         onSave={handleSaveInvoice}
       />

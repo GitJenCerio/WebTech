@@ -1,9 +1,5 @@
 # Security Headers & HTTP Security Documentation
 
-**Document Purpose:** Documents the HTTP security headers and related security measures in the application for mentor review. Use this to verify MO-IT149 Milestone 2 security requirements (Helmet.js equivalence, error handling, input validation).
-
-**Reference:** MO-IT149 Integration Plan — Weeks 6–9, Milestone 2
-
 ---
 
 ## Executive Summary

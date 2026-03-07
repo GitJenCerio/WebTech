@@ -45,28 +45,38 @@ async function generateBookingCode(): Promise<string> {
 }
 
 /**
- * Validate that all slots are available and belong to the same nail tech
+ * Validate that all slots are available and belong to the same nail tech.
+ * When nailTechId is provided, slots must match it. When omitted (reschedule case),
+ * slots can be from any nail tech but must all belong to the same one.
+ * Returns the nail tech ID of the slots.
  */
-async function validateSlots(slotIds: string[], nailTechId: string): Promise<void> {
+async function validateSlots(slotIds: string[], nailTechId?: string): Promise<string> {
   if (!slotIds || slotIds.length === 0) {
     throw new Error('At least one slot is required');
   }
 
   const slots = await Slot.find({ _id: { $in: slotIds } });
-  
+
   if (slots.length !== slotIds.length) {
     throw new Error('One or more slots not found');
   }
 
-  // Check all slots belong to the same nail tech
+  const firstTechId = String(slots[0].nailTechId);
+
   for (const slot of slots) {
-    if (slot.nailTechId !== nailTechId) {
+    const slotTechId = String(slot.nailTechId);
+    if (slotTechId !== firstTechId) {
       throw new Error('All slots must belong to the same nail tech');
     }
     if (slot.status !== 'available') {
       throw new Error(`Slot ${slot._id} is not available (status: ${slot.status})`);
     }
+    if (nailTechId != null && slotTechId !== String(nailTechId)) {
+      throw new Error('All slots must belong to the specified nail tech');
+    }
   }
+
+  return firstTechId;
 }
 
 /**
@@ -560,8 +570,8 @@ export async function rescheduleBookingToSlots(
     throw new Error('At least one new slot is required');
   }
 
-  const nailTechId = String(booking.nailTechId);
-  await validateSlots(newSlotIds, nailTechId);
+  // Allow reschedule to a different nail tech - derive tech from new slots
+  const newNailTechId = await validateSlots(newSlotIds);
 
   const oldSlotIds = [...(booking.slotIds || [])];
   await releaseSlots(oldSlotIds);
@@ -573,6 +583,7 @@ export async function rescheduleBookingToSlots(
   }
 
   booking.slotIds = newSlotIds;
+  booking.nailTechId = newNailTechId;
   if (reason != null && String(reason).trim()) {
     booking.statusReason = `Rescheduled: ${String(reason).trim()}`;
   }
