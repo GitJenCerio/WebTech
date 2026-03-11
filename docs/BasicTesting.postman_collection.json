@@ -1,0 +1,491 @@
+{
+  "info": {
+    "name": "Basic Testing - Milestone 2",
+    "description": "Feature-specific testing: File Storage, Authentication, Middleware/RBAC, Error Handling, Security.\n\n## Setup\n1. Import this collection and the environment: **Import** → upload `BasicTesting.postman_collection.json` and `BasicTesting.postman_environment.json`.\n2. Select the **Basic Testing (Local)** environment (top-right dropdown).\n3. Edit the environment: set **ADMIN_EMAIL** and **ADMIN_PASSWORD** to your admin credentials. Optionally set **BOOKING_ID**, **CUSTOMER_ID**, **PROOF_TOKEN** for file-storage and RBAC tests.\n\n## How to get the session token (cookie)\n1. Run **2. User Authentication** → **Credentials Login (Valid)** with BASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD set.\n2. Click **Send**.\n3. Postman stores the cookie `next-auth.session-token` for localhost:3000.\n4. Any later request in the same collection that uses {{BASE_URL}} will send this cookie automatically (e.g. Protected Route (With Token), Get Session). You don't need to copy the token for normal use.\n\n## Recommended run order\n- **Without auth:** Run **4. Error Handling** and **5. Security Features** (most work without login).\n- **With auth:** Run **2. User Authentication** → **Credentials Login (Valid)** first, then **3. Middleware Validation and RBAC** (Protected Route With Token, RBAC).\n- **No token test:** Run **3. Protected Route (No Token) - 401** before logging in, or in a new tab/session without cookies.\n- **File storage:** Set BOOKING_ID (and PROOF_TOKEN from booking email) then run **1. File Storage and Retrieval**.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "BASE_URL", "value": "http://localhost:3000" },
+    { "key": "ADMIN_EMAIL", "value": "admin@nails.com" },
+    { "key": "ADMIN_PASSWORD", "value": "SecurePassword123" },
+    { "key": "BOOKING_ID", "value": "" },
+    { "key": "CUSTOMER_ID", "value": "" },
+    { "key": "PROOF_TOKEN", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. File Storage and Retrieval",
+      "item": [
+        {
+          "name": "Generate Signature (Valid)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response has signature and cloudName', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('signature');",
+                  "  pm.expect(j).to.have.property('cloudName');",
+                  "  pm.expect(j.expiresIn).to.eql(900);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": \"{{BOOKING_ID}}\",\n  \"photoType\": \"inspiration\"\n}"
+            },
+            "url": "{{BASE_URL}}/api/integrations/storage/generate-signature"
+          }
+        },
+        {
+          "name": "Generate Signature (Invalid photoType)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error message present', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": \"{{BOOKING_ID}}\",\n  \"photoType\": \"invalid_type\"\n}"
+            },
+            "url": "{{BASE_URL}}/api/integrations/storage/generate-signature"
+          }
+        },
+        {
+          "name": "Upload Proof Summary (Invalid Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error about invalid token', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.error).to.match(/Invalid|Missing|expired/i);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/bookings/upload-proof?token=invalid_token_12345"
+          }
+        },
+        {
+          "name": "Upload Proof Summary (Valid Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 when valid token', () => pm.response.to.have.status(200));",
+                  "pm.test('Response has bookingCode', () => {",
+                  "  if (pm.response.code === 200) {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property('bookingCode');",
+                  "  }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/bookings/upload-proof?token={{PROOF_TOKEN}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. User Authentication",
+      "item": [
+        {
+          "name": "Credentials Login (Valid)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 302', () => {",
+                  "  pm.expect([200, 302]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('Sets session cookie on success', () => {",
+                  "  const setCookie = pm.response.headers.get('set-cookie') || '';",
+                  "  const jar = pm.cookies.toObject();",
+                  "  const inHeader = setCookie.includes('next-auth.session-token');",
+                  "  const inJar = jar && Object.keys(jar).some(k => k.includes('next-auth'));",
+                  "  pm.expect(inHeader || inJar, 'cookie in Set-Cookie or cookie jar').to.be.true;",
+                  "});",
+                  "pm.test('Response time under 5s', () => pm.expect(pm.response.responseTime).to.be.below(5000));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "{{ADMIN_EMAIL}}" },
+                { "key": "password", "value": "{{ADMIN_PASSWORD}}" }
+              ]
+            },
+            "url": "{{BASE_URL}}/api/auth/callback/credentials"
+          }
+        },
+        {
+          "name": "Credentials Login (Invalid Password)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// NextAuth returns 200 (HTML login page) or 302 on invalid credentials, not 401 JSON",
+                  "pm.test('Status is 200 or 302', () => {",
+                  "  pm.expect([200, 302]).to.include(pm.response.code);",
+                  "});",
+                  "pm.test('No session cookie set (invalid login rejected)', () => {",
+                  "  const setCookie = pm.response.headers.get('set-cookie') || '';",
+                  "  const hasSessionToken = setCookie.includes('next-auth.session-token');",
+                  "  pm.expect(hasSessionToken).to.be.false;",
+                  "});",
+                  "pm.test('Response is login page or redirect (not JSON session)', () => {",
+                  "  const ct = pm.response.headers.get('content-type') || '';",
+                  "  if (pm.response.code === 200) pm.expect(ct).to.include('text/html');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "{{ADMIN_EMAIL}}" },
+                { "key": "password", "value": "WrongPassword123" }
+              ]
+            },
+            "url": "{{BASE_URL}}/api/auth/callback/credentials"
+          }
+        },
+        {
+          "name": "Get Session (After Login)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Session has user with id, email, role', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('user');",
+                  "  pm.expect(j.user).to.have.property('id');",
+                  "  pm.expect(j.user).to.have.property('email');",
+                  "  pm.expect(j.user).to.have.property('role');",
+                  "});",
+                  "pm.test('Body is JSON', () => pm.expect(pm.response.headers.get('content-type')).to.include('application/json'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/auth/session"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Middleware Validation and RBAC",
+      "item": [
+        {
+          "name": "Protected Route (No Token) - 401",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Clear cookies so this request is sent without session (tests 401)",
+                  "pm.cookies.clear();"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Error message says auth required', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('error');",
+                  "  pm.expect(j.error).to.match(/Authentication required|Please log in/i);",
+                  "});",
+                  "pm.test('Body is JSON', () => pm.expect(pm.response.headers.get('content-type')).to.include('application/json'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{BASE_URL}}/api/bookings"
+          }
+        },
+        {
+          "name": "Protected Route (With Token) - 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 when authenticated', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is JSON array or object', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(Array.isArray(j) || typeof j === 'object').to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/bookings"
+          }
+        },
+        {
+          "name": "RBAC - Delete Customer as ADMIN - 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Error is Forbidden or Access denied', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('error');",
+                  "  pm.expect(['Forbidden', 'Access denied']).to.include(j.error);",
+                  "});",
+                  "pm.test('Body is JSON', () => pm.expect(pm.response.headers.get('content-type')).to.include('application/json'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{BASE_URL}}/api/customers/{{CUSTOMER_ID}}"
+          }
+        },
+        {
+          "name": "RBAC - Create Slot as STAFF (Wrong Tech) - 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403 for STAFF wrong tech', () => pm.response.to.have.status(403));",
+                  "pm.test('Error indicates permission or assigned tech', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('error');",
+                  "  pm.expect(j.error).to.match(/Forbidden|Access denied|assigned|only create/i);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slots\": [{\n    \"date\": \"2026-12-01\",\n    \"time\": \"10:00\",\n    \"nailTechId\": \"wrong_tech_id\"\n  }]\n}"
+            },
+            "url": "{{BASE_URL}}/api/slots"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Error Handling",
+      "item": [
+        {
+          "name": "Create Booking - Missing slotIds - 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Validation error or details', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('error');",
+                  "  pm.expect(j.error || j.details).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nailTechId\": \"someTechId\",\n  \"service\": {\n    \"type\": \"manicure\",\n    \"location\": \"homebased_studio\",\n    \"clientType\": \"new\"\n  },\n  \"customer\": { \"name\": \"Test\" }\n}"
+            },
+            "url": "{{BASE_URL}}/api/bookings"
+          }
+        },
+        {
+          "name": "Generate Signature - Invalid photoType - 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error or validation details', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": \"{{BOOKING_ID}}\",\n  \"photoType\": \"invalid_enum\"\n}"
+            },
+            "url": "{{BASE_URL}}/api/integrations/storage/generate-signature"
+          }
+        },
+        {
+          "name": "Upload Proof - Invalid Token - 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Invalid token message', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j.error).to.match(/Invalid|Missing|expired/i);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/bookings/upload-proof?token=bad_token_xyz"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Security Features",
+      "item": [
+        {
+          "name": "Check Security Headers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('X-Frame-Options present', () => {",
+                  "  pm.expect(pm.response.headers.get('x-frame-options')).to.exist;",
+                  "  pm.expect(pm.response.headers.get('x-frame-options').toLowerCase()).to.include('deny');",
+                  "});",
+                  "pm.test('X-Content-Type-Options present', () => {",
+                  "  pm.expect(pm.response.headers.get('x-content-type-options')).to.eql('nosniff');",
+                  "});",
+                  "pm.test('X-XSS-Protection present', () => {",
+                  "  pm.expect(pm.response.headers.get('x-xss-protection')).to.exist;",
+                  "});",
+                  "pm.test('Referrer-Policy or Permissions-Policy present', () => {",
+                  "  const ref = pm.response.headers.get('referrer-policy');",
+                  "  const perm = pm.response.headers.get('permissions-policy');",
+                  "  pm.expect(ref || perm).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{BASE_URL}}/api/availability?nailTechId=any"
+          }
+        },
+        {
+          "name": "Input Validation - Missing Required Field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Validation error returned', () => {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('error');",
+                  "  pm.expect(j.error || '').to.match(/Validation|required/i);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"slotIds\": [],\n  \"nailTechId\": \"tech123\",\n  \"service\": { \"type\": \"manicure\", \"location\": \"homebased_studio\", \"clientType\": \"new\" },\n  \"customer\": { \"name\": \"Test\" }\n}"
+            },
+            "url": "{{BASE_URL}}/api/bookings"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { formatTime12Hour } from '@/lib/utils';
+import { formatTime12Hour, sortSlotsWithPairedBookings } from '@/lib/utils';
 import { Plus, Calendar as CalendarIcon, CalendarDays, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Button } from '@/components/ui/Button';
@@ -480,7 +480,7 @@ export default function CalendarPanel({
             {(() => {
               const counts = getSlotCounts(selectedDate);
               const slotsForDay = daySlots.length > 0 ? daySlots : slots.filter((s) => s.date === format(selectedDate, 'yyyy-MM-dd'));
-              const sortedSlots = [...slotsForDay].sort((a, b) => a.time.localeCompare(b.time));
+              const sortedSlots = sortSlotsWithPairedBookings(slotsForDay);
               return (
                 <div className="space-y-3">
                   <div className="d-flex flex-wrap gap-2">

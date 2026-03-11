@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { normalizeSlotTime } from "@/lib/constants/slots";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -64,6 +65,35 @@ function parseTimeToMinutes(time: string): number {
  */
 export function sortTimesChronologically(times: string[]): string[] {
   return [...times].sort((a, b) => parseTimeToMinutes(a) - parseTimeToMinutes(b));
+}
+
+/**
+ * Sorts slots chronologically, keeping slots from the same booking (multi-slot) adjacent.
+ * E.g. a Mani+Pedi with 10:00 and 10:30 will appear together even if other slots exist at 10:00.
+ */
+export function sortSlotsWithPairedBookings<T extends { id: string; time: string; booking?: { id?: string } | null }>(
+  slots: T[]
+): T[] {
+  const norm = (t: string) => normalizeSlotTime(t);
+
+  const bookingMinTime = new Map<string, string>();
+  for (const s of slots) {
+    const bid = s.booking?.id;
+    if (bid) {
+      const nt = norm(s.time);
+      const existing = bookingMinTime.get(bid);
+      if (!existing || nt < existing) bookingMinTime.set(bid, nt);
+    }
+  }
+
+  return [...slots].sort((a, b) => {
+    const aGroupKey = a.booking?.id ? (bookingMinTime.get(a.booking.id) ?? norm(a.time)) : norm(a.time);
+    const bGroupKey = b.booking?.id ? (bookingMinTime.get(b.booking.id) ?? norm(b.time)) : norm(b.time);
+    if (aGroupKey !== bGroupKey) return aGroupKey.localeCompare(bGroupKey);
+    const cmp = norm(a.time).localeCompare(norm(b.time));
+    if (cmp !== 0) return cmp;
+    return (a.id || '').localeCompare(b.id || '');
+  });
 }
 
 /**

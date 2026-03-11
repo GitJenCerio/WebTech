@@ -6,7 +6,7 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "create-placeholders": "node scripts/create-placeholders.js",
     "clean-database": "tsx scripts/clean-database.ts",
     "cleanup-old-data": "tsx scripts/cleanup-old-data.ts",

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import SlotItem from './SlotItem';
 import { BookingStatus } from '../StatusBadge';
+import { sortSlotsWithPairedBookings } from '@/lib/utils';
 
 interface Slot {
   id: string;
@@ -46,6 +47,8 @@ export default function SlotList({
   onCancel,
   emptyStateFiltered = false,
 }: SlotListProps) {
+  const sortedSlots = useMemo(() => sortSlotsWithPairedBookings(slots), [slots]);
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -85,7 +88,7 @@ export default function SlotList({
           padding: '1rem 1.25rem'
         }}
       >
-        {slots.length === 0 ? (
+        {sortedSlots.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
             <p className="text-sm font-medium text-gray-500">
               {emptyStateFiltered ? 'No slots for the selected nail tech on this date.' : 'No slots for this date.'}
@@ -96,7 +99,7 @@ export default function SlotList({
           </div>
         ) : (
           <div>
-            {slots.map((slot) => (
+            {sortedSlots.map((slot) => (
               <SlotItem
                 key={slot.id}
                 time={slot.time}

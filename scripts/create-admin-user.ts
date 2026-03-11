@@ -14,6 +14,9 @@
  *   # Fix existing user: set SUPER_ADMIN + active (use when locked out):
  *   npx tsx scripts/create-admin-user.ts <email> --fix
  * 
+ *   # Create admin in TEST database: set USE_TEST_DB=true and MONGODB_URI_TEST in .env, then:
+ *   npx tsx scripts/create-admin-user.ts <email> <password> --role ADMIN [name]
+ * 
  * Examples:
  *   npx tsx scripts/create-admin-user.ts admin@example.com mypassword123 "Admin User"
  *   npx tsx scripts/create-admin-user.ts user@gmail.com --google-only "User Name"
@@ -38,6 +41,7 @@ async function createAdminUser() {
     console.log('\nUsage:');
     console.log('  # Create user with email/password:');
     console.log('  npx tsx scripts/create-admin-user.ts <email> <password> [name]');
+    console.log('  npx tsx scripts/create-admin-user.ts <email> <password> --role=ADMIN [name]');
     console.log('\n  # Create user for Google OAuth only:');
     console.log('  npx tsx scripts/create-admin-user.ts <email> --google-only [name]');
     console.log('\n  # Create SUPER_ADMIN for Google OAuth (when locked out):');
@@ -51,8 +55,10 @@ async function createAdminUser() {
   const isFix = args[1] === '--fix';
   const isGoogleOnly = args[1] === '--google-only' || (args[1] !== '--fix' && args[2] === '--google-only');
   const isSuperAdmin = args.includes('--super-admin');
+  const roleArg = args.find((a) => a.startsWith('--role='));
+  const roleValue = roleArg ? roleArg.split('=')[1] : undefined;
   const password = isGoogleOnly || isFix ? undefined : (args[1] === '--google-only' ? undefined : args[1]);
-  const name = args.find((a) => !['--google-only', '--super-admin', '--fix'].includes(a) && a !== email && a !== password) || undefined;
+  const name = args.find((a) => !['--google-only', '--super-admin', '--fix'].includes(a) && !a.startsWith('--role=') && a !== email && a !== password) || undefined;
 
   if (!email) {
     console.error('❌ Email is required');
@@ -65,6 +71,8 @@ async function createAdminUser() {
   }
 
   try {
+    const useTestDb = process.env.USE_TEST_DB === 'true';
+    if (useTestDb) console.log('📂 Using TEST database (USE_TEST_DB=true)');
     console.log('🔌 Connecting to MongoDB...');
     await connectDB();
     console.log('✅ Connected to MongoDB');
@@ -136,17 +144,20 @@ async function createAdminUser() {
     } else {
       console.log(`📝 Creating authorized user with password: ${email}`);
       const hashedPassword = await bcrypt.hash(password!, 10);
+      const role = (roleValue === 'SUPER_ADMIN' || roleValue === 'ADMIN' ? roleValue : 'STAFF') as 'SUPER_ADMIN' | 'ADMIN' | 'STAFF';
       
       const user = await User.create({
         email: email.toLowerCase(),
         password: hashedPassword,
         name: name || email.split('@')[0],
         emailVerified: true,
+        role,
       });
 
       console.log(`✅ User created successfully!`);
       console.log(`   Email: ${user.email}`);
       console.log(`   Name: ${user.name}`);
+      console.log(`   Role: ${role}`);
       console.log(`   ID: ${user._id}`);
       console.log('\n🎉 User can now sign in with email/password or Google OAuth!');
     }

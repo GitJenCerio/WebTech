@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
-function getMongoUri() {
+function getMongoUri(): string {
+  const useTestDb = process.env.USE_TEST_DB === 'true';
+  if (useTestDb && process.env.MONGODB_URI_TEST) {
+    return process.env.MONGODB_URI_TEST;
+  }
   const MONGODB_URI = process.env.MONGODB_URI;
   if (!MONGODB_URI) {
     throw new Error('Please define MONGODB_URI in your .env.local file');
@@ -44,7 +48,9 @@ async function connectDB() {
     cached.promise = mongoose
       .connect(getMongoUri(), opts)
       .then(async (mongoose) => {
-        console.log('✅ MongoDB connected successfully');
+        const uri = getMongoUri();
+        const dbName = uri.split('/').pop()?.split('?')[0] || 'unknown';
+        console.log('✅ MongoDB connected successfully', process.env.USE_TEST_DB === 'true' ? `(test DB: ${dbName})` : '');
         const { ensureIndexes } = await import('@/lib/db/ensureIndexes');
         await ensureIndexes();
         return mongoose;

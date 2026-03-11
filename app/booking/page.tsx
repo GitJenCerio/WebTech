@@ -17,7 +17,7 @@ import type { Slot, NailTech } from '@/lib/types';
 
 type ServiceLocation = 'homebased_studio' | 'home_service';
 type BookingServiceType = 'manicure' | 'pedicure' | 'mani_pedi' | 'home_service_2slots' | 'home_service_3slots';
-import { getNextSlotTime, SLOT_TIMES } from '@/lib/constants/slots';
+import { getNextSlotTime, SLOT_TIMES, normalizeSlotTime } from '@/lib/constants/slots';
 import { formatTime12Hour } from '@/lib/utils';
 
 const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; label: string }[]> = {
@@ -64,7 +64,7 @@ function canSlotAccommodateService(
   // Get all slots for this date and same nail tech, sorted by time
   const slotsForDate = allSlots
     .filter((s) => s.date === slot.date && s.nailTechId === slot.nailTechId)
-    .sort((a, b) => a.time.localeCompare(b.time));
+    .sort((a, b) => normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time)));
 
   let referenceSlot = slot;
   // Consecutive means: available slots with no booked/blocked slots in between
@@ -255,7 +255,7 @@ export default function BookingPage() {
     // Sort by time to ensure consistent ordering
     const slotsForDate = slots
       .filter((s) => s.date === selectedSlot.date && s.nailTechId === selectedSlot.nailTechId)
-      .sort((a, b) => a.time.localeCompare(b.time));
+      .sort((a, b) => normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time)));
 
     // Check for consecutive slots starting from the selected slot
     // Consecutive means: available slots with no booked/blocked slots in between
@@ -769,7 +769,7 @@ export default function BookingPage() {
                     {(() => {
                       const slotsToDisplay = requiredSlots === 1 ? availableSlotsForDate : compatibleSlotsForDate;
                       // Sort slots chronologically by time
-                      const sortedSlots = [...slotsToDisplay].sort((a, b) => a.time.localeCompare(b.time));
+                      const sortedSlots = [...slotsToDisplay].sort((a, b) => normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time)));
                       return sortedSlots.map((slot) => (
                         <button
                           key={slot.id}
