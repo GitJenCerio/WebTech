@@ -52,7 +52,7 @@ interface Slot {
     customerSocialMediaName?: string;
     nailTechId?: string;
     slotIds?: string[];
-    service?: { type?: string; location?: 'homebased_studio' | 'home_service'; chosenServices?: string[]; secondaryNailTechId?: string };
+    service?: { type?: string; location?: 'homebased_studio' | 'home_service'; chosenServices?: string[]; secondaryNailTechId?: string; address?: string };
     status: string;
     paymentStatus?: string;
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number };

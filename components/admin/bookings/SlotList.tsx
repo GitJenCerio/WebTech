@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import SlotItem from './SlotItem';
 import { BookingStatus } from '../StatusBadge';
 import { sortSlotsWithPairedBookings } from '@/lib/utils';
@@ -41,6 +41,8 @@ interface SlotListProps {
   emptyStateFiltered?: boolean;
 }
 
+type DaySlotFilter = 'all' | 'available' | 'confirmed';
+
 export default function SlotList({
   date,
   slots,
@@ -50,6 +52,8 @@ export default function SlotList({
   onCancel,
   emptyStateFiltered = false,
 }: SlotListProps) {
+  const [daySlotFilter, setDaySlotFilter] = useState<DaySlotFilter>('all');
+
   const sortedSlots = useMemo(() => {
     const base = sortSlotsWithPairedBookings(slots);
     // Deterministic ordering for simultaneous Mani+Pedi:
@@ -69,6 +73,24 @@ export default function SlotList({
     });
     return withIndex.map((x) => x.s);
   }, [slots]);
+
+  const filteredSlots = useMemo(() => {
+    if (daySlotFilter === 'available') {
+      return sortedSlots.filter((slot) => slot.status === 'available');
+    }
+    if (daySlotFilter === 'confirmed') {
+      return sortedSlots.filter((slot) => slot.status === 'CONFIRMED' || slot.status === 'confirmed');
+    }
+    return sortedSlots;
+  }, [daySlotFilter, sortedSlots]);
+
+  const handleFilterSelect = (filter: DaySlotFilter) => (event: React.MouseEvent<HTMLButtonElement>) => {
+    setDaySlotFilter(filter);
+    const detailsEl = event.currentTarget.closest('details');
+    if (detailsEl) {
+      detailsEl.removeAttribute('open');
+    }
+  };
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -99,7 +121,47 @@ export default function SlotList({
           padding: '1rem 1.25rem'
         }}
       >
-        <h5 className="mb-0 text-xs sm:text-sm" style={{ fontWeight: 600, color: '#212529' }}>Slots for {formatDate(date)}</h5>
+        <div className="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <h5 className="mb-0 text-xs sm:text-sm" style={{ fontWeight: 600, color: '#212529' }}>Slots for {formatDate(date)}</h5>
+            {daySlotFilter !== 'all' && (
+              <p className="mb-0 mt-1 text-xs text-gray-500">
+                Filter: {daySlotFilter === 'available' ? 'Available' : 'Confirmed'}
+              </p>
+            )}
+          </div>
+          <details className="relative">
+            <summary
+              className="list-none cursor-pointer p-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              aria-label="Open slot filter menu"
+            >
+              <i className="bi bi-three-dots-vertical" />
+            </summary>
+            <div className="absolute right-0 mt-2 min-w-[160px] rounded-lg border border-gray-200 bg-white shadow-lg z-20 p-1">
+              <button
+                type="button"
+                className={`w-full text-start px-3 py-2 rounded-md text-sm ${daySlotFilter === 'all' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
+                onClick={handleFilterSelect('all')}
+              >
+                All slots
+              </button>
+              <button
+                type="button"
+                className={`w-full text-start px-3 py-2 rounded-md text-sm ${daySlotFilter === 'available' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
+                onClick={handleFilterSelect('available')}
+              >
+                Available
+              </button>
+              <button
+                type="button"
+                className={`w-full text-start px-3 py-2 rounded-md text-sm ${daySlotFilter === 'confirmed' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
+                onClick={handleFilterSelect('confirmed')}
+              >
+                Confirmed
+              </button>
+            </div>
+          </details>
+        </div>
       </div>
       <div 
         className="card-body flex-grow-1 min-h-0 overflow-auto slot-list-body"
@@ -109,18 +171,26 @@ export default function SlotList({
           padding: '1rem 1.25rem'
         }}
       >
-        {sortedSlots.length === 0 ? (
+        {filteredSlots.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
             <p className="text-sm font-medium text-gray-500">
-              {emptyStateFiltered ? 'No slots for the selected nail tech on this date.' : 'No slots for this date.'}
+              {daySlotFilter !== 'all'
+                ? `No ${daySlotFilter} slots for this date.`
+                : emptyStateFiltered
+                  ? 'No slots for the selected nail tech on this date.'
+                  : 'No slots for this date.'}
             </p>
             <p className="text-xs text-gray-400 max-w-[220px]">
-              {emptyStateFiltered ? 'Try another date or select All Techs.' : "Add slots using '+ Add Slot' or select another date."}
+              {daySlotFilter !== 'all'
+                ? 'Try another filter or select another date.'
+                : emptyStateFiltered
+                  ? 'Try another date or select All Techs.'
+                  : "Add slots using '+ Add Slot' or select another date."}
             </p>
           </div>
         ) : (
           <div>
-            {sortedSlots.map((slot) => (
+            {filteredSlots.map((slot) => (
               <SlotItem
                 key={slot.id}
                 time={slot.time}
