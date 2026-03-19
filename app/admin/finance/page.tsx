@@ -586,7 +586,7 @@ export default function FinancePage() {
           title="Total Tips"
           iconBgColor="#e9ecef"
           value={`₱${totalTips.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-XT
+
           icon="bi-heart"
           className="flex-grow-1"
         />
