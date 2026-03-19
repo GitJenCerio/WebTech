@@ -175,13 +175,15 @@ export function CalendarGrid({
             bgColorStyle = '#fff3cd';
             textColorStyle = '#856404';
             borderColorStyle = '#ffeaa7';
+          } else if (hasNoSlots) {
+            // Day has slots but not enough consecutive ones for selected service (e.g. home service)
+            bgColorStyle = '#f8f9fa';
+            textColorStyle = '#6c757d';
+            borderColorStyle = '#dee2e6';
           } else if (status === 'available') {
             bgColorStyle = '#d4edda';
             textColorStyle = '#155724';
             borderColorStyle = '#c3e6cb';
-          } else if (hasNoSlots) {
-            bgColorStyle = '#f8f9fa';
-            textColorStyle = '#6c757d';
           }
 
           if (isSelected) {
@@ -221,7 +223,7 @@ export function CalendarGrid({
                 <div className="flex-1 flex items-center justify-center min-h-0">
                   {status === 'blocked' ? (
                     <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight text-center">Blocked</span>
-                  ) : slotCounts.total > 0 ? (
+                  ) : slotCounts.total > 0 && !hasNoSlots ? (
                     <div className="flex flex-col items-center justify-center gap-0.5">
                       {slotCounts.available > 0 && (
                         <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: '#28a745' }}>

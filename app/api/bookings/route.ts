@@ -48,6 +48,10 @@ export async function POST(request: Request) {
         location: z.enum(['homebased_studio', 'home_service']),
         clientType: z.enum(['NEW', 'REPEAT', 'new', 'repeat']),
         chosenServices: z.array(z.string()).optional(),
+        address: z.string().max(500).optional(),
+        mode: z.enum(['single_tech', 'simultaneous_two_techs']).optional(),
+        secondaryNailTechId: z.string().optional(),
+        secondaryServiceType: z.enum(['Manicure', 'Pedicure']).optional(),
       }),
       pricing: z.object({
         total: z.number().min(0),
@@ -142,6 +146,14 @@ export async function POST(request: Request) {
         location: service.location,
         clientType: (service.clientType || '').toLowerCase() === 'repeat' ? 'repeat' : 'new',
         chosenServices: Array.isArray(service.chosenServices) && service.chosenServices.length > 0 ? service.chosenServices : undefined,
+        address: service.location === 'home_service' && service.address?.trim() ? service.address.trim() : undefined,
+        mode: service.mode === 'simultaneous_two_techs' ? 'simultaneous_two_techs' : 'single_tech',
+        secondaryNailTechId: typeof service.secondaryNailTechId === 'string' && service.secondaryNailTechId.trim()
+          ? service.secondaryNailTechId.trim()
+          : undefined,
+        secondaryServiceType: service.secondaryServiceType === 'Manicure' || service.secondaryServiceType === 'Pedicure'
+          ? service.secondaryServiceType
+          : undefined,
       },
       pricing: {
         total: pricingTotal,
@@ -186,15 +198,20 @@ export async function POST(request: Request) {
 
     (async () => {
       try {
-        const [cust, tech, slotList] = await Promise.all([
+        const [cust, tech, secondaryTech, slotList] = await Promise.all([
           Customer.findById(resolvedCustomerId).select('name socialMediaName').lean(),
           NailTech.findById(nailTechId).select('name').lean(),
+          booking.service?.mode === 'simultaneous_two_techs' && booking.service?.secondaryNailTechId
+            ? NailTech.findById(booking.service.secondaryNailTechId).select('name').lean()
+            : Promise.resolve(null),
           Slot.find({ _id: { $in: booking.slotIds } }).sort({ date: 1, time: 1 }).lean(),
         ]);
         const slots = slotList as { date?: string; time?: string }[] | undefined;
         const appointmentDate = slots?.[0]?.date ?? '';
         const appointmentTimes = (slots ?? []).map(s => s.time).filter(Boolean) as string[];
-        const nailTechName = (tech as { name?: string })?.name ? `Ms. ${(tech as { name: string }).name}` : '';
+        const primaryName = (tech as { name?: string })?.name ? `Ms. ${(tech as { name: string }).name}` : '';
+        const secondaryName = (secondaryTech as { name?: string } | null)?.name ? `Ms. ${(secondaryTech as { name: string }).name}` : '';
+        const nailTechName = secondaryName ? `${primaryName} + ${secondaryName}` : primaryName;
         await syncBookingToSheet(
           booking,
           (cust as { name?: string })?.name ?? 'Unknown',

@@ -12,6 +12,15 @@ export interface IBooking extends Document {
     location: 'homebased_studio' | 'home_service';
     clientType: 'new' | 'repeat';
     chosenServices?: string[];
+    /** Client's address for home service appointments */
+    address?: string;
+    /**
+     * When set, this booking reserves slots across two different techs at the same time.
+     * Primary tech is `nailTechId` and `slotIds[0]` (by convention in client flow).
+     */
+    mode?: 'single_tech' | 'simultaneous_two_techs';
+    secondaryNailTechId?: string;
+    secondaryServiceType?: 'Manicure' | 'Pedicure';
   };
   status: BookingStatus; // 'pending' | 'confirmed' | 'cancelled' | 'no_show'
   paymentStatus: PaymentStatus; // 'unpaid' | 'partial' | 'paid' | 'refunded'
@@ -95,6 +104,10 @@ const BookingSchema = new Schema<IBooking>(
         enum: ['new', 'repeat'],
       },
       chosenServices: [{ type: String }],
+      address: { type: String },
+      mode: { type: String, enum: ['single_tech', 'simultaneous_two_techs'], default: 'single_tech' },
+      secondaryNailTechId: { type: String },
+      secondaryServiceType: { type: String, enum: ['Manicure', 'Pedicure'] },
     },
     status: {
       type: String,

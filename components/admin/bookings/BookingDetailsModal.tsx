@@ -43,8 +43,10 @@ interface BookingDetailsModalProps {
     slotTimes?: string[];
     slotType?: 'regular' | 'with_squeeze_fee' | null;
     serviceLocation?: 'homebased_studio' | 'home_service';
+    serviceAddress?: string;
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     nailTechName?: string;
+    secondaryNailTechName?: string;
     clientName: string;
     clientEmail?: string;
     clientPhone?: string;
@@ -184,7 +186,10 @@ export default function BookingDetailsModal({
               {booking.nailTechName && (
                 <div className="flex items-center gap-2">
                   <User size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
-                  <span>Ms. {booking.nailTechName}</span>
+                  <span>
+                    Ms. {booking.nailTechName}
+                    {booking.secondaryNailTechName ? ` + Ms. ${booking.secondaryNailTechName}` : ''}
+                  </span>
                 </div>
               )}
               <div className="flex items-center gap-2">
@@ -206,7 +211,7 @@ export default function BookingDetailsModal({
               {locationLabel && (
                 <div className="flex items-center gap-2">
                   <MapPin size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
-                  <span>{locationLabel}</span>
+                  <span>{locationLabel}{booking.serviceAddress ? ` · ${booking.serviceAddress}` : ''}</span>
                 </div>
               )}
               <div className="flex items-center gap-2">

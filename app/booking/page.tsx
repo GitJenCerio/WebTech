@@ -10,13 +10,20 @@ import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import ClientTypeSelectionModal from '@/components/booking/ClientTypeSelectionModal';
 import ServiceTypeSelectionModal from '@/components/booking/ServiceTypeSelectionModal';
 import NailTechSelectionModal from '@/components/booking/NailTechSelectionModal';
+import DualNailTechSelectionModal from '@/components/booking/DualNailTechSelectionModal';
 import BookingFormModal from '@/components/booking/BookingFormModal';
 import SlotConfirmationModal from '@/components/booking/SlotConfirmationModal';
 import BookingSuccessModal from '@/components/booking/BookingSuccessModal';
 import type { Slot, NailTech } from '@/lib/types';
 
 type ServiceLocation = 'homebased_studio' | 'home_service';
-type BookingServiceType = 'manicure' | 'pedicure' | 'mani_pedi' | 'home_service_2slots' | 'home_service_3slots';
+type BookingServiceType =
+  | 'manicure'
+  | 'pedicure'
+  | 'mani_pedi'
+  | 'mani_pedi_simultaneous'
+  | 'home_service_2slots'
+  | 'home_service_3slots';
 import { getNextSlotTime, SLOT_TIMES, normalizeSlotTime } from '@/lib/constants/slots';
 import { formatTime12Hour } from '@/lib/utils';
 
@@ -25,17 +32,20 @@ const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; labe
     { value: 'manicure', label: 'Manicure (1 slot)' },
     { value: 'pedicure', label: 'Pedicure (1 slot)' },
     { value: 'mani_pedi', label: 'Mani + Pedi (2 slots)' },
+    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi (Same time, 2 techs)' },
   ],
   home_service: [
     { value: 'manicure', label: 'Manicure 2 pax (2 slots)' },
     { value: 'pedicure', label: 'Pedicure 2 pax (2 slots)' },
     { value: 'mani_pedi', label: 'Mani + Pedi (2 slots)' },
+    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi (Same time, 2 techs)' },
     { value: 'home_service_2slots', label: 'Mani + Pedi 2 pax (4 slots)' },
   ],
 };
 
 function getRequiredSlotCount(serviceType: BookingServiceType | null, serviceLocation?: ServiceLocation): number {
   if (serviceType === null) return 1;
+  if (serviceType === 'mani_pedi_simultaneous') return 1;
   // For home service, manicure and pedicure require 2 slots (2 pax)
   if (serviceLocation === 'home_service' && (serviceType === 'manicure' || serviceType === 'pedicure')) {
     return 2;
@@ -56,9 +66,10 @@ function getRequiredSlotCount(serviceType: BookingServiceType | null, serviceLoc
 function canSlotAccommodateService(
   slot: Slot,
   serviceType: BookingServiceType,
-  allSlots: Slot[]
+  allSlots: Slot[],
+  serviceLocation?: ServiceLocation
 ): boolean {
-  const requiredSlots = getRequiredSlotCount(serviceType);
+  const requiredSlots = getRequiredSlotCount(serviceType, serviceLocation);
   if (requiredSlots === 1) return true;
 
   // Get all slots for this date and same nail tech, sorted by time
@@ -113,7 +124,6 @@ function canSlotAccommodateService(
     referenceSlot = nextSlot;
   }
   return true;
-type ServiceLocation = 'homebased_studio' | 'home_service';
 }
 
 type ClientType = 'new' | 'repeat';
@@ -123,6 +133,7 @@ export default function BookingPage() {
   const [showClientTypeModal, setShowClientTypeModal] = useState(true);
   const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
   const [showNailTechModal, setShowNailTechModal] = useState(false);
+  const [serviceChangeMode, setServiceChangeMode] = useState(false);
   const [clientInfo, setClientInfo] = useState<{
     clientType: ClientType;
     serviceLocation: ServiceLocation;
@@ -136,6 +147,7 @@ export default function BookingPage() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [nailTechs, setNailTechs] = useState<NailTech[]>([]);
   const [selectedNailTechId, setSelectedNailTechId] = useState<string | null>(null);
+  const [selectedSecondaryNailTechId, setSelectedSecondaryNailTechId] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingNailTechs, setLoadingNailTechs] = useState(true);
@@ -154,6 +166,8 @@ export default function BookingPage() {
   const [latestBookingCode, setLatestBookingCode] = useState('');
   const [bookingSuccessNote, setBookingSuccessNote] = useState<string | null>(null);
   const serviceOptions = clientInfo ? SERVICE_OPTIONS[clientInfo.serviceLocation] : SERVICE_OPTIONS.homebased_studio;
+  const isSimultaneous = selectedService === 'mani_pedi_simultaneous';
+  const secondarySlotIdByDateTimeRef = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (clientInfo && selectedService !== null) {
@@ -169,16 +183,17 @@ export default function BookingPage() {
   }, []);
 
   useEffect(() => {
-    if (selectedNailTechId) {
+    if (selectedNailTechId && (!isSimultaneous || !!selectedSecondaryNailTechId)) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedNailTechId]);
+  }, [selectedNailTechId, selectedSecondaryNailTechId, isSimultaneous]);
 
   // OPTIMIZED: Increased auto-refresh interval from 30s to 60s to reduce Firestore reads
   // Cache headers on API route provide freshness, so less frequent polling is safe
   useEffect(() => {
     if (!selectedNailTechId) return;
+    if (isSimultaneous && !selectedSecondaryNailTechId) return;
     
     const interval = setInterval(() => {
       loadData(false); // Don't show loading spinner on auto-refresh
@@ -186,7 +201,7 @@ export default function BookingPage() {
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedNailTechId]);
+  }, [selectedNailTechId, selectedSecondaryNailTechId, isSimultaneous]);
 
   async function loadNailTechs() {
     setLoadingNailTechs(true);
@@ -209,19 +224,58 @@ export default function BookingPage() {
 
   async function loadData(showLoading = true) {
     if (!selectedNailTechId) return;
+    if (isSimultaneous && !selectedSecondaryNailTechId) return;
     
     if (showLoading) {
       setLoading(true);
     }
     setError(null);
     try {
-      // OPTIMIZED: Removed cache-busting timestamp - API route now has proper caching
-      // Browser/CDN cache will handle freshness, reducing unnecessary Firestore reads
-      const response = await fetch(`/api/availability?nailTechId=${selectedNailTechId}`, {
-        // Use default cache behavior - API route handles caching headers
-      });
-      const data = await response.json();
-      setSlots(data.slots);
+      if (isSimultaneous) {
+        const [resA, resB] = await Promise.all([
+          fetch(`/api/availability?nailTechId=${selectedNailTechId}`),
+          fetch(`/api/availability?nailTechId=${selectedSecondaryNailTechId}`),
+        ]);
+        if (!resA.ok || !resB.ok) throw new Error('Failed to fetch availability');
+        const [dataA, dataB] = await Promise.all([resA.json(), resB.json()]);
+        const slotsA = (dataA?.slots || []) as any[];
+        const slotsB = (dataB?.slots || []) as any[];
+
+        const normA = slotsA.map((slot: any) => ({
+          ...slot,
+          id: slot.id || slot._id || slot._id?.toString?.(),
+          time: normalizeSlotTime(String(slot.time || '')),
+        })) as Slot[];
+        const normB = slotsB.map((slot: any) => ({
+          ...slot,
+          id: slot.id || slot._id || slot._id?.toString?.(),
+          time: normalizeSlotTime(String(slot.time || '')),
+        })) as Slot[];
+
+        const mapB = new Map<string, Slot>();
+        normB.forEach((s) => mapB.set(`${s.date}T${normalizeSlotTime(s.time)}`, s));
+
+        const intersection: Slot[] = [];
+        const secondaryIdMap = new Map<string, string>();
+        normA.forEach((s) => {
+          const key = `${s.date}T${normalizeSlotTime(s.time)}`;
+          const other = mapB.get(key);
+          if (other) {
+            intersection.push(s);
+            secondaryIdMap.set(key, other.id);
+          }
+        });
+
+        secondarySlotIdByDateTimeRef.current = secondaryIdMap;
+        setSlots(intersection);
+      } else {
+        // Single-tech flow
+        const response = await fetch(`/api/availability?nailTechId=${selectedNailTechId}`, {
+          // Use default cache behavior - API route handles caching headers
+        });
+        const data = await response.json();
+        setSlots(data.slots);
+      }
     } catch (err) {
       console.error('Error loading availability', err);
       setError('Unable to load availability. Please try again.');
@@ -240,7 +294,15 @@ export default function BookingPage() {
       return;
     }
 
-    const requiredSlots = getRequiredSlotCount(selectedService);
+    if (isSimultaneous) {
+      setLinkedSlots([]);
+      setServiceMessage(
+        `This booking will reserve 2 nail techs at the same time slot (${formatTime12Hour(selectedSlot.time)}).`
+      );
+      return;
+    }
+
+    const requiredSlots = getRequiredSlotCount(selectedService, clientInfo?.serviceLocation);
     if (requiredSlots === 1) {
       setLinkedSlots([]);
       setServiceMessage(null);
@@ -335,7 +397,7 @@ export default function BookingPage() {
         `This booking will use the time slot at ${formatTime12Hour(selectedSlot.time)}.`
       );
     }
-  }, [selectedSlot, selectedService, slots, serviceOptions]);
+  }, [selectedSlot, selectedService, slots, serviceOptions, isSimultaneous, clientInfo?.serviceLocation]);
 
   const availableSlotsForDate = useMemo(
     () => {
@@ -352,12 +414,12 @@ export default function BookingPage() {
   // Filter slots that can accommodate the selected service
   const compatibleSlotsForDate = useMemo(
     () => {
-      if (!selectedService || getRequiredSlotCount(selectedService) === 1) {
+      if (!selectedService || getRequiredSlotCount(selectedService, clientInfo?.serviceLocation) === 1) {
         return availableSlotsForDate;
       }
-      return availableSlotsForDate.filter((slot) => canSlotAccommodateService(slot, selectedService, slots));
+      return availableSlotsForDate.filter((slot) => canSlotAccommodateService(slot, selectedService, slots, clientInfo?.serviceLocation));
     },
-    [availableSlotsForDate, selectedService, slots],
+    [availableSlotsForDate, selectedService, slots, clientInfo?.serviceLocation],
   );
 
 
@@ -392,9 +454,9 @@ export default function BookingPage() {
       }
     });
     
-    // Check each date for consecutive available slots
+    // Check each date for consecutive available slots (required for home service 2/4 slots)
     Object.entries(dateGroups).forEach(([dateKey, dateSlots]) => {
-      if (canSlotAccommodateService(dateSlots[0], selectedService, slots)) {
+      if (canSlotAccommodateService(dateSlots[0], selectedService, slots, clientInfo?.serviceLocation)) {
         available.add(dateKey);
       }
     });
@@ -501,6 +563,7 @@ export default function BookingPage() {
     inspoDescription: string;
     waiverAccepted: string;
     rulesAccepted: boolean;
+    address?: string;
   }) {
     if (!selectedSlot || isBooking || !clientInfo) return;
     
@@ -553,7 +616,15 @@ export default function BookingPage() {
         customerId = customerData.customer._id || customerData.customer.id;
       }
 
-      const slotIds = [selectedSlot.id, ...linkedSlotIds];
+      const slotIds = (() => {
+        if (isSimultaneous) {
+          const key = `${selectedSlot.date}T${normalizeSlotTime(selectedSlot.time)}`;
+          const secondarySlotId = secondarySlotIdByDateTimeRef.current.get(key);
+          if (!secondarySlotId) throw new Error('Matching slot for the second nail tech is no longer available. Please select a different time.');
+          return [selectedSlot.id, secondarySlotId];
+        }
+        return [selectedSlot.id, ...linkedSlotIds];
+      })();
       const slotCount = slotIds.length;
       const basePrice = 1500;
       const depositRequired = 500 * slotCount; // ₱500 per slot
@@ -574,10 +645,12 @@ export default function BookingPage() {
           } : undefined,
           nailTechId: selectedNailTechId || '',
           service: {
-            type: selectedService,
+            type: isSimultaneous ? 'Manicure + Pedicure' : selectedService,
             location: clientInfo.serviceLocation,
             clientType: clientInfo.clientType,
             chosenServices: formData.services?.length ? formData.services : undefined,
+            ...(clientInfo.serviceLocation === 'home_service' && formData.address ? { address: formData.address } : {}),
+            ...(isSimultaneous && selectedSecondaryNailTechId ? { mode: 'simultaneous_two_techs', secondaryNailTechId: selectedSecondaryNailTechId, secondaryServiceType: 'Pedicure' } : {}),
           },
           pricing: {
             total,
@@ -676,14 +749,29 @@ export default function BookingPage() {
                       <button
                         onClick={() => {
                           setSelectedNailTechId(null);
+                          setSelectedSecondaryNailTechId(null);
                           setSelectedSlot(null);
                           setLinkedSlots([]);
                           setServiceMessage(null);
+                          setShowNailTechModal(true);
                         }}
                         className="text-sm hover:opacity-75 underline mt-2 transition-opacity"
                         style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
                       >
-                        Change nail technician
+                        Change nail tech
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedService(null);
+                          // Open service modal as a "change" modal.
+                          // If user presses Back/Close, we should return to calendar.
+                          setServiceChangeMode(true);
+                          setShowServiceTypeModal(true);
+                        }}
+                        className="text-sm hover:opacity-75 underline mt-2 transition-opacity ml-4"
+                        style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
+                      >
+                        Change service
                       </button>
                     </div>
                   );
@@ -712,8 +800,14 @@ export default function BookingPage() {
                           selectedDate={selectedDate}
                           onSelectDate={setSelectedDate}
                           onChangeMonth={setCurrentMonth}
-                          nailTechName={selectedNailTechId ? `Ms. ${nailTechs.find(t => t.id === selectedNailTechId)?.name || ''}` : undefined}
-                          noAvailableSlotsDates={noAvailableSlotsDates}
+                          nailTechName={
+                            selectedNailTechId
+                              ? isSimultaneous
+                                ? `Ms. ${nailTechs.find(t => t.id === selectedNailTechId)?.name || ''} + Ms. ${nailTechs.find(t => t.id === selectedSecondaryNailTechId)?.name || ''}`
+                                : `Ms. ${nailTechs.find(t => t.id === selectedNailTechId)?.name || ''}`
+                              : undefined
+                          }
+                          noAvailableSlotsDates={requiredSlots > 1 ? noAvailableSlotsDates : []}
                           disablePastDates
                         />
                       );
@@ -828,6 +922,8 @@ export default function BookingPage() {
         onContinue={(data) => {
           setClientInfo(data);
           setSelectedService(null);
+          setSelectedNailTechId(null);
+          setSelectedSecondaryNailTechId(null);
           setShowClientTypeModal(false);
           setShowServiceTypeModal(true);
         }}
@@ -842,8 +938,21 @@ export default function BookingPage() {
           setSelectedService(serviceType);
           setShowServiceTypeModal(false);
           setShowNailTechModal(true);
+          setServiceChangeMode(false);
+          // Changing service should invalidate previously-selected tech/slots.
+          setSelectedNailTechId(null);
+          setSelectedSecondaryNailTechId(null);
+          setSelectedSlot(null);
+          setLinkedSlots([]);
+          setServiceMessage(null);
         }}
         onBack={() => {
+          if (serviceChangeMode) {
+            setShowServiceTypeModal(false);
+            setServiceChangeMode(false);
+            // Keep existing calendar context (tech/service selection) and just return.
+            return;
+          }
           setShowServiceTypeModal(false);
           setShowClientTypeModal(true);
           setClientInfo(null);
@@ -851,23 +960,56 @@ export default function BookingPage() {
       />
 
       {/* Nail Tech Selection Modal - Shows after service type is selected */}
-      <NailTechSelectionModal
-        isOpen={showNailTechModal}
-        nailTechs={nailTechs}
-        selectedNailTechId={selectedNailTechId}
-        serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
-        onContinue={(techId) => {
-          setSelectedNailTechId(techId);
-          setSelectedSlot(null);
-          setLinkedSlots([]);
-          setServiceMessage(null);
-          setShowNailTechModal(false);
-        }}
-        onBack={() => {
-          setShowNailTechModal(false);
-          setShowServiceTypeModal(true);
-        }}
-      />
+      {isSimultaneous ? (
+        <DualNailTechSelectionModal
+          isOpen={showNailTechModal}
+          nailTechs={nailTechs}
+          serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
+          manicureTechId={selectedNailTechId}
+          pedicureTechId={selectedSecondaryNailTechId}
+          onSelectManicure={(techId) => {
+            setSelectedNailTechId(techId);
+            setSelectedSlot(null);
+            setLinkedSlots([]);
+            setServiceMessage(null);
+          }}
+          onSelectPedicure={(techId) => {
+            setSelectedSecondaryNailTechId(techId);
+            setSelectedSlot(null);
+            setLinkedSlots([]);
+            setServiceMessage(null);
+          }}
+          onContinue={() => {
+            setSelectedSlot(null);
+            setLinkedSlots([]);
+            setServiceMessage(null);
+            setShowNailTechModal(false);
+          }}
+          onBack={() => {
+            setShowNailTechModal(false);
+            setShowServiceTypeModal(true);
+          }}
+        />
+      ) : (
+        <NailTechSelectionModal
+          isOpen={showNailTechModal}
+          nailTechs={nailTechs}
+          selectedNailTechId={selectedNailTechId}
+          serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
+          onContinue={(techId) => {
+            setSelectedNailTechId(techId);
+            setSelectedSecondaryNailTechId(null);
+            setSelectedSlot(null);
+            setLinkedSlots([]);
+            setServiceMessage(null);
+            setShowNailTechModal(false);
+          }}
+          onBack={() => {
+            setShowNailTechModal(false);
+            setShowServiceTypeModal(true);
+          }}
+        />
+      )}
 
       {/* Slot Confirmation Modal - Shows after slot selection */}
       <SlotConfirmationModal
@@ -876,7 +1018,7 @@ export default function BookingPage() {
         slotTime={selectedSlot?.time || ''}
         slotType={selectedSlot?.slotType}
         linkedSlotTimes={linkedSlots.map(s => s.time)}
-        slotCount={selectedSlot ? 1 + linkedSlots.length : 0}
+        slotCount={selectedSlot ? (isSimultaneous ? 2 : 1 + linkedSlots.length) : 0}
         serviceName={serviceOptions.find(o => o.value === selectedService)?.label}
         onConfirm={() => {
           setShowSlotConfirmModal(false);
@@ -892,8 +1034,9 @@ export default function BookingPage() {
       {/* Booking Form Modal - Collect customer info */}
       <BookingFormModal
         isOpen={showBookingFormModal}
-        slotCount={selectedSlot ? 1 + linkedSlots.length : 0}
+        slotCount={selectedSlot ? (isSimultaneous ? 2 : 1 + linkedSlots.length) : 0}
         clientType={clientInfo?.clientType || 'new'}
+        serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
         clientName={clientInfo?.customerName}
         clientEmail={clientInfo?.customerEmail}
         clientContactNumber={clientInfo?.contactNumber}

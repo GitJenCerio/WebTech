@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getChosenServicesDisplay } from '@/lib/serviceLabels';
-import { X, Phone, Mail, User, AlertCircle, ArrowLeft, Upload, Info } from 'lucide-react';
+import { X, Phone, Mail, User, AlertCircle, ArrowLeft, Upload, Info, MapPin } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 
 type ClientType = 'new' | 'repeat';
@@ -12,6 +12,7 @@ interface BookingFormModalProps {
   isOpen: boolean;
   slotCount?: number; // Total slots for deposit calc: ₱500 per slot
   clientType: ClientType;
+  serviceLocation?: 'homebased_studio' | 'home_service';
   clientName?: string;
   clientEmail?: string;
   clientContactNumber?: string;
@@ -22,6 +23,7 @@ interface BookingFormModalProps {
     email: string;
     contactNumber: string;
     socialMediaName: string;
+    address?: string;
     howDidYouFindUs: string;
     howDidYouFindUsOther?: string;
     currentNailPictures: File[];
@@ -46,6 +48,7 @@ export default function BookingFormModal({
   isOpen,
   slotCount = 1,
   clientType,
+  serviceLocation = 'homebased_studio',
   clientName,
   clientEmail,
   clientContactNumber,
@@ -59,6 +62,7 @@ export default function BookingFormModal({
   const [email, setEmail] = useState('');
   const [contactNumber, setContactNumber] = useState(clientContactNumber || '');
   const [socialMediaName, setSocialMediaName] = useState(clientSocialMediaName || '');
+  const [address, setAddress] = useState('');
   const [howDidYouFindUs, setHowDidYouFindUs] = useState('');
   const [howDidYouFindUsOther, setHowDidYouFindUsOther] = useState('');
   const [currentNailPictures, setCurrentNailPictures] = useState<File[]>([]);
@@ -100,6 +104,7 @@ export default function BookingFormModal({
       setInspoDescription('');
       setWaiverAccepted('');
       setRulesAccepted(false);
+      setAddress('');
       setError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -140,6 +145,10 @@ export default function BookingFormModal({
           if (!email.trim()) { setError('Email address is required'); return false; }
           if (!contactNumber.trim()) { setError('Contact number is required'); return false; }
           if (!socialMediaName.trim()) { setError('Facebook or Instagram name is required'); return false; }
+          if (serviceLocation === 'home_service' && !address.trim()) {
+            setError('Please provide your address for the home service appointment');
+            return false;
+          }
           return true;
         case 2:
           return true; // Nail Pictures (optional)
@@ -174,6 +183,10 @@ export default function BookingFormModal({
         }
         if (!socialMediaName.trim()) {
           setError('Facebook or Instagram name is required');
+          return false;
+        }
+        if (serviceLocation === 'home_service' && !address.trim()) {
+          setError('Please provide your address for the home service appointment');
           return false;
         }
         if (!howDidYouFindUs) {
@@ -270,6 +283,7 @@ export default function BookingFormModal({
         email: email.trim(),
         contactNumber: contactNumber.trim(),
         socialMediaName: socialMediaName.trim(),
+        ...(serviceLocation === 'home_service' && address.trim() ? { address: address.trim() } : {}),
         howDidYouFindUs: isRepeatFound ? 'repeat' : howDidYouFindUs,
         howDidYouFindUsOther: isRepeatFound ? undefined : (howDidYouFindUs === 'other' ? howDidYouFindUsOther.trim() : undefined),
         currentNailPictures: currentNailPictures,
@@ -423,6 +437,27 @@ export default function BookingFormModal({
                   required
                 />
               </div>
+
+              {serviceLocation === 'home_service' && (
+                <div>
+                  <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
+                    <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+                    Address for home service <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={address}
+                    onChange={(e) => {
+                      setAddress(e.target.value);
+                      setError(null);
+                    }}
+                    placeholder="e.g., Street, Barangay, City"
+                    rows={2}
+                    className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors resize-none"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+              )}
 
               {/* How did you find us - new clients only */}
               {!isRepeatFound && (

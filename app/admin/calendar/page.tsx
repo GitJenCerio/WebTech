@@ -95,6 +95,7 @@ export default function CalendarPage() {
     customerId?: string;
     nailTechId?: string;
     nailTechName?: string;
+    secondaryNailTechName?: string;
     slotType?: 'regular' | 'with_squeeze_fee' | null;
     date: string;
     time: string;
@@ -105,6 +106,7 @@ export default function CalendarPage() {
     service: string;
     chosenServices?: string[];
     serviceLocation?: 'homebased_studio' | 'home_service';
+    serviceAddress?: string;
     status: BookingStatus;
     notes?: string;
     adminNotes?: string;
@@ -486,6 +488,9 @@ export default function CalendarPage() {
         customerId: slot.booking.customerId,
         nailTechId: slot.nailTechId,
         nailTechName: slot.nailTechId ? nailTechs.find((t) => t.id === slot.nailTechId)?.name : undefined,
+        secondaryNailTechName: slot.booking?.service?.secondaryNailTechId
+          ? nailTechs.find((t) => t.id === slot.booking?.service?.secondaryNailTechId)?.name
+          : undefined,
         date: displayDate,
         time: slot.time,
         slotTimes: bookingSlotTimes.length > 0 ? bookingSlotTimes : undefined,
@@ -496,6 +501,7 @@ export default function CalendarPage() {
         service: slot.service || 'Nail Service',
         chosenServices: slot.booking?.service?.chosenServices,
         serviceLocation: slot.booking?.service?.location,
+        serviceAddress: slot.booking?.service?.address,
         status: slot.status,
         slotType: slot.type,
         notes: slot.booking?.clientNotes || undefined,
@@ -868,6 +874,7 @@ export default function CalendarPage() {
           clientPhotoUploadExpiresAt: b.clientPhotoUploadExpiresAt ?? prev.clientPhotoUploadExpiresAt,
           amountPaid: b.pricing?.paidAmount ?? prev.amountPaid ?? prev.paidAmount ?? prev.pricing?.paidAmount,
           pricing: b.pricing ?? prev.pricing,
+          serviceAddress: b.service?.address ?? prev.serviceAddress,
         } : null);
       })
       .catch(() => {});

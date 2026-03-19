@@ -7,7 +7,13 @@ import { OptionCard, OptionCardTitle, OptionCardDescription, OptionCardBadge } f
 import { Button } from '@/components/ui/Button';
 
 type ServiceLocation = 'homebased_studio' | 'home_service';
-type BookingServiceType = 'manicure' | 'pedicure' | 'mani_pedi' | 'home_service_2slots' | 'home_service_3slots';
+type BookingServiceType =
+  | 'manicure'
+  | 'pedicure'
+  | 'mani_pedi'
+  | 'mani_pedi_simultaneous'
+  | 'home_service_2slots'
+  | 'home_service_3slots';
 
 interface ServiceOption {
   value: BookingServiceType;
@@ -21,11 +27,13 @@ const servicesByLocation: Record<ServiceLocation, ServiceOption[]> = {
     { value: 'manicure', label: 'Manicure', description: 'Professional manicure at our studio', slots: 1 },
     { value: 'pedicure', label: 'Pedicure', description: 'Professional pedicure at our studio', slots: 1 },
     { value: 'mani_pedi', label: 'Mani + Pedi', description: 'Manicure and pedicure combo', slots: 2 },
+    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi (Same time)', description: 'Manicure and pedicure with 2 nail techs at the same time', slots: 1 },
   ],
   home_service: [
     { value: 'manicure', label: 'Manicure for 2', description: 'Professional manicure for 2 people at your home', slots: 2 },
     { value: 'pedicure', label: 'Pedicure for 2', description: 'Professional pedicure for 2 people at your home', slots: 2 },
     { value: 'mani_pedi', label: 'Mani + Pedi', description: 'Manicure and pedicure combo', slots: 2 },
+    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi (Same time)', description: 'Manicure and pedicure with 2 nail techs at the same time', slots: 1 },
     { value: 'home_service_2slots', label: 'Mani + Pedi for 2', description: 'Mani + Pedi for 2 people', slots: 4 },
   ],
 };

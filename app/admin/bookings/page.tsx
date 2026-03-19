@@ -49,12 +49,14 @@ interface Booking {
   bookingCode?: string;
   customerId?: string;
   nailTechId?: string;
+  secondaryNailTechId?: string;
   date: string;
   time: string;
   clientName: string;
   service: string;
   chosenServices?: string[];
   serviceLocation?: 'homebased_studio' | 'home_service';
+  serviceAddress?: string;
   status: BookingStatus;
   amount?: number;
   clientNotes?: string;
@@ -89,6 +91,7 @@ export default function BookingsPage() {
     customerId?: string;
     nailTechId?: string;
     nailTechName?: string;
+    secondaryNailTechName?: string;
     slotType?: 'regular' | 'with_squeeze_fee' | null;
     date: string;
     time: string;
@@ -165,9 +168,11 @@ export default function BookingsPage() {
       time: apptTime,
       clientName: booking.customerName || 'Unknown Client',
       socialName: booking.customerSocialMediaName || '',
-      service: booking.service?.type || 'Nail Service',
-      chosenServices: booking.service?.chosenServices,
-      serviceLocation: booking.service?.location,
+            service: booking.service?.type || 'Nail Service',
+            chosenServices: booking.service?.chosenServices,
+            serviceLocation: booking.service?.location,
+            serviceAddress: booking.service?.address,
+            secondaryNailTechId: booking.service?.secondaryNailTechId,
       status: booking.status || 'booked',
       amount: (booking.invoice?.quotationId || booking.invoice?.total != null) ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0,
       amountPaid: booking.pricing?.paidAmount || 0,
@@ -263,6 +268,7 @@ export default function BookingsPage() {
           socialName: booking.customerSocialMediaName || '',
           service: booking.service?.type || 'Nail Service',
           serviceLocation: booking.service?.location,
+          serviceAddress: booking.service?.address,
           status: booking.status || 'booked',
           amount: (booking.invoice?.quotationId || booking.invoice?.total != null) ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0,
           amountPaid: booking.pricing?.paidAmount || 0,
@@ -421,6 +427,8 @@ export default function BookingsPage() {
             socialName: booking.customerSocialMediaName || '',
             service: booking.service?.type || 'Nail Service',
             serviceLocation: booking.service?.location,
+            serviceAddress: booking.service?.address,
+            secondaryNailTechId: booking.service?.secondaryNailTechId,
             status: booking.status || 'booked',
             amount: (booking.invoice?.quotationId || booking.invoice?.total != null) ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0,
             amountPaid: booking.pricing?.paidAmount || 0,
@@ -499,6 +507,7 @@ export default function BookingsPage() {
             socialName: booking.customerSocialMediaName || '',
             service: booking.service?.type || 'Nail Service',
             serviceLocation: booking.service?.location,
+            serviceAddress: booking.service?.address,
             status: booking.status || 'booked',
             amount: (booking.invoice?.quotationId || booking.invoice?.total != null) ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0,
             amountPaid: booking.pricing?.paidAmount || 0,
@@ -916,6 +925,7 @@ export default function BookingsPage() {
       customerId: item.customerId,
       nailTechId: item.nailTechId,
       nailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
+      secondaryNailTechName: item.secondaryNailTechId ? nailTechs.find((t) => t.id === item.secondaryNailTechId)?.name : undefined,
       date: item.date,
       time: item.time,
       clientName: item.clientName,
