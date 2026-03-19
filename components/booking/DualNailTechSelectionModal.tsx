@@ -60,7 +60,7 @@ export default function DualNailTechSelectionModal({
         {availableTechs.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2">
             <div>
-              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Manicure tech</p>
+              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Manicure (Nail Tech)</p>
               <div className="space-y-3">
                 {availableTechs.map((tech) => {
                   const selected = manicureTechId === tech.id;
@@ -81,7 +81,7 @@ export default function DualNailTechSelectionModal({
             </div>
 
             <div>
-              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Pedicure tech</p>
+              <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Pedicure (Nail Tech)</p>
               <div className="space-y-3">
                 {availableTechs.map((tech) => {
                   const selected = pedicureTechId === tech.id;

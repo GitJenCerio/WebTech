@@ -29,6 +29,15 @@ function formatDateYyyyMmDd(dateStr: string): string {
   }
 }
 
+/** Simultaneous two-tech Mani+Pedi is branded “Express” in admin UI */
+function getBookingDetailsServiceDisplay(service: string | undefined, secondaryNailTechName?: string): string {
+  const resolvedService = getSlotServiceDisplay(service);
+  if (secondaryNailTechName?.trim() && resolvedService === 'Manicure + Pedicure') {
+    return 'Mani+Pedi Express';
+  }
+  return getSlotServiceDisplay(service);
+}
+
 const iconSize = 14;
 
 interface BookingDetailsModalProps {
@@ -45,7 +54,10 @@ interface BookingDetailsModalProps {
     serviceLocation?: 'homebased_studio' | 'home_service';
     serviceAddress?: string;
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
+    nailTechId?: string;
     nailTechName?: string;
+    primaryNailTechId?: string;
+    secondaryNailTechId?: string;
     secondaryNailTechName?: string;
     clientName: string;
     clientEmail?: string;
@@ -120,6 +132,26 @@ export default function BookingDetailsModal({
 
   if (!booking) return null;
 
+  const resolvedService = getSlotServiceDisplay(booking.service);
+  // Be tolerant of legacy stored service values so the modal consistently
+  // switches to the "Express" single-tech display when a secondary tech exists.
+  const isExpressManiPedi =
+    Boolean(booking.secondaryNailTechName) &&
+    resolvedService.toLowerCase().includes('manicure') &&
+    resolvedService.toLowerCase().includes('pedicure');
+  const expressTechRoleLabel = (() => {
+    if (!isExpressManiPedi) return null;
+    if (booking.nailTechId && booking.primaryNailTechId && booking.secondaryNailTechId) {
+      if (String(booking.nailTechId) === String(booking.primaryNailTechId)) return 'Manicure';
+      if (String(booking.nailTechId) === String(booking.secondaryNailTechId)) return 'Pedicure';
+    }
+    // Fallback: if the currently shown tech matches the secondary name, treat it as Pedicure.
+    if (booking.nailTechName && booking.secondaryNailTechName && booking.nailTechName === booking.secondaryNailTechName) {
+      return 'Pedicure';
+    }
+    return 'Manicure';
+  })();
+
   const isPendingPayment = ['booked', 'PENDING_PAYMENT', 'pending'].includes(booking.status);
   const isCompleted = Boolean(booking.completedAt) || ['completed', 'COMPLETED'].includes(booking.status);
   const canVerify = Boolean(booking.paymentProofUrl && onVerifyPaymentProof);
@@ -186,7 +218,12 @@ export default function BookingDetailsModal({
               {booking.nailTechName && (
                 <div className="flex items-center gap-2">
                   <User size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
-                  {booking.secondaryNailTechName ? (
+                  {expressTechRoleLabel ? (
+                    <span>
+                      Ms. {booking.nailTechName}
+                      <span className="text-gray-400 text-[11px] ml-0.5">({expressTechRoleLabel})</span>
+                    </span>
+                  ) : booking.secondaryNailTechName ? (
                     <span>
                       Ms. {booking.nailTechName}
                       <span className="text-gray-400 text-[11px] ml-0.5">(Manicure)</span>
@@ -212,7 +249,7 @@ export default function BookingDetailsModal({
               <div className="flex items-center gap-2">
                 <Sparkles size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
                 <span>
-                  {[getSlotServiceDisplay(booking.service), getChosenServicesDisplay(booking.chosenServices)].filter(Boolean).join(' · ')}
+                  {[getBookingDetailsServiceDisplay(booking.service, booking.secondaryNailTechName), getChosenServicesDisplay(booking.chosenServices)].filter(Boolean).join(' · ')}
                 </span>
               </div>
               {locationLabel && (

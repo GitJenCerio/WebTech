@@ -33,6 +33,8 @@ interface Slot {
   type?: 'regular' | 'with_squeeze_fee';
   nailTechId?: string;
   nailTechName?: string;
+  primaryNailTechId?: string;
+  secondaryNailTechId?: string;
   secondaryNailTechName?: string;
   clientName?: string;
   clientEmail?: string;
@@ -97,6 +99,8 @@ export default function CalendarPage() {
     customerId?: string;
     nailTechId?: string;
     nailTechName?: string;
+    primaryNailTechId?: string;
+    secondaryNailTechId?: string;
     secondaryNailTechName?: string;
     slotType?: 'regular' | 'with_squeeze_fee' | null;
     date: string;
@@ -195,19 +199,13 @@ export default function CalendarPage() {
     status: mapSlotStatus(slot),
     type: slot.slotType,
     nailTechId: slot.nailTechId,
-    nailTechName: (() => {
-      const primaryId = slot.booking?.nailTechId;
-      const secondaryId = slot.booking?.service?.secondaryNailTechId;
-      // For simultaneous bookings always show primary tech as Manicure,
-      // regardless of which slot (primary or secondary) we're rendering.
-      if (primaryId && secondaryId) return nailTechs.find(t => t.id === String(primaryId))?.name;
-      return nailTechs.find(t => t.id === slot.nailTechId)?.name;
-    })(),
+    primaryNailTechId: slot.booking?.nailTechId ? String(slot.booking.nailTechId) : undefined,
+    secondaryNailTechId: slot.booking?.service?.secondaryNailTechId ? String(slot.booking.service.secondaryNailTechId) : undefined,
+    // Show the tech that owns THIS slot card (primary slot = Manicure, secondary slot = Pedicure)
+    nailTechName: nailTechs.find(t => t.id === slot.nailTechId)?.name,
     secondaryNailTechName: (() => {
-      const primaryId = slot.booking?.nailTechId;
       const secondaryId = slot.booking?.service?.secondaryNailTechId;
-      if (primaryId && secondaryId) return nailTechs.find(t => t.id === String(secondaryId))?.name;
-      return undefined;
+      return secondaryId ? nailTechs.find(t => t.id === String(secondaryId))?.name : undefined;
     })(),
     clientName: slot.booking?.customerName,
     clientEmail: slot.booking?.customerEmail,
@@ -503,6 +501,8 @@ export default function CalendarPage() {
         customerId: slot.booking.customerId,
         nailTechId: slot.nailTechId,
         nailTechName: slot.nailTechId ? nailTechs.find((t) => t.id === slot.nailTechId)?.name : undefined,
+        primaryNailTechId: slot.booking?.nailTechId ? String(slot.booking.nailTechId) : undefined,
+        secondaryNailTechId: slot.booking?.service?.secondaryNailTechId ? String(slot.booking.service.secondaryNailTechId) : undefined,
         secondaryNailTechName: slot.booking?.service?.secondaryNailTechId
           ? nailTechs.find((t) => t.id === slot.booking?.service?.secondaryNailTechId)?.name
           : undefined,

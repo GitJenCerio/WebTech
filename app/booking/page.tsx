@@ -32,13 +32,13 @@ const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; labe
     { value: 'manicure', label: 'Manicure (1 slot)' },
     { value: 'pedicure', label: 'Pedicure (1 slot)' },
     { value: 'mani_pedi', label: 'Mani + Pedi (2 slots)' },
-    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi (Same time, 2 techs)' },
+    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express (2 techs)' },
   ],
   home_service: [
     { value: 'manicure', label: 'Manicure 2 pax (2 slots)' },
     { value: 'pedicure', label: 'Pedicure 2 pax (2 slots)' },
     { value: 'mani_pedi', label: 'Mani + Pedi (2 slots)' },
-    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi (Same time, 2 techs)' },
+    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express (2 techs)' },
     { value: 'home_service_2slots', label: 'Mani + Pedi 2 pax (4 slots)' },
   ],
 };
@@ -740,15 +740,15 @@ export default function BookingPage() {
                     const secondaryTech = nailTechs.find(t => t.id === selectedSecondaryNailTechId);
                     return (
                       <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-widest mb-1" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>Mani+Pedi (Same Time)</p>
+                        <p className="text-xs uppercase tracking-widest mb-1" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>Mani+Pedi Express</p>
                         <p className="text-sm" style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}>
                           <strong style={{ fontFamily: "'Lato', sans-serif" }}>Ms. {selectedTech.name}</strong>
-                          <span className="ml-1 text-xs" style={{ color: '#6c757d' }}>(Manicure)</span>
+                          <span className="ml-1 text-xs" style={{ color: '#6c757d' }}>(Manicure (Nail Tech))</span>
                           {secondaryTech && (
                             <>
                               <span className="mx-2" style={{ color: '#adb5bd' }}>·</span>
                               <strong style={{ fontFamily: "'Lato', sans-serif" }}>Ms. {secondaryTech.name}</strong>
-                              <span className="ml-1 text-xs" style={{ color: '#6c757d' }}>(Pedicure)</span>
+                              <span className="ml-1 text-xs" style={{ color: '#6c757d' }}>(Pedicure (Nail Tech))</span>
                             </>
                           )}
                         </p>

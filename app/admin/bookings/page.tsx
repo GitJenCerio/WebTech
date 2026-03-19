@@ -90,6 +90,8 @@ export default function BookingsPage() {
     bookingCode?: string;
     customerId?: string;
     nailTechId?: string;
+    primaryNailTechId?: string;
+    secondaryNailTechId?: string;
     nailTechName?: string;
     secondaryNailTechName?: string;
     slotType?: 'regular' | 'with_squeeze_fee' | null;
@@ -924,6 +926,8 @@ export default function BookingsPage() {
       bookingCode: item.bookingCode,
       customerId: item.customerId,
       nailTechId: item.nailTechId,
+      primaryNailTechId: item.nailTechId,
+      secondaryNailTechId: item.secondaryNailTechId,
       nailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
       secondaryNailTechName: item.secondaryNailTechId ? nailTechs.find((t) => t.id === item.secondaryNailTechId)?.name : undefined,
       date: item.date,

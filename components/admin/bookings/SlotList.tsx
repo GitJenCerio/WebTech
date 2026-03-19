@@ -10,6 +10,8 @@ interface Slot {
   slotType?: 'regular' | 'with_squeeze_fee' | null;
   nailTechId?: string;
   nailTechName?: string;
+  primaryNailTechId?: string;
+  secondaryNailTechId?: string;
   secondaryNailTechName?: string;
   nailTechRole?: string;
   serviceLocation?: 'homebased_studio' | 'home_service';
@@ -48,7 +50,25 @@ export default function SlotList({
   onCancel,
   emptyStateFiltered = false,
 }: SlotListProps) {
-  const sortedSlots = useMemo(() => sortSlotsWithPairedBookings(slots), [slots]);
+  const sortedSlots = useMemo(() => {
+    const base = sortSlotsWithPairedBookings(slots);
+    // Deterministic ordering for simultaneous Mani+Pedi:
+    // primary tech (Manicure) slot card first, secondary tech (Pedicure) second.
+    const withIndex = base.map((s, i) => ({ s, i }));
+    withIndex.sort((a, b) => {
+      const sameBookingId = a.s.booking?.id && b.s.booking?.id && a.s.booking.id === b.s.booking.id;
+      const sameTime = a.s.time && b.s.time && a.s.time === b.s.time;
+      const isSimA = a.s.service === 'Manicure + Pedicure' && a.s.primaryNailTechId && a.s.secondaryNailTechId;
+      const isSimB = b.s.service === 'Manicure + Pedicure' && b.s.primaryNailTechId && b.s.secondaryNailTechId;
+      if (sameBookingId && sameTime && isSimA && isSimB) {
+        const aIsPrimary = String(a.s.nailTechId) === String(a.s.primaryNailTechId);
+        const bIsPrimary = String(b.s.nailTechId) === String(b.s.primaryNailTechId);
+        if (aIsPrimary !== bIsPrimary) return aIsPrimary ? -1 : 1;
+      }
+      return a.i - b.i;
+    });
+    return withIndex.map((x) => x.s);
+  }, [slots]);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -108,6 +128,8 @@ export default function SlotList({
                 slotType={slot.slotType}
                 nailTechId={slot.nailTechId}
                 nailTechName={slot.nailTechName}
+                primaryNailTechId={slot.primaryNailTechId}
+                secondaryNailTechId={slot.secondaryNailTechId}
                 secondaryNailTechName={slot.secondaryNailTechName}
                 nailTechRole={slot.nailTechRole}
                 serviceLocation={slot.serviceLocation}

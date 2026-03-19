@@ -25,6 +25,8 @@ interface SlotItemProps {
   slotType?: 'regular' | 'with_squeeze_fee' | null;
   nailTechId?: string;
   nailTechName?: string;
+  primaryNailTechId?: string;
+  secondaryNailTechId?: string;
   secondaryNailTechName?: string;
   nailTechRole?: string;
   serviceLocation?: 'homebased_studio' | 'home_service';
@@ -45,6 +47,8 @@ export default function SlotItem({
   slotType,
   nailTechId,
   nailTechName,
+  primaryNailTechId,
+  secondaryNailTechId,
   secondaryNailTechName,
   nailTechRole: _nailTechRole,
   serviceLocation,
@@ -67,8 +71,10 @@ export default function SlotItem({
   const isClickable = (canViewSlot && onView) || (canEditSlot && onEdit);
 
   const isSimultaneous = service === 'Manicure + Pedicure' && Boolean(secondaryNailTechName);
+
+  /** Batch badge: same combined label on both simultaneous slot cards */
   const serviceBadge = isSimultaneous
-    ? { label: 'Mani+Pedi (Same Time)', style: SERVICE_BADGE_STYLE }
+    ? { label: 'Mani+Pedi Express', style: SERVICE_BADGE_STYLE }
     : getServiceBadge(service);
 
   return (
@@ -172,10 +178,15 @@ export default function SlotItem({
                 {nailTechName && !isSimultaneous && (
                   <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
                 )}
-                {isSimultaneous && nailTechName && secondaryNailTechName && (
+                {isSimultaneous && nailTechName && nailTechId && primaryNailTechId && secondaryNailTechId && (
                   <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: '#374151' }}>
-                    <NailTechBadge name={`${nailTechName} (Mani)`} nailTechId={nailTechId} />
-                    <NailTechBadge name={`${secondaryNailTechName} (Pedi)`} />
+                    {String(nailTechId) === String(primaryNailTechId) ? (
+                      <NailTechBadge name={`${nailTechName} (Manicure)`} nailTechId={nailTechId} />
+                    ) : String(nailTechId) === String(secondaryNailTechId) ? (
+                      <NailTechBadge name={`${nailTechName} (Pedicure)`} nailTechId={nailTechId} />
+                    ) : (
+                      <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
+                    )}
                   </span>
                 )}
               </div>
