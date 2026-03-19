@@ -29,16 +29,8 @@ export default function DualNailTechSelectionModal({
   onContinue,
   onBack,
 }: DualNailTechSelectionModalProps) {
-  const availableTechs = nailTechs.filter((tech) => {
-    if (serviceLocation === 'homebased_studio') {
-      return tech.serviceAvailability === 'Studio only' || tech.serviceAvailability === 'Studio and Home Service';
-    }
-    // Home service: only show techs that actually do home service.
-    // If you want home service restricted to the Owner (e.g. Ms. Jhen), keep this extra role check.
-    const supportsHomeService =
-      tech.serviceAvailability === 'Home service only' || tech.serviceAvailability === 'Studio and Home Service';
-    return supportsHomeService && tech.role === 'Owner';
-  });
+  // For simultaneous Mani+Pedi, all techs are visible regardless of serviceAvailability or location.
+  const availableTechs = nailTechs;
 
   const canContinue = Boolean(manicureTechId && pedicureTechId && manicureTechId !== pedicureTechId);
 

@@ -186,10 +186,17 @@ export default function BookingDetailsModal({
               {booking.nailTechName && (
                 <div className="flex items-center gap-2">
                   <User size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
-                  <span>
-                    Ms. {booking.nailTechName}
-                    {booking.secondaryNailTechName ? ` + Ms. ${booking.secondaryNailTechName}` : ''}
-                  </span>
+                  {booking.secondaryNailTechName ? (
+                    <span>
+                      Ms. {booking.nailTechName}
+                      <span className="text-gray-400 text-[11px] ml-0.5">(Manicure)</span>
+                      <span className="mx-1.5 text-gray-300">·</span>
+                      Ms. {booking.secondaryNailTechName}
+                      <span className="text-gray-400 text-[11px] ml-0.5">(Pedicure)</span>
+                    </span>
+                  ) : (
+                    <span>Ms. {booking.nailTechName}</span>
+                  )}
                 </div>
               )}
               <div className="flex items-center gap-2">

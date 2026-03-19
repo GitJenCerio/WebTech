@@ -125,12 +125,7 @@ async function validateSimultaneousSlots(params: {
     throw new Error('Simultaneous Mani+Pedi requires the same date and time for both slots');
   }
 
-  const [techA, techB] = await Promise.all([
-    NailTech.findById(primaryNailTechId).select('serviceAvailability').lean(),
-    NailTech.findById(secondaryNailTechId).select('serviceAvailability').lean(),
-  ]);
-  validateTechSupportsLocation(techA as any, location);
-  validateTechSupportsLocation(techB as any, location);
+  // Simultaneous Mani+Pedi: all techs are allowed regardless of serviceAvailability or location.
 }
 
 /**

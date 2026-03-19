@@ -33,6 +33,7 @@ interface Slot {
   type?: 'regular' | 'with_squeeze_fee';
   nailTechId?: string;
   nailTechName?: string;
+  secondaryNailTechName?: string;
   clientName?: string;
   clientEmail?: string;
   clientPhone?: string;
@@ -47,8 +48,9 @@ interface Slot {
     customerEmail?: string;
     customerPhone?: string;
     customerSocialMediaName?: string;
+    nailTechId?: string;
     slotIds?: string[];
-    service?: { type?: string; location?: 'homebased_studio' | 'home_service'; chosenServices?: string[] };
+    service?: { type?: string; location?: 'homebased_studio' | 'home_service'; chosenServices?: string[]; secondaryNailTechId?: string };
     status: string;
     paymentStatus?: string;
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number };
@@ -193,7 +195,20 @@ export default function CalendarPage() {
     status: mapSlotStatus(slot),
     type: slot.slotType,
     nailTechId: slot.nailTechId,
-    nailTechName: nailTechs.find(t => t.id === slot.nailTechId)?.name,
+    nailTechName: (() => {
+      const primaryId = slot.booking?.nailTechId;
+      const secondaryId = slot.booking?.service?.secondaryNailTechId;
+      // For simultaneous bookings always show primary tech as Manicure,
+      // regardless of which slot (primary or secondary) we're rendering.
+      if (primaryId && secondaryId) return nailTechs.find(t => t.id === String(primaryId))?.name;
+      return nailTechs.find(t => t.id === slot.nailTechId)?.name;
+    })(),
+    secondaryNailTechName: (() => {
+      const primaryId = slot.booking?.nailTechId;
+      const secondaryId = slot.booking?.service?.secondaryNailTechId;
+      if (primaryId && secondaryId) return nailTechs.find(t => t.id === String(secondaryId))?.name;
+      return undefined;
+    })(),
     clientName: slot.booking?.customerName,
     clientEmail: slot.booking?.customerEmail,
     clientPhone: slot.booking?.customerPhone,

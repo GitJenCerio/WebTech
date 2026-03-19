@@ -735,6 +735,52 @@ export default function BookingPage() {
                 {(() => {
                   const selectedTech = nailTechs.find(t => t.id === selectedNailTechId);
                   if (!selectedTech) return null;
+
+                  if (isSimultaneous) {
+                    const secondaryTech = nailTechs.find(t => t.id === selectedSecondaryNailTechId);
+                    return (
+                      <div className="space-y-1">
+                        <p className="text-xs uppercase tracking-widest mb-1" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>Mani+Pedi (Same Time)</p>
+                        <p className="text-sm" style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}>
+                          <strong style={{ fontFamily: "'Lato', sans-serif" }}>Ms. {selectedTech.name}</strong>
+                          <span className="ml-1 text-xs" style={{ color: '#6c757d' }}>(Manicure)</span>
+                          {secondaryTech && (
+                            <>
+                              <span className="mx-2" style={{ color: '#adb5bd' }}>·</span>
+                              <strong style={{ fontFamily: "'Lato', sans-serif" }}>Ms. {secondaryTech.name}</strong>
+                              <span className="ml-1 text-xs" style={{ color: '#6c757d' }}>(Pedicure)</span>
+                            </>
+                          )}
+                        </p>
+                        <button
+                          onClick={() => {
+                            setSelectedNailTechId(null);
+                            setSelectedSecondaryNailTechId(null);
+                            setSelectedSlot(null);
+                            setLinkedSlots([]);
+                            setServiceMessage(null);
+                            setShowNailTechModal(true);
+                          }}
+                          className="text-sm hover:opacity-75 underline mt-2 transition-opacity"
+                          style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
+                        >
+                          Change nail techs
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedService(null);
+                            setServiceChangeMode(true);
+                            setShowServiceTypeModal(true);
+                          }}
+                          className="text-sm hover:opacity-75 underline mt-2 transition-opacity ml-4"
+                          style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
+                        >
+                          Change service
+                        </button>
+                      </div>
+                    );
+                  }
+
                   const hasDiscount = selectedTech.discount !== undefined && selectedTech.discount !== null && selectedTech.discount > 0;
                   return (
                     <div className="space-y-1">

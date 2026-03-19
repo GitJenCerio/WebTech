@@ -10,6 +10,7 @@ interface Slot {
   slotType?: 'regular' | 'with_squeeze_fee' | null;
   nailTechId?: string;
   nailTechName?: string;
+  secondaryNailTechName?: string;
   nailTechRole?: string;
   serviceLocation?: 'homebased_studio' | 'home_service';
   clientName?: string;
@@ -107,6 +108,7 @@ export default function SlotList({
                 slotType={slot.slotType}
                 nailTechId={slot.nailTechId}
                 nailTechName={slot.nailTechName}
+                secondaryNailTechName={slot.secondaryNailTechName}
                 nailTechRole={slot.nailTechRole}
                 serviceLocation={slot.serviceLocation}
                 clientName={slot.clientName}

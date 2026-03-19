@@ -25,6 +25,7 @@ interface SlotItemProps {
   slotType?: 'regular' | 'with_squeeze_fee' | null;
   nailTechId?: string;
   nailTechName?: string;
+  secondaryNailTechName?: string;
   nailTechRole?: string;
   serviceLocation?: 'homebased_studio' | 'home_service';
   clientName?: string;
@@ -44,6 +45,7 @@ export default function SlotItem({
   slotType,
   nailTechId,
   nailTechName,
+  secondaryNailTechName,
   nailTechRole: _nailTechRole,
   serviceLocation,
   clientName,
@@ -64,7 +66,10 @@ export default function SlotItem({
   };
   const isClickable = (canViewSlot && onView) || (canEditSlot && onEdit);
 
-  const serviceBadge = getServiceBadge(service);
+  const isSimultaneous = service === 'Manicure + Pedicure' && Boolean(secondaryNailTechName);
+  const serviceBadge = isSimultaneous
+    ? { label: 'Mani+Pedi (Same Time)', style: SERVICE_BADGE_STYLE }
+    : getServiceBadge(service);
 
   return (
     <div
@@ -164,8 +169,14 @@ export default function SlotItem({
                     <EyeOff style={{ width: '12px', height: '12px', flexShrink: 0 }} />Hidden from Clients
                   </span>
                 )}
-                {nailTechName && (
+                {nailTechName && !isSimultaneous && (
                   <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
+                )}
+                {isSimultaneous && nailTechName && secondaryNailTechName && (
+                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: '#374151' }}>
+                    <NailTechBadge name={`${nailTechName} (Mani)`} nailTechId={nailTechId} />
+                    <NailTechBadge name={`${secondaryNailTechName} (Pedi)`} />
+                  </span>
                 )}
               </div>
               {clientName && (

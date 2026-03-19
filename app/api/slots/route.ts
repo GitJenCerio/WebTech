@@ -153,6 +153,7 @@ export async function GET(request: Request) {
             id: String(booking._id),
             bookingCode: booking.bookingCode,
             customerId: booking.customerId,
+            nailTechId: booking.nailTechId ? String(booking.nailTechId) : undefined,
             customerName: customerById.get(String(booking.customerId))?.name || 'Unknown Client',
             customerEmail: customerById.get(String(booking.customerId))?.email || '',
             customerPhone: customerById.get(String(booking.customerId))?.phone || '',
