@@ -453,7 +453,7 @@ export default function BookingDetailsModal({
                 loading={isVerifyingPaymentProof}
               >
                 <i className="bi bi-shield-check mr-2"></i>
-                {isVerifyingPaymentProof ? 'Verifying...' : 'Verify Payment Proof'}
+                {isVerifyingPaymentProof ? 'Verifying...' : 'Verify Payment'}
               </Button>
               <Button
                 variant="outline"
@@ -464,7 +464,7 @@ export default function BookingDetailsModal({
                 disabled={!onManualConfirmPayment || isManualConfirming}
               >
                 <i className="bi bi-pencil-square mr-2"></i>
-                Manual confirmation
+                Confirm Manually
               </Button>
               <Button
                 variant="destructive"
@@ -577,7 +577,7 @@ export default function BookingDetailsModal({
     <Dialog open={showManualConfirmDialog} onOpenChange={setShowManualConfirmDialog}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Manual confirmation</DialogTitle>
+          <DialogTitle>Confirm Manually</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-gray-600">
           Confirm this booking without payment proof. Set how much the client paid (PHP). You can set 0 if you don’t require payment.

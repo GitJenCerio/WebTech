@@ -255,22 +255,35 @@ export default function FinancePage() {
 
   const revenueByNailTech = useMemo(() => {
     const paidTx = filteredTransactions.filter((t) => t.paymentStatus === 'paid');
-    const byTech = new Map<string, { name: string; total: number; count: number }>();
+    const byTech = new Map<string, { name: string; total: number; count: number; commissionRate: number }>();
     for (const t of paidTx) {
       const techId = t.nailTechId || '_unknown';
       const tech = nailTechs.find((n) => n.id === t.nailTechId);
       const name = tech ? `Ms. ${tech.name}` : techId === '_unknown' ? 'Unassigned' : 'Unknown';
-      const current = byTech.get(techId) || { name, total: 0, count: 0 };
+      // tech.commissionRate is stored as a decimal (0.4 = 40%); normalize to percentage scale (0–100) to match adminCommissionRate
+      const rate = typeof tech?.commissionRate === 'number' ? tech.commissionRate * 100 : adminCommissionRate;
+      const current = byTech.get(techId) || { name, total: 0, count: 0, commissionRate: rate };
       byTech.set(techId, {
         name,
         total: current.total + t.total,
         count: current.count + 1,
+        commissionRate: rate,
       });
     }
     return Array.from(byTech.entries())
       .map(([id, data]) => ({ id, ...data }))
       .sort((a, b) => b.total - a.total);
-  }, [filteredTransactions, nailTechs]);
+  }, [filteredTransactions, nailTechs, adminCommissionRate]);
+
+  const commissionByNailTech = useMemo(() => {
+    return revenueByNailTech.map(({ id, name, total, count, commissionRate }) => ({
+      id,
+      name,
+      commission: total * (commissionRate / 100),
+      count,
+      commissionRate,
+    }));
+  }, [revenueByNailTech]);
 
   const exportToCsv = () => {
     const dateLabel = dateFrom || dateTo ? `${dateFrom || 'all'}-to-${dateTo || 'all'}` : 'all';
@@ -470,140 +483,34 @@ export default function FinancePage() {
 
   return (
     <div className="space-y-5 md:space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
-        <StatCard
-          title="Today's Income"
-          value={`₱${todayIncome.toLocaleString()}`}
-          subtext="By appointment date (today)"
-          icon="bi-cash-stack"
-          variant="dark"
-          className="flex-grow-1"
-        />
-        <StatCard
-          title="This Week's Income"
-          iconBgColor="#e9ecef"
-          value={`₱${weekIncome.toLocaleString()}`}
-          subtext="By appointment date (this week)"
-          icon="bi-calendar-week"
-          className="flex-grow-1"
-        />
-        <StatCard
-          title="Pending Payments"
-          iconBgColor="#e9ecef"
-          value={`₱${pendingPayments.toLocaleString()}`}
-          subtext="By appointment date (this week)"
-          icon="bi-clock-history"
-          className="flex-grow-1"
-        />
-        <StatCard
-          title="Total Tips"
-          iconBgColor="#e9ecef"
-          value={`₱${totalTips.toLocaleString()}`}
-          subtext="By appointment date (filtered range)"
-          icon="bi-heart"
-          className="flex-grow-1"
-        />
-        <StatCard
-          title="Admin Commission"
-          iconBgColor="#e9ecef"
-          value={`₱${adminCommission.toLocaleString()}`}
-          subtext={`${adminCommissionRate}% of invoice total, excluding tips (by appointment date)`}
-          icon="bi-percent"
-          className="flex-grow-1"
-        />
-      </div>
-
-      {/* Revenue Trend Chart */}
-      {chartData.length > 0 && (
-        <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
-          <CardContent className="p-3 md:p-4">
-            <h3 className="text-sm font-semibold text-[#1a1a1a] mb-3">Revenue Trend</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={chartData.map((d) => ({ ...d, dateLabel: d.date ? new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '' }))} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: '#737373' }} />
-                <YAxis tick={{ fontSize: 11, fill: '#737373' }} tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000) + 'k' : v}`} />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null;
-                    const p = payload[0].payload as { date: string; total: number; paid: number; tip: number };
-                    return (
-                      <div className="rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 shadow-sm text-sm">
-                        <p className="font-medium text-[#1a1a1a] mb-1">{p.date ? new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</p>
-                        <p className="text-gray-600">Total: ₱{Number(p.total).toLocaleString()}</p>
-                        <p className="text-gray-600">Paid: ₱{Number(p.paid).toLocaleString()}</p>
-                        <p className="text-gray-600">Tip: ₱{Number(p.tip).toLocaleString()}</p>
-                      </div>
-                    );
-                  }}
-                />
-                <Line type="monotone" dataKey="total" name="Total Invoice" stroke="#1a1a1a" strokeWidth={2} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="paid" name="Paid Amount" stroke="#a3a3a3" strokeWidth={2} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
-          {error}
-        </div>
-      )}
-
-      {/* Revenue by Nail Tech */}
-      {revenueByNailTech.length > 0 && (
-        <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
-          <CardContent className="p-3 md:p-4">
-            <h3 className="text-sm font-semibold text-[#1a1a1a] mb-3">Revenue by Nail Tech</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {revenueByNailTech.map(({ id, name, total, count }) => (
-                <div
-                  key={id}
-                  className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 flex flex-col"
-                >
-                  <p className="font-medium text-[#1a1a1a] truncate">{name}</p>
-                  <p className="text-lg font-semibold text-[#1a1a1a] mt-1">₱{total.toLocaleString()}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{count} appointment{count !== 1 ? 's' : ''}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Filter Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
-        <CardContent className="p-3 md:p-4">
-          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 md:gap-3">
-            <div className="relative flex-1 w-full sm:min-w-[180px] md:min-w-[200px]">
+        <CardContent className="p-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search by client or service..."
+                placeholder="Search client or service..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+                className="w-full pl-9 pr-4 h-9 text-xs rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
               />
             </div>
-            <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[120px] md:min-w-[140px]">
-              <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Quick Select</label>
-              <Select value={quickSelect} onValueChange={handleQuickSelectChange}>
-                <SelectTrigger className="flex-1 min-w-0 h-9 px-3">
-                  <SelectValue placeholder="Custom Range" />
-                </SelectTrigger>
-                <SelectContent>
-                  {monthOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={quickSelect} onValueChange={handleQuickSelectChange}>
+              <SelectTrigger className="h-9 px-3 text-xs">
+                <SelectValue placeholder="Month" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[120px] md:min-w-[140px] h-9 px-3">
+              <SelectTrigger className="h-9 px-3 text-xs">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
@@ -614,7 +521,7 @@ export default function FinancePage() {
               </SelectContent>
             </Select>
             <Select value={nailTechFilter} onValueChange={setNailTechFilter}>
-              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[120px] w-auto max-w-[140px] h-9 px-3">
+              <SelectTrigger className="h-9 px-3 text-xs">
                 <SelectValue placeholder="All Nail Techs" />
               </SelectTrigger>
               <SelectContent>
@@ -626,52 +533,147 @@ export default function FinancePage() {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[120px] md:min-w-[140px]">
-              <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Date range</label>
-              <DateRangePicker
-                dateFrom={dateFrom}
-                dateTo={dateTo}
-                onDateFromChange={handleDateFromChange}
-                onDateToChange={handleDateToChange}
-                placeholder="From – To"
-                className="flex-1 min-w-0"
-              />
-            </div>
-            {(searchQuery || statusFilter !== 'all' || nailTechFilter !== 'all' || dateFrom || dateTo || quickSelect) && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('all');
-                  setNailTechFilter('all');
-                  setDateFrom('');
-                  setDateTo('');
-                  setQuickSelect('custom');
-                }}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:text-[#1a1a1a] hover:border-[#1a1a1a] transition-all flex items-center gap-1.5"
-              >
-                <X className="h-3.5 w-3.5" />
-                Clear
-              </button>
+            {quickSelect === 'custom' && (
+              <div className="col-span-2">
+                <DateRangePicker
+                  dateFrom={dateFrom}
+                  dateTo={dateTo}
+                  onDateFromChange={handleDateFromChange}
+                  onDateToChange={handleDateToChange}
+                  placeholder="From – To"
+                  className="w-full"
+                />
+              </div>
             )}
             <button
               onClick={exportToPdf}
               disabled={filteredTransactions.length === 0}
-              className="h-9 px-4 text-sm font-medium rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-9 px-2 text-xs font-medium rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center justify-center gap-1.5 min-w-0 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FileDown className="h-4 w-4" />
-              Export PDF
+              <FileDown className="h-4 w-4 shrink-0" />
+              <span className="truncate">Export PDF</span>
             </button>
             <button
               onClick={exportToCsv}
               disabled={filteredTransactions.length === 0}
-              className="h-9 px-4 text-sm font-medium rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-9 px-2 text-xs font-medium rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center justify-center gap-1.5 min-w-0 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download className="h-4 w-4" />
-              {exportButtonLabel}
+              <Download className="h-4 w-4 shrink-0" />
+              <span className="truncate">{exportButtonLabel}</span>
             </button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 items-stretch">
+        <StatCard
+          title="Today's Income"
+          value={`₱${todayIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+          subtext="By appointment date (today)"
+          icon="bi-cash-stack"
+          className="flex-grow-1"
+        />
+        <StatCard
+          title="This Week's Income"
+          iconBgColor="#e9ecef"
+          value={`₱${weekIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+          subtext="By appointment date (this week)"
+          icon="bi-calendar-week"
+          className="flex-grow-1"
+        />
+        <StatCard
+          title="Total Tips"
+          iconBgColor="#e9ecef"
+          value={`₱${totalTips.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+XT
+          icon="bi-heart"
+          className="flex-grow-1"
+        />
+        <StatCard
+          title="Admin Commission"
+          iconBgColor="#e9ecef"
+          value={`₱${adminCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+          subtext={`${adminCommissionRate}% of invoice total, excluding tips`}
+          icon="bi-percent"
+          className="flex-grow-1"
+        />
+      </div>
+
+      {/* Revenue Trend + Revenue by Nail Tech */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-stretch">
+        {chartData.length > 0 && (
+          <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+            <CardContent className="p-3 md:p-4">
+              <h3 className="text-sm font-semibold text-[#1a1a1a] mb-3">Revenue Trend</h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={chartData.map((d) => ({ ...d, dateLabel: d.date ? new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '' }))} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                  <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: '#737373' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#737373' }} tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000) + 'k' : v}`} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const p = payload[0].payload as { date: string; total: number; paid: number; tip: number };
+                      return (
+                        <div className="rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 shadow-sm text-sm">
+                          <p className="font-medium text-[#1a1a1a] mb-1">{p.date ? new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</p>
+                          <p className="text-gray-600">Total: ₱{Number(p.total).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                          <p className="text-gray-600">Paid: ₱{Number(p.paid).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                          <p className="text-gray-600">Tip: ₱{Number(p.tip).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Line type="monotone" dataKey="total" name="Total Invoice" stroke="#1a1a1a" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="paid" name="Paid Amount" stroke="#a3a3a3" strokeWidth={2} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+        {revenueByNailTech.length > 0 && (
+          <div className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+            <div className="px-4 pt-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Revenue by Nail Tech</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 p-3">
+              {revenueByNailTech.map(({ id, name, total, count }) => (
+                <div key={id} className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 flex flex-col">
+                  <p className="text-xs font-medium text-[#1a1a1a] truncate">{name}</p>
+                  <p className="text-base font-semibold text-[#1a1a1a] mt-1">₱{total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{count} appt{count !== 1 ? 's' : ''}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Commission by Nail Tech */}
+      {commissionByNailTech.length > 0 && (
+        <div className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+          <div className="px-4 pt-3 pb-1">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Commission by Nail Tech</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-3">
+            {commissionByNailTech.map(({ id, name, commission, count, commissionRate }) => (
+              <div key={id} className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 flex flex-col">
+                <p className="text-xs font-medium text-[#1a1a1a] truncate">{name}</p>
+                <p className="text-base font-semibold text-[#1a1a1a] mt-1">₱{commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{commissionRate}% · {count} appt{count !== 1 ? 's' : ''}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          {error}
+        </div>
+      )}
+
 
       {/* Table Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
@@ -744,15 +746,15 @@ export default function FinancePage() {
                           {serviceLocationBadge(item.serviceLocation)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.paid.toLocaleString()}</td>
+                      <td className="px-4 py-3 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.paid.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                       <td className="px-4 py-3 tabular-nums">
                         <span className={item.balance > 0 ? 'text-amber-600 font-medium' : 'text-gray-500'}>
-                          ₱{item.balance.toLocaleString()}
+                          ₱{item.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.tip.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{commission.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.tip.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                       <td className="px-4 py-3">{getPaymentStatusBadge(item.paymentStatus)}</td>
                     </tr>
                     );
@@ -831,25 +833,25 @@ export default function FinancePage() {
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Invoice</span>
-                      <p className="text-[#1a1a1a] font-medium">₱{item.total.toLocaleString()}</p>
+                      <p className="text-[#1a1a1a] font-medium">₱{item.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Paid Amount</span>
-                      <p className="text-[#1a1a1a]">₱{item.paid.toLocaleString()}</p>
+                      <p className="text-[#1a1a1a]">₱{item.paid.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Balance</span>
                       <p className={item.balance > 0 ? 'text-amber-600 font-medium' : 'text-[#1a1a1a]'}>
-                        ₱{item.balance.toLocaleString()}
+                        ₱{item.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Tip</span>
-                      <p className="text-[#1a1a1a]">₱{item.tip.toLocaleString()}</p>
+                      <p className="text-[#1a1a1a]">₱{item.tip.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Commission</span>
-                      <p className="text-[#1a1a1a]">₱{(item.total * (adminCommissionRate / 100)).toLocaleString()}</p>
+                      <p className="text-[#1a1a1a]">₱{(item.total * (adminCommissionRate / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                   </div>
                 </div>

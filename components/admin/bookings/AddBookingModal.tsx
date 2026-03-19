@@ -116,6 +116,9 @@ export default function AddBookingModal({
   const [clientNotes, setClientNotes] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
 
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
+  const [clientDropdownOpen, setClientDropdownOpen] = useState(false);
   const [createNewCustomer, setCreateNewCustomer] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     name: '',
@@ -185,6 +188,8 @@ export default function AddBookingModal({
       setAdminNotes('');
       setCreateNewCustomer(false);
       setNewCustomer({ name: '', email: '', phone: '', socialMediaName: '' });
+      setClientSearch('');
+      setClientDropdownOpen(false);
     }
   }, [open, fetchCustomers]);
 
@@ -371,25 +376,51 @@ export default function AddBookingModal({
                 </div>
               </div>
             ) : (
-              <div>
+              <div className="relative">
                 <Label className="text-xs text-gray-500">Client *</Label>
-                <Select
-                  value={customerId}
-                  onValueChange={setCustomerId}
+                <input
+                  type="text"
+                  value={clientSearch}
+                  onChange={(e) => {
+                    setClientSearch(e.target.value);
+                    setCustomerId('');
+                    setClientDropdownOpen(true);
+                  }}
+                  onFocus={() => setClientDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setClientDropdownOpen(false), 150)}
+                  placeholder={loadingCustomers ? 'Loading...' : 'Search client...'}
                   disabled={loadingCustomers}
-                >
-                  <SelectTrigger className="h-9 mt-1">
-                    <SelectValue placeholder="Select client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                        {c.phone ? ` (${c.phone})` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  className="w-full mt-1 h-9 px-3 text-base rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all disabled:opacity-50"
+                />
+                {clientDropdownOpen && clientSearch.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#e5e5e5] bg-white shadow-lg">
+                    {customers
+                      .filter((c) =>
+                        `${c.name} ${c.phone ?? ''} ${c.email ?? ''}`.toLowerCase().includes(clientSearch.toLowerCase())
+                      )
+                      .slice(0, 20)
+                      .map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onMouseDown={() => {
+                            setCustomerId(c.id);
+                            setClientSearch(`${c.name}${c.phone ? ` (${c.phone})` : ''}`);
+                            setClientDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-[#1a1a1a] hover:bg-[#f5f5f5] transition-colors"
+                        >
+                          {c.name}
+                          {c.phone && <span className="text-gray-400 ml-1">{c.phone}</span>}
+                        </button>
+                      ))}
+                    {customers.filter((c) =>
+                      `${c.name} ${c.phone ?? ''} ${c.email ?? ''}`.toLowerCase().includes(clientSearch.toLowerCase())
+                    ).length === 0 && (
+                      <p className="px-3 py-2 text-sm text-gray-400">No clients found</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -419,71 +450,79 @@ export default function AddBookingModal({
               <Label className="text-xs text-gray-500">Specific / Add-ons</Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {CHOSEN_SERVICE_OPTIONS.map(({ value, label }) => (
-                  <label
+                  <button
                     key={value}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e5e5e5] bg-white cursor-pointer hover:border-[#1a1a1a]/30 transition-colors"
+                    type="button"
+                    onClick={() =>
+                      setChosenServices((prev) =>
+                        prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
+                      )
+                    }
+                    className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
+                      chosenServices.includes(value)
+                        ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
+                        : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                    }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={chosenServices.includes(value)}
-                      onChange={() => {
-                        setChosenServices((prev) =>
-                          prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
-                        );
-                      }}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm text-[#1a1a1a]">{label}</span>
-                  </label>
+                    {label}
+                  </button>
                 ))}
               </div>
             </div>
 
             <div>
               <Label className="text-xs text-gray-500">Location</Label>
-              <Select
-                value={location}
-                onValueChange={(v) => {
-                  setLocation(v as 'homebased_studio' | 'home_service');
-                  setSelectedSlotId('');
-                }}
-              >
-                <SelectTrigger className="h-9 mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="homebased_studio">Studio</SelectItem>
-                  <SelectItem value="home_service">Home Service</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {([['homebased_studio', 'Studio'], ['home_service', 'Home Service']] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => {
+                      setLocation(val);
+                      setSelectedSlotId('');
+                    }}
+                    className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
+                      location === val
+                        ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
+                        : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>
               <Label className="text-xs text-gray-500">Nail Tech *</Label>
-              <Select
-                value={nailTechId}
-                onValueChange={(v) => {
-                  setNailTechId(v);
-                  setSelectedSlotId('');
-                }}
-                disabled={nailTechsLoading}
-              >
-                <SelectTrigger className="h-9 mt-1">
-                  <SelectValue placeholder="Select nail tech" />
-                </SelectTrigger>
-                <SelectContent>
+              {nailTechsLoading ? (
+                <p className="text-sm text-gray-400 mt-1">Loading...</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 mt-2">
                   {nailTechs.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        setNailTechId(t.id);
+                        setSelectedSlotId('');
+                      }}
+                      className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all truncate ${
+                        nailTechId === t.id
+                          ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
+                          : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                      }`}
+                    >
                       {t.name}
-                    </SelectItem>
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
 
             <div>
               <Label className="text-xs text-gray-500">Date *</Label>
-              <Popover>
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
@@ -507,6 +546,7 @@ export default function AddBookingModal({
                       if (d) {
                         setDate(format(d, 'yyyy-MM-dd'));
                         setSelectedSlotId('');
+                        setCalendarOpen(false);
                       }
                     }}
                     defaultMonth={date ? new Date(date) : new Date()}

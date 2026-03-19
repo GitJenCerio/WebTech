@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
@@ -914,7 +915,7 @@ export default function BookingsPage() {
       status === 'no_show' ? 'bg-gray-100 text-gray-500' :
       'bg-gray-100 text-gray-500';
     return (
-      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
+      <span className={`inline-flex items-center rounded-full px-1.5 py-px text-[10px] font-semibold ${cls}`}>
         {(status || '').replace(/_/g, ' ')}
       </span>
     );
@@ -970,12 +971,12 @@ export default function BookingsPage() {
       onClick={() => openBookingDetails(item)}
       className="hover:bg-[#fafafa] transition-colors duration-100 cursor-pointer border-b border-[#f5f5f5] last:border-0"
     >
-      <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">{formatMiniDate(item.date)}</td>
-      <td className="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">{formatSlotTimes(item.slotTimes, item.time)}</td>
-      <td className="px-4 py-2.5 font-medium text-[#1a1a1a] text-sm">{item.clientName}</td>
-      <td className="px-4 py-2.5 text-gray-600 text-sm">{getSlotServiceDisplay(item.service)}</td>
-      <td className="px-4 py-2.5 text-gray-600 text-sm">{item.nailTechId ? (nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—') : '—'}</td>
-      <td className="px-4 py-2.5">{getStatusBadge(item.status)}</td>
+      <td className="px-3 py-1.5 text-gray-500 text-xs whitespace-nowrap">{formatMiniDate(item.date)}</td>
+      <td className="px-3 py-1.5 text-gray-500 text-xs whitespace-nowrap">{formatSlotTimes(item.slotTimes, item.time)}</td>
+      <td className="px-3 py-1.5 font-medium text-[#1a1a1a] text-xs">{item.clientName}</td>
+      <td className="px-3 py-1.5 text-gray-600 text-xs">{getSlotServiceDisplay(item.service)}</td>
+      <td className="px-3 py-1.5 text-gray-600 text-xs">{item.nailTechId ? (nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—') : '—'}</td>
+      <td className="px-3 py-1.5">{getStatusBadge(item.status)}</td>
     </tr>
   );
 
@@ -984,26 +985,125 @@ export default function BookingsPage() {
       key={item.id}
       type="button"
       onClick={() => openBookingDetails(item)}
-      className="w-full text-left px-4 py-3 border-b border-[#f5f5f5] last:border-0 hover:bg-[#fafafa] transition-colors active:bg-[#f5f5f5]"
+      className="w-full text-left px-3 py-2 border-b border-[#f5f5f5] last:border-0 hover:bg-[#fafafa] transition-colors active:bg-[#f5f5f5]"
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-medium text-[#1a1a1a] text-sm truncate">{item.clientName}</span>
-        {getStatusBadge(item.status)}
+      <div className="grid grid-cols-[5rem_1fr_auto] items-start gap-x-3 gap-y-0">
+        <div className="text-[11px] text-gray-400 font-medium tabular-nums">
+          {(item.slotTimes?.length ? sortTimesChronologically(item.slotTimes) : [item.time]).map((t, i) => (
+            <span key={i} className="block whitespace-nowrap leading-5">{formatTime12Hour(t)}</span>
+          ))}
+        </div>
+        <div className="min-w-0">
+          <span className="text-xs font-medium text-[#1a1a1a] truncate block leading-5">{item.clientName}</span>
+          <span className="text-[11px] text-gray-400 truncate block leading-5">
+            {getSlotServiceDisplay(item.service)}{item.nailTechId ? ` · ${nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—'}` : ''}
+          </span>
+        </div>
+        <div className="leading-5">{getStatusBadge(item.status)}</div>
       </div>
-      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-        <span>{formatMiniDate(item.date)}</span>
-        <span>•</span>
-        <span>{formatSlotTimes(item.slotTimes, item.time)}</span>
-      </div>
-      <p className="text-sm text-gray-600 mt-0.5 truncate">{getSlotServiceDisplay(item.service)}</p>
-      {item.nailTechId && (
-        <p className="text-xs text-gray-400 mt-0.5">Tech: {nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—'}</p>
-      )}
     </button>
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      <button
+        onClick={() => setShowAddBookingModal(true)}
+        className="w-fit px-6 h-10 mt-2 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2"
+      >
+        <Plus className="h-4 w-4" />
+        Add Booking
+      </button>
+
+      {/* Filter Card */}
+      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 h-9 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-9 px-3 text-sm">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="no_show">No Show</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={nailTechFilter} onValueChange={setNailTechFilter}>
+                <SelectTrigger className="h-9 px-3 text-sm">
+                  <SelectValue placeholder="All Nail Techs" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Nail Techs</SelectItem>
+                  {nailTechs.map((n) => (
+                    <SelectItem key={n.id} value={n.id}>
+                      {n.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Date range</label>
+              <DateRangePicker
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onDateFromChange={setDateFrom}
+                onDateToChange={setDateTo}
+                placeholder="From – To"
+                compact
+                className="flex-1 min-w-0"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              {(searchQuery || statusFilter !== 'all' || nailTechFilter !== 'all' || dateFrom || dateTo) && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter('all');
+                    setNailTechFilter('all');
+                    setDateFrom('');
+                    setDateTo('');
+                  }}
+                  className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:text-[#1a1a1a] hover:border-[#1a1a1a] transition-all flex items-center gap-1.5"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Clear
+                </button>
+              )}
+              {lastFetchedAt != null && (
+                <span className="text-xs text-gray-400 ml-auto">
+                  Last updated {lastUpdatedSeconds != null ? `${lastUpdatedSeconds}s ago` : '…'}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => fetchBookings()}
+                disabled={bookingsLoading}
+                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-2 disabled:opacity-60 ml-auto"
+                title="Refresh"
+              >
+                <RefreshCw className={`h-4 w-4 ${bookingsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {bookingsError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {bookingsError}
@@ -1014,11 +1114,11 @@ export default function BookingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
           <CardContent className="p-0">
-            <div className="px-4 py-3 border-b border-[#f0f0f0]">
-              <h3 className="text-sm font-semibold text-[#1a1a1a]">Today&apos;s Bookings</h3>
-              <p className="text-xs text-gray-500 mt-0.5">{todayBookings.length} appointment{todayBookings.length !== 1 ? 's' : ''}</p>
+            <div className="px-3 py-2 border-b border-[#f0f0f0] flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-[#1a1a1a]">Today&apos;s Bookings ({format(new Date(), 'MMM d')})</h3>
+              <span className="text-[11px] text-gray-400">{todayBookings.length} appt{todayBookings.length !== 1 ? 's' : ''}</span>
             </div>
-            <div className="overflow-x-auto max-h-[240px] overflow-y-auto">
+            <div className="overflow-x-auto">
               {/* Mobile: cards */}
               <div className="sm:hidden">
                 {todayBookings.length === 0 ? (
@@ -1052,11 +1152,11 @@ export default function BookingsPage() {
         </Card>
         <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
           <CardContent className="p-0">
-            <div className="px-4 py-3 border-b border-[#f0f0f0]">
-              <h3 className="text-sm font-semibold text-[#1a1a1a]">Upcoming Bookings</h3>
-              <p className="text-xs text-gray-500 mt-0.5">{weekBookings.length} appointment{weekBookings.length !== 1 ? 's' : ''}</p>
+            <div className="px-3 py-2 border-b border-[#f0f0f0] flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-[#1a1a1a]">Upcoming Bookings</h3>
+              <span className="text-[11px] text-gray-400">{weekBookings.length} appt{weekBookings.length !== 1 ? 's' : ''}</span>
             </div>
-            <div className="overflow-x-auto max-h-[240px] overflow-y-auto">
+            <div className="overflow-x-auto">
               {/* Mobile: cards */}
               <div className="sm:hidden">
                 {weekBookings.length === 0 ? (
@@ -1089,99 +1189,6 @@ export default function BookingsPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Filter Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
-            <div className="relative flex-1 min-w-0 sm:min-w-[140px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[140px] h-9 px-3">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="no_show">No Show</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={nailTechFilter} onValueChange={setNailTechFilter}>
-              <SelectTrigger className="flex-1 min-w-0 sm:min-w-[120px] md:min-w-[140px] h-9 px-3">
-                <SelectValue placeholder="All Nail Techs" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Nail Techs</SelectItem>
-                {nailTechs.map((n) => (
-                  <SelectItem key={n.id} value={n.id}>
-                    {n.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-2 flex-1 min-w-0 sm:min-w-[140px]">
-              <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Date range</label>
-              <DateRangePicker
-                dateFrom={dateFrom}
-                dateTo={dateTo}
-                onDateFromChange={setDateFrom}
-                onDateToChange={setDateTo}
-                placeholder="From – To"
-                compact
-                className="flex-1 min-w-0"
-              />
-            </div>
-            {(searchQuery || statusFilter !== 'all' || nailTechFilter !== 'all' || dateFrom || dateTo) && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('all');
-                  setNailTechFilter('all');
-                  setDateFrom('');
-                  setDateTo('');
-                }}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:text-[#1a1a1a] hover:border-[#1a1a1a] transition-all flex items-center gap-1.5"
-              >
-                <X className="h-3.5 w-3.5" />
-                Clear
-              </button>
-            )}
-            {lastFetchedAt != null && (
-              <span className="text-xs text-gray-400 ml-auto mr-2">
-                Last updated {lastUpdatedSeconds != null ? `${lastUpdatedSeconds}s ago` : '…'}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => fetchBookings()}
-              disabled={bookingsLoading}
-              className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-2 disabled:opacity-60"
-              title="Refresh"
-            >
-              <RefreshCw className={`h-4 w-4 ${bookingsLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-            <button
-              onClick={() => setShowAddBookingModal(true)}
-              className="h-9 px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Booking
-            </button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Table Card */}
       <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">

@@ -241,14 +241,14 @@ export default function OverviewPage() {
   }
 
   return (
-    <div className="w-full max-w-full space-y-6">
+    <div className="w-full max-w-full space-y-3 md:space-y-6">
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 sm:mb-8 items-stretch">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-3 md:mb-6 lg:mb-8 items-stretch">
         <StatCard
           title="Today's Appointments"
           value={stats.appointmentsCount}
@@ -279,73 +279,25 @@ export default function OverviewPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch lg:min-h-[380px]">
-        <div className="lg:col-span-2 min-h-0 flex flex-col">
-          <Card className="h-full flex flex-col border border-[#e5e5e5] shadow-card bg-white overflow-hidden transition-shadow hover:shadow-hover">
-            <CardHeader className="flex-shrink-0 pb-2 border-b border-[#f0f0f0]">
-              <h5 className="text-lg font-semibold text-[#1a1a1a]">Weekly Appointments</h5>
-            </CardHeader>
-            <CardContent className="flex-1 min-h-0 flex flex-col" style={{ minHeight: 280 }}>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={weeklyChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#888" />
-                  <YAxis tick={{ fontSize: 12 }} stroke="#888" />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 8, border: '1px solid #e5e5e5' }}
-                    formatter={(value: number) => [value, 'Appointments']}
-                  />
-                  <Bar dataKey="count" fill="#1a1a1a" radius={[4, 4, 0, 0]} name="Appointments" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="lg:col-span-1 min-h-0 flex flex-col">
-          <Card className="h-full flex flex-col border border-[#e5e5e5] shadow-card bg-white overflow-hidden transition-shadow hover:shadow-hover">
-            <CardHeader className="flex-shrink-0 pb-2 border-b border-[#f0f0f0]">
-              <h5 className="text-lg font-semibold text-[#1a1a1a]">Slot Utilization Today</h5>
-            </CardHeader>
-            <CardContent className="flex-1 min-h-0 flex flex-col">
-              <div className="flex justify-between items-center mb-4 text-sm flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-[#1a1a1a] rounded-sm"></div>
-                  <span className="text-[#1a1a1a]">Booked: {stats.bookedSlots}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-[#e5e5e5] rounded-sm"></div>
-                  <span className="text-[#1a1a1a]">Available: {stats.availableSlots}</span>
-                </div>
-              </div>
-              {pieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {pieData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => [value, 'Slots']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm min-h-[200px]">
-                  No slot data for today
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Card className="border border-[#e5e5e5] shadow-card bg-white overflow-hidden transition-shadow hover:shadow-hover">
+        <CardHeader className="flex-shrink-0 pb-2 border-b border-[#f0f0f0]">
+          <h5 className="text-lg font-semibold text-[#1a1a1a]">Weekly Appointments</h5>
+        </CardHeader>
+        <CardContent className="flex-1 min-h-0 flex flex-col" style={{ minHeight: 280 }}>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={weeklyChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#888" />
+              <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+              <Tooltip
+                contentStyle={{ borderRadius: 8, border: '1px solid #e5e5e5' }}
+                formatter={(value: number) => [value, 'Appointments']}
+              />
+              <Bar dataKey="count" fill="#1a1a1a" radius={[4, 4, 0, 0]} name="Appointments" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
 
       <Card className="border border-[#e5e5e5] shadow-card bg-white">
         <CardHeader className="border-b border-[#f0f0f0]">

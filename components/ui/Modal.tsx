@@ -38,7 +38,7 @@ function ModalRoot({ isOpen, onClose, title, children, size = 'md', className = 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 pt-4 [padding-bottom:max(1rem,env(safe-area-inset-bottom,0px))]"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -53,7 +53,7 @@ function ModalRoot({ isOpen, onClose, title, children, size = 'md', className = 
         className={`
           relative z-50 w-full ${sizeClasses[size]}
           bg-white rounded-[24px] shadow-xl
-          max-h-[90vh] overflow-hidden
+          max-h-[90dvh] overflow-hidden
           flex flex-col
           ${className}
         `}
