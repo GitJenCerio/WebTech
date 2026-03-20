@@ -59,7 +59,14 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    const forbid = await requireCanManageSettings(session, request);
+    const previewBody = await request.clone().json().catch(() => undefined);
+    const changedKeys =
+      previewBody && typeof previewBody === 'object' && !Array.isArray(previewBody)
+        ? Object.keys(previewBody as Record<string, unknown>)
+        : undefined;
+    const forbid = await requireCanManageSettings(session, request, {
+      changedKeys,
+    });
     if (forbid) return forbid;
 
     const body = await request.json();

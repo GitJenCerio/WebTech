@@ -26,8 +26,11 @@ async function forbidden(
   action: string,
   resource: string,
   resourceId?: string,
-  req?: Request
+  req?: Request,
+  details?: Record<string, unknown>
 ): Promise<NextResponse> {
+  const method = req?.method;
+  const path = req ? new URL(req.url).pathname : undefined;
   await logAuthFailure({
     userId: session?.user?.id,
     userEmail: session?.user?.email ?? undefined,
@@ -35,7 +38,12 @@ async function forbidden(
     action,
     resource,
     resourceId,
-    details: { reason: 'Insufficient role' },
+    details: {
+      reason: 'Insufficient role',
+      method,
+      path,
+      ...details,
+    },
     req,
   });
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -65,11 +73,12 @@ export async function requireCanDeleteCustomer(
 /** Require SUPER_ADMIN for settings. Returns 403 response if not allowed. */
 export async function requireCanManageSettings(
   session: Session | null,
-  req?: Request
+  req?: Request,
+  details?: Record<string, unknown>
 ): Promise<NextResponse | null> {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (canManageSettings(toSessionUser(session))) return null;
-  return forbidden(session, 'manage_settings', 'settings', undefined, req);
+  return forbidden(session, 'manage_settings', 'settings', undefined, req, details);
 }
 
 /** Require SUPER_ADMIN for audit log. Returns 403 response if not allowed. */
