@@ -33,6 +33,7 @@ export interface NailTech {
   workingDays: string[]; // Array of day names: ['Monday', 'Tuesday', ...]
   discount?: number; // Discount percentage (e.g., 15 for 15% discount)
   commissionRate?: number; // Commission rate (e.g., 0.3 for 30%)
+  adminCommissionRate?: number; // Admin commission rate (e.g., 0.1 for 10%)
   status: NailTechStatus;
   createdAt: string;
   updatedAt: string;

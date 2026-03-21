@@ -12,6 +12,15 @@ function normalizeName(name: string): string {
   return trimmed;
 }
 
+// Accept either decimal form (0.1) or percent form (10), store as decimal.
+function normalizeRate(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined;
+  if (value < 0) return undefined;
+  const decimal = value > 1 ? value / 100 : value;
+  if (decimal > 1) return 1;
+  return decimal;
+}
+
 export async function listNailTechs(): Promise<NailTech[]> {
   await connectDB();
   const docs = await NailTechModel.find().sort({ name: 1 }).lean<INailTech[]>();
@@ -61,6 +70,8 @@ export async function createNailTech(payload: NailTechInput): Promise<NailTech> 
     ...payload,
     name: normalizedName,
     serviceAvailability: serviceAvailability as ServiceAvailability,
+    commissionRate: normalizeRate(payload.commissionRate),
+    adminCommissionRate: normalizeRate(payload.adminCommissionRate),
   };
 
   const doc = await NailTechModel.create(data);
@@ -82,6 +93,13 @@ export async function updateNailTech(id: string, updates: Partial<NailTechInput>
   // Convert "Both" to "Studio and Home Service" if present
   if ((updateData.serviceAvailability as string) === 'Both') {
     updateData.serviceAvailability = 'Studio and Home Service' as ServiceAvailability;
+  }
+
+  if (updateData.commissionRate !== undefined) {
+    updateData.commissionRate = normalizeRate(updateData.commissionRate);
+  }
+  if (updateData.adminCommissionRate !== undefined) {
+    updateData.adminCommissionRate = normalizeRate(updateData.adminCommissionRate);
   }
   
   const doc = await NailTechModel.findByIdAndUpdate(id, updateData, {
@@ -143,6 +161,7 @@ function docToNailTech(doc: INailTech | (INailTech & { _id?: any })): NailTech {
     workingDays: data.workingDays || [],
     discount: data.discount ?? undefined,
     commissionRate: data.commissionRate ?? undefined,
+    adminCommissionRate: data.adminCommissionRate ?? undefined,
     status: data.status,
     createdAt: createdAtValue,
     updatedAt: updatedAtValue,

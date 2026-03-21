@@ -68,8 +68,13 @@ export default function FinancePage() {
   const techCommissionRateById = useMemo(() => {
     const map = new Map<string, number>();
     for (const tech of nailTechs) {
-      // Stored as decimal (0.4 = 40%), convert to percentage.
-      const rate = typeof tech.commissionRate === 'number' ? tech.commissionRate * 100 : adminCommissionRate;
+      // Prefer per-tech admin commission rate; fall back to legacy commissionRate, then global setting.
+      const rate =
+        typeof tech.adminCommissionRate === 'number'
+          ? tech.adminCommissionRate * 100
+          : typeof tech.commissionRate === 'number'
+            ? tech.commissionRate * 100
+            : adminCommissionRate;
       map.set(tech.id, rate);
     }
     return map;
@@ -80,8 +85,22 @@ export default function FinancePage() {
     return techCommissionRateById.get(nailTechId) ?? adminCommissionRate;
   };
 
-  const getBookingCommissionAmount = (t: Transaction) => {
-    const rate = getTechCommissionRate(t.nailTechId);
+  const getAdminCommissionRate = (nailTechId?: string) => getTechCommissionRate(nailTechId);
+
+  const getNailTechCommissionRate = (nailTechId?: string) => {
+    if (!nailTechId) return 0;
+    const tech = nailTechs.find((n) => n.id === nailTechId);
+    if (!tech || typeof tech.commissionRate !== 'number') return 0;
+    return tech.commissionRate * 100;
+  };
+
+  const getBookingAdminCommissionAmount = (t: Transaction) => {
+    const rate = getAdminCommissionRate(t.nailTechId);
+    return t.total * (rate / 100);
+  };
+
+  const getBookingNailTechCommissionAmount = (t: Transaction) => {
+    const rate = getNailTechCommissionRate(t.nailTechId);
     return t.total * (rate / 100);
   };
 
@@ -268,8 +287,14 @@ export default function FinancePage() {
   const adminCommission = useMemo(() => {
     return filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
-      .reduce((sum, t) => sum + getBookingCommissionAmount(t), 0);
-  }, [filteredTransactions, techCommissionRateById, adminCommissionRate]);
+      .reduce((sum, t) => sum + getBookingAdminCommissionAmount(t), 0);
+  }, [filteredTransactions, techCommissionRateById, adminCommissionRate, nailTechs]);
+
+  const nailTechCommission = useMemo(() => {
+    return filteredTransactions
+      .filter((t) => t.paymentStatus === 'paid')
+      .reduce((sum, t) => sum + getBookingNailTechCommissionAmount(t), 0);
+  }, [filteredTransactions, nailTechs]);
 
   const revenueByNailTech = useMemo(() => {
     const paidTx = filteredTransactions.filter((t) => t.paymentStatus === 'paid');
@@ -278,8 +303,12 @@ export default function FinancePage() {
       const techId = t.nailTechId || '_unknown';
       const tech = nailTechs.find((n) => n.id === t.nailTechId);
       const name = tech ? `Ms. ${tech.name}` : techId === '_unknown' ? 'Unassigned' : 'Unknown';
-      // tech.commissionRate is stored as a decimal (0.4 = 40%); normalize to percentage scale (0–100) to match adminCommissionRate
-      const rate = typeof tech?.commissionRate === 'number' ? tech.commissionRate * 100 : adminCommissionRate;
+      const rate =
+        typeof tech?.adminCommissionRate === 'number'
+          ? tech.adminCommissionRate * 100
+          : typeof tech?.commissionRate === 'number'
+            ? tech.commissionRate * 100
+            : adminCommissionRate;
       const current = byTech.get(techId) || { name, total: 0, count: 0, commissionRate: rate };
       byTech.set(techId, {
         name,
@@ -297,11 +326,13 @@ export default function FinancePage() {
     return revenueByNailTech.map(({ id, name, total, count, commissionRate }) => ({
       id,
       name,
-      commission: total * (commissionRate / 100),
+      adminCommission: total * (commissionRate / 100),
+      nailTechCommission: total * (getNailTechCommissionRate(id) / 100),
       count,
-      commissionRate,
+      adminCommissionRate: commissionRate,
+      nailTechCommissionRate: getNailTechCommissionRate(id),
     }));
-  }, [revenueByNailTech]);
+  }, [revenueByNailTech, nailTechs]);
 
   const exportToCsv = () => {
     const dateLabel = dateFrom || dateTo ? `${dateFrom || 'all'}-to-${dateTo || 'all'}` : 'all';
@@ -315,13 +346,15 @@ export default function FinancePage() {
       'Paid Amount',
       'Balance',
       'Tip',
-      'Tech Commission',
+      'Admin Commission',
+      'Nail Tech Commission',
     ];
     const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
     const rows = byDateAsc.map((t) => {
       const totalInvoice = t.total;
       const tipAmount = t.tip;
-      const adminCom = getBookingCommissionAmount(t);
+      const adminCom = getBookingAdminCommissionAmount(t);
+      const techCom = getBookingNailTechCommissionAmount(t);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '';
       const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
         ? [...t.appointmentTimes].sort((a, b) => {
@@ -353,6 +386,7 @@ export default function FinancePage() {
         t.balance,
         tipAmount,
         adminCom,
+        techCom,
       ];
     });
     const sumTotal = filteredTransactions.reduce((s, t) => s + t.total, 0);
@@ -361,8 +395,11 @@ export default function FinancePage() {
     const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
-      .reduce((s, t) => s + getBookingCommissionAmount(t), 0);
-    const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumBalance, sumTip, sumCommission];
+      .reduce((s, t) => s + getBookingAdminCommissionAmount(t), 0);
+    const sumTechCommission = filteredTransactions
+      .filter((t) => t.paymentStatus === 'paid')
+      .reduce((s, t) => s + getBookingNailTechCommissionAmount(t), 0);
+    const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumBalance, sumTip, sumCommission, sumTechCommission];
     const csv = [headers.join(','), ...rows.map((r) => r.join(',')), totalRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -397,14 +434,16 @@ export default function FinancePage() {
       'Paid Amount',
       'Balance',
       'Tip',
-      'Tech Commission',
+      'Admin Commission',
+      'Nail Tech Commission',
     ];
     const fmt = (n: number) => `PHP ${String(Number(n).toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 })).replace(/[^\d,.]/g, '')}`;
     const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
     const rows = byDateAsc.map((t) => {
       const totalInvoice = t.total;
       const tipAmount = t.tip;
-      const commission = getBookingCommissionAmount(t);
+      const commission = getBookingAdminCommissionAmount(t);
+      const nailTechCom = getBookingNailTechCommissionAmount(t);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '—';
       const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
         ? [...t.appointmentTimes].sort((a, b) => {
@@ -436,6 +475,7 @@ export default function FinancePage() {
         fmt(t.balance),
         fmt(tipAmount),
         fmt(commission),
+        fmt(nailTechCom),
       ];
     });
 
@@ -444,7 +484,10 @@ export default function FinancePage() {
     const sumTip = filteredTransactions.reduce((s, t) => s + t.tip, 0);
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
-      .reduce((s, t) => s + getBookingCommissionAmount(t), 0);
+      .reduce((s, t) => s + getBookingAdminCommissionAmount(t), 0);
+    const sumNailTechCommission = filteredTransactions
+      .filter((t) => t.paymentStatus === 'paid')
+      .reduce((s, t) => s + getBookingNailTechCommissionAmount(t), 0);
     const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
     const totalsRow = [
       'Total',
@@ -457,6 +500,7 @@ export default function FinancePage() {
       fmt(sumBalance),
       fmt(sumTip),
       fmt(sumCommission),
+      fmt(sumNailTechCommission),
     ];
     const bodyRows = rows.length > 0 ? [...rows, totalsRow] : rows;
     const totalsRowIndex = rows.length;
@@ -584,7 +628,7 @@ export default function FinancePage() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 items-stretch">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 items-stretch">
         <StatCard
           title="Today's Income"
           value={`₱${todayIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
@@ -614,6 +658,14 @@ export default function FinancePage() {
           value={`₱${adminCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
           subtext="Based on each nail tech commission rate"
           icon="bi-percent"
+          className="flex-grow-1"
+        />
+        <StatCard
+          title="Nail Tech Commission"
+          iconBgColor="#e9ecef"
+          value={`₱${nailTechCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+          subtext="Based on each nail tech's commission rate"
+          icon="bi-person-badge"
           className="flex-grow-1"
         />
       </div>
@@ -675,11 +727,12 @@ export default function FinancePage() {
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Commission by Nail Tech</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-3">
-            {commissionByNailTech.map(({ id, name, commission, count, commissionRate }) => (
+            {commissionByNailTech.map(({ id, name, adminCommission, nailTechCommission, count, adminCommissionRate, nailTechCommissionRate }) => (
               <div key={id} className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 flex flex-col">
                 <p className="text-xs font-medium text-[#1a1a1a] truncate">{name}</p>
-                <p className="text-base font-semibold text-[#1a1a1a] mt-1">₱{commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">{commissionRate}% · {count} appt{count !== 1 ? 's' : ''}</p>
+                <p className="text-sm font-semibold text-[#1a1a1a] mt-1">Admin: ₱{adminCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                <p className="text-sm font-semibold text-[#1a1a1a]">Tech: ₱{nailTechCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Admin {adminCommissionRate}% · Tech {nailTechCommissionRate}% · {count} appt{count !== 1 ? 's' : ''}</p>
               </div>
             ))}
           </div>
@@ -709,7 +762,8 @@ export default function FinancePage() {
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Paid Amount</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Balance</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Tip</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Commission</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Admin Commission</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Nail Tech Commission</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
                 </tr>
               </thead>
@@ -718,7 +772,7 @@ export default function FinancePage() {
                   <>
                     {Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
-                        {Array.from({ length: 10 }).map((_, j) => (
+                        {Array.from({ length: 11 }).map((_, j) => (
                           <td key={j} className="px-4 py-3">
                             <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
                           </td>
@@ -728,7 +782,7 @@ export default function FinancePage() {
                   </>
                 ) : paginatedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-16 text-center">
+                    <td colSpan={11} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                         <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
                           <Search className="h-6 w-6 text-gray-300" />
@@ -748,7 +802,8 @@ export default function FinancePage() {
                   </tr>
                 ) : (
                   paginatedTransactions.map((item) => {
-                    const commission = getBookingCommissionAmount(item);
+                    const adminCom = getBookingAdminCommissionAmount(item);
+                    const techCom = getBookingNailTechCommissionAmount(item);
                     return (
                     <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100">
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
@@ -772,7 +827,8 @@ export default function FinancePage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.tip.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{commission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{adminCom.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{techCom.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                       <td className="px-4 py-3">{getPaymentStatusBadge(item.paymentStatus)}</td>
                     </tr>
                     );
@@ -868,8 +924,12 @@ export default function FinancePage() {
                       <p className="text-[#1a1a1a]">₱{item.tip.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                     <div>
-                      <span className="text-gray-400 text-xs">Commission</span>
-                      <p className="text-[#1a1a1a]">₱{getBookingCommissionAmount(item).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      <span className="text-gray-400 text-xs">Admin Commission</span>
+                      <p className="text-[#1a1a1a]">₱{getBookingAdminCommissionAmount(item).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Nail Tech Commission</span>
+                      <p className="text-[#1a1a1a]">₱{getBookingNailTechCommissionAmount(item).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                   </div>
                 </div>

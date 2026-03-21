@@ -23,12 +23,10 @@ export async function GET(request: Request) {
       nailTechs = activeOnly ? await listActiveNailTechs() : await listNailTechs();
     }
     
-    // OPTIMIZED: Nail techs change very infrequently, cache for 5 minutes
-    // This significantly reduces Firestore reads since nail techs are loaded on every page
+    // Admin settings (commission/discount) should reflect immediately after edits.
     return NextResponse.json({ nailTechs }, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-        'CDN-Cache-Control': 'public, s-maxage=300',
+        'Cache-Control': 'no-store',
       },
     });
   } catch (error: any) {
@@ -58,6 +56,7 @@ export async function POST(request: Request) {
       workingDays: Array.isArray(body.workingDays) ? body.workingDays : [],
       discount: typeof body.discount === 'number' ? body.discount : undefined,
       commissionRate: typeof body.commissionRate === 'number' ? body.commissionRate : undefined,
+      adminCommissionRate: typeof body.adminCommissionRate === 'number' ? body.adminCommissionRate : undefined,
       status: body.status || 'Active',
     };
 

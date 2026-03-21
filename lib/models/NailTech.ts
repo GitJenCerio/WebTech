@@ -9,6 +9,7 @@ export interface INailTech extends Document {
   workingDays: string[];
   discount?: number;
   commissionRate?: number;
+  adminCommissionRate?: number;
   status: NailTechStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -34,6 +35,7 @@ const NailTechSchema = new Schema<INailTech>(
     },
     discount: { type: Number },
     commissionRate: { type: Number },
+    adminCommissionRate: { type: Number },
     status: {
       type: String,
       required: true,
@@ -48,8 +50,18 @@ const NailTechSchema = new Schema<INailTech>(
 NailTechSchema.index({ status: 1 });
 NailTechSchema.index({ role: 1 });
 
+const existingModel = mongoose.models.NailTech as Model<INailTech> | undefined;
+
+// In dev hot-reload, Mongoose can reuse a cached model with an older schema.
+// Ensure newly added paths are available on the reused model too.
+if (existingModel && !existingModel.schema.path('adminCommissionRate')) {
+  existingModel.schema.add({
+    adminCommissionRate: { type: Number },
+  });
+}
+
 const NailTechModel: Model<INailTech> =
-  mongoose.models.NailTech || mongoose.model<INailTech>('NailTech', NailTechSchema);
+  existingModel || mongoose.model<INailTech>('NailTech', NailTechSchema);
 
 export default NailTechModel;
 

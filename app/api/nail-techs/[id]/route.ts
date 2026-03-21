@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getNailTechById, updateNailTech, deleteNailTech } from '@/lib/services/nailTechService';
+import type { NailTechInput } from '@/lib/types';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -28,7 +29,30 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const nailTech = await updateNailTech(id, body);
+
+    const parseOptionalNumber = (value: unknown): number | undefined => {
+      if (value === null || value === undefined || value === '') return undefined;
+      const parsed = typeof value === 'number' ? value : Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    };
+
+    const payload: Partial<NailTechInput> = {
+      name: typeof body.name === 'string' ? body.name.trim() : undefined,
+      role: body.role,
+      serviceAvailability: body.serviceAvailability,
+      workingDays: Array.isArray(body.workingDays) ? body.workingDays : undefined,
+      discount: parseOptionalNumber(body.discount),
+      commissionRate: parseOptionalNumber(body.commissionRate),
+      adminCommissionRate: parseOptionalNumber(body.adminCommissionRate),
+      status: body.status,
+    };
+
+    // Do not overwrite name with empty string on partial updates.
+    if (!payload.name) {
+      delete payload.name;
+    }
+
+    const nailTech = await updateNailTech(id, payload);
     return NextResponse.json({ nailTech });
   } catch (error: any) {
     console.error('Error updating nail tech:', error);

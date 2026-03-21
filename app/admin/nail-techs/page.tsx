@@ -25,6 +25,7 @@ type NailTechFormState = {
   serviceAvailability: ServiceAvailability;
   discount: string;
   commissionRate: string;
+  adminCommissionRate: string;
   workingDays: string[];
   status: NailTechType['status'];
 };
@@ -35,6 +36,7 @@ const DEFAULT_FORM_STATE: NailTechFormState = {
   serviceAvailability: 'Studio only',
   discount: '',
   commissionRate: '',
+  adminCommissionRate: '',
   workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
   status: 'Active',
 };
@@ -109,6 +111,7 @@ export default function NailTechsPage() {
       serviceAvailability: tech.serviceAvailability,
       discount: tech.discount != null ? String(tech.discount) : '',
       commissionRate: tech.commissionRate != null ? String(Math.round(tech.commissionRate * 100)) : '',
+      adminCommissionRate: tech.adminCommissionRate != null ? String(Math.round(tech.adminCommissionRate * 100)) : '',
       workingDays: tech.workingDays || [],
       status: tech.status,
     });
@@ -124,6 +127,7 @@ export default function NailTechsPage() {
       serviceAvailability: tech.serviceAvailability,
       discount: tech.discount != null ? String(tech.discount) : '',
       commissionRate: tech.commissionRate != null ? String(Math.round(tech.commissionRate * 100)) : '',
+      adminCommissionRate: tech.adminCommissionRate != null ? String(Math.round(tech.adminCommissionRate * 100)) : '',
       workingDays: tech.workingDays || [],
       status: tech.status,
     });
@@ -166,6 +170,7 @@ export default function NailTechsPage() {
 
       const discountNumber = form.discount ? Number(form.discount) : undefined;
       const commissionNumber = form.commissionRate ? Number(form.commissionRate) / 100 : undefined;
+      const adminCommissionNumber = form.adminCommissionRate ? Number(form.adminCommissionRate) / 100 : undefined;
 
       const isEdit = modalMode === 'edit' && selectedTechId;
       const url = isEdit ? `/api/nail-techs/${selectedTechId}` : '/api/nail-techs';
@@ -181,6 +186,7 @@ export default function NailTechsPage() {
           workingDays: form.workingDays,
           discount: isNaN(discountNumber as number) ? undefined : discountNumber,
           commissionRate: isNaN(commissionNumber as number) ? undefined : commissionNumber,
+          adminCommissionRate: isNaN(adminCommissionNumber as number) ? undefined : adminCommissionNumber,
           status: form.status,
         }),
       });
@@ -356,6 +362,7 @@ export default function NailTechsPage() {
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Role</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Discount</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Commission</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Admin Commission</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Service Availability</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
                   <th className="px-5 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
@@ -366,7 +373,7 @@ export default function NailTechsPage() {
                   <>
                     {Array.from({ length: 6 }).map((_, i) => (
                       <tr key={i}>
-                        {Array.from({ length: 7 }).map((_, j) => (
+                        {Array.from({ length: 8 }).map((_, j) => (
                           <td key={j} className="px-5 py-3.5">
                             <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
                           </td>
@@ -376,7 +383,7 @@ export default function NailTechsPage() {
                   </>
                 ) : paginatedTechs.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-16 text-center">
+                    <td colSpan={8} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center gap-2 text-gray-400">
                         <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
                           <Search className="h-5 w-5" />
@@ -400,6 +407,7 @@ export default function NailTechsPage() {
                       </td>
                       <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">{item.discount != null ? `${item.discount}%` : '—'}</td>
                       <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">{item.commissionRate != null ? `${Math.round(item.commissionRate * 100)}%` : '—'}</td>
+                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">{item.adminCommissionRate != null ? `${Math.round(item.adminCommissionRate * 100)}%` : '—'}</td>
                       <td className="px-5 py-3.5 text-gray-500">{item.serviceAvailability}</td>
                       <td className="px-5 py-3.5">{getStatusBadge(item.status)}</td>
                       <td className="px-5 py-3.5 text-right">
@@ -490,6 +498,10 @@ export default function NailTechsPage() {
                     <div>
                       <span className="text-gray-400 text-xs">Commission</span>
                       <p className="text-[#1a1a1a]">{item.commissionRate != null ? `${Math.round(item.commissionRate * 100)}%` : '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Admin Commission</span>
+                      <p className="text-[#1a1a1a]">{item.adminCommissionRate != null ? `${Math.round(item.adminCommissionRate * 100)}%` : '—'}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Service</span>
@@ -635,7 +647,7 @@ export default function NailTechsPage() {
               <small className="text-gray-500 text-xs block mt-1.5">Select all days this technician is available</small>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Discount (%)</label>
                 <Input
@@ -663,6 +675,20 @@ export default function NailTechsPage() {
                   className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
                 />
                 <small className="text-gray-500 text-xs block mt-1">Optional: Commission rate (0-100)</small>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Admin Commission (%)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.adminCommissionRate}
+                  onChange={(e) => handleChange('adminCommissionRate', e.target.value)}
+                  placeholder="e.g. 10"
+                  disabled={saving || modalMode === 'view'}
+                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                />
+                <small className="text-gray-500 text-xs block mt-1">Optional: Admin commission rate (0-100)</small>
               </div>
             </div>
 
