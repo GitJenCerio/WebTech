@@ -43,19 +43,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const subtotal = items.reduce((sum: number, item: any) => sum + (Number(item.total) || 0), 0);
 
-    // Apply nail tech discount server-side so it's always counted/deducted
+    // Respect explicit discountAmount from UI (including 0 for "remove discount").
+    // If not provided, fall back to nail tech default discount.
     const nailTech = booking.nailTechId ? await NailTech.findById(booking.nailTechId).lean() : null;
     const nailTechDiscountRate = typeof (nailTech as { discount?: number })?.discount === 'number' && (nailTech as { discount: number }).discount > 0
       ? (nailTech as { discount: number }).discount
       : 0;
-    const discountRate = nailTechDiscountRate > 0
+    const hasExplicitDiscountAmount = typeof body.discountAmount === 'number' && body.discountAmount >= 0;
+    const requestedDiscountAmount = hasExplicitDiscountAmount ? body.discountAmount : undefined;
+    const fallbackDiscountRate = nailTechDiscountRate > 0
       ? nailTechDiscountRate
       : (typeof body.discountRate === 'number' && body.discountRate >= 0 ? body.discountRate : 0);
-    const discountAmount = nailTechDiscountRate > 0
-      ? Math.round(subtotal * (nailTechDiscountRate / 100))
-      : (typeof body.discountAmount === 'number' && body.discountAmount >= 0
-          ? body.discountAmount
-          : Math.round(subtotal * (discountRate / 100)));
+    const discountAmount = hasExplicitDiscountAmount
+      ? requestedDiscountAmount!
+      : Math.round(subtotal * (fallbackDiscountRate / 100));
+    const discountRate = subtotal > 0
+      ? Math.round((discountAmount / subtotal) * 10000) / 100
+      : 0;
     const squeezeInFee =
       typeof body.squeezeInFee === 'number' && body.squeezeInFee >= 0 ? body.squeezeInFee : 0;
     const totalAmount = subtotal - discountAmount + squeezeInFee;

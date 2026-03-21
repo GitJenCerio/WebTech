@@ -65,6 +65,25 @@ export default function FinancePage() {
   const [weekSummaryTransactions, setWeekSummaryTransactions] = useState<Transaction[]>([]);
   const [adminCommissionRate, setAdminCommissionRate] = useState(10);
   const { nailTechs } = useNailTechs();
+  const techCommissionRateById = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const tech of nailTechs) {
+      // Stored as decimal (0.4 = 40%), convert to percentage.
+      const rate = typeof tech.commissionRate === 'number' ? tech.commissionRate * 100 : adminCommissionRate;
+      map.set(tech.id, rate);
+    }
+    return map;
+  }, [nailTechs, adminCommissionRate]);
+
+  const getTechCommissionRate = (nailTechId?: string) => {
+    if (!nailTechId) return adminCommissionRate;
+    return techCommissionRateById.get(nailTechId) ?? adminCommissionRate;
+  };
+
+  const getBookingCommissionAmount = (t: Transaction) => {
+    const rate = getTechCommissionRate(t.nailTechId);
+    return t.total * (rate / 100);
+  };
 
   useEffect(() => {
     async function fetchSummary() {
@@ -247,11 +266,10 @@ export default function FinancePage() {
   }, [filteredTransactions]);
 
   const adminCommission = useMemo(() => {
-    const rate = adminCommissionRate / 100;
     return filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
-      .reduce((sum, t) => sum + t.total * rate, 0);
-  }, [filteredTransactions, adminCommissionRate]);
+      .reduce((sum, t) => sum + getBookingCommissionAmount(t), 0);
+  }, [filteredTransactions, techCommissionRateById, adminCommissionRate]);
 
   const revenueByNailTech = useMemo(() => {
     const paidTx = filteredTransactions.filter((t) => t.paymentStatus === 'paid');
@@ -297,13 +315,13 @@ export default function FinancePage() {
       'Paid Amount',
       'Balance',
       'Tip',
-      `Admin Com ${adminCommissionRate}%`,
+      'Tech Commission',
     ];
     const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
     const rows = byDateAsc.map((t) => {
       const totalInvoice = t.total;
       const tipAmount = t.tip;
-      const adminCom = t.total * (adminCommissionRate / 100);
+      const adminCom = getBookingCommissionAmount(t);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '';
       const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
         ? [...t.appointmentTimes].sort((a, b) => {
@@ -343,7 +361,7 @@ export default function FinancePage() {
     const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
-      .reduce((s, t) => s + t.total * (adminCommissionRate / 100), 0);
+      .reduce((s, t) => s + getBookingCommissionAmount(t), 0);
     const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumBalance, sumTip, sumCommission];
     const csv = [headers.join(','), ...rows.map((r) => r.join(',')), totalRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -379,14 +397,14 @@ export default function FinancePage() {
       'Paid Amount',
       'Balance',
       'Tip',
-      `Commission (${adminCommissionRate}%)`,
+      'Tech Commission',
     ];
     const fmt = (n: number) => `PHP ${String(Number(n).toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 })).replace(/[^\d,.]/g, '')}`;
     const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
     const rows = byDateAsc.map((t) => {
       const totalInvoice = t.total;
       const tipAmount = t.tip;
-      const commission = t.total * (adminCommissionRate / 100);
+      const commission = getBookingCommissionAmount(t);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '—';
       const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
         ? [...t.appointmentTimes].sort((a, b) => {
@@ -426,7 +444,7 @@ export default function FinancePage() {
     const sumTip = filteredTransactions.reduce((s, t) => s + t.tip, 0);
     const sumCommission = filteredTransactions
       .filter((t) => t.paymentStatus === 'paid')
-      .reduce((s, t) => s + t.total * (adminCommissionRate / 100), 0);
+      .reduce((s, t) => s + getBookingCommissionAmount(t), 0);
     const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
     const totalsRow = [
       'Total',
@@ -594,7 +612,7 @@ export default function FinancePage() {
           title="Admin Commission"
           iconBgColor="#e9ecef"
           value={`₱${adminCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-          subtext={`${adminCommissionRate}% of invoice total, excluding tips`}
+          subtext="Based on each nail tech commission rate"
           icon="bi-percent"
           className="flex-grow-1"
         />
@@ -730,7 +748,7 @@ export default function FinancePage() {
                   </tr>
                 ) : (
                   paginatedTransactions.map((item) => {
-                    const commission = item.total * (adminCommissionRate / 100);
+                    const commission = getBookingCommissionAmount(item);
                     return (
                     <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100">
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
@@ -851,7 +869,7 @@ export default function FinancePage() {
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Commission</span>
-                      <p className="text-[#1a1a1a]">₱{(item.total * (adminCommissionRate / 100)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      <p className="text-[#1a1a1a]">₱{getBookingCommissionAmount(item).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                   </div>
                 </div>
