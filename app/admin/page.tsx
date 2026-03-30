@@ -47,7 +47,11 @@ function AdminLoginForm() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password. Please try again.');
+        if (result.error === 'RATE_LIMITED') {
+          setError('Too many login attempts. Please try again in a minute.');
+        } else {
+          setError('Invalid email or password. Please try again.');
+        }
         setLoading(false);
       } else {
         window.location.href = '/admin/overview';

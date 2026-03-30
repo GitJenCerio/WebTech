@@ -32,6 +32,13 @@ function recordLoginAttempt(identifier: string): void {
   }
 }
 
+class AuthRateLimitError extends Error {
+  constructor() {
+    super('RATE_LIMITED');
+    this.name = 'AuthRateLimitError';
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -49,7 +56,7 @@ export const authOptions: NextAuthOptions = {
 
         if (!checkLoginRateLimit(key)) {
           console.warn(`[Auth] Rate limit exceeded for: ${key}`);
-          return null;
+          throw new AuthRateLimitError();
         }
 
         try {

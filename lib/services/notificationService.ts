@@ -8,7 +8,7 @@ import { sendPaymentReminderEmail, sendPaymentUrgentEmail, sendAppointmentRemind
 const CRON_WINDOW_MINUTES = 20;
 const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000;
 
-function manilaDateTimeToUtc(dateStr?: string, timeStr?: string): Date | null {
+export function manilaDateTimeToUtc(dateStr?: string, timeStr?: string): Date | null {
   if (!dateStr || !timeStr) return null;
   const [year, month, day] = dateStr.split('-').map(Number);
   const [hour, minute] = timeStr.split(':').map(Number);
@@ -17,7 +17,7 @@ function manilaDateTimeToUtc(dateStr?: string, timeStr?: string): Date | null {
   return new Date(utcMs - MANILA_OFFSET_MS);
 }
 
-function isWithinWindow(target: Date, now: Date): boolean {
+export function isWithinWindow(target: Date, now: Date): boolean {
   const diff = Math.abs(target.getTime() - now.getTime());
   return diff <= CRON_WINDOW_MINUTES * 60 * 1000;
 }
