@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
-import { normalizeRole } from '@/lib/rbac';
+import { normalizeRole, assignableRoleFromStored, type AssignableUserRole } from '@/lib/rbac';
 
 interface NailTech {
   id: string;
@@ -34,7 +34,8 @@ interface EditUserModalProps {
 
 export default function EditUserModal({ show, onHide, onUserUpdated, user }: EditUserModalProps) {
   const [name, setName] = useState('');
-  const [role, setRole] = useState<'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF'>('STAFF');
+  const [role, setRole] = useState<AssignableUserRole>('STAFF');
+  const [legacyManagerNotice, setLegacyManagerNotice] = useState(false);
   const [assignedNailTechId, setAssignedNailTechId] = useState<string>('');
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [loading, setLoading] = useState(false);
@@ -54,7 +55,9 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
   useEffect(() => {
     if (user) {
       setName(user.name || '');
-      setRole((normalizeRole(user.role) as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF') || 'STAFF');
+      const stored = normalizeRole(user.role);
+      setLegacyManagerNotice(stored === 'MANAGER');
+      setRole(assignableRoleFromStored(user.role));
       setAssignedNailTechId(user.assignedNailTechId || '');
       setStatus(user.status || 'active');
       setError('');
@@ -168,6 +171,15 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
               </Alert>
             )}
 
+            {legacyManagerNotice && (
+              <Alert>
+                <AlertDescription>
+                  This account currently has the Manager role. Manager is no longer assignable; the role
+                  below defaults to Admin—change if needed and save to update.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
               <Label>Email</Label>
               <Input
@@ -200,7 +212,7 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
               <Select
                 value={role}
                 onValueChange={(value) => {
-                  const v = value as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF';
+                  const v = value as AssignableUserRole;
                   setRole(v);
                   if (v !== 'STAFF') setAssignedNailTechId('');
                 }}
@@ -212,7 +224,6 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
                 <SelectContent>
                   <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                   <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="MANAGER">Manager</SelectItem>
                   <SelectItem value="STAFF">Staff</SelectItem>
                 </SelectContent>
               </Select>

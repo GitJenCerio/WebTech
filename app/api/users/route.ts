@@ -52,7 +52,7 @@ const createUserSchema = z.object({
   password: z.string().optional(),
   name: z.string().optional(),
   authMethod: z.enum(['password', 'google']).default('google'),
-  role: z.enum(['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF']).default('STAFF'),
+  role: z.enum(['SUPER_ADMIN', 'ADMIN', 'STAFF']).default('STAFF'),
   assignedNailTechId: z.string().nullable().optional(),
 }).refine((data) => {
   if (data.authMethod === 'password') return !!data.password;

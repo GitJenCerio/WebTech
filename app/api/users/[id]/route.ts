@@ -9,7 +9,7 @@ import { handleApiError } from '@/lib/apiError';
 
 const patchUserSchema = z.object({
   name: z.string().min(1).optional(),
-  role: z.enum(['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF']).optional(),
+  role: z.enum(['SUPER_ADMIN', 'ADMIN', 'STAFF']).optional(),
   assignedNailTechId: z.string().nullable().optional(),
   status: z.enum(['active', 'inactive']).optional(),
 });
@@ -54,7 +54,7 @@ export async function PATCH(
       user.name = name;
     }
     if (role !== undefined) {
-      const validRoles = ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'STAFF'];
+      const validRoles = ['SUPER_ADMIN', 'ADMIN', 'STAFF'];
       user.role = validRoles.includes(role) ? role : user.role;
     }
     if (assignedNailTechId !== undefined) {

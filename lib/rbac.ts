@@ -6,6 +6,15 @@
 
 export type RbacRole = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF';
 
+/** Roles allowed in admin create/edit-user UI (Manager is not assignable). */
+export type AssignableUserRole = Exclude<RbacRole, 'MANAGER'>;
+
+/** Map stored role to the assign-user form default (Manager → Admin). */
+export function assignableRoleFromStored(role: string | undefined): AssignableUserRole {
+  const r = normalizeRole(role);
+  return r === 'MANAGER' ? 'ADMIN' : r;
+}
+
 /** Map legacy roles to new roles (for migration) */
 export const LEGACY_ROLE_MAP: Record<string, RbacRole> = {
   admin: 'ADMIN',

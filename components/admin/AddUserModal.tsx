@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
+import type { AssignableUserRole } from '@/lib/rbac';
 
 interface NailTech {
   id: string;
@@ -31,7 +32,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('google');
-  const [role, setRole] = useState<'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF'>('STAFF');
+  const [role, setRole] = useState<AssignableUserRole>('STAFF');
   const [assignedNailTechId, setAssignedNailTechId] = useState<string>('');
   const [nailTechs, setNailTechs] = useState<NailTech[]>([]);
   const [loadingNailTechs, setLoadingNailTechs] = useState(false);
@@ -254,7 +255,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
               <Select
                 value={role}
                 onValueChange={(value) => {
-                  const v = value as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'STAFF';
+                  const v = value as AssignableUserRole;
                   setRole(v);
                   if (v !== 'STAFF') setAssignedNailTechId('');
                 }}
@@ -266,7 +267,6 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
                 <SelectContent>
                   <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                   <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="MANAGER">Manager</SelectItem>
                   <SelectItem value="STAFF">Staff</SelectItem>
                 </SelectContent>
               </Select>
