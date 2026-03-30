@@ -72,11 +72,8 @@ export async function POST(request: Request) {
       });
     }
 
-    if (!user.password) {
-      return NextResponse.json({
-        message: 'If an account exists with this email, you will receive a password reset link.',
-      });
-    }
+    // Allow password reset even if the user previously signed in with Google only.
+    // This lets admins/users set a password and use credentials sign-in as an alternative.
 
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour

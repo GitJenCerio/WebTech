@@ -38,10 +38,6 @@ export default function ResetPasswordDialog({
 
   const handleReset = async () => {
     if (!user) return;
-    if (user.authMethod === 'google') {
-      setError('This user signs in with Google. Password reset is not applicable.');
-      return;
-    }
     setError('');
     setTempPassword('');
     try {
@@ -86,56 +82,47 @@ export default function ResetPasswordDialog({
           <DialogTitle>Reset Password</DialogTitle>
         </DialogHeader>
         <div className="py-4 space-y-4">
-          {user.authMethod === 'google' ? (
-            <p className="text-sm text-gray-600">
-              <strong>{user.name || user.email}</strong> signs in with Google. Password reset is not applicable.
-            </p>
-          ) : (
-            <>
-              <p className="text-sm text-gray-600">
-                Reset password for <strong>{user.name || user.email}</strong>. A temporary password will be generated. Share it securely with the user.
+          <p className="text-sm text-gray-600">
+            Reset password for <strong>{user.name || user.email}</strong>. A temporary password will be generated.
+            Share it securely with the user.
+            {user.authMethod === 'google' && (
+              <>
+                {' '}
+                This will also enable email/password sign-in for this account.
+              </>
+            )}
+          </p>
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+          {tempPassword && (
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-500">Temporary password (copy and share securely)</Label>
+              <div className="flex items-center gap-2">
+                <Input readOnly value={tempPassword} className="font-mono text-sm bg-gray-50" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopy}
+                  className="shrink-0"
+                >
+                  {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-amber-600">
+                This password will not be shown again. Ask the user to change it after signing in.
               </p>
-              {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-                  {error}
-                </div>
-              )}
-              {tempPassword && (
-                <div className="space-y-2">
-                  <Label className="text-xs text-gray-500">Temporary password (copy and share securely)</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      readOnly
-                      value={tempPassword}
-                      className="font-mono text-sm bg-gray-50"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={handleCopy}
-                      className="shrink-0"
-                    >
-                      {copied ? (
-                        <Check className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-amber-600">
-                    This password will not be shown again. Ask the user to change it after signing in.
-                  </p>
-                </div>
-              )}
-            </>
+            </div>
           )}
         </div>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={handleClose} disabled={loading}>
             {tempPassword ? 'Close' : 'Cancel'}
           </Button>
-          {user.authMethod !== 'google' && !tempPassword && (
+          {!tempPassword && (
             <Button
               type="button"
               onClick={handleReset}

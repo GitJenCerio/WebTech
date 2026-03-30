@@ -21,7 +21,7 @@ function generateTempPassword(length = 12): string {
 /**
  * POST /api/users/:id/reset-password
  * Admin-initiated password reset. Generates a temporary password and returns it.
- * Only works for users with password auth (not Google OAuth).
+ * If the user previously used Google OAuth only, this will also enable password sign-in.
  */
 export async function POST(
   _request: Request,
@@ -44,13 +44,6 @@ export async function POST(
     const user = await User.findById(userId).select('+password');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    if (!user.password) {
-      return NextResponse.json(
-        { error: 'This user signs in with Google. Password reset is not applicable.' },
-        { status: 400 }
-      );
     }
 
     const tempPassword = generateTempPassword(12);
