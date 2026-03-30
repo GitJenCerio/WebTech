@@ -15,6 +15,7 @@ export const dynamic = 'force-dynamic';
 function AdminLoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
@@ -110,16 +111,27 @@ function AdminLoginForm() {
                     Forgot password?
                   </a>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  className="bg-[#f9f9f9] border-[#e5e5e5]"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    className="bg-[#f9f9f9] border-[#e5e5e5] pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    disabled={loading}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <i className={showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'} />
+                  </button>
+                </div>
               </div>
 
               {(error || oauthErrorMessage) && (
