@@ -63,7 +63,7 @@ export async function runNotificationSweep(): Promise<{ sent: number }> {
         { type: 'payment_6h', hours: 6, label: 'Payment Reminder' },
         { type: 'payment_12h', hours: 12, label: 'Payment Urgent Reminder' },
         { type: 'payment_23h', hours: 23, label: 'Final Payment Warning' },
-        { type: 'payment_24h_cancel', hours: 24, label: 'Cancellation Notice' },
+        { type: 'payment_48h_cancel', hours: 48, label: 'Cancellation Notice' },
       ];
 
       for (const item of schedule) {

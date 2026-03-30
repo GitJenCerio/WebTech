@@ -3,6 +3,9 @@ import type { Config } from 'jest';
 const config: Config = {
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  globalTeardown: '<rootDir>/jest.teardown.ts',
+  testTimeout: 30000,
   transform: {
     '^.+\\.(ts|tsx)$': [
       'ts-jest',

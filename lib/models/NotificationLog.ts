@@ -4,7 +4,7 @@ export type NotificationType =
   | 'payment_6h'
   | 'payment_12h'
   | 'payment_23h'
-  | 'payment_24h_cancel'
+  | 'payment_48h_cancel'
   | 'appt_24h'
   | 'appt_2h';
 
