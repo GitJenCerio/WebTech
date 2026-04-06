@@ -1,7 +1,18 @@
 export type SlotStatus = 'available' | 'blocked' | 'pending' | 'confirmed' | 'booked';
 export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show' | 'pending_payment' | 'pending_form';
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'refunded';
-export type ServiceType = 'Manicure' | 'Pedicure' | 'Manicure + Pedicure' | 'Manicure for 2' | 'Pedicure for 2' | 'Manicure + Pedicure for 1' | 'Manicure + Pedicure for 2';
+export type ServiceType =
+  | 'Manicure'
+  | 'Pedicure'
+  | 'Manicure + Pedicure'
+  | 'Mani + Pedi Express'
+  | 'Manicure for 2'
+  | 'Pedicure for 2'
+  | 'Manicure for 2 or more'
+  | 'Pedicure for 2 or more'
+  | 'Manicure + Pedicure for 1'
+  | 'Manicure + Pedicure for 2'
+  | 'Manicure + Pedicure for 2 or more';
 export type NailTechRole = 'Owner' | 'Junior Tech' | 'Senior Tech';
 export type ServiceAvailability = 'Studio only' | 'Home service only' | 'Studio and Home Service';
 export type NailTechStatus = 'Active' | 'Inactive';

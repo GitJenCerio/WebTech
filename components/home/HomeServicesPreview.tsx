@@ -20,7 +20,7 @@ const items = [
   {
     title: 'Nail Art & More',
     description: 'Gel overlay, extensions, nail art. We bring your vision to life.',
-    image: '/images/service-3.jpg',
+    image: '/images/service-3-v3.jpg',
     href: '/pricing',
   },
 ];

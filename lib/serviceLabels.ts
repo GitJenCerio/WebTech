@@ -12,8 +12,11 @@ export const CHOSEN_SERVICE_LABELS: Record<string, string> = {
 /** Standard display names (no backend codes like mani_pedi on frontend) */
 export const STANDARD_SERVICE_NAMES = [
   'Manicure', 'Pedicure', 'Manicure + Pedicure',
+  'Mani + Pedi Express',
   'Manicure for 2', 'Pedicure for 2',
+  'Manicure for 2 or more', 'Pedicure for 2 or more',
   'Manicure + Pedicure for 1', 'Manicure + Pedicure for 2',
+  'Manicure + Pedicure for 2 or more',
 ] as const;
 
 /** Map legacy/backend service codes to standard display labels */
@@ -21,6 +24,7 @@ export const SLOT_SERVICE_LABELS: Record<string, string> = {
   manicure: 'Manicure',
   pedicure: 'Pedicure',
   mani_pedi: 'Manicure + Pedicure',
+  mani_pedi_simultaneous: 'Mani + Pedi Express',
   home_service_2slots: 'Manicure + Pedicure for 2',
   home_service_3slots: 'Manicure + Pedicure for 1',
   russian_manicure: 'Manicure',
@@ -50,12 +54,20 @@ export function getSlotServiceDisplay(type: string | undefined): string {
 export function mapServiceToStandardDisplay(service?: string): string {
   if (!service?.trim()) return 'Manicure';
   const k = service.toLowerCase().trim().replace(/\s+/g, ' ');
+  const maniPediForN = k.match(/manicure \+ pedicure for (\d+)/);
+  if (maniPediForN?.[1] && Number(maniPediForN[1]) >= 2) return Number(maniPediForN[1]) > 2 ? 'Manicure + Pedicure for 2 or more' : 'Manicure + Pedicure for 2';
+  const maniForN = k.match(/manicure for (\d+)/);
+  if (maniForN?.[1] && Number(maniForN[1]) >= 2) return Number(maniForN[1]) > 2 ? 'Manicure for 2 or more' : 'Manicure for 2';
+  const pediForN = k.match(/pedicure for (\d+)/);
+  if (pediForN?.[1] && Number(pediForN[1]) >= 2) return Number(pediForN[1]) > 2 ? 'Pedicure for 2 or more' : 'Pedicure for 2';
+  if (k.includes('express') || k.includes('simultaneous')) return 'Mani + Pedi Express';
   if (k.includes('mani') && k.includes('pedi')) {
+    if (k.includes('2 or more')) return 'Manicure + Pedicure for 2 or more';
     if (k.includes('for 2') || k.includes('2 pax') || k.includes('2slots')) return 'Manicure + Pedicure for 2';
     if (k.includes('for 1') || k.includes('1 pax') || k.includes('3slots')) return 'Manicure + Pedicure for 1';
     return 'Manicure + Pedicure';
   }
-  if (k.includes('pedicure')) return k.includes('for 2') ? 'Pedicure for 2' : 'Pedicure';
-  if (k.includes('manicure')) return k.includes('for 2') ? 'Manicure for 2' : 'Manicure';
+  if (k.includes('pedicure')) return k.includes('2 or more') ? 'Pedicure for 2 or more' : (k.includes('for 2') ? 'Pedicure for 2' : 'Pedicure');
+  if (k.includes('manicure')) return k.includes('2 or more') ? 'Manicure for 2 or more' : (k.includes('for 2') ? 'Manicure for 2' : 'Manicure');
   return getSlotServiceDisplay(service) || service.trim();
 }

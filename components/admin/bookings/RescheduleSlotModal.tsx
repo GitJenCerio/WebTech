@@ -36,10 +36,14 @@ const SERVICE_TYPES: ServiceType[] = [
   'Manicure',
   'Pedicure',
   'Manicure + Pedicure',
+  'Mani + Pedi Express',
   'Manicure for 2',
   'Pedicure for 2',
+  'Manicure for 2 or more',
+  'Pedicure for 2 or more',
   'Manicure + Pedicure for 1',
   'Manicure + Pedicure for 2',
+  'Manicure + Pedicure for 2 or more',
 ];
 
 interface Slot {

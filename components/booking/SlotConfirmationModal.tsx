@@ -44,6 +44,18 @@ export default function SlotConfirmationModal({
     : '';
 
   const hasSqueezeFee = slotType === 'with_squeeze_fee';
+  const allSlotTimes = [slotTime, ...linkedSlotTimes].filter(Boolean);
+  const toMinutes = (time: string) => {
+    const [h, m] = String(time).split(':').map(Number);
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return Number.NaN;
+    return h * 60 + m;
+  };
+  const sortedTimes = [...allSlotTimes].sort((a, b) => toMinutes(a) - toMinutes(b));
+  const timeDisplay = (() => {
+    if (sortedTimes.length === 0) return '';
+    if (sortedTimes.length === 1) return formatTime12Hour(sortedTimes[0]);
+    return `${formatTime12Hour(sortedTimes[0])} - ${formatTime12Hour(sortedTimes[sortedTimes.length - 1])}`;
+  })();
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
@@ -81,13 +93,7 @@ export default function SlotConfirmationModal({
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wider">Time</p>
                 <p className="text-base font-semibold text-gray-900 whitespace-nowrap">
-                  {slotTime ? formatTime12Hour(slotTime) : ''}
-                  {linkedSlotTimes.length > 0 && (
-                    <span className="text-base font-semibold text-gray-900">
-                      {' & '}
-                      {linkedSlotTimes.map((t) => formatTime12Hour(t)).join(' & ')}
-                    </span>
-                  )}
+                  {timeDisplay}
                 </p>
               </div>
             </div>

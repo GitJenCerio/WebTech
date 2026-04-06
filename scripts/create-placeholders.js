@@ -11,7 +11,7 @@ const images = [
   'hero.jpg',
   'service-1.jpg',
   'service-2.jpg',
-  'service-3.jpg',
+  'service-3-v3.jpg',
   'service-4.jpg',
   'service-5.jpg',
   'service-6.jpg',

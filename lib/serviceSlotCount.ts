@@ -9,6 +9,7 @@ export function getRequiredSlotCountForService(
   if (!serviceType || !serviceType.trim()) return 1;
 
   const key = serviceType.toLowerCase().trim().replace(/\s+/g, ' ');
+  if (key.includes('express') || key.includes('simultaneous')) return 1;
 
   // Manicure / Pedicure
   if (key === 'manicure' || key === 'pedicure') {
@@ -24,6 +25,14 @@ export function getRequiredSlotCountForService(
   if (key.includes('home_service_3slots') || key === 'mani + pedi 3 pax') return 3;
 
   // Standard names: Manicure for 2, Pedicure for 2, Manicure + Pedicure for 2
+  const maniPediForN = key.match(/manicure \+ pedicure for (\d+)/);
+  if (maniPediForN?.[1]) return Math.max(2, Number(maniPediForN[1])) * 2;
+  const maniForN = key.match(/manicure for (\d+)/);
+  if (maniForN?.[1]) return Math.max(2, Number(maniForN[1]));
+  const pediForN = key.match(/pedicure for (\d+)/);
+  if (pediForN?.[1]) return Math.max(2, Number(pediForN[1]));
+  if (key.includes('manicure for 2 or more') || key.includes('pedicure for 2 or more')) return 2;
+  if (key.includes('manicure + pedicure for 2 or more')) return 4;
   if (key.includes('manicure for 2') || key.includes('pedicure for 2')) return 2;
   if (key.includes('manicure + pedicure for 2')) return 4;
   if (key.includes('manicure + pedicure for 1') || key.includes('manicure + pedicure')) return 2;

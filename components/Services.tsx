@@ -22,7 +22,7 @@ const services = [
     title: 'Nail Art',
     description:
       'Turn your nails into mini masterpieces. Choose from a wide range of creative designs — from minimalist details to intricate 3D art, chrome, ombre, or hand-painted styles. Each look is carefully done to match your personality and enhance your overall aesthetic.',
-    image: '/images/service-3.jpg',
+    image: '/images/service-3-v3.jpg',
   },
   {
     title: 'Russian Manicure w/ Extensions',

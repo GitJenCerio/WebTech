@@ -154,7 +154,7 @@ export default function ClientTypeSelectionModal({
       }
     >
       <div className="p-6 sm:p-8">
-        <h3 className="text-2xl font-semibold mb-2 text-gray-900">Book Your Appointment</h3>
+        <h3 className="text-xl sm:text-2xl font-semibold mb-2 text-gray-900">Book Your Appointment</h3>
 
         {/* Step 1: Client Type Selection */}
         {step === 'type' && (
@@ -164,15 +164,19 @@ export default function ClientTypeSelectionModal({
             </p>
 
             <div className="space-y-3">
-              <OptionCard selected={false} onClick={() => handleSelectClientType('new')}>
-                <OptionCardTitle>New Client</OptionCardTitle>
-                <OptionCardDescription>I&apos;m booking for the first time</OptionCardDescription>
-              </OptionCard>
+              <div className="w-full grid place-items-center">
+                <OptionCard className="w-[300px] max-w-full" selected={false} onClick={() => handleSelectClientType('new')}>
+                  <OptionCardTitle>New Client</OptionCardTitle>
+                  <OptionCardDescription>I&apos;m booking for the first time</OptionCardDescription>
+                </OptionCard>
+              </div>
 
-              <OptionCard selected={false} onClick={() => handleSelectClientType('repeat')}>
-                <OptionCardTitle>Returning Client</OptionCardTitle>
-                <OptionCardDescription>I&apos;ve booked before</OptionCardDescription>
-              </OptionCard>
+              <div className="w-full grid place-items-center">
+                <OptionCard className="w-[300px] max-w-full" selected={false} onClick={() => handleSelectClientType('repeat')}>
+                  <OptionCardTitle>Returning Client</OptionCardTitle>
+                  <OptionCardDescription>I&apos;ve booked before</OptionCardDescription>
+                </OptionCard>
+              </div>
             </div>
           </div>
         )}
@@ -298,17 +302,21 @@ export default function ClientTypeSelectionModal({
             </p>
 
             <div className="space-y-3">
-              <OptionCard selected={false} onClick={() => handleLocationSelect('homebased_studio')}>
-                <OptionCardTitle>Home Studio</OptionCardTitle>
-                <OptionCardDescription>Service at our location</OptionCardDescription>
-              </OptionCard>
+              <div className="w-full grid place-items-center">
+                <OptionCard className="w-[300px] max-w-full" selected={false} onClick={() => handleLocationSelect('homebased_studio')}>
+                  <OptionCardTitle>Home Studio</OptionCardTitle>
+                  <OptionCardDescription>Service at our location</OptionCardDescription>
+                </OptionCard>
+              </div>
 
-              <OptionCard selected={false} onClick={() => handleLocationSelect('home_service')}>
-                <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">+₱1,000 per head</span></OptionCardTitle>
-                <OptionCardDescription>
-                  Service at your home. Additional ₱1,000 per head + Grab transpo fee (back & forth).
-                </OptionCardDescription>
-              </OptionCard>
+              <div className="w-full grid place-items-center">
+                <OptionCard className="w-[300px] max-w-full" selected={false} onClick={() => handleLocationSelect('home_service')}>
+                  <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">Base starts at ₱1,500</span></OptionCardTitle>
+                  <OptionCardDescription>
+                    Service at your home. Base rate starts at ₱1,500 (depends on location) + ₱500 for each additional head.
+                  </OptionCardDescription>
+                </OptionCard>
+              </div>
             </div>
 
             {error && (
