@@ -103,9 +103,10 @@ export default function StudioPoliciesPage() {
       </p>
 
       <h2 className="text-xl font-semibold mt-8 mb-3">Home Service Rules</h2>
-      <p className="mb-3">We offer home service across Metro Manila with a PHP 1,500 travel fee.</p>
+      <p className="mb-3">We offer home service across Metro Manila with a PHP 1,500 home service fee.</p>
       <ul className="list-disc pl-6 mb-4 space-y-1">
         <li>Home service bookings require a PHP 500 deposit per slot.</li>
+        <li>Grab transportation back and forth will be shouldered by the client.</li>
         <li>Please provide a clean, well-lit, and comfortable working area.</li>
         <li>A stable table and chair setup is required. We bring our own tools and equipment.</li>
         <li>Home service is subject to technician availability and Metro Manila coverage only.</li>
