@@ -43,6 +43,13 @@ export default function Home() {
     <main className="min-h-screen">
       <Header />
       <Hero />
+      <section className="bg-amber-50 border-y border-amber-200">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center">
+          <p className="text-sm sm:text-base text-amber-900">
+            Price update: Starting April 2026, there is a +300 PHP increase for main services. Prices shown on this site are already updated.
+          </p>
+        </div>
+      </section>
       <Suspense fallback={<LoadingPlaceholder />}>
         <Services />
       </Suspense>

@@ -181,6 +181,19 @@ h6.font-heading {
   @apply text-primary font-medium underline hover:no-underline;
 }
 
+/* Slightly larger blog typography on mobile for readability */
+@media (max-width: 640px) {
+  .blog-content h2 {
+    font-size: 1.75rem; /* 28px */
+  }
+
+  .blog-content p,
+  .blog-content li {
+    font-size: 1.25rem; /* 20px */
+    line-height: 1.8;
+  }
+}
+
 /* Select overrides - theme-aware */
 select,
 select.nail-tech-select {

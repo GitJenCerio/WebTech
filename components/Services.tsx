@@ -7,37 +7,45 @@ import Link from 'next/link';
 
 const services = [
   {
-    title: 'Russian Manicure (Cleaning only)',
+    title: 'Russian Manicure (Cleaning Only)',
+    price: 'PHP 1,000',
     description:
       'A meticulous, machine-based cleaning that deeply removes dead skin and refines the cuticle area for a polished, healthy nail appearance. Perfect for those who prefer natural nails without polish. This service enhances nail health, promotes cleaner regrowth, and leaves nails looking neat and naturally glossy.',
     image: '/images/service-1.jpg',
   },
   {
-    title: 'Russian Manicure w/o Extensions',
+    title: 'BIAB/Gel/Hardgel Overlay',
+    titleLine2: '(No Extensions)',
+    price: 'Starts at PHP 1,300',
     description:
       'Achieve the perfect balance between natural and refined. This manicure includes complete Russian-style cleaning, cuticle detailing, and a flawless gel or BIAB overlay for long-lasting shine and strength — no extensions needed. It enhances the nail\'s natural shape and keeps them looking elegant for weeks.',
     image: '/images/service-2.jpg',
   },
   {
-    title: 'Nail Art',
-    description:
-      'Turn your nails into mini masterpieces. Choose from a wide range of creative designs — from minimalist details to intricate 3D art, chrome, ombre, or hand-painted styles. Each look is carefully done to match your personality and enhance your overall aesthetic.',
-    image: '/images/service-3-v3.jpg',
-  },
-  {
-    title: 'Russian Manicure w/ Extensions',
+    title: 'BIAB/Gel/Hardgel Overlay',
+    titleLine2: '(With Extensions)',
+    price: 'Starts at PHP 1,800',
     description:
       'Instantly elevate your look with expertly sculpted extensions using premium-quality soft gel, hard gel, or polygel. Each set is custom-shaped and finished to complement your natural nail bed. Perfect for those who want added length, durability, and style with a natural feel..',
     image: '/images/service-4.jpg',
   },
   {
-    title: 'Russian Pedicure',
+    title: 'Nail Art',
+    price: 'Starts at PHP 2,000',
+    description:
+      'Turn your nails into mini masterpieces. Choose from a wide range of creative designs — from minimalist details to intricate 3D art, chrome, ombre, or hand-painted styles. Each look is carefully done to match your personality and enhance your overall aesthetic.',
+    image: '/images/service-3-v3.jpg',
+  },
+  {
+    title: 'Russian Pedicure with Gel Overlay',
+    price: 'Starts at PHP 1,500',
     description:
       'Indulge in a Russian-style pedicure with precise cuticle care and a long-lasting gel overlay for smooth, glossy toes. This service not only beautifies your nails but also maintains foot hygiene. Optional custom shades and nail art are available for a personalized finish.',
     image: '/images/service-5.jpg',
   },
   {
     title: 'Nail Repair',
+    price: 'Price varies',
     description:
       'Restore your nails to perfection. Whether it’s a chipped, cracked, or broken nail, this service carefully rebuilds and strengthens it to blend seamlessly with your natural or extended nails. Ideal for maintaining the longevity and beauty of your set.',
     image: '/images/service-6.jpg',
@@ -65,7 +73,7 @@ export default function Services() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-2 sm:px-4">
           {services.map((service, index) => (
             <motion.div
-              key={service.title}
+              key={`${service.title}-${service.titleLine2 ?? 'default'}`}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -85,8 +93,14 @@ export default function Services() {
                   className="object-cover group-hover:scale-110 transition-transform duration-300 rounded-xl sm:rounded-2xl md:rounded-3xl"
                 />
               </div>
-              <h3 className="text-lg sm:text-xl md:text-2xl font-heading font-normal mb-2">{service.title}</h3>
-              <p className="text-gray-600 text-xs sm:text-sm md:text-base text-justify leading-relaxed">{service.description}</p>
+              <div className="mb-2 flex flex-col gap-1">
+                <h3 className="text-lg sm:text-xl md:text-2xl font-heading font-normal leading-tight">
+                  {service.title}
+                  {service.titleLine2 && <span className="block">{service.titleLine2}</span>}
+                </h3>
+                <p className="text-base sm:text-lg font-medium text-gray-600">{service.price}</p>
+              </div>
+              <p className="text-gray-600 text-sm sm:text-sm md:text-base text-justify leading-relaxed">{service.description}</p>
               {index === 0 && (
                 <Link
                   href="/russian-manicure"

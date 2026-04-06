@@ -75,6 +75,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.3,
     },
     {
+      url: `${baseUrl}/studio-policies`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.4,
+    },
+    {
       url: `${baseUrl}/blog`,
       lastModified: currentDate,
       changeFrequency: 'weekly',

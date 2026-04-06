@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.glammednailsbyjhen.com';
 
@@ -17,6 +18,9 @@ export const metadata: Metadata = {
 export default function CookiesPolicy() {
   return (
     <main className="max-w-3xl mx-auto py-12 sm:py-16 px-2 sm:px-4">
+      <Link href="/" className="inline-block text-sm text-gray-600 hover:text-black underline mb-5">
+        ← Back to Home
+      </Link>
       <h1 className="text-2xl sm:text-3xl font-bold mb-6">Cookies Policy</h1>
       <p className="mb-4">This website uses cookies to make your browsing experience better. Here’s what that means:</p>
       <h2 className="text-xl font-semibold mt-8 mb-2">What Are Cookies?</h2>
