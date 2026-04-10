@@ -24,6 +24,7 @@ import {
   User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import PushNotificationButton from '@/components/admin/PushNotificationButton';
 
 const SIDEBAR_RAIL_BREAKPOINT = 768;
 
@@ -194,6 +195,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <span className="text-sm text-gray-500">{currentPageTitle}</span>
           </div>
           <div className="flex items-center gap-2">
+            <PushNotificationButton />
             <span
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#e5e5e5] bg-[#fafafa] text-gray-600"
               title={session?.user?.name || session?.user?.email || 'Profile'}

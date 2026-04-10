@@ -58,6 +58,9 @@ function isPublicApiRoute(pathname: string, method: string): boolean {
   // Cron endpoints (use x-cron-secret header, validated by route)
   if (pathname.startsWith('/api/cron/')) return true;
 
+  // Push notification VAPID public key (safe to expose)
+  if (pathname === '/api/push/vapid-public-key' && method === 'GET') return true;
+
   return false;
 }
 

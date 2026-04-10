@@ -11,6 +11,7 @@ import NailTech from '@/lib/models/NailTech';
 import Slot from '@/lib/models/Slot';
 import { createUploadProofToken, createPhotoUploadToken } from '@/lib/uploadProofToken';
 import { syncBookingToSheet } from '@/lib/services/googleSheetsService';
+import { sendPushToAll } from '@/lib/services/pushNotificationService';
 import connectDB from '@/lib/mongodb';
 
 // Mark this route as dynamic to prevent static analysis during build
@@ -195,6 +196,15 @@ export async function POST(request: Request) {
         }
       })
       .catch(err => console.error('Failed to fetch customer for email:', err));
+
+    // Send push notification to all admins (non-blocking)
+    sendPushToAll({
+      title: 'New Booking Request',
+      body: `Booking ${booking.bookingCode} — ${input.service.type}`,
+      tag: 'new-booking',
+      requireInteraction: true,
+      data: { url: `/admin/bookings` },
+    }).catch(err => console.error('[Push] Failed to send new booking notification:', err));
 
     (async () => {
       try {

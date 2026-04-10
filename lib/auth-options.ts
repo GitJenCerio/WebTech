@@ -214,7 +214,11 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours (plan: reduce from 30 days)
+    maxAge: 365 * 24 * 60 * 60, // 1 year
+    updateAge: 24 * 60 * 60, // Refresh session age every 24h
+  },
+  jwt: {
+    maxAge: 365 * 24 * 60 * 60, // 1 year
   },
   // NextAuth uses httpOnly cookies by default; maxAge controlled by session.maxAge
   secret: process.env.NEXTAUTH_SECRET,

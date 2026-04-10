@@ -110,7 +110,22 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="manifest" href="/manifest.json" />
         <StructuredData />
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                    console.warn('Service worker registration failed:', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className={`${jost.variable} ${cormorant.variable} font-sans antialiased`}>
         <SessionProvider>{children}</SessionProvider>
