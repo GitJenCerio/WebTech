@@ -764,7 +764,7 @@ export async function updateBookingService(
     booking.nailTechId = primaryNailTechId;
     booking.service = {
       ...booking.service,
-      type: service.type,
+      type: service.type as ServiceType,
       mode: 'simultaneous_two_techs',
       secondaryNailTechId: service.secondaryNailTechId,
       ...(service.location && { location: service.location }),
