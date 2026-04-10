@@ -24,7 +24,8 @@ const defaultDescription = 'Russian manicure in Manila: premium e-file manicure,
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   icons: {
-    icon: '/logo.png',
+    icon: '/icon',
+    apple: '/apple-icon',
   },
   title: {
     default: defaultTitle,
