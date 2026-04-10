@@ -2,11 +2,16 @@ import webpush from 'web-push';
 import connectDB from '@/lib/mongodb';
 import PushSubscription from '@/lib/models/PushSubscription';
 
-webpush.setVapidDetails(
-  `mailto:${process.env.EMAIL_FROM || 'admin@glammednailsbyjhen.com'}`,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+function initVapid() {
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) return;
+  webpush.setVapidDetails(
+    `mailto:${process.env.EMAIL_FROM || 'admin@glammednailsbyjhen.com'}`,
+    publicKey,
+    privateKey
+  );
+}
 
 export interface PushPayload {
   title: string;
@@ -23,6 +28,7 @@ export interface PushPayload {
  * Send a push notification to all subscriptions for a user
  */
 export async function sendPushToUser(userId: string, payload: PushPayload) {
+  initVapid();
   await connectDB();
   const subscriptions = await PushSubscription.find({ userId });
 
@@ -56,6 +62,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
  * Send a push notification to ALL admin subscriptions (all users)
  */
 export async function sendPushToAll(payload: PushPayload) {
+  initVapid();
   await connectDB();
   const subscriptions = await PushSubscription.find({});
 

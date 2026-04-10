@@ -198,14 +198,14 @@ export default function AddSlotModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
-      <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl md:max-w-lg flex flex-col max-h-[90vh]">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="text-lg">
             {addMode === 'single' ? 'Add Slot' : 'Add Bulk Slots'}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-3">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="overflow-y-auto flex-1 space-y-3 pr-1">
             {/* Step 1: Select Nail Tech First */}
             {nailTechs.length > 0 && (
               <div className="space-y-1.5">
@@ -444,7 +444,7 @@ export default function AddSlotModal({
               </>
             )}
           </div>
-          <DialogFooter className="pt-3 pb-2">
+          <DialogFooter className="pt-3 pb-2 shrink-0 border-t border-gray-100 mt-2">
             <Button type="button" variant="secondary" onClick={onHide} className="h-9 text-sm">
               Cancel
             </Button>

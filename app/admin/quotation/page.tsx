@@ -331,8 +331,9 @@ export default function QuotationPage() {
   }
 
   return (
-    <div className="px-2 sm:px-4 py-4 sm:py-6 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-2">
+    <div className="px-2 sm:px-4 py-4 sm:py-6 space-y-6 pb-24 sm:pb-6">
+      {/* Action buttons — sticky on mobile, normal on desktop */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-[#e5e5e5] px-4 py-3 flex flex-wrap gap-2 justify-end sm:static sm:bg-transparent sm:border-0 sm:p-0 sm:z-auto">
         <div className="flex flex-wrap gap-2">
           <button
             className="h-9 px-4 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] hover:border-[#1a1a1a]/30 hover:bg-white transition-all flex items-center gap-2"

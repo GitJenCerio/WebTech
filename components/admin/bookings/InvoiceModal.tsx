@@ -136,12 +136,12 @@ export default function InvoiceModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl md:max-w-lg flex flex-col max-h-[90vh]">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{currentQuotationId ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3" style={{ fontSize: '0.92rem' }}>
+        <div className="overflow-y-auto flex-1 space-y-3 pr-1" style={{ fontSize: '0.92rem' }}>
           <div className="p-4 border border-gray-200 rounded-2xl bg-gray-50">
             <div className="flex flex-col gap-2">
               {booking.bookingCode && (
@@ -432,7 +432,7 @@ export default function InvoiceModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-wrap gap-2">
+        <DialogFooter className="flex-wrap gap-2 shrink-0 border-t border-gray-100 pt-3 mt-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Close
           </Button>

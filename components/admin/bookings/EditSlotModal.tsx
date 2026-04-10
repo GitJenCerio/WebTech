@@ -109,12 +109,12 @@ export default function EditSlotModal({
   return (
     <>
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
-      <DialogContent className="sm:max-w-lg md:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg md:max-w-md flex flex-col max-h-[90vh]">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Edit Slot: <span className="whitespace-nowrap">{formatTime12Hour(slot.time)}</span> on {slot.date}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-3">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <div className="overflow-y-auto flex-1 space-y-3 pr-1">
             {/* Nail Tech Info */}
             <div className="space-y-1.5">
               <Label>Nail Technician</Label>
@@ -183,7 +183,7 @@ export default function EditSlotModal({
               </Alert>
             )}
           </div>
-          <DialogFooter className="flex-wrap gap-2">
+          <DialogFooter className="flex-wrap gap-2 shrink-0 border-t border-gray-100 pt-3 mt-2">
             <Button
               type="button"
               variant="outline"

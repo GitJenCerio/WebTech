@@ -218,14 +218,14 @@ export default function RescheduleSlotModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Reschedule & change service</DialogTitle>
           <DialogDescription>
             Optionally change the service, then select a new date and time. Current slots will be released.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+        <div className="overflow-y-auto flex-1 space-y-4 py-4 pr-1">
           <div>
             <Label className="text-xs text-gray-500">Service type</Label>
               <Select value={selectedServiceType} onValueChange={setSelectedServiceType}>
@@ -353,7 +353,7 @@ export default function RescheduleSlotModal({
             </p>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t border-gray-100 pt-3">
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancel
           </Button>
