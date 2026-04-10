@@ -245,8 +245,8 @@ export default function SlotsOverviewTable({ currentMonth, showNailTechFilter = 
                   const isAvail = slot.status === 'available';
                   const isBooked = ['booked', 'confirmed', 'CONFIRMED', 'pending', 'PENDING_PAYMENT', 'completed', 'COMPLETED'].includes(slot.status);
                   const statusLabel = isAvail ? 'Available' : isBooked ? 'Booked' : slot.status;
-                  const statusBg = isAvail ? '#d4edda' : '#fff3cd';
-                  const statusColor = isAvail ? '#155724' : '#856404';
+                  const statusBg = isAvail ? '#fef2f2' : '#fff3cd';
+                  const statusColor = isAvail ? '#dc2626' : '#856404';
                   const svc = slot.booking?.service;
                   const serviceType = svc?.type ? getSlotServiceDisplay(svc.type) : '—';
                   const specific = svc?.chosenServices?.length ? getChosenServicesDisplay(svc.chosenServices) : '—';

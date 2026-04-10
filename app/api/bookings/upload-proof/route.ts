@@ -4,6 +4,7 @@ import Booking from '@/lib/models/Booking';
 import { uploadImage, deleteImage } from '@/lib/cloudinary';
 import { verifyUploadProofToken } from '@/lib/uploadProofToken';
 import { backupBooking } from '@/lib/services/googleSheetsBackup';
+import { sendPushToAll } from '@/lib/services/pushNotificationService';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,6 +91,14 @@ export async function POST(request: Request) {
         console.error('Failed to backup booking update to Google Sheets:', err)
       );
     }
+
+    sendPushToAll({
+      title: '💳 Payment Proof Uploaded',
+      body: `${booking.bookingCode} — Client submitted proof of payment. Please verify.`,
+      tag: 'payment-proof',
+      requireInteraction: true,
+      data: { url: `/admin/bookings` },
+    }).catch(err => console.error('[Push] payment proof:', err));
 
     return NextResponse.json({
       url: result.secure_url,

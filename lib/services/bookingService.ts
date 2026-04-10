@@ -617,7 +617,8 @@ export async function markBookingAsRescheduled(bookingId: string, reason: string
 export async function rescheduleBookingToSlots(
   bookingId: string,
   newSlotIds: string[],
-  reason?: string
+  reason?: string,
+  secondaryNailTechId?: string
 ): Promise<IBooking> {
   await connectDB();
 
@@ -635,8 +636,26 @@ export async function rescheduleBookingToSlots(
     throw new Error('At least one new slot is required');
   }
 
-  // Allow reschedule to a different nail tech - derive tech from new slots
-  const newNailTechId = await validateSlots(newSlotIds);
+  let newNailTechId: string;
+
+  if (secondaryNailTechId) {
+    // Simultaneous two-tech mode (Mani + Pedi Express)
+    // newSlotIds = [primarySlotId, secondarySlotId]
+    // derive primary nail tech from first slot
+    const primarySlot = await Slot.findById(newSlotIds[0]);
+    if (!primarySlot) throw new Error('Primary slot not found');
+    newNailTechId = String(primarySlot.nailTechId);
+
+    await validateSimultaneousSlots({
+      slotIds: newSlotIds,
+      primaryNailTechId: newNailTechId,
+      secondaryNailTechId,
+      location: (booking.service?.location as 'homebased_studio' | 'home_service') || 'homebased_studio',
+    });
+  } else {
+    // Single-tech mode: all slots must belong to same nail tech
+    newNailTechId = await validateSlots(newSlotIds);
+  }
 
   const oldSlotIds = [...(booking.slotIds || [])];
   await releaseSlots(oldSlotIds);
@@ -649,6 +668,23 @@ export async function rescheduleBookingToSlots(
 
   booking.slotIds = newSlotIds;
   booking.nailTechId = newNailTechId;
+
+  // Update secondary nail tech and mode on service
+  if (secondaryNailTechId) {
+    booking.service = {
+      ...booking.service,
+      mode: 'simultaneous_two_techs',
+      secondaryNailTechId,
+    };
+  } else if (booking.service?.mode === 'simultaneous_two_techs') {
+    // Switched away from simultaneous — clear secondary tech
+    booking.service = {
+      ...booking.service,
+      mode: 'single_tech',
+      secondaryNailTechId: undefined,
+    };
+  }
+
   if (reason != null && String(reason).trim()) {
     booking.statusReason = `Rescheduled: ${String(reason).trim()}`;
   }
@@ -669,7 +705,14 @@ export async function rescheduleBookingToSlots(
  */
 export async function updateBookingService(
   bookingId: string,
-  service: { type: string; location?: 'homebased_studio' | 'home_service'; clientType?: 'new' | 'repeat'; chosenServices?: string[] }
+  service: {
+    type: string;
+    location?: 'homebased_studio' | 'home_service';
+    clientType?: 'new' | 'repeat';
+    chosenServices?: string[];
+    secondaryNailTechId?: string;
+    newSlotIds?: string[];
+  }
 ): Promise<IBooking> {
   await connectDB();
 
@@ -685,28 +728,81 @@ export async function updateBookingService(
     throw new Error('Cannot update a cancelled booking');
   }
 
-  const currentSlotCount = (booking.slotIds || []).length;
-  const requiredSlots = getRequiredSlotCountForService(service.type, service.location || booking.service?.location);
+  const isSimultaneous = service.type.toLowerCase().includes('express') || service.type.toLowerCase().includes('simultaneous');
 
-  if (requiredSlots > currentSlotCount) {
-    throw new Error(
-      `New service requires ${requiredSlots} slot(s) but booking has ${currentSlotCount}. Please reschedule to select more slots.`
-    );
-  }
+  if (isSimultaneous) {
+    // Simultaneous Mani+Pedi Express: requires 2 slots from 2 different techs at same time
+    if (!service.secondaryNailTechId) {
+      throw new Error('secondaryNailTechId is required for Mani + Pedi Express');
+    }
+    if (!service.newSlotIds || service.newSlotIds.length !== 2) {
+      throw new Error('Exactly 2 slot IDs are required for Mani + Pedi Express');
+    }
 
-  if (booking.service) {
-    (booking.service as { type: string }).type = service.type;
-    if (service.location) booking.service.location = service.location;
-    if (service.clientType) booking.service.clientType = service.clientType;
-    if (service.chosenServices !== undefined) booking.service.chosenServices = service.chosenServices;
-  }
+    const primarySlot = await Slot.findById(service.newSlotIds[0]);
+    if (!primarySlot) throw new Error('Primary slot not found');
+    const primaryNailTechId = String(primarySlot.nailTechId);
 
-  // If new service needs fewer slots, release the extra ones
-  if (requiredSlots < currentSlotCount && booking.slotIds && booking.slotIds.length > requiredSlots) {
-    const keepIds = booking.slotIds.slice(0, requiredSlots);
-    const releaseIds = booking.slotIds.slice(requiredSlots);
-    await releaseSlots(releaseIds);
-    booking.slotIds = keepIds;
+    await validateSimultaneousSlots({
+      slotIds: service.newSlotIds,
+      primaryNailTechId,
+      secondaryNailTechId: service.secondaryNailTechId,
+      location: service.location || (booking.service?.location as 'homebased_studio' | 'home_service') || 'homebased_studio',
+    });
+
+    // Release old slots and reserve new ones
+    const oldSlotIds = [...(booking.slotIds || [])];
+    await releaseSlots(oldSlotIds);
+    try {
+      await reserveSlots(service.newSlotIds);
+    } catch (err) {
+      await reserveSlots(oldSlotIds);
+      throw err;
+    }
+
+    booking.slotIds = service.newSlotIds;
+    booking.nailTechId = primaryNailTechId;
+    booking.service = {
+      ...booking.service,
+      type: service.type,
+      mode: 'simultaneous_two_techs',
+      secondaryNailTechId: service.secondaryNailTechId,
+      ...(service.location && { location: service.location }),
+      ...(service.clientType && { clientType: service.clientType }),
+      ...(service.chosenServices !== undefined && { chosenServices: service.chosenServices }),
+    };
+
+    if (booking.status === 'confirmed') {
+      await confirmSlots(service.newSlotIds);
+    }
+  } else {
+    // Standard single-tech service change
+    const currentSlotCount = (booking.slotIds || []).length;
+    const requiredSlots = getRequiredSlotCountForService(service.type, service.location || booking.service?.location);
+
+    if (requiredSlots > currentSlotCount) {
+      throw new Error(
+        `New service requires ${requiredSlots} slot(s) but booking has ${currentSlotCount}. Please reschedule to select more slots.`
+      );
+    }
+
+    if (booking.service) {
+      (booking.service as { type: string }).type = service.type;
+      if (service.location) booking.service.location = service.location;
+      if (service.clientType) booking.service.clientType = service.clientType;
+      if (service.chosenServices !== undefined) booking.service.chosenServices = service.chosenServices;
+      // Clear simultaneous mode if switching away from Express
+      booking.service.mode = 'single_tech';
+      booking.service.secondaryNailTechId = undefined;
+    }
+
+    // If new service needs fewer slots, release the extras
+    if (requiredSlots < currentSlotCount && booking.slotIds && booking.slotIds.length > requiredSlots) {
+      const keepIds = booking.slotIds.slice(0, requiredSlots);
+      const releaseIds = booking.slotIds.slice(requiredSlots);
+      await releaseSlots(releaseIds);
+      booking.slotIds = keepIds;
+    }
   }
 
   await booking.save();

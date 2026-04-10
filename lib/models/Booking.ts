@@ -59,6 +59,7 @@ export interface IBooking extends Document {
   invoice?: {
     quotationId?: string;
     total?: number;
+    nailTechId?: string;
     createdAt?: Date;
   };
   statusReason?: string; // Reason for admin status actions (cancel/no_show/reschedule)
@@ -164,6 +165,7 @@ const BookingSchema = new Schema<IBooking>(
     invoice: {
       quotationId: { type: String },
       total: { type: Number },
+      nailTechId: { type: String },
       createdAt: { type: Date },
     },
     statusReason: {

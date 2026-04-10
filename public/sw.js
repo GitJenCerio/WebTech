@@ -26,6 +26,9 @@ self.addEventListener('push', (event) => {
     tag: payload.tag || 'default',
     data: payload.data || {},
     requireInteraction: payload.requireInteraction || false,
+    renotify: true,
+    vibrate: payload.vibrate || [200, 100, 200],
+    silent: false,
     actions: payload.actions || [],
   };
 

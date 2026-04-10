@@ -484,13 +484,13 @@ export default function CalendarPanel({
               return (
                 <div className="space-y-3">
                   <div className="d-flex flex-wrap gap-2">
-                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#d4edda', color: '#155724', fontSize: '0.8rem' }}>
+                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#dc2626', color: '#ffffff', fontSize: '0.8rem' }}>
                       {counts.available} available
                     </span>
                     <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#212529', color: '#fff', fontSize: '0.8rem' }}>
                       {counts.booked} booked
                     </span>
-                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#ea580c', color: '#fff', fontSize: '0.8rem' }}>
+                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#16a34a', color: '#fff', fontSize: '0.8rem' }}>
                       {counts.completed} completed
                     </span>
                     <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#007bff', color: '#fff', fontSize: '0.8rem' }}>
@@ -525,8 +525,8 @@ export default function CalendarPanel({
                             const isConfirmed = slot.status === 'confirmed' || slot.status === 'CONFIRMED';
                             const isPending = slot.status === 'pending' || slot.status === 'PENDING_PAYMENT';
                             const isBooked = slot.status === 'booked';
-                            const bg = (slot as Slot).isHidden ? '#e9ecef' : slot.status === 'available' ? '#d4edda' : isConfirmed ? '#9ca3af' : isPending ? '#3b82f6' : isBooked ? '#212529' : slot.status === 'completed' || slot.status === 'COMPLETED' ? '#ea580c' : '#cce5ff';
-                            const fg = (slot as Slot).isHidden ? '#6c757d' : slot.status === 'available' ? '#155724' : isConfirmed ? '#1a1a1a' : isBooked || slot.status === 'completed' || slot.status === 'COMPLETED' || slot.status === 'pending' || slot.status === 'PENDING_PAYMENT' ? '#fff' : '#1a1a1a';
+                            const bg = (slot as Slot).isHidden ? '#e9ecef' : slot.status === 'available' ? '#dc2626' : isConfirmed ? '#9ca3af' : isPending ? '#3b82f6' : isBooked ? '#212529' : slot.status === 'completed' || slot.status === 'COMPLETED' ? '#16a34a' : '#cce5ff';
+                            const fg = (slot as Slot).isHidden ? '#6c757d' : slot.status === 'available' ? '#ffffff' : isConfirmed ? '#1a1a1a' : isBooked || slot.status === 'completed' || slot.status === 'COMPLETED' || slot.status === 'pending' || slot.status === 'PENDING_PAYMENT' ? '#fff' : '#1a1a1a';
                             return (
                           <button
                             key={slot.id}
@@ -618,8 +618,8 @@ export default function CalendarPanel({
                       <span 
                         className="slot-count-badge slot-count-available"
                         style={{ 
-                          color: '#155724',
-                          backgroundColor: '#d4edda',
+                          color: '#ffffff',
+                          backgroundColor: '#dc2626',
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,
@@ -640,7 +640,7 @@ export default function CalendarPanel({
                         className="slot-count-badge slot-count-completed d-flex flex-column align-items-stretch"
                         style={{ 
                           color: '#fff',
-                          backgroundColor: '#ea580c',
+                          backgroundColor: '#16a34a',
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,

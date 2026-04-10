@@ -43,9 +43,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const subtotal = items.reduce((sum: number, item: any) => sum + (Number(item.total) || 0), 0);
 
+    const requestedInvoiceNailTechId =
+      typeof body.nailTechId === 'string' && body.nailTechId.trim() ? body.nailTechId.trim() : undefined;
+    const allowedNailTechIds = new Set(
+      [booking.nailTechId, booking.service?.secondaryNailTechId]
+        .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+        .map((id) => id.trim())
+    );
+    const invoiceNailTechId = requestedInvoiceNailTechId && allowedNailTechIds.has(requestedInvoiceNailTechId)
+      ? requestedInvoiceNailTechId
+      : (typeof booking.invoice?.nailTechId === 'string' && booking.invoice.nailTechId.trim())
+        ? booking.invoice.nailTechId.trim()
+        : booking.nailTechId;
+
     // Respect explicit discountAmount from UI (including 0 for "remove discount").
-    // If not provided, fall back to nail tech default discount.
-    const nailTech = booking.nailTechId ? await NailTech.findById(booking.nailTechId).lean() : null;
+    // If not provided, fall back to selected invoice nail tech default discount.
+    const nailTech = invoiceNailTechId ? await NailTech.findById(invoiceNailTechId).lean() : null;
     const nailTechDiscountRate = typeof (nailTech as { discount?: number })?.discount === 'number' && (nailTech as { discount: number }).discount > 0
       ? (nailTech as { discount: number }).discount
       : 0;
@@ -108,6 +121,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     booking.invoice = {
       quotationId: quotation._id.toString(),
       total: totalAmount,
+      nailTechId: invoiceNailTechId,
       createdAt: booking.invoice?.createdAt || new Date(),
     };
     booking.pricing = {

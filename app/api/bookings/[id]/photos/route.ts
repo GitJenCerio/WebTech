@@ -6,6 +6,7 @@ import { deleteImage, uploadImage } from '@/lib/cloudinary';
 import { backupBooking } from '@/lib/services/googleSheetsBackup';
 import { verifyPhotoUploadToken } from '@/lib/uploadProofToken';
 import { authOptions } from '@/lib/auth-options';
+import { sendPushToAll } from '@/lib/services/pushNotificationService';
 
 const ALLOWED_PHOTO_TYPES = ['inspiration', 'currentState'] as const;
 // Client nail photos: JPEG, PNG, WebP, HEIC (mobile camera support)
@@ -124,6 +125,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           console.error('Failed to backup booking update to Google Sheets:', err)
         );
       }
+      sendPushToAll({
+        title: '📸 Client Photo Uploaded',
+        body: `${booking.bookingCode} — Client uploaded ${photoType} photo.`,
+        tag: 'client-photo-upload',
+        requireInteraction: false,
+        data: { url: '/admin/bookings' },
+      }).catch((err) => console.error('[Push] client photo upload:', err));
 
       return NextResponse.json({ success: true, message: 'Photo uploaded', photo });
     }
@@ -153,6 +161,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         console.error('Failed to backup booking update to Google Sheets:', err)
       );
     }
+    sendPushToAll({
+      title: '📸 Client Photo Uploaded',
+      body: `${booking.bookingCode} — Client uploaded ${photoType} photo.`,
+      tag: 'client-photo-upload',
+      requireInteraction: false,
+      data: { url: '/admin/bookings' },
+    }).catch((err) => console.error('[Push] client photo upload:', err));
 
     return NextResponse.json({ success: true, message: 'Photo added' });
   } catch (error: unknown) {

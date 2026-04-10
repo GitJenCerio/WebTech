@@ -1018,7 +1018,7 @@ function mapBookingToTransaction(booking: any): Transaction {
     discount: booking.pricing?.discountAmount ?? 0,
     balance,
     paymentStatus,
-    nailTechId: booking.nailTechId,
+    nailTechId: booking.invoice?.nailTechId || booking.nailTechId,
   };
 }
 

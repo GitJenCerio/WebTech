@@ -641,14 +641,19 @@ export default function CalendarPage() {
     setShowChangeServiceModal(true);
   };
 
-  const handleChangeServiceConfirm = async (service: { type: string; location?: string; chosenServices?: string[] }) => {
+  const handleChangeServiceConfirm = async (service: { type: string; location?: string; chosenServices?: string[]; secondaryNailTechId?: string; newSlotIds?: string[] }) => {
     if (!selectedBooking?.id) return;
     setChangeServiceLoading(true);
     try {
       const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update_service', service }),
+        body: JSON.stringify({
+          action: 'update_service',
+          service: { type: service.type, location: service.location, chosenServices: service.chosenServices },
+          secondaryNailTechId: service.secondaryNailTechId || undefined,
+          newSlotIds: service.newSlotIds || undefined,
+        }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -667,14 +672,20 @@ export default function CalendarPage() {
     }
   };
 
-  const handleRescheduleConfirm = async (newSlotIds: string[], reason?: string, service?: { type: string; location?: string; clientType?: string }) => {
+  const handleRescheduleConfirm = async (newSlotIds: string[], reason?: string, service?: { type: string; location?: string; clientType?: string; secondaryNailTechId?: string }) => {
     if (!selectedBooking?.id) return;
     setRescheduleLoading(true);
     try {
       const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reschedule_to', newSlotIds, reason: reason || undefined, service: service || undefined }),
+        body: JSON.stringify({
+          action: 'reschedule_to',
+          newSlotIds,
+          reason: reason || undefined,
+          service: service ? { type: service.type, location: service.location, clientType: service.clientType } : undefined,
+          secondaryNailTechId: service?.secondaryNailTechId || undefined,
+        }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -983,6 +994,7 @@ export default function CalendarPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          nailTechId: selectedBooking?.nailTechId,
           items: invoiceItems.map((item) => ({
             description: item.description,
             quantity: item.quantity,

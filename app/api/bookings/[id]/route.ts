@@ -21,6 +21,7 @@ import Settings from '@/lib/models/Settings';
 import Slot from '@/lib/models/Slot';
 import connectDB from '@/lib/mongodb';
 import { sendBookingConfirmedEmail, sendBookingRescheduledEmail } from '@/lib/email';
+import { sendPushToAll } from '@/lib/services/pushNotificationService';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -155,6 +156,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         );
       }
       fireSheetsSync(id);
+      sendPushToAll({
+        title: '✅ Booking Confirmed',
+        body: `${booking.bookingCode} has been confirmed.`,
+        tag: 'booking-confirmed',
+        data: { url: '/admin/bookings' },
+      }).catch(err => console.error('[Push] confirm:', err));
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -178,6 +185,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         );
       }
       fireSheetsSync(id);
+      sendPushToAll({
+        title: '❌ Booking Cancelled',
+        body: `${booking.bookingCode} has been cancelled.${reason ? ` Reason: ${reason}` : ''}`,
+        tag: 'booking-cancelled',
+        data: { url: '/admin/bookings' },
+      }).catch(err => console.error('[Push] cancel:', err));
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -264,6 +277,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         );
       }
       fireSheetsSync(id);
+      sendPushToAll({
+        title: '🎉 Booking Completed',
+        body: `${booking.bookingCode} has been marked as completed.`,
+        tag: 'booking-completed',
+        data: { url: '/admin/bookings' },
+      }).catch(err => console.error('[Push] completed:', err));
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
@@ -306,11 +325,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       if (!service || typeof service.type !== 'string' || !service.type.trim()) {
         return NextResponse.json({ error: 'service.type is required' }, { status: 400 });
       }
+      const secondaryNailTechId = typeof body.secondaryNailTechId === 'string' && body.secondaryNailTechId.trim()
+        ? body.secondaryNailTechId.trim()
+        : undefined;
+      const newSlotIds = Array.isArray(body.newSlotIds) ? body.newSlotIds.map(String) : undefined;
       const booking = await updateBookingService(id, {
         type: service.type.trim(),
         location: service.location,
         clientType: service.clientType,
         chosenServices: Array.isArray(service.chosenServices) ? service.chosenServices : undefined,
+        secondaryNailTechId,
+        newSlotIds,
       });
       if (booking.confirmedAt) {
         backupBooking(booking, 'update').catch(() => {});
@@ -331,7 +356,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       if (newSlotIds.length === 0) {
         return NextResponse.json({ error: 'newSlotIds array is required' }, { status: 400 });
       }
-      let booking = await rescheduleBookingToSlots(id, newSlotIds, body.reason);
+      const secondaryNailTechId = typeof body.secondaryNailTechId === 'string' && body.secondaryNailTechId.trim()
+        ? body.secondaryNailTechId.trim()
+        : undefined;
+      let booking = await rescheduleBookingToSlots(id, newSlotIds, body.reason, secondaryNailTechId);
       // Optionally update service when rescheduling (e.g. manicure → mani+pedi)
       if (body.service && typeof body.service.type === 'string' && body.service.type.trim()) {
         booking = await updateBookingService(id, {
@@ -339,6 +367,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           location: body.service.location,
           clientType: body.service.clientType,
           chosenServices: Array.isArray(body.service.chosenServices) ? body.service.chosenServices : undefined,
+          secondaryNailTechId:
+            (typeof body.service.secondaryNailTechId === 'string' && body.service.secondaryNailTechId.trim()) ||
+            secondaryNailTechId,
+          newSlotIds,
         });
       }
       const customer = await Customer.findById(booking.customerId).lean();
@@ -353,6 +385,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         );
       }
       fireSheetsSync(id);
+      sendPushToAll({
+        title: '📅 Booking Rescheduled',
+        body: `${booking.bookingCode} has been rescheduled.${body.reason ? ` Reason: ${body.reason}` : ''}`,
+        tag: 'booking-rescheduled',
+        data: { url: '/admin/bookings' },
+      }).catch(err => console.error('[Push] rescheduled:', err));
       const slots = await Slot.find({ _id: { $in: booking.slotIds } }).sort({ date: 1, time: 1 }).lean();
       const appointmentDate = (slots[0] as { date?: string })?.date ?? null;
       const appointmentTimes = (slots as { time?: string }[]).map(s => s.time).filter(Boolean) as string[];
@@ -381,6 +419,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         );
       }
       fireSheetsSync(id);
+      sendPushToAll({
+        title: '⚠️ No-Show',
+        body: `${booking.bookingCode} has been marked as no-show.`,
+        tag: 'booking-noshow',
+        data: { url: '/admin/bookings' },
+      }).catch(err => console.error('[Push] no-show:', err));
       return NextResponse.json({
         booking: {
           id: booking._id.toString(),
