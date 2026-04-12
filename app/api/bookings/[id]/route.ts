@@ -20,8 +20,10 @@ import NailTech from '@/lib/models/NailTech';
 import Settings from '@/lib/models/Settings';
 import Slot from '@/lib/models/Slot';
 import connectDB from '@/lib/mongodb';
+import Booking from '@/lib/models/Booking';
 import { sendBookingConfirmedEmail, sendBookingRescheduledEmail } from '@/lib/email';
 import { sendPushToAll } from '@/lib/services/pushNotificationService';
+import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -45,11 +47,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     // Derive payment status: no real invoice yet → never "paid", only "partial" at best
-    const inv = booking.invoice;
-    const hasRealInvoice = Boolean(
-      inv && (inv.quotationId || (typeof inv.total === 'number' && inv.total > 0))
-    );
-    const invoiceTotal = Number(inv?.total ?? booking.pricing?.total ?? 0);
+    const hasRealInvoice = hasAnyRealInvoice(booking);
+    const invoiceTotal = hasRealInvoice ? getCombinedInvoiceTotal(booking) : 0;
     const paidAmount = Number(booking.pricing?.paidAmount ?? 0);
     const balance = Math.max(0, invoiceTotal - paidAmount);
     const fullyPaidAt = booking.payment?.fullyPaidAt ?? null;
@@ -59,6 +58,32 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         ? 'partial'
         : 'pending';
 
+    let partnerBooking: {
+      id: string;
+      bookingCode: string;
+      nailTechId: string;
+      slotIds: string[];
+      service: unknown;
+    } | null = null;
+    if ((booking as { expressGroupId?: string }).expressGroupId) {
+      await connectDB();
+      const p = await Booking.findOne({
+        expressGroupId: (booking as { expressGroupId?: string }).expressGroupId,
+        _id: { $ne: booking._id },
+      })
+        .select('bookingCode nailTechId slotIds service')
+        .lean();
+      if (p) {
+        partnerBooking = {
+          id: String(p._id),
+          bookingCode: p.bookingCode,
+          nailTechId: String(p.nailTechId),
+          slotIds: (p.slotIds || []).map(String),
+          service: p.service,
+        };
+      }
+    }
+
     return NextResponse.json({
       booking: {
         id: booking._id.toString(),
@@ -67,6 +92,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         nailTechId: booking.nailTechId,
         slotIds: booking.slotIds,
         service: booking.service,
+        expressGroupId: (booking as { expressGroupId?: string }).expressGroupId ?? null,
         status: booking.status,
         paymentStatus: derivedPaymentStatus,
         pricing: booking.pricing,
@@ -74,6 +100,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         completedAt: booking.completedAt?.toISOString() || null,
         confirmedAt: booking.confirmedAt?.toISOString() || null,
         invoice: booking.invoice || null,
+        secondaryInvoice: booking.secondaryInvoice || null,
         clientNotes: booking.clientNotes || '',
         adminNotes: booking.adminNotes || '',
         clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
@@ -81,7 +108,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         clientPhotoUploadExpiresAt: booking.clientPhotoUploadExpiresAt?.toISOString() || null,
         createdAt: booking.createdAt.toISOString(),
         updatedAt: booking.updatedAt.toISOString(),
-      }
+      },
+      partnerBooking,
     });
   } catch (error: any) {
     console.error('Error getting booking:', error);

@@ -1,5 +1,6 @@
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, parseISO, format } from 'date-fns';
 import type { Booking, Slot, Customer } from '@/lib/types';
+import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
 
 export type TimeRange = 'today' | 'week' | 'month' | 'year';
 
@@ -118,8 +119,8 @@ export function getPaymentBreakdown(bookings: Booking[], range: TimeRange): {
   let unpaid = 0;
   
   filteredBookings.forEach((booking) => {
-    const hasInvoice = Boolean((booking as any).invoice?.quotationId || (booking as any).invoice?.total != null);
-    const effectiveTotal = hasInvoice ? ((booking as any).invoice?.total ?? (booking as any).pricing?.total ?? 0) : 0;
+    const hasInvoice = hasAnyRealInvoice(booking as any);
+    const effectiveTotal = hasInvoice ? getCombinedInvoiceTotal(booking as any) : 0;
 
     if (booking.paymentStatus === 'paid') {
       const tip = booking.tipAmount || 0;

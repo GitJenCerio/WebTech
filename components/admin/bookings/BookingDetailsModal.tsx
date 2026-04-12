@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/Textarea';
 import { format } from 'date-fns';
 import { sortTimesChronologically, formatTime12Hour } from '@/lib/utils';
 import { getChosenServicesDisplay, getSlotServiceDisplay } from '@/lib/serviceLabels';
+import { expressBrandedLineDescription, getExpressSegmentLabels } from '@/lib/utils/pricing';
+import { isManiPediExpressDualFromParts } from '@/lib/utils/bookingInvoice';
 
 function formatDateYyyyMmDd(dateStr: string): string {
   try {
@@ -54,6 +56,7 @@ interface BookingDetailsModalProps {
     serviceLocation?: 'homebased_studio' | 'home_service';
     serviceAddress?: string;
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
+    secondaryInvoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     nailTechId?: string;
     nailTechName?: string;
     primaryNailTechId?: string;
@@ -64,6 +67,9 @@ interface BookingDetailsModalProps {
     clientPhone?: string;
     clientSocialMediaName?: string;
     service: string;
+    secondaryServiceType?: string;
+    /** From booking.service.mode — dual-tech detection when type is a display string */
+    serviceMode?: 'single_tech' | 'simultaneous_two_techs';
     chosenServices?: string[];
     status: BookingStatus;
     notes?: string;
@@ -88,7 +94,7 @@ interface BookingDetailsModalProps {
   onReschedule?: () => void;
   onChangeService?: () => void;
   onMarkNoShow?: () => void;
-  onCreateInvoice?: () => void;
+  onCreateInvoice?: (target?: 'primary' | 'secondary') => void;
   onVerifyPaymentProof?: () => void;
   isVerifyingPaymentProof?: boolean;
   onManualConfirmPayment?: (amountPaid: number) => Promise<void>;
@@ -151,6 +157,51 @@ export default function BookingDetailsModal({
     }
     return 'Manicure';
   })();
+
+  const isManiPediExpressDual = isManiPediExpressDualFromParts(
+    booking.service,
+    booking.secondaryNailTechId,
+    booking.serviceMode
+  );
+  const expressSeg = isManiPediExpressDual
+    ? getExpressSegmentLabels(booking.secondaryServiceType)
+    : null;
+
+  const invoiceFooterActions =
+    onCreateInvoice &&
+    (isManiPediExpressDual && expressSeg ? (
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap w-full">
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 min-w-0"
+          onClick={() => onCreateInvoice('primary')}
+        >
+          <i className="bi bi-receipt mr-2" />
+          {booking.invoice?.quotationId ? 'Invoice' : 'Create invoice'} —{' '}
+          {expressBrandedLineDescription(expressSeg.primary)}{' '}
+          <span className="text-gray-500 font-normal">({booking.nailTechName ? `Ms. ${booking.nailTechName}` : 'Primary'})</span>
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 min-w-0"
+          onClick={() => onCreateInvoice('secondary')}
+        >
+          <i className="bi bi-receipt mr-2" />
+          {booking.secondaryInvoice?.quotationId ? 'Invoice' : 'Create invoice'} —{' '}
+          {expressBrandedLineDescription(expressSeg.secondary)}{' '}
+          <span className="text-gray-500 font-normal">
+            ({booking.secondaryNailTechName ? `Ms. ${booking.secondaryNailTechName}` : 'Secondary'})
+          </span>
+        </Button>
+      </div>
+    ) : (
+      <Button type="button" variant="outline" onClick={() => onCreateInvoice()}>
+        <i className="bi bi-receipt mr-2" />
+        {booking.invoice?.quotationId ? 'View / Edit Invoice' : 'Create Invoice'}
+      </Button>
+    ));
 
   const isPendingPayment = ['booked', 'PENDING_PAYMENT', 'pending'].includes(booking.status);
   const isCompleted = Boolean(booking.completedAt) || ['completed', 'COMPLETED'].includes(booking.status);
@@ -476,14 +527,7 @@ export default function BookingDetailsModal({
             </>
           ) : isCompleted ? (
             <>
-              <Button
-                variant="outline"
-                onClick={onCreateInvoice}
-                disabled={!onCreateInvoice}
-              >
-                <i className="bi bi-receipt mr-2"></i>
-                {booking.invoice?.quotationId ? 'View / Edit Invoice' : 'Create Invoice'}
-              </Button>
+              {invoiceFooterActions}
               <Button
                 variant="outline"
                 onClick={() => {
@@ -502,14 +546,7 @@ export default function BookingDetailsModal({
           ) : (
             ['CONFIRMED', 'confirmed'].includes(booking.status) && (
               <>
-                <Button
-                  variant="outline"
-                  onClick={onCreateInvoice}
-                  disabled={!onCreateInvoice}
-                >
-                  <i className="bi bi-receipt mr-2"></i>
-                  {booking.invoice?.quotationId ? 'View / Edit Invoice' : 'Create Invoice'}
-                </Button>
+                {invoiceFooterActions}
                 <Button
                   variant="outline"
                   onClick={() => {

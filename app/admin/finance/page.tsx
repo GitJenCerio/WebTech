@@ -12,6 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
 import { getSlotServiceDisplay } from '@/lib/serviceLabels';
+import {
+  getCombinedInvoiceTotal,
+  hasAnyRealInvoice,
+  hasRealInvoiceSlice,
+  isDualTechManiPediExpress,
+} from '@/lib/utils/bookingInvoice';
 
 const PAGE_SIZE = 10;
 
@@ -121,8 +127,8 @@ export default function FinancePage() {
         const todayData = await todayRes.json();
         const weekData = await weekRes.json();
 
-        const today = (todayData.bookings || []).map(mapBookingToTransaction);
-        const week = (weekData.bookings || []).map(mapBookingToTransaction);
+        const today = (todayData.bookings || []).flatMap(mapBookingToTransactions);
+        const week = (weekData.bookings || []).flatMap(mapBookingToTransactions);
 
         setTodaySummaryTransactions(today);
         setWeekSummaryTransactions(week);
@@ -177,7 +183,7 @@ export default function FinancePage() {
         if (!response.ok) throw new Error('Failed to fetch transactions');
         const data = await response.json();
 
-        const rows: Transaction[] = (data.bookings || []).map(mapBookingToTransaction);
+        const rows: Transaction[] = (data.bookings || []).flatMap(mapBookingToTransactions);
         setTransactions(rows);
         setCurrentPage(1);
       } catch (err: any) {
@@ -975,35 +981,47 @@ export default function FinancePage() {
 }
 
 function getEffectiveTotal(booking: any): number {
-  const inv = booking?.invoice;
-  const hasInvoice = Boolean(inv && (inv.quotationId || inv.total != null));
-  const fromInvoice = inv?.total ?? inv?.totalAmount;
-  // Invoice amount only from admin-created invoice; no fallback to pricing
-  return hasInvoice && typeof fromInvoice === 'number' && fromInvoice > 0 ? fromInvoice : 0;
+  if (hasAnyRealInvoice(booking)) {
+    return getCombinedInvoiceTotal(booking);
+  }
+  return 0;
 }
 
-function mapBookingToTransaction(booking: any): Transaction {
-  const invoiceTotal = getEffectiveTotal(booking);
+function splitPaidProportionally(
+  paid: number,
+  segmentTotals: number[]
+): number[] {
+  const sum = segmentTotals.reduce((s, t) => s + t, 0);
+  if (sum <= 0 || segmentTotals.length === 0) return segmentTotals.map(() => 0);
+  const rounded = segmentTotals.map((t) => Math.round((paid * t) / sum));
+  let drift = paid - rounded.reduce((a, b) => a + b, 0);
+  let i = rounded.length - 1;
+  while (drift !== 0 && i >= 0) {
+    rounded[i] += drift;
+    drift = 0;
+    i--;
+  }
+  return rounded;
+}
+
+function mapBookingToTransactions(booking: any): Transaction[] {
   const paidAmount =
     booking?.pricing?.paidAmount ??
     (booking as any)?.paidAmount ??
     (booking as any)?.totalPaid ??
     0;
   const tipAmount = booking.pricing?.tipAmount ?? 0;
-  // Do NOT use paid amount as invoice when no invoice exists — invoice total comes only from actual invoice or pricing
-  const balance = Math.max(0, invoiceTotal - paidAmount);
-  // Only treat as "paid" when we have a real invoice (quotation or total > 0); no invoice yet → partial at best
-  const inv = booking?.invoice;
-  const hasRealInvoice = Boolean(
-    inv && (inv.quotationId || (typeof inv.total === 'number' && inv.total > 0))
-  );
-  const paymentStatus =
-    hasRealInvoice && balance <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'pending';
   const apptDate = booking.appointmentDate || '';
   const apptTime = booking.appointmentTime || '';
   const apptTimes = Array.isArray(booking.appointmentTimes) ? booking.appointmentTimes : (apptTime ? [apptTime] : []);
-  return {
-    id: booking.id,
+
+  const invoiceTotal = getEffectiveTotal(booking);
+  const balanceOverall = Math.max(0, invoiceTotal - paidAmount);
+  const hasRealInvoice = hasAnyRealInvoice(booking);
+  const paymentStatus: Transaction['paymentStatus'] =
+    hasRealInvoice && balanceOverall <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'pending';
+
+  const base = {
     date: apptDate || booking.completedAt || booking.createdAt || '',
     appointmentDate: apptDate,
     appointmentTime: apptTime,
@@ -1012,14 +1030,57 @@ function mapBookingToTransaction(booking: any): Transaction {
     customerSocialMediaName: booking.customerSocialMediaName || '',
     service: booking.service?.type || 'Nail Service',
     serviceLocation: booking.service?.location,
-    total: invoiceTotal,
-    paid: paidAmount,
     tip: tipAmount,
     discount: booking.pricing?.discountAmount ?? 0,
-    balance,
     paymentStatus,
-    nailTechId: booking.invoice?.nailTechId || booking.nailTechId,
   };
+
+  if (
+    isDualTechManiPediExpress(booking) &&
+    (hasRealInvoiceSlice(booking.invoice) || hasRealInvoiceSlice(booking.secondaryInvoice))
+  ) {
+    const parts: { nailTechId?: string; segTotal: number; suffix: string }[] = [];
+    if (hasRealInvoiceSlice(booking.invoice)) {
+      parts.push({
+        nailTechId: booking.invoice?.nailTechId || booking.nailTechId,
+        segTotal: Number(booking.invoice?.total) || 0,
+        suffix: ':express_mani',
+      });
+    }
+    if (hasRealInvoiceSlice(booking.secondaryInvoice)) {
+      parts.push({
+        nailTechId: booking.secondaryInvoice?.nailTechId || booking.service?.secondaryNailTechId,
+        segTotal: Number(booking.secondaryInvoice?.total) || 0,
+        suffix: ':express_pedi',
+      });
+    }
+    if (parts.length === 0) {
+      return [];
+    }
+    const paidShares = splitPaidProportionally(
+      paidAmount,
+      parts.map((p) => p.segTotal)
+    );
+    return parts.map((p, idx) => ({
+      ...base,
+      id: `${booking.id}${p.suffix}`,
+      total: p.segTotal,
+      paid: paidShares[idx] ?? 0,
+      balance: Math.max(0, p.segTotal - (paidShares[idx] ?? 0)),
+      nailTechId: p.nailTechId,
+    }));
+  }
+
+  return [
+    {
+      ...base,
+      id: booking.id,
+      total: invoiceTotal,
+      paid: paidAmount,
+      balance: balanceOverall,
+      nailTechId: booking.invoice?.nailTechId || booking.nailTechId,
+    },
+  ];
 }
 
 function filterTransactions(rows: Transaction[], query: string): Transaction[] {

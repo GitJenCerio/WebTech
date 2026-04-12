@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import type { BookingStatus } from '@/components/admin/StatusBadge';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import { getSlotServiceDisplay } from '@/lib/serviceLabels';
+import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
 
 interface TodayBooking {
   id: string;
@@ -21,6 +22,8 @@ interface TodayBooking {
   service: string;
   nailTechId?: string;
   status: BookingStatus;
+  /** Invoice total when an admin invoice exists */
+  amount: number;
 }
 
 function getManilaDateKey(): string {
@@ -109,7 +112,7 @@ export default function OverviewPage() {
             service: b.service?.type || 'Nail Service',
             nailTechId: b.nailTechId,
             status: (b.status || 'pending') as BookingStatus,
-            amount: (b.invoice?.quotationId || b.invoice?.total != null) ? (b.invoice?.total ?? b.pricing?.total ?? 0) : 0,
+            amount: hasAnyRealInvoice(b) ? getCombinedInvoiceTotal(b) : 0,
             pricing: b.pricing,
           };
         });
@@ -144,9 +147,7 @@ export default function OverviewPage() {
     const income = todayBookings.reduce((sum, b) => {
       const s = String(b.status).toLowerCase();
       if (['completed', 'confirmed', 'pending', 'booked'].includes(s)) {
-        const hasInv = (b as any).invoice?.quotationId || (b as any).invoice?.total != null;
-        const amt = hasInv ? ((b as any).amount ?? (b as any).invoice?.total ?? (b as any).pricing?.total ?? 0) : 0;
-        return sum + Number(amt) || 0;
+        return sum + Number(b.amount) || 0;
       }
       return sum;
     }, 0);

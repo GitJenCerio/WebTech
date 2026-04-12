@@ -5,6 +5,7 @@ import Customer from '@/lib/models/Customer';
 import NailTech from '@/lib/models/NailTech';
 import Quotation from '@/lib/models/Quotation';
 import { recomputeCustomerStats } from '@/lib/services/bookingService';
+import { isDualTechManiPediExpress, sumStoredInvoiceDiscounts } from '@/lib/utils/bookingInvoice';
 
 async function findQuotationById(id: string) {
   if (!id?.trim()) return null;
@@ -50,90 +51,147 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
         .map((id) => id.trim())
     );
-    const invoiceNailTechId = requestedInvoiceNailTechId && allowedNailTechIds.has(requestedInvoiceNailTechId)
-      ? requestedInvoiceNailTechId
-      : (typeof booking.invoice?.nailTechId === 'string' && booking.invoice.nailTechId.trim())
-        ? booking.invoice.nailTechId.trim()
-        : booking.nailTechId;
 
-    // Respect explicit discountAmount from UI (including 0 for "remove discount").
-    // If not provided, fall back to selected invoice nail tech default discount.
+    if (!requestedInvoiceNailTechId || !allowedNailTechIds.has(requestedInvoiceNailTechId)) {
+      return NextResponse.json(
+        { error: 'nailTechId must match this booking primary or secondary nail tech' },
+        { status: 400 }
+      );
+    }
+    const invoiceNailTechId = requestedInvoiceNailTechId;
+
+    const dual = isDualTechManiPediExpress(booking);
+    const secondaryTechId = booking.service?.secondaryNailTechId?.trim();
+    const isSecondarySegment = Boolean(dual && secondaryTechId && invoiceNailTechId === secondaryTechId);
+
+    let squeezeInFee =
+      typeof body.squeezeInFee === 'number' && body.squeezeInFee >= 0 ? body.squeezeInFee : 0;
+    if (isSecondarySegment) {
+      squeezeInFee = 0;
+    }
+
     const nailTech = invoiceNailTechId ? await NailTech.findById(invoiceNailTechId).lean() : null;
-    const nailTechDiscountRate = typeof (nailTech as { discount?: number })?.discount === 'number' && (nailTech as { discount: number }).discount > 0
-      ? (nailTech as { discount: number }).discount
-      : 0;
+    const nailTechDiscountRate =
+      typeof (nailTech as { discount?: number })?.discount === 'number' &&
+      (nailTech as { discount: number }).discount > 0
+        ? (nailTech as { discount: number }).discount
+        : 0;
     const hasExplicitDiscountAmount = typeof body.discountAmount === 'number' && body.discountAmount >= 0;
     const requestedDiscountAmount = hasExplicitDiscountAmount ? body.discountAmount : undefined;
-    const fallbackDiscountRate = nailTechDiscountRate > 0
-      ? nailTechDiscountRate
-      : (typeof body.discountRate === 'number' && body.discountRate >= 0 ? body.discountRate : 0);
+    const fallbackDiscountRate =
+      nailTechDiscountRate > 0
+        ? nailTechDiscountRate
+        : typeof body.discountRate === 'number' && body.discountRate >= 0
+          ? body.discountRate
+          : 0;
     const discountAmount = hasExplicitDiscountAmount
       ? requestedDiscountAmount!
       : Math.round(subtotal * (fallbackDiscountRate / 100));
-    const discountRate = subtotal > 0
-      ? Math.round((discountAmount / subtotal) * 10000) / 100
-      : 0;
-    const squeezeInFee =
-      typeof body.squeezeInFee === 'number' && body.squeezeInFee >= 0 ? body.squeezeInFee : 0;
+    const discountRate = subtotal > 0 ? Math.round((discountAmount / subtotal) * 10000) / 100 : 0;
     const totalAmount = subtotal - discountAmount + squeezeInFee;
 
+    const quotationPayload = {
+      customerName,
+      customerPhone,
+      customerEmail,
+      items,
+      subtotal,
+      discountRate,
+      discountAmount,
+      squeezeInFee,
+      totalAmount,
+      status: 'accepted' as const,
+      notes: body.notes?.trim() || (booking.bookingCode ? `Booking: ${booking.bookingCode}` : undefined),
+    };
+
+    const prevSlice = isSecondarySegment ? booking.secondaryInvoice : booking.invoice;
+    const existingQuotId = prevSlice?.quotationId;
+
     let quotation;
-    if (booking.invoice?.quotationId) {
-      const existing = await findQuotationById(booking.invoice.quotationId);
-      quotation = existing
-        ? await Quotation.findByIdAndUpdate(
-            existing._id,
-            {
-          customerName,
-          customerPhone,
-          customerEmail,
-          items,
-          subtotal,
-          discountRate,
-          discountAmount,
-          squeezeInFee,
-          totalAmount,
-          status: 'accepted',
-          notes: body.notes?.trim() || (booking.bookingCode ? `Booking: ${booking.bookingCode}` : undefined),
-        },
-        { new: true }
-          )
-        : null;
-      if (!quotation) {
+    if (existingQuotId) {
+      const existing = await findQuotationById(existingQuotId);
+      if (!existing) {
         return NextResponse.json({ error: 'Quotation not found' }, { status: 404 });
       }
-    } else {
-      quotation = await Quotation.create({
-        customerName,
-        customerPhone,
-        customerEmail,
-        items,
-        subtotal,
-        discountRate,
-        discountAmount,
-        squeezeInFee,
-        totalAmount,
-        status: 'accepted',
-        notes: body.notes?.trim() || (booking.bookingCode ? `Booking: ${booking.bookingCode}` : undefined),
+
+      const refVariants = [
+        String(existing._id),
+        typeof (existing as { firebaseId?: string }).firebaseId === 'string'
+          ? (existing as { firebaseId: string }).firebaseId
+          : undefined,
+        existingQuotId.trim(),
+        existingQuotId,
+      ].filter((x): x is string => typeof x === 'string' && x.length > 0);
+      const uniqRefs = [...new Set(refVariants)];
+
+      const sharedWithOtherBookings = await Booking.exists({
+        _id: { $ne: booking._id },
+        $or: [
+          { 'invoice.quotationId': { $in: uniqRefs } },
+          { 'secondaryInvoice.quotationId': { $in: uniqRefs } },
+        ],
       });
+
+      if (sharedWithOtherBookings) {
+        quotation = await Quotation.create(quotationPayload);
+      } else {
+        const updated = await Quotation.findByIdAndUpdate(existing._id, quotationPayload, { new: true });
+        if (!updated) {
+          return NextResponse.json({ error: 'Failed to update quotation' }, { status: 500 });
+        }
+        quotation = updated;
+      }
+    } else {
+      quotation = await Quotation.create(quotationPayload);
     }
 
-    booking.invoice = {
+    if (!quotation) {
+      return NextResponse.json({ error: 'Failed to save quotation' }, { status: 500 });
+    }
+
+    const slicePayload = {
       quotationId: quotation._id.toString(),
       total: totalAmount,
       nailTechId: invoiceNailTechId,
-      createdAt: booking.invoice?.createdAt || new Date(),
-    };
-    booking.pricing = {
-      ...booking.pricing,
-      total: totalAmount,
-      depositRequired: depositRequired ?? booking.pricing?.depositRequired ?? 0,
+      createdAt: prevSlice?.createdAt || new Date(),
       discountAmount,
     };
+
+    if (isSecondarySegment) {
+      booking.secondaryInvoice = slicePayload;
+    } else {
+      booking.invoice = slicePayload;
+    }
+
+    if (dual) {
+      booking.pricing = {
+        ...booking.pricing,
+        total:
+          (Number(booking.invoice?.total) || 0) + (Number(booking.secondaryInvoice?.total) || 0),
+        depositRequired: depositRequired ?? booking.pricing?.depositRequired ?? 0,
+        discountAmount: sumStoredInvoiceDiscounts(booking),
+      };
+    } else {
+      booking.pricing = {
+        ...booking.pricing,
+        total: totalAmount,
+        depositRequired: depositRequired ?? booking.pricing?.depositRequired ?? 0,
+        discountAmount,
+      };
+    }
+
     await booking.save();
     await recomputeCustomerStats(booking.customerId);
 
-    return NextResponse.json({ quotation, booking: { id: booking._id.toString(), invoice: booking.invoice } });
+    return NextResponse.json({
+      quotation,
+      booking: {
+        id: booking._id.toString(),
+        invoice: booking.invoice,
+        secondaryInvoice: booking.secondaryInvoice,
+        pricing: booking.pricing,
+      },
+    });
   } catch (error: any) {
     console.error('Error creating booking invoice:', error);
     return NextResponse.json({ error: error.message || 'Failed to create invoice' }, { status: 500 });

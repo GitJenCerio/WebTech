@@ -20,6 +20,21 @@ import { useUserRole } from '@/lib/hooks/useUserRole';
 import { usePricing } from '@/lib/hooks/usePricing';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import { format } from 'date-fns';
+import { cleanCurrencyValue } from '@/lib/utils/currency';
+import {
+  getCombinedInvoiceTotal,
+  hasAnyRealInvoice,
+  isExpressManiPediServiceType,
+  isManiPediExpressDualFromParts,
+} from '@/lib/utils/bookingInvoice';
+import {
+  buildExpressSegmentInvoiceItems,
+  buildManiPediExpressInvoiceItems,
+  expressBrandedLineDescription,
+  filterInvoiceItemsToExpressSegment,
+  getExpressSegmentLabels,
+  maybeNormalizeManiPediExpressInvoiceItems,
+} from '@/lib/utils/pricing';
 
 function getTechIdFromQuery(searchParams: URLSearchParams): string | null {
   return searchParams.get('techId');
@@ -52,7 +67,15 @@ interface Slot {
     customerSocialMediaName?: string;
     nailTechId?: string;
     slotIds?: string[];
-    service?: { type?: string; location?: 'homebased_studio' | 'home_service'; chosenServices?: string[]; secondaryNailTechId?: string; address?: string };
+    service?: {
+      type?: string;
+      mode?: 'single_tech' | 'simultaneous_two_techs';
+      location?: 'homebased_studio' | 'home_service';
+      chosenServices?: string[];
+      secondaryNailTechId?: string;
+      secondaryServiceType?: string;
+      address?: string;
+    };
     status: string;
     paymentStatus?: string;
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number };
@@ -63,6 +86,7 @@ interface Slot {
     clientPhotoUploadUrl?: string | null;
     clientPhotoUploadExpiresAt?: string | null;
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
+    secondaryInvoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     completedAt?: string | null;
   } | null;
 }
@@ -110,6 +134,8 @@ export default function CalendarPage() {
     clientPhone?: string;
     clientSocialMediaName?: string;
     service: string;
+    secondaryServiceType?: string;
+    serviceMode?: 'single_tech' | 'simultaneous_two_techs';
     chosenServices?: string[];
     serviceLocation?: 'homebased_studio' | 'home_service';
     serviceAddress?: string;
@@ -128,6 +154,7 @@ export default function CalendarPage() {
     clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
     slotTimes?: string[];
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
+    secondaryInvoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     completedAt?: string | null;
     clientPhotoUploadUrl?: string | null;
     clientPhotoUploadExpiresAt?: string | null;
@@ -136,6 +163,7 @@ export default function CalendarPage() {
   const [isManualConfirming, setIsManualConfirming] = useState(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceTarget, setInvoiceTarget] = useState<'primary' | 'secondary'>('primary');
   const [invoiceItems, setInvoiceItems] = useState<Array<{ description: string; quantity: number; unitPrice: number; total: number }>>([]);
   const [invoiceNotes, setInvoiceNotes] = useState('');
   const [invoiceSaving, setInvoiceSaving] = useState(false);
@@ -513,7 +541,9 @@ export default function CalendarPage() {
         clientEmail: slot.booking?.customerEmail,
         clientPhone: slot.booking?.customerPhone,
         clientSocialMediaName: slot.booking?.customerSocialMediaName,
-        service: slot.service || 'Nail Service',
+        service: slot.booking?.service?.type || slot.service || 'Nail Service',
+        secondaryServiceType: slot.booking?.service?.secondaryServiceType,
+        serviceMode: slot.booking?.service?.mode,
         chosenServices: slot.booking?.service?.chosenServices,
         serviceLocation: slot.booking?.service?.location,
         serviceAddress: slot.booking?.service?.address,
@@ -533,6 +563,7 @@ export default function CalendarPage() {
         clientPhotoUploadUrl: slot.booking?.clientPhotoUploadUrl ?? null,
         clientPhotoUploadExpiresAt: slot.booking?.clientPhotoUploadExpiresAt ?? null,
         invoice: slot.booking?.invoice || null,
+        secondaryInvoice: slot.booking?.secondaryInvoice || null,
         completedAt: (slot.booking as { completedAt?: string | null } | null)?.completedAt ?? null,
       });
       setAdminNotesDraft(slot.booking?.adminNotes || '');
@@ -589,8 +620,17 @@ export default function CalendarPage() {
 
   const handleMarkCompleted = async (amountReceived: number, tipFromExcess: number) => {
     if (!selectedBooking?.id) return;
-    const hasInv = selectedBooking.invoice?.quotationId || selectedBooking.invoice?.total != null;
-    const total = hasInv ? (selectedBooking.invoice?.total ?? selectedBooking.amount ?? selectedBooking.pricing?.total ?? 0) : 0;
+    const bookingInv = {
+      service: {
+        type: selectedBooking.service,
+        mode: selectedBooking.serviceMode,
+        secondaryNailTechId: selectedBooking.secondaryNailTechId,
+      },
+      invoice: selectedBooking.invoice,
+      secondaryInvoice: selectedBooking.secondaryInvoice,
+    };
+    const hasInv = hasAnyRealInvoice(bookingInv);
+    const total = hasInv ? getCombinedInvoiceTotal(bookingInv) : 0;
     const currentPaid = selectedBooking.paidAmount ?? 0;
     const remaining = Math.max(0, total - currentPaid);
     const appliedToBalance = Math.min(amountReceived, remaining);
@@ -864,20 +904,58 @@ export default function CalendarPage() {
     }
   };
 
+  const activeInvoiceTechId = useMemo(() => {
+    if (!selectedBooking?.nailTechId) return undefined;
+    if (
+      isManiPediExpressDualFromParts(
+        selectedBooking.service,
+        selectedBooking.secondaryNailTechId,
+        selectedBooking.serviceMode
+      )
+    ) {
+      return invoiceTarget === 'secondary'
+        ? selectedBooking.secondaryNailTechId
+        : selectedBooking.nailTechId;
+    }
+    return selectedBooking.nailTechId;
+  }, [selectedBooking, invoiceTarget]);
+
+  const invoiceSubtitle = useMemo(() => {
+    if (
+      !selectedBooking ||
+      !isManiPediExpressDualFromParts(
+        selectedBooking.service,
+        selectedBooking.secondaryNailTechId,
+        selectedBooking.serviceMode
+      )
+    ) {
+      return undefined;
+    }
+    const { primary, secondary } = getExpressSegmentLabels(selectedBooking.secondaryServiceType);
+    const base = invoiceTarget === 'secondary' ? secondary : primary;
+    const label = expressBrandedLineDescription(base);
+    const techName =
+      invoiceTarget === 'secondary'
+        ? selectedBooking.secondaryNailTechName
+        : selectedBooking.nailTechName;
+    return `${label} · Ms. ${techName || '—'}`;
+  }, [selectedBooking, invoiceTarget]);
+
   const suggestedDiscountAmount = useMemo(() => {
     const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
-    const rate = typeof selectedBooking?.nailTechId === 'string'
-      ? (nailTechs.find((t) => t.id === selectedBooking.nailTechId)?.discount || 0)
-      : 0;
+    const rate =
+      typeof activeInvoiceTechId === 'string'
+        ? (nailTechs.find((t) => t.id === activeInvoiceTechId)?.discount || 0)
+        : 0;
     return Math.round(subtotal * (rate / 100));
-  }, [invoiceItems, nailTechs, selectedBooking?.nailTechId]);
+  }, [invoiceItems, nailTechs, activeInvoiceTechId]);
 
   useEffect(() => {
     if (discountManuallySet) return;
     if (invoiceDiscountAmount !== suggestedDiscountAmount) {
       setInvoiceDiscountAmount(suggestedDiscountAmount);
     }
-  }, [invoiceItems, nailTechs, selectedBooking?.nailTechId, suggestedDiscountAmount, discountManuallySet, invoiceDiscountAmount]);
+  }, [invoiceItems, nailTechs, activeInvoiceTechId, suggestedDiscountAmount, discountManuallySet, invoiceDiscountAmount]);
 
   // Fetch latest booking when details modal opens so we have fresh invoice data and admin notes
   useEffect(() => {
@@ -893,6 +971,9 @@ export default function CalendarPage() {
         setSelectedBooking((prev) => prev ? {
           ...prev,
           invoice: b.invoice ?? prev.invoice,
+          secondaryInvoice: b.secondaryInvoice ?? prev.secondaryInvoice,
+          secondaryServiceType: b.service?.secondaryServiceType ?? prev.secondaryServiceType,
+          serviceMode: b.service?.mode ?? prev.serviceMode,
           paymentStatus: b.paymentStatus ?? prev.paymentStatus,
           adminNotes: freshAdminNotes,
           completedAt: b.completedAt ?? prev.completedAt,
@@ -907,8 +988,9 @@ export default function CalendarPage() {
     return () => { cancelled = true; };
   }, [showModal, selectedBooking?.id]);
 
-  const handleCreateInvoice = async () => {
+  const handleCreateInvoice = async (target: 'primary' | 'secondary' = 'primary') => {
     if (!selectedBooking?.id) return;
+    setInvoiceTarget(target);
     setInvoiceError(null);
     setInvoiceNotes('');
     setInvoiceDiscountAmount(0);
@@ -918,16 +1000,21 @@ export default function CalendarPage() {
     setSelectedPricingService('');
     setShowInvoiceModal(true);
 
+    let pricingRows: any[] = [];
+    let pricingHdrs: string[] = [];
+
     try {
       setPricingLoading(true);
       setPricingError(null);
       const pricingRes = await fetch('/api/quotation/pricing');
-      const pricingData = await pricingRes.json();
-      if (pricingRes.ok && pricingData.available) {
-        setPricingData(pricingData.pricing || []);
-        setPricingHeaders(pricingData.headers || []);
+      const pricingJson = await pricingRes.json();
+      if (pricingRes.ok && pricingJson.available) {
+        pricingRows = pricingJson.pricing || [];
+        pricingHdrs = pricingJson.headers || [];
+        setPricingData(pricingRows);
+        setPricingHeaders(pricingHdrs);
       } else {
-        setPricingError(pricingData.error || 'Pricing data not available');
+        setPricingError(pricingJson.error || 'Pricing data not available');
       }
     } catch (error: any) {
       setPricingError(error.message || 'Failed to load pricing');
@@ -935,26 +1022,53 @@ export default function CalendarPage() {
       setPricingLoading(false);
     }
 
+    const dualExpress = isManiPediExpressDualFromParts(
+      selectedBooking.service,
+      selectedBooking.secondaryNailTechId,
+      selectedBooking.serviceMode
+    );
+    const segment = dualExpress && target === 'secondary' ? 'secondary' : 'primary';
+
+    let loadedQuotation = false;
     try {
       const bookingRes = await fetch(`/api/bookings/${selectedBooking.id}`);
       if (bookingRes.ok) {
         const bookingData = await bookingRes.json();
-        const quotationId = bookingData?.booking?.invoice?.quotationId;
+        const b = bookingData?.booking;
+        const quotationId = dualExpress
+          ? target === 'secondary'
+            ? b?.secondaryInvoice?.quotationId
+            : b?.invoice?.quotationId
+          : b?.invoice?.quotationId;
         if (quotationId) {
           const quoteRes = await fetch(`/api/quotations/${quotationId}`);
           if (quoteRes.ok) {
             const quoteData = await quoteRes.json();
             const quotation = quoteData?.quotation;
             if (quotation) {
+              loadedQuotation = true;
               setCurrentQuotationId(quotation._id || quotation.id);
-              setInvoiceItems(
-                (quotation.items || []).map((item: any) => ({
-                  description: item.description || '',
-                  quantity: item.quantity || 1,
-                  unitPrice: item.unitPrice || 0,
-                  total: item.total || 0,
-                }))
-              );
+              let rawItems = (quotation.items || []).map((item: any) => ({
+                description: item.description || '',
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0,
+                total: item.total || 0,
+              }));
+              if (dualExpress) {
+                rawItems = maybeNormalizeManiPediExpressInvoiceItems(
+                  selectedBooking.service,
+                  rawItems,
+                  pricingRows,
+                  pricingHdrs,
+                  cleanCurrencyValue
+                );
+                rawItems = filterInvoiceItemsToExpressSegment(
+                  rawItems,
+                  segment,
+                  b?.service?.secondaryServiceType ?? selectedBooking.secondaryServiceType
+                );
+              }
+              setInvoiceItems(rawItems);
               setInvoiceNotes(quotation.notes || '');
               setInvoiceDiscountAmount(quotation.discountAmount || 0);
               setDiscountManuallySet(true);
@@ -964,6 +1078,20 @@ export default function CalendarPage() {
       }
     } catch (error: any) {
       console.error('Failed to load existing quotation:', error);
+    }
+
+    if (!loadedQuotation && dualExpress && pricingRows.length > 0) {
+      const segItems = buildExpressSegmentInvoiceItems(
+        pricingRows,
+        pricingHdrs,
+        cleanCurrencyValue,
+        segment,
+        selectedBooking.secondaryServiceType
+      );
+      if (segItems.length > 0) setInvoiceItems(segItems);
+    } else if (!loadedQuotation && selectedBooking.service === 'mani_pedi_simultaneous' && pricingRows.length > 0 && !dualExpress) {
+      const split = buildManiPediExpressInvoiceItems(pricingRows, pricingHdrs, cleanCurrencyValue);
+      if (split.length > 0) setInvoiceItems(split);
     }
   };
 
@@ -990,11 +1118,28 @@ export default function CalendarPage() {
       setInvoiceSaving(true);
       setInvoiceError(null);
 
+      const dualExpress = isManiPediExpressDualFromParts(
+        selectedBooking.service,
+        selectedBooking.secondaryNailTechId,
+        selectedBooking.serviceMode
+      );
+      const nailTechIdForSave = dualExpress
+        ? invoiceTarget === 'secondary'
+          ? selectedBooking.secondaryNailTechId
+          : selectedBooking.nailTechId
+        : selectedBooking.nailTechId;
+      const squeezeInFee =
+        dualExpress && invoiceTarget === 'secondary'
+          ? 0
+          : selectedBooking?.slotType === 'with_squeeze_fee'
+            ? 500
+            : 0;
+
       const response = await fetch(`/api/bookings/${selectedBooking.id}/invoice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nailTechId: selectedBooking?.nailTechId,
+          nailTechId: nailTechIdForSave,
           items: invoiceItems.map((item) => ({
             description: item.description,
             quantity: item.quantity,
@@ -1002,11 +1147,12 @@ export default function CalendarPage() {
             total: item.total,
           })),
           notes: invoiceNotes,
-          discountRate: typeof selectedBooking?.nailTechId === 'string'
-            ? (nailTechs.find((t) => t.id === selectedBooking.nailTechId)?.discount || 0)
-            : 0,
+          discountRate:
+            typeof nailTechIdForSave === 'string'
+              ? (nailTechs.find((t) => t.id === nailTechIdForSave)?.discount || 0)
+              : 0,
           discountAmount: invoiceDiscountAmount,
-          squeezeInFee: selectedBooking?.slotType === 'with_squeeze_fee' ? 500 : 0,
+          squeezeInFee,
         }),
       });
 
@@ -1019,8 +1165,13 @@ export default function CalendarPage() {
       setCurrentQuotationId(data?.quotation?._id || data?.quotation?.id || currentQuotationId);
       toast.success(currentQuotationId ? 'Invoice updated successfully.' : 'Invoice created successfully.');
       setShowInvoiceModal(false);
-      if (selectedBooking && data?.booking?.invoice) {
-        setSelectedBooking({ ...selectedBooking, invoice: data.booking.invoice });
+      if (selectedBooking && data?.booking) {
+        setSelectedBooking({
+          ...selectedBooking,
+          invoice: data.booking.invoice ?? selectedBooking.invoice,
+          secondaryInvoice: data.booking.secondaryInvoice ?? selectedBooking.secondaryInvoice,
+          pricing: data.booking.pricing ?? selectedBooking.pricing,
+        });
       }
       await refreshSelectedDateSlots();
       await refreshMonthlySlots();
@@ -1213,7 +1364,22 @@ export default function CalendarPage() {
       <MarkCompleteModal
         open={showMarkCompleteModal}
         onOpenChange={setShowMarkCompleteModal}
-        balanceDue={Math.max(0, ((selectedBooking?.invoice?.quotationId || selectedBooking?.invoice?.total != null) ? (selectedBooking?.invoice?.total ?? selectedBooking?.amount ?? selectedBooking?.pricing?.total ?? 0) : 0) - (selectedBooking?.paidAmount ?? 0))}
+        balanceDue={
+          selectedBooking
+            ? Math.max(
+                0,
+                getCombinedInvoiceTotal({
+                  service: {
+                    type: selectedBooking.service,
+                    mode: selectedBooking.serviceMode,
+                    secondaryNailTechId: selectedBooking.secondaryNailTechId,
+                  },
+                  invoice: selectedBooking.invoice,
+                  secondaryInvoice: selectedBooking.secondaryInvoice,
+                }) - (selectedBooking.paidAmount ?? 0)
+              )
+            : 0
+        }
         onConfirm={handleMarkCompleted}
         isLoading={isMarkingComplete}
       />
@@ -1228,6 +1394,7 @@ export default function CalendarPage() {
         currentQuotationId={currentQuotationId}
         invoiceDiscountAmount={invoiceDiscountAmount}
         suggestedDiscountAmount={suggestedDiscountAmount}
+        invoiceSubtitle={invoiceSubtitle}
         pricingData={pricingData}
         selectedPricingService={selectedPricingService}
         pricingLoading={pricingLoading}

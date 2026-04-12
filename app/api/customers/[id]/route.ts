@@ -8,6 +8,7 @@ import type { CustomerInput } from '@/lib/types';
 import { authOptions } from '@/lib/auth-options';
 import { requireCanDeleteCustomer } from '@/lib/api-rbac';
 import { handleApiError, UnauthorizedError, NotFoundError, ValidationError } from '@/lib/apiError';
+import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
 
 const patchCustomerSchema = z.object({
   name: z.string().min(1).optional(),
@@ -57,8 +58,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     const bookings = await Booking.find({ customerId: id }).sort({ createdAt: -1 }).lean();
     const lifetimeValue = bookings.reduce((total, booking: any) => {
-      const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
-      const totalAmount = hasInvoice ? (booking.invoice?.total ?? booking.pricing?.total ?? 0) : 0;
+      const hasInvoice = hasAnyRealInvoice(booking);
+      const totalAmount = hasInvoice ? getCombinedInvoiceTotal(booking) : 0;
       const tipAmount = booking.pricing?.tipAmount || 0;
       return total + totalAmount + tipAmount;
     }, 0);

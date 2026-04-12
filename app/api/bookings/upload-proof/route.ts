@@ -86,6 +86,21 @@ export async function POST(request: Request) {
       paymentProofPublicId: result.public_id,
     };
     await booking.save();
+
+    if (booking.expressGroupId) {
+      const siblings = await Booking.find({
+        expressGroupId: booking.expressGroupId,
+        _id: { $ne: booking._id },
+      });
+      for (const s of siblings) {
+        s.payment = {
+          ...s.payment,
+          paymentProofUrl: result.secure_url,
+          paymentProofPublicId: result.public_id,
+        };
+        await s.save();
+      }
+    }
     if (booking.confirmedAt) {
       backupBooking(booking, 'update').catch(err =>
         console.error('Failed to backup booking update to Google Sheets:', err)

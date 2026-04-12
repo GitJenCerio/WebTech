@@ -728,7 +728,11 @@ export default function BookingPage() {
       setClientInfo(null);
       setShowClientTypeModal(true);
       
-      setLatestBookingCode(data.booking.bookingCode || '');
+      setLatestBookingCode(
+        data.partnerBooking?.bookingCode
+          ? `${data.booking.bookingCode} + ${data.partnerBooking.bookingCode}`
+          : data.booking.bookingCode || ''
+      );
       setBookingSuccessNote(photoUploadWarning);
       setShowBookingSuccessModal(true);
     } catch (error: any) {

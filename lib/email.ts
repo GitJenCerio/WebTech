@@ -7,6 +7,7 @@
 
 import { Resend } from 'resend';
 import { createUploadProofToken } from '@/lib/uploadProofToken';
+import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
 
 /** Brand logo - direct image URL for email embedding */
 const BRAND_LOGO_URL = 'https://i.imgur.com/igZLzzU.png';
@@ -315,9 +316,10 @@ export async function sendPaymentReminderEmail(booking: any, customer: any) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     const uploadProofLink = getUploadProofLink(booking);
-    const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
+    const hasInvoice = hasAnyRealInvoice(booking);
+    const invoiceTotal = hasInvoice ? getCombinedInvoiceTotal(booking) : 0;
     const amountDue = hasInvoice
-      ? Math.max(0, (booking.invoice?.total ?? booking.pricing?.total ?? 0) - (booking.pricing?.paidAmount || 0))
+      ? Math.max(0, invoiceTotal - (booking.pricing?.paidAmount || 0))
       : Math.max(0, (booking.pricing?.depositRequired ?? 0) - (booking.pricing?.paidAmount || 0));
 
     const content = `
@@ -420,9 +422,10 @@ export async function sendPaymentUrgentEmail(booking: any, customer: any, subjec
     }
     const resend = new Resend(process.env.RESEND_API_KEY);
     const uploadProofLink = getUploadProofLink(booking);
-    const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
+    const hasInvoice = hasAnyRealInvoice(booking);
+    const invoiceTotal = hasInvoice ? getCombinedInvoiceTotal(booking) : 0;
     const amountDue = hasInvoice
-      ? Math.max(0, (booking.invoice?.total ?? booking.pricing?.total ?? 0) - (booking.pricing?.paidAmount || 0))
+      ? Math.max(0, invoiceTotal - (booking.pricing?.paidAmount || 0))
       : Math.max(0, (booking.pricing?.depositRequired ?? 0) - (booking.pricing?.paidAmount || 0));
     const content = `
       <h1 style="color: #1a1a1a; margin: 0 0 16px; font-size: 24px;">${subjectLabel}</h1>

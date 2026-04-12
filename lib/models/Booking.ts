@@ -21,7 +21,14 @@ export interface IBooking extends Document {
     mode?: 'single_tech' | 'simultaneous_two_techs';
     secondaryNailTechId?: string;
     secondaryServiceType?: 'Manicure' | 'Pedicure';
+    /** When Mani + Pedi Express is split into two booking docs, which segment this row is */
+    expressSegment?: 'manicure' | 'pedicure';
   };
+  /**
+   * Shared id for paired Mani + Pedi Express bookings (two docs, same session).
+   * Cancelling/rescheduling one should affect all members with this id.
+   */
+  expressGroupId?: string;
   status: BookingStatus; // 'pending' | 'confirmed' | 'cancelled' | 'no_show'
   paymentStatus: PaymentStatus; // 'unpaid' | 'partial' | 'paid' | 'refunded'
   pricing: {
@@ -61,6 +68,16 @@ export interface IBooking extends Document {
     total?: number;
     nailTechId?: string;
     createdAt?: Date;
+    /** Discount amount for this invoice segment (dual express has two segments). */
+    discountAmount?: number;
+  };
+  /** Second quotation for Mani + Pedi Express (secondary nail tech). */
+  secondaryInvoice?: {
+    quotationId?: string;
+    total?: number;
+    nailTechId?: string;
+    createdAt?: Date;
+    discountAmount?: number;
   };
   statusReason?: string; // Reason for admin status actions (cancel/no_show/reschedule)
   createdAt: Date;
@@ -109,7 +126,9 @@ const BookingSchema = new Schema<IBooking>(
       mode: { type: String, enum: ['single_tech', 'simultaneous_two_techs'], default: 'single_tech' },
       secondaryNailTechId: { type: String },
       secondaryServiceType: { type: String, enum: ['Manicure', 'Pedicure'] },
+      expressSegment: { type: String, enum: ['manicure', 'pedicure'] },
     },
+    expressGroupId: { type: String, index: true },
     status: {
       type: String,
       required: true,
@@ -167,6 +186,14 @@ const BookingSchema = new Schema<IBooking>(
       total: { type: Number },
       nailTechId: { type: String },
       createdAt: { type: Date },
+      discountAmount: { type: Number },
+    },
+    secondaryInvoice: {
+      quotationId: { type: String },
+      total: { type: Number },
+      nailTechId: { type: String },
+      createdAt: { type: Date },
+      discountAmount: { type: Number },
     },
     statusReason: {
       type: String,

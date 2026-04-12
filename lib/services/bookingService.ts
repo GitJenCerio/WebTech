@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import connectDB from '../mongodb';
 import Booking, { IBooking } from '../models/Booking';
 import BookingCounter from '../models/BookingCounter';
@@ -5,6 +6,7 @@ import Slot from '../models/Slot';
 import Customer from '../models/Customer';
 import NailTech from '../models/NailTech';
 import type { BookingStatus, PaymentStatus, ServiceType } from '../types';
+import { hasAnyRealInvoice } from '../utils/bookingInvoice';
 
 /**
  * Get Manila-local date key in YYYYMMDD format
@@ -158,6 +160,117 @@ async function confirmSlots(slotIds: string[]): Promise<void> {
   );
 }
 
+function sortExpressGroupMembers(members: IBooking[]): IBooking[] {
+  return [...members].sort((a, b) => {
+    const sa = a.service?.expressSegment === 'manicure' ? 0 : a.service?.expressSegment === 'pedicure' ? 1 : 0;
+    const sb = b.service?.expressSegment === 'manicure' ? 0 : b.service?.expressSegment === 'pedicure' ? 1 : 0;
+    return sa - sb;
+  });
+}
+
+/** Sum of deposit requirements across paired express bookings (full deposit is kept on the manicure row). */
+function expressGroupDepositMet(members: IBooking[]): boolean {
+  const sumDep = members.reduce((s, b) => s + (b.pricing?.depositRequired ?? 0), 0);
+  const sumPaid = members.reduce(
+    (s, b) => s + (b.pricing?.paidAmount ?? 0) + (b.pricing?.tipAmount ?? 0),
+    0
+  );
+  return sumPaid >= sumDep;
+}
+
+/**
+ * Mani + Pedi Express: two booking documents (separate codes/invoices), same `expressGroupId`.
+ * Full session deposit sits on the manicure (primary) row; pedicure row has depositRequired 0.
+ */
+async function createSimultaneousExpressPair(input: CreateBookingInput): Promise<IBooking> {
+  if (!input.service.secondaryNailTechId) {
+    throw new Error('secondaryNailTechId is required for simultaneous Mani+Pedi');
+  }
+  await validateSimultaneousSlots({
+    slotIds: input.slotIds,
+    primaryNailTechId: input.nailTechId,
+    secondaryNailTechId: input.service.secondaryNailTechId,
+    location: input.service.location,
+  });
+  await reserveSlots(input.slotIds);
+
+  const expressGroupId = randomUUID();
+  const total = input.pricing.total;
+  const deposit = input.pricing.depositRequired;
+  const half1 = Math.floor(total / 2);
+  const half2 = total - half1;
+
+  const baseService = {
+    type: 'Mani + Pedi Express' as ServiceType,
+    location: input.service.location,
+    clientType: input.service.clientType,
+    chosenServices:
+      (input.service.chosenServices?.length ?? 0) > 0 ? input.service.chosenServices : undefined,
+    address: input.service.address,
+  };
+
+  const bookingCodePrimary = await generateBookingCode();
+  const bookingCodeSecondary = await generateBookingCode();
+
+  const primary = new Booking({
+    bookingCode: bookingCodePrimary,
+    customerId: input.customerId,
+    nailTechId: input.nailTechId,
+    slotIds: [input.slotIds[0]],
+    service: {
+      ...baseService,
+      expressSegment: 'manicure',
+    },
+    expressGroupId,
+    status: 'pending',
+    paymentStatus: 'unpaid',
+    clientNotes: input.clientNotes || '',
+    adminNotes: input.adminNotes || '',
+    pricing: {
+      total: half1,
+      depositRequired: deposit,
+      paidAmount: 0,
+      tipAmount: 0,
+    },
+    payment: {},
+    completedAt: null,
+  });
+
+  const secondary = new Booking({
+    bookingCode: bookingCodeSecondary,
+    customerId: input.customerId,
+    nailTechId: input.service.secondaryNailTechId,
+    slotIds: [input.slotIds[1]],
+    service: {
+      ...baseService,
+      expressSegment: 'pedicure',
+    },
+    expressGroupId,
+    status: 'pending',
+    paymentStatus: 'unpaid',
+    clientNotes: input.clientNotes || '',
+    adminNotes: input.adminNotes || '',
+    pricing: {
+      total: half2,
+      depositRequired: 0,
+      paidAmount: 0,
+      tipAmount: 0,
+    },
+    payment: {},
+    completedAt: null,
+  });
+
+  try {
+    await primary.save();
+    await secondary.save();
+    await recomputeCustomerStats(input.customerId);
+    return primary;
+  } catch (error) {
+    await releaseSlots(input.slotIds);
+    throw error;
+  }
+}
+
 export async function recomputeCustomerStats(customerId: string): Promise<void> {
   await connectDB();
   const bookings = await Booking.find({ customerId }).lean();
@@ -261,20 +374,12 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
     throw new Error('Customer not found');
   }
 
-  // Validate and reserve slots atomically
+  // Simultaneous Mani + Pedi Express → two booking documents (grouped by expressGroupId)
   if (input.service?.mode === 'simultaneous_two_techs') {
-    if (!input.service.secondaryNailTechId) {
-      throw new Error('secondaryNailTechId is required for simultaneous Mani+Pedi');
-    }
-    await validateSimultaneousSlots({
-      slotIds: input.slotIds,
-      primaryNailTechId: input.nailTechId,
-      secondaryNailTechId: input.service.secondaryNailTechId,
-      location: input.service.location,
-    });
-  } else {
-    await validateSlots(input.slotIds, input.nailTechId);
+    return createSimultaneousExpressPair(input);
   }
+
+  await validateSlots(input.slotIds, input.nailTechId);
   await reserveSlots(input.slotIds);
 
   try {
@@ -359,7 +464,7 @@ export async function updateBookingPayment(
 
   const totalPaid = paidAmount + tipAmount;
   const totalRequired = booking.pricing.total + booking.pricing.depositRequired;
-  const hasInvoice = Boolean(booking.invoice?.quotationId || booking.invoice?.total != null);
+  const hasInvoice = hasAnyRealInvoice(booking);
 
   // Determine payment status
   // If no invoice yet and deposit is paid → partial (never 'paid' until invoice exists and is fully paid)
@@ -427,27 +532,48 @@ export async function confirmBooking(
     throw new Error('Cannot confirm a completed booking');
   }
 
-  if (booking.status === 'confirmed') {
-    return booking; // Already confirmed
+  const members = booking.expressGroupId
+    ? await Booking.find({ expressGroupId: booking.expressGroupId })
+    : [booking];
+
+  const allAlreadyConfirmed =
+    members.length > 0 && members.every((m) => m.status === 'confirmed');
+  if (allAlreadyConfirmed) {
+    return (await Booking.findById(bookingId)) || booking;
   }
 
   // Check if deposit or full payment is received (skip when admin manually confirms)
   if (!options?.skipDepositCheck) {
-    const totalPaid = booking.pricing.paidAmount + booking.pricing.tipAmount;
-    if (totalPaid < booking.pricing.depositRequired) {
-      throw new Error('Deposit or full payment is required to confirm booking');
+    if (booking.expressGroupId) {
+      if (!expressGroupDepositMet(members as IBooking[])) {
+        throw new Error('Deposit or full payment is required to confirm booking');
+      }
+    } else {
+      const totalPaid = booking.pricing.paidAmount + booking.pricing.tipAmount;
+      if (totalPaid < booking.pricing.depositRequired) {
+        throw new Error('Deposit or full payment is required to confirm booking');
+      }
     }
   }
 
-  // Confirm booking and slots
-  booking.status = 'confirmed';
-  if (!booking.confirmedAt) {
-    booking.confirmedAt = new Date();
+  const now = new Date();
+  for (const m of members) {
+    if (m.status === 'cancelled') {
+      throw new Error('Cannot confirm a cancelled booking');
+    }
+    if (isBookingCompleted(m as IBooking)) {
+      throw new Error('Cannot confirm a completed booking');
+    }
+    if (m.status === 'confirmed') continue;
+    m.status = 'confirmed';
+    if (!m.confirmedAt) {
+      m.confirmedAt = now;
+    }
+    await m.save();
+    await confirmSlots(m.slotIds);
   }
-  await booking.save();
-  await confirmSlots(booking.slotIds);
 
-  return booking;
+  return (await Booking.findById(bookingId)) || booking;
 }
 
 /**
@@ -463,42 +589,56 @@ export async function cancelBooking(
 ): Promise<IBooking> {
   await connectDB();
 
-  const booking = await Booking.findById(bookingId);
-  if (!booking) {
+  const anchor = await Booking.findById(bookingId);
+  if (!anchor) {
     throw new Error('Booking not found');
   }
 
-  if (booking.status === 'cancelled') {
-    return booking; // Already cancelled
-  }
+  const groupIds = anchor.expressGroupId
+    ? (await Booking.find({ expressGroupId: anchor.expressGroupId }).select('_id')).map((d) =>
+        d._id.toString()
+      )
+    : [anchor._id.toString()];
 
-  // Cannot cancel completed bookings
-  if (isBookingCompleted(booking)) {
-    throw new Error('Cannot cancel a completed booking');
-  }
+  let lastReturned: IBooking = anchor;
 
-  // If confirmed, only allow cancellation with admin override
-  if (booking.status === 'confirmed' && !adminOverride) {
-    throw new Error('Cannot cancel a confirmed booking without admin override');
-  }
+  for (const id of groupIds) {
+    const booking = await Booking.findById(id);
+    if (!booking) continue;
 
-  // Cancel booking
-  booking.status = 'cancelled';
-  if (reason) {
-    booking.statusReason = reason.trim();
-  }
-  await booking.save();
+    if (booking.status === 'cancelled') {
+      lastReturned = booking;
+      continue;
+    }
 
-  // Release slots if they were pending or confirmed
-  const slots = await Slot.find({ _id: { $in: booking.slotIds } });
-  for (const slot of slots) {
-    if (slot.status === 'pending' || slot.status === 'confirmed') {
-      slot.status = 'available';
-      await slot.save();
+    if (isBookingCompleted(booking)) {
+      throw new Error('Cannot cancel a completed booking');
+    }
+
+    if (booking.status === 'confirmed' && !adminOverride) {
+      throw new Error('Cannot cancel a confirmed booking without admin override');
+    }
+
+    booking.status = 'cancelled';
+    if (reason) {
+      booking.statusReason = reason.trim();
+    }
+    await booking.save();
+
+    const slots = await Slot.find({ _id: { $in: booking.slotIds } });
+    for (const slot of slots) {
+      if (slot.status === 'pending' || slot.status === 'confirmed') {
+        slot.status = 'available';
+        await slot.save();
+      }
+    }
+
+    if (id === bookingId) {
+      lastReturned = booking;
     }
   }
 
-  return booking;
+  return (await Booking.findById(bookingId)) || lastReturned;
 }
 
 /**
@@ -512,27 +652,34 @@ export async function cancelBooking(
 export async function markBookingAsCompleted(bookingId: string): Promise<IBooking> {
   await connectDB();
 
-  const booking = await Booking.findById(bookingId);
-  if (!booking) {
+  const anchor = await Booking.findById(bookingId);
+  if (!anchor) {
     throw new Error('Booking not found');
   }
 
-  // Enforce completion rules
-  if (booking.status !== 'confirmed') {
-    throw new Error('Can only complete confirmed bookings');
+  const members = anchor.expressGroupId
+    ? await Booking.find({ expressGroupId: anchor.expressGroupId })
+    : [anchor];
+
+  for (const booking of members) {
+    if (booking.status !== 'confirmed') {
+      throw new Error('Can only complete confirmed bookings');
+    }
+    if (booking.completedAt !== null) {
+      throw new Error('Booking is already completed');
+    }
   }
 
-  if (booking.completedAt !== null) {
-    throw new Error('Booking is already completed');
+  const now = new Date();
+  const customerId = members[0].customerId;
+  for (const booking of members) {
+    booking.completedAt = now;
+    booking.status = 'completed';
+    await booking.save();
   }
+  await recomputeCustomerStats(customerId);
 
-  // Set completion timestamp and status
-  booking.completedAt = new Date();
-  booking.status = 'completed';
-  await booking.save();
-  await recomputeCustomerStats(booking.customerId);
-
-  return booking;
+  return (await Booking.findById(bookingId)) || anchor;
 }
 
 /**
@@ -543,33 +690,38 @@ export async function markBookingAsCompleted(bookingId: string): Promise<IBookin
 export async function markBookingAsNoShow(bookingId: string, reason?: string): Promise<IBooking> {
   await connectDB();
 
-  const booking = await Booking.findById(bookingId);
-  if (!booking) {
+  const anchor = await Booking.findById(bookingId);
+  if (!anchor) {
     throw new Error('Booking not found');
   }
 
-  if (booking.status === 'cancelled' || booking.status === 'no_show') {
-    return booking;
+  const members = anchor.expressGroupId
+    ? await Booking.find({ expressGroupId: anchor.expressGroupId })
+    : [anchor];
+
+  for (const booking of members) {
+    if (booking.status === 'cancelled' || booking.status === 'no_show') {
+      continue;
+    }
+    if (isBookingCompleted(booking)) {
+      throw new Error('Cannot mark a completed booking as no-show');
+    }
+    if (booking.status !== 'confirmed') {
+      throw new Error('Can only mark confirmed bookings as no-show');
+    }
   }
 
-  if (isBookingCompleted(booking)) {
-    throw new Error('Cannot mark a completed booking as no-show');
+  for (const booking of members) {
+    if (booking.status === 'cancelled' || booking.status === 'no_show') continue;
+    booking.status = 'no_show';
+    if (reason) {
+      booking.statusReason = reason.trim();
+    }
+    await booking.save();
+    await releaseSlots(booking.slotIds);
   }
 
-  if (booking.status !== 'confirmed') {
-    throw new Error('Can only mark confirmed bookings as no-show');
-  }
-
-  booking.status = 'no_show';
-  if (reason) {
-    booking.statusReason = reason.trim();
-  }
-  await booking.save();
-
-  // Free up pending/confirmed slots when a client no-shows
-  await releaseSlots(booking.slotIds);
-
-  return booking;
+  return (await Booking.findById(bookingId)) || anchor;
 }
 
 /**
@@ -580,17 +732,9 @@ export async function markBookingAsNoShow(bookingId: string, reason?: string): P
 export async function markBookingAsRescheduled(bookingId: string, reason: string): Promise<IBooking> {
   await connectDB();
 
-  const booking = await Booking.findById(bookingId);
-  if (!booking) {
+  const anchor = await Booking.findById(bookingId);
+  if (!anchor) {
     throw new Error('Booking not found');
-  }
-
-  if (isBookingCompleted(booking)) {
-    throw new Error('Cannot reschedule a completed booking');
-  }
-
-  if (booking.status === 'cancelled') {
-    return booking;
   }
 
   const reasonText = reason?.trim();
@@ -598,13 +742,95 @@ export async function markBookingAsRescheduled(bookingId: string, reason: string
     throw new Error('Reason is required for reschedule');
   }
 
-  booking.status = 'cancelled';
-  booking.statusReason = `Rescheduled: ${reasonText}`;
-  await booking.save();
+  const members = anchor.expressGroupId
+    ? await Booking.find({ expressGroupId: anchor.expressGroupId })
+    : [anchor];
 
-  await releaseSlots(booking.slotIds);
+  for (const booking of members) {
+    if (isBookingCompleted(booking)) {
+      throw new Error('Cannot reschedule a completed booking');
+    }
+  }
 
-  return booking;
+  for (const booking of members) {
+    if (booking.status === 'cancelled') continue;
+    booking.status = 'cancelled';
+    booking.statusReason = `Rescheduled: ${reasonText}`;
+    await booking.save();
+    await releaseSlots(booking.slotIds);
+  }
+
+  return (await Booking.findById(bookingId)) || anchor;
+}
+
+/**
+ * Reschedule paired express bookings (two docs) to two new simultaneous slots.
+ */
+async function rescheduleExpressPairToSlots(
+  anchor: IBooking,
+  newSlotIds: string[],
+  reason?: string
+): Promise<IBooking> {
+  validateBookingEditable(anchor, 'reschedule');
+  if (anchor.status === 'cancelled') {
+    throw new Error('Cannot reschedule a cancelled booking');
+  }
+
+  const members = sortExpressGroupMembers(
+    (await Booking.find({ expressGroupId: anchor.expressGroupId })) as IBooking[]
+  );
+  if (members.length !== 2) {
+    throw new Error('Express booking group is incomplete');
+  }
+
+  const primary = members.find((m) => m.service?.expressSegment === 'manicure') || members[0];
+  const secondary = members.find((m) => m.service?.expressSegment === 'pedicure') || members[1];
+
+  await validateSimultaneousSlots({
+    slotIds: newSlotIds,
+    primaryNailTechId: String(primary.nailTechId),
+    secondaryNailTechId: String(secondary.nailTechId),
+    location: (primary.service?.location as 'homebased_studio' | 'home_service') || 'homebased_studio',
+  });
+
+  const oldSlotIds = members.flatMap((m) => [...(m.slotIds || [])]);
+  await releaseSlots(oldSlotIds);
+  try {
+    await reserveSlots(newSlotIds);
+  } catch (err) {
+    await reserveSlots(oldSlotIds);
+    throw err;
+  }
+
+  const foundSlots = await Slot.find({ _id: { $in: newSlotIds } });
+  if (foundSlots.length !== 2) {
+    await releaseSlots(newSlotIds);
+    await reserveSlots(oldSlotIds);
+    throw new Error('One or more slots not found');
+  }
+
+  const ps = foundSlots.find((s) => String(s.nailTechId) === String(primary.nailTechId));
+  const ss = foundSlots.find((s) => String(s.nailTechId) === String(secondary.nailTechId));
+  if (!ps || !ss) {
+    await releaseSlots(newSlotIds);
+    await reserveSlots(oldSlotIds);
+    throw new Error('Each new slot must match the manicure and pedicure nail techs');
+  }
+
+  primary.slotIds = [String(ps._id)];
+  secondary.slotIds = [String(ss._id)];
+
+  const reasonText = reason != null && String(reason).trim() ? `Rescheduled: ${String(reason).trim()}` : undefined;
+
+  for (const m of [primary, secondary]) {
+    if (reasonText) m.statusReason = reasonText;
+    await m.save();
+    if (m.status === 'confirmed') {
+      await confirmSlots(m.slotIds);
+    }
+  }
+
+  return (await Booking.findById(anchor._id)) as IBooking;
 }
 
 /**
@@ -634,6 +860,13 @@ export async function rescheduleBookingToSlots(
 
   if (!newSlotIds || newSlotIds.length === 0) {
     throw new Error('At least one new slot is required');
+  }
+
+  if (booking.expressGroupId) {
+    if (newSlotIds.length !== 2) {
+      throw new Error('Mani + Pedi Express requires exactly 2 new slots (one per tech)');
+    }
+    return rescheduleExpressPairToSlots(booking, newSlotIds, reason);
   }
 
   let newNailTechId: string;

@@ -47,6 +47,8 @@ interface InvoiceModalProps {
   invoiceDiscountAmount: number;
   /** Suggested discount from nail tech (used when user unchecks "Remove discount") */
   suggestedDiscountAmount: number;
+  /** Shown under the title for Mani + Pedi Express (which tech’s invoice). */
+  invoiceSubtitle?: string | null;
   pricingData: any[];
   selectedPricingService: string;
   pricingLoading: boolean;
@@ -70,6 +72,7 @@ export default function InvoiceModal({
   currentQuotationId,
   invoiceDiscountAmount,
   suggestedDiscountAmount,
+  invoiceSubtitle,
   pricingData,
   selectedPricingService,
   pricingLoading,
@@ -139,6 +142,9 @@ export default function InvoiceModal({
       <DialogContent className="sm:max-w-2xl md:max-w-lg flex flex-col max-h-[90vh]">
         <DialogHeader className="shrink-0">
           <DialogTitle>{currentQuotationId ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
+          {invoiceSubtitle ? (
+            <p className="text-sm text-gray-600 font-normal pt-0.5">{invoiceSubtitle}</p>
+          ) : null}
         </DialogHeader>
 
         <div className="overflow-y-auto flex-1 space-y-3 pr-1" style={{ fontSize: '0.92rem' }}>

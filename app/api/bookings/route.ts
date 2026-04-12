@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import mongoose from 'mongoose';
+import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { createBooking, listBookings, type CreateBookingInput } from '@/lib/services/bookingService';
@@ -13,6 +14,7 @@ import { createUploadProofToken, createPhotoUploadToken } from '@/lib/uploadProo
 import { syncBookingToSheet } from '@/lib/services/googleSheetsService';
 import { sendPushToAll } from '@/lib/services/pushNotificationService';
 import connectDB from '@/lib/mongodb';
+import Booking from '@/lib/models/Booking';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -168,6 +170,16 @@ export async function POST(request: Request) {
       typeof customerEmail === 'string' ? customerEmail.trim().toLowerCase() : '';
 
     const booking = await createBooking(input);
+
+    let partnerBooking: InstanceType<typeof Booking> | null = null;
+    if (booking.expressGroupId) {
+      await connectDB();
+      partnerBooking = await Booking.findOne({
+        expressGroupId: booking.expressGroupId,
+        _id: { $ne: booking._id },
+      });
+    }
+
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || '';
     const uploadProofToken = createUploadProofToken(booking._id.toString());
     const uploadProofPath = `/booking/upload-proof?token=${encodeURIComponent(uploadProofToken)}`;
@@ -200,7 +212,9 @@ export async function POST(request: Request) {
     // Send push notification to all admins (non-blocking)
     sendPushToAll({
       title: 'New Booking Request',
-      body: `Booking ${booking.bookingCode} — ${input.service.type}`,
+      body: partnerBooking
+        ? `Bookings ${booking.bookingCode} + ${partnerBooking.bookingCode} — Mani + Pedi Express`
+        : `Booking ${booking.bookingCode} — ${input.service.type}`,
       tag: 'new-booking',
       requireInteraction: true,
       data: { url: `/admin/bookings` },
@@ -208,28 +222,28 @@ export async function POST(request: Request) {
 
     (async () => {
       try {
-        const [cust, tech, secondaryTech, slotList] = await Promise.all([
-          Customer.findById(resolvedCustomerId).select('name socialMediaName').lean(),
-          NailTech.findById(nailTechId).select('name').lean(),
-          booking.service?.mode === 'simultaneous_two_techs' && booking.service?.secondaryNailTechId
-            ? NailTech.findById(booking.service.secondaryNailTechId).select('name').lean()
-            : Promise.resolve(null),
-          Slot.find({ _id: { $in: booking.slotIds } }).sort({ date: 1, time: 1 }).lean(),
-        ]);
-        const slots = slotList as { date?: string; time?: string }[] | undefined;
-        const appointmentDate = slots?.[0]?.date ?? '';
-        const appointmentTimes = (slots ?? []).map(s => s.time).filter(Boolean) as string[];
-        const primaryName = (tech as { name?: string })?.name ? `Ms. ${(tech as { name: string }).name}` : '';
-        const secondaryName = (secondaryTech as { name?: string } | null)?.name ? `Ms. ${(secondaryTech as { name: string }).name}` : '';
-        const nailTechName = secondaryName ? `${primaryName} + ${secondaryName}` : primaryName;
-        await syncBookingToSheet(
-          booking,
-          (cust as { name?: string })?.name ?? 'Unknown',
-          (cust as { socialMediaName?: string })?.socialMediaName ?? '',
-          nailTechName,
-          appointmentDate,
-          appointmentTimes
-        );
+        const cust = await Customer.findById(resolvedCustomerId).select('name socialMediaName').lean();
+        const rows = partnerBooking ? [booking, partnerBooking] : [booking];
+        for (const row of rows) {
+          const [tech, slotList] = await Promise.all([
+            NailTech.findById(row.nailTechId).select('name').lean(),
+            Slot.find({ _id: { $in: row.slotIds } }).sort({ date: 1, time: 1 }).lean(),
+          ]);
+          const slots = slotList as { date?: string; time?: string }[] | undefined;
+          const appointmentDate = slots?.[0]?.date ?? '';
+          const appointmentTimes = (slots ?? []).map(s => s.time).filter(Boolean) as string[];
+          const nailTechName = (tech as { name?: string })?.name
+            ? `Ms. ${(tech as { name: string }).name}`
+            : '';
+          await syncBookingToSheet(
+            row,
+            (cust as { name?: string })?.name ?? 'Unknown',
+            (cust as { socialMediaName?: string })?.socialMediaName ?? '',
+            nailTechName,
+            appointmentDate,
+            appointmentTimes
+          );
+        }
       } catch (e) {
         console.error('[Sheets] Booking sync failed:', e);
       }
@@ -245,6 +259,7 @@ export async function POST(request: Request) {
         nailTechId: booking.nailTechId,
         slotIds: booking.slotIds,
         service: booking.service,
+        expressGroupId: booking.expressGroupId ?? null,
         status: booking.status,
         paymentStatus: booking.paymentStatus,
         pricing: booking.pricing,
@@ -252,11 +267,21 @@ export async function POST(request: Request) {
         completedAt: booking.completedAt?.toISOString() || null,
         confirmedAt: booking.confirmedAt?.toISOString() || null,
         invoice: booking.invoice || null,
+        secondaryInvoice: booking.secondaryInvoice || null,
         clientNotes: booking.clientNotes || '',
         adminNotes: booking.adminNotes || '',
         createdAt: booking.createdAt.toISOString(),
         updatedAt: booking.updatedAt.toISOString(),
       },
+      partnerBooking: partnerBooking
+        ? {
+            id: partnerBooking._id.toString(),
+            bookingCode: partnerBooking.bookingCode,
+            nailTechId: partnerBooking.nailTechId,
+            slotIds: partnerBooking.slotIds,
+            service: partnerBooking.service,
+          }
+        : null,
       uploadProofLink: uploadProofLink || undefined,
       photoUploadToken,
     }, { status: 201 });
@@ -371,7 +396,9 @@ export async function GET(request: Request) {
           .filter((t): t is string => !!t)
           .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
-        const invoiceTotal = Number(booking.invoice?.total ?? booking.pricing?.total ?? 0);
+        const invoiceTotal = hasAnyRealInvoice(booking)
+          ? getCombinedInvoiceTotal(booking)
+          : Number(booking.pricing?.total ?? 0);
         const paidAmount = Number(booking.pricing?.paidAmount ?? 0);
         const depositRequired = Number(booking.pricing?.depositRequired ?? 0);
         const tipAmount = Number(booking.pricing?.tipAmount ?? 0);
@@ -382,10 +409,7 @@ export async function GET(request: Request) {
         const fullyPaidAt = booking.payment?.fullyPaidAt ?? null;
 
         // Derive payment status: no real invoice yet → never "paid", only "partial" at best
-        const inv = booking.invoice;
-        const hasRealInvoice = Boolean(
-          inv && (inv.quotationId || (typeof inv.total === 'number' && inv.total > 0))
-        );
+        const hasRealInvoice = hasAnyRealInvoice(booking);
         const paymentStatus = hasRealInvoice && balance <= 0
           ? 'paid'
           : paidAmount > 0
@@ -401,6 +425,7 @@ export async function GET(request: Request) {
         return {
           id: booking._id.toString(),
           bookingCode: booking.bookingCode,
+          expressGroupId: (booking as { expressGroupId?: string }).expressGroupId ?? null,
           customerId: booking.customerId,
           customerName: customerById.get(String(booking.customerId))?.name || 'Unknown Client',
           customerEmail: customerById.get(String(booking.customerId))?.email || '',
@@ -420,6 +445,7 @@ export async function GET(request: Request) {
           completedAt: booking.completedAt?.toISOString() || null,
           confirmedAt: booking.confirmedAt?.toISOString() || null,
           invoice: booking.invoice || null,
+          secondaryInvoice: booking.secondaryInvoice || null,
           clientNotes: booking.clientNotes || '',
           adminNotes: booking.adminNotes || '',
           clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },

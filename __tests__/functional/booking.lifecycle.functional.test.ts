@@ -106,7 +106,7 @@ describe('functional: booking lifecycle', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'manual_confirm', paidAmount: 0, tipAmount: 0 }),
     });
-    const patchRes = await updateBooking(patchReq, { params: Promise.resolve({ id: bookingId }) });
+    const patchRes = await updateBooking(patchReq, { params: Promise.resolve({ id: bookingId! }) });
     expect(patchRes.status).toBe(200);
     const patchBody = await patchRes.json();
     expect(patchBody.booking?.status).toBe('confirmed');

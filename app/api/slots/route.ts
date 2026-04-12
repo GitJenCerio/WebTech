@@ -152,6 +152,7 @@ export async function GET(request: Request) {
           bookingBySlotId.set(slotKey, {
             id: String(booking._id),
             bookingCode: booking.bookingCode,
+            expressGroupId: booking.expressGroupId || null,
             customerId: booking.customerId,
             nailTechId: booking.nailTechId ? String(booking.nailTechId) : undefined,
             customerName: customerById.get(String(booking.customerId))?.name || 'Unknown Client',
@@ -170,6 +171,7 @@ export async function GET(request: Request) {
             clientPhotoUploadUrl: booking.clientPhotoUploadUrl || null,
             clientPhotoUploadExpiresAt: booking.clientPhotoUploadExpiresAt || null,
             invoice: booking.invoice || null,
+            secondaryInvoice: booking.secondaryInvoice || null,
             completedAt: booking.completedAt || null,
           });
         }
