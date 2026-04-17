@@ -20,6 +20,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.glammednailsbyj
 const siteName = 'glammednailsbyjhen';
 const defaultTitle = `Russian Manicure & Pedicure in Manila | ${siteName}`;
 const defaultDescription = 'Russian manicure in Manila: premium e-file manicure, pedicure, nail art & extensions. Book your appointment online. Metro Manila nail studio.';
+const ogVersion = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8) || 'v1';
+const ogImageUrl = `/opengraph-image?v=${ogVersion}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -61,13 +63,21 @@ export const metadata: Metadata = {
     siteName: siteName,
     title: defaultTitle,
     description: defaultDescription,
-    // og:image from app/opengraph-image.tsx (1200x630, logo properly sized)
+    images: [
+      {
+        url: ogImageUrl,
+        width: 1200,
+        height: 630,
+        alt: 'Russian manicure & pedicure in Manila | glammednailsbyjhen',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: defaultTitle,
     description: defaultDescription,
     creator: '@glammednailsbyjhen', // Update with your actual Twitter handle if you have one
+    images: [ogImageUrl],
   },
   robots: {
     index: true,
