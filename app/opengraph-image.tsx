@@ -1,42 +1,32 @@
 import { ImageResponse } from 'next/og';
-import { join } from 'node:path';
-import { readFile } from 'node:fs/promises';
 
 export const alt = 'Russian manicure & pedicure in Manila | glammednailsbyjhen';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
+const baseUrl = (
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.NEXTAUTH_URL ||
+  'https://www.glammednailsbyjhen.com'
+).replace(/\/$/, '');
 
-async function loadLogoSrc(): Promise<string> {
-  // 1. Try fetch from site URL (works in dev + prod)
+async function loadImageAsDataUrl(path: string, mime: string): Promise<string> {
   try {
-    const res = await fetch(`${baseUrl}/logo.png`, { cache: 'no-store' });
+    const res = await fetch(`${baseUrl}${path}`, { cache: 'no-store' });
     if (res.ok) {
       const buf = await res.arrayBuffer();
       const b64 = Buffer.from(buf).toString('base64');
-      return `data:image/png;base64,${b64}`;
+      return `data:${mime};base64,${b64}`;
     }
-  } catch {}
-  // 2. Fallback: file read
-  try {
-    const logoPath = join(process.cwd(), 'public', 'logo.png');
-    const logoData = await readFile(logoPath, 'base64');
-    return `data:image/png;base64,${logoData}`;
   } catch {}
   return '';
 }
 
 export default async function Image() {
-  const logoSrc = await loadLogoSrc();
-  let heroBgSrc: string;
-  try {
-    const heroPath = join(process.cwd(), 'public', 'images', 'hero-1.JPG');
-    const heroData = await readFile(heroPath, 'base64');
-    heroBgSrc = `data:image/jpeg;base64,${heroData}`;
-  } catch {
-    heroBgSrc = '';
-  }
+  const [logoSrc, heroBgSrc] = await Promise.all([
+    loadImageAsDataUrl('/logo.png', 'image/png'),
+    loadImageAsDataUrl('/images/hero-1.JPG', 'image/jpeg'),
+  ]);
 
   return new ImageResponse(
     (
