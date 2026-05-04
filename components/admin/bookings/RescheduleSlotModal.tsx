@@ -28,23 +28,8 @@ import { formatTime12Hour } from '@/lib/utils';
 import { normalizeSlotTime } from '@/lib/constants/slots';
 import { getRequiredSlotCountForService } from '@/lib/serviceSlotCount';
 import { mapServiceToStandardDisplay } from '@/lib/serviceLabels';
-import type { ServiceType } from '@/lib/types';
 
 const BOOKED_STATUSES = ['pending', 'confirmed'] as const;
-
-const SERVICE_TYPES: ServiceType[] = [
-  'Manicure',
-  'Pedicure',
-  'Manicure + Pedicure',
-  'Mani + Pedi Express',
-  'Manicure for 2',
-  'Pedicure for 2',
-  'Manicure for 2 or more',
-  'Pedicure for 2 or more',
-  'Manicure + Pedicure for 1',
-  'Manicure + Pedicure for 2',
-  'Manicure + Pedicure for 2 or more',
-];
 
 interface Slot {
   _id: string;
@@ -59,13 +44,17 @@ interface RescheduleSlotModalProps {
   onOpenChange: (open: boolean) => void;
   bookingId: string;
   nailTechId: string;
+  /** Primary (manicure) tech for express; defaults to `nailTechId` when omitted */
+  initialManicureNailTechId?: string;
+  /** Pedicure tech for express bookings */
+  initialPedicureNailTechId?: string;
   currentService?: string;
   currentServiceLocation?: 'homebased_studio' | 'home_service';
   reason?: string;
   onConfirm: (
     newSlotIds: string[],
     reason?: string,
-    service?: { type: string; location?: string; clientType?: string; secondaryNailTechId?: string }
+    opts?: { secondaryNailTechId?: string }
   ) => Promise<void>;
   isLoading?: boolean;
 }
@@ -80,6 +69,8 @@ export default function RescheduleSlotModal({
   onOpenChange,
   bookingId,
   nailTechId: initialNailTechId,
+  initialManicureNailTechId,
+  initialPedicureNailTechId,
   currentService,
   currentServiceLocation,
   reason,
@@ -89,8 +80,9 @@ export default function RescheduleSlotModal({
   const { nailTechs, loading: nailTechsLoading } = useNailTechs();
   const [date, setDate] = useState('');
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [selectedServiceType, setSelectedServiceType] = useState<string>(
-    mapServiceToStandardDisplay(currentService)
+  const lockedServiceDisplay = useMemo(
+    () => mapServiceToStandardDisplay(currentService),
+    [currentService]
   );
   const [reasonText, setReasonText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -110,11 +102,11 @@ export default function RescheduleSlotModal({
   const [loadingDualSlots, setLoadingDualSlots] = useState(false);
   const [selectedTime, setSelectedTime] = useState('');
 
-  const isSimultaneous = isSimultaneousService(selectedServiceType);
+  const isSimultaneous = isSimultaneousService(lockedServiceDisplay);
 
   const requiredSlots = useMemo(
-    () => getRequiredSlotCountForService(selectedServiceType, currentServiceLocation || 'homebased_studio'),
-    [selectedServiceType, currentServiceLocation]
+    () => getRequiredSlotCountForService(lockedServiceDisplay, currentServiceLocation || 'homebased_studio'),
+    [lockedServiceDisplay, currentServiceLocation]
   );
 
   // ── Consecutive slot helpers (single-tech) ─────────────────────
@@ -262,26 +254,21 @@ export default function RescheduleSlotModal({
       setAllSlots([]);
       setAvailableSlots([]);
       setSelectedSlotId('');
-      setSelectedServiceType(mapServiceToStandardDisplay(currentService));
       setReasonText('');
       setError(null);
-      setManicureTechId('');
-      setPedicureTechId('');
+      const display = mapServiceToStandardDisplay(currentService);
+      if (isSimultaneousService(display)) {
+        setManicureTechId(initialManicureNailTechId || initialNailTechId || '');
+        setPedicureTechId(initialPedicureNailTechId || '');
+      } else {
+        setManicureTechId('');
+        setPedicureTechId('');
+      }
       setManiSlots([]);
       setPediSlots([]);
       setSelectedTime('');
     }
-  }, [open, initialNailTechId, currentService]);
-
-  // Reset slot selection when service type changes
-  useEffect(() => {
-    setSelectedSlotId('');
-    setSelectedTime('');
-    setManiSlots([]);
-    setPediSlots([]);
-    setAllSlots([]);
-    setAvailableSlots([]);
-  }, [selectedServiceType]);
+  }, [open, initialNailTechId, currentService, initialManicureNailTechId, initialPedicureNailTechId]);
 
   // Fetch single-tech slots
   useEffect(() => {
@@ -307,24 +294,14 @@ export default function RescheduleSlotModal({
   const handleConfirm = async () => {
     setError(null);
     try {
-      const mappedCurrent = mapServiceToStandardDisplay(currentService);
-      const serviceChanged = selectedServiceType !== mappedCurrent;
-
       if (isSimultaneous) {
         if (dualSlotIds.length < 2) return;
-        const servicePayload = {
-          type: selectedServiceType,
-          location: currentServiceLocation,
-          clientType: 'repeat' as const,
+        await onConfirm(dualSlotIds, reasonText.trim() || undefined, {
           secondaryNailTechId: pedicureTechId,
-        };
-        await onConfirm(dualSlotIds, reasonText.trim() || undefined, servicePayload);
+        });
       } else {
         if (selectedSlotIds.length === 0) return;
-        const servicePayload = serviceChanged
-          ? { type: selectedServiceType, location: currentServiceLocation, clientType: 'repeat' as const }
-          : undefined;
-        await onConfirm(selectedSlotIds, reasonText.trim() || undefined, servicePayload);
+        await onConfirm(selectedSlotIds, reasonText.trim() || undefined);
       }
       onOpenChange(false);
     } catch (err) {
@@ -344,31 +321,16 @@ export default function RescheduleSlotModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
         <DialogHeader className="shrink-0">
-          <DialogTitle>Reschedule & change service</DialogTitle>
+          <DialogTitle>Reschedule</DialogTitle>
           <DialogDescription>
-            Optionally change the service, then select a new date and time. Current slots will be released.
+            Pick a new date and time only. The service type stays the same — use Change service in the booking details to update the service.
           </DialogDescription>
         </DialogHeader>
 
         <div className="overflow-y-auto flex-1 space-y-4 py-4 pr-1">
-          {/* Service Type */}
           <div>
-            <Label className="text-xs text-gray-500">Service type</Label>
-            <Select value={selectedServiceType} onValueChange={setSelectedServiceType}>
-              <SelectTrigger className="h-9 mt-1">
-                <SelectValue placeholder="Select service" />
-              </SelectTrigger>
-              <SelectContent>
-                {SERVICE_TYPES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                    {!isSimultaneousService(s) && getRequiredSlotCountForService(s, currentServiceLocation) > 1
-                      ? ` (${getRequiredSlotCountForService(s, currentServiceLocation)} slots)`
-                      : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs text-gray-500">Current service</Label>
+            <p className="mt-1 text-sm font-medium text-[#1a1a1a]">{lockedServiceDisplay}</p>
           </div>
 
           {/* ── SIMULTANEOUS: two nail tech selectors ── */}

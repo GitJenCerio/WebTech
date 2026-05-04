@@ -110,7 +110,9 @@ export default function BookingsPage() {
     bookingCode?: string;
     customerId?: string;
     nailTechId?: string;
+    /** Booking primary nail tech (mani side for express) */
     primaryNailTechId?: string;
+    primaryNailTechName?: string;
     secondaryNailTechId?: string;
     nailTechName?: string;
     secondaryNailTechName?: string;
@@ -253,8 +255,11 @@ export default function BookingsPage() {
   const activeInvoiceTechId = useMemo(() => {
     if (!selectedBooking?.nailTechId) return undefined;
     if (
-      selectedBooking.service === 'mani_pedi_simultaneous' &&
-      selectedBooking.secondaryNailTechId
+      isManiPediExpressDualFromParts(
+        selectedBooking.service,
+        selectedBooking.secondaryNailTechId,
+        selectedBooking.serviceMode
+      )
     ) {
       return invoiceTarget === 'secondary'
         ? selectedBooking.secondaryNailTechId
@@ -266,8 +271,11 @@ export default function BookingsPage() {
   const invoiceSubtitle = useMemo(() => {
     if (
       !selectedBooking ||
-      selectedBooking.service !== 'mani_pedi_simultaneous' ||
-      !selectedBooking.secondaryNailTechId
+      !isManiPediExpressDualFromParts(
+        selectedBooking.service,
+        selectedBooking.secondaryNailTechId,
+        selectedBooking.serviceMode
+      )
     ) {
       return undefined;
     }
@@ -326,11 +334,13 @@ export default function BookingsPage() {
           nailTechId: booking.nailTechId,
           secondaryNailTechId: booking.service?.secondaryNailTechId,
           secondaryServiceType: booking.service?.secondaryServiceType,
+          serviceMode: booking.service?.mode,
           date: apptDate,
           time: apptTime,
           clientName: booking.customerName || 'Unknown Client',
           socialName: booking.customerSocialMediaName || '',
           service: booking.service?.type || 'Nail Service',
+          chosenServices: booking.service?.chosenServices,
           serviceLocation: booking.service?.location,
           serviceAddress: booking.service?.address,
           status: booking.status || 'booked',
@@ -524,7 +534,11 @@ export default function BookingsPage() {
   const handleMarkCompleted = async (amountReceived: number, tipFromExcess: number) => {
     if (!selectedBooking?.id) return;
     const bookingInv = {
-      service: { type: selectedBooking.service, secondaryNailTechId: selectedBooking.secondaryNailTechId },
+      service: {
+        type: selectedBooking.service,
+        mode: selectedBooking.serviceMode,
+        secondaryNailTechId: selectedBooking.secondaryNailTechId,
+      },
       invoice: selectedBooking.invoice,
       secondaryInvoice: selectedBooking.secondaryInvoice,
     };
@@ -652,7 +666,11 @@ export default function BookingsPage() {
     }
   };
 
-  const handleRescheduleConfirm = async (newSlotIds: string[], reason?: string, service?: { type: string; location?: string; clientType?: string; secondaryNailTechId?: string }) => {
+  const handleRescheduleConfirm = async (
+    newSlotIds: string[],
+    reason?: string,
+    opts?: { secondaryNailTechId?: string }
+  ) => {
     if (!selectedBooking?.id) return;
     setRescheduleLoading(true);
     try {
@@ -663,8 +681,7 @@ export default function BookingsPage() {
           action: 'reschedule_to',
           newSlotIds,
           reason: reason || undefined,
-          service: service ? { type: service.type, location: service.location, clientType: service.clientType } : undefined,
-          secondaryNailTechId: service?.secondaryNailTechId || undefined,
+          secondaryNailTechId: opts?.secondaryNailTechId || undefined,
         }),
       });
       if (!response.ok) {
@@ -876,8 +893,11 @@ export default function BookingsPage() {
       setPricingLoading(false);
     }
 
-    const dualExpress =
-      selectedBooking.service === 'mani_pedi_simultaneous' && Boolean(selectedBooking.secondaryNailTechId);
+    const dualExpress = isManiPediExpressDualFromParts(
+      selectedBooking.service,
+      selectedBooking.secondaryNailTechId,
+      selectedBooking.serviceMode
+    );
     const segment = dualExpress && target === 'secondary' ? 'secondary' : 'primary';
 
     let loadedQuotation = false;
@@ -940,7 +960,12 @@ export default function BookingsPage() {
         selectedBooking.secondaryServiceType
       );
       if (segItems.length > 0) setInvoiceItems(segItems);
-    } else if (!loadedQuotation && selectedBooking.service === 'mani_pedi_simultaneous' && pricingRows.length > 0 && !dualExpress) {
+    } else if (
+      !loadedQuotation &&
+      isExpressManiPediServiceType(selectedBooking.service) &&
+      pricingRows.length > 0 &&
+      !dualExpress
+    ) {
       const split = buildManiPediExpressInvoiceItems(pricingRows, pricingHdrs, cleanCurrencyValue);
       if (split.length > 0) setInvoiceItems(split);
     }
@@ -1079,6 +1104,7 @@ export default function BookingsPage() {
       primaryNailTechId: item.nailTechId,
       secondaryNailTechId: item.secondaryNailTechId,
       nailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
+      primaryNailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
       secondaryNailTechName: item.secondaryNailTechId ? nailTechs.find((t) => t.id === item.secondaryNailTechId)?.name : undefined,
       date: item.date,
       time: item.time,
@@ -1087,7 +1113,7 @@ export default function BookingsPage() {
       service: item.service,
       secondaryServiceType: item.secondaryServiceType,
       serviceMode: item.serviceMode,
-      chosenServices: item.chosenServices,
+      chosenServices: item.chosenServices ?? [],
       serviceLocation: item.serviceLocation,
       slotType: item.slotType,
       status: item.status,
@@ -1607,6 +1633,8 @@ export default function BookingsPage() {
         onOpenChange={setShowRescheduleModal}
         bookingId={selectedBooking?.id ?? ''}
         nailTechId={selectedBooking?.nailTechId ?? ''}
+        initialManicureNailTechId={selectedBooking?.primaryNailTechId ?? selectedBooking?.nailTechId}
+        initialPedicureNailTechId={selectedBooking?.secondaryNailTechId}
         currentService={selectedBooking?.service}
         currentServiceLocation={selectedBooking?.serviceLocation}
         onConfirm={handleRescheduleConfirm}
@@ -1618,6 +1646,9 @@ export default function BookingsPage() {
           setShowChangeServiceModal(o);
           if (!o && selectedBooking) setShowModal(true);
         }}
+        appointmentDate={selectedBooking?.date}
+        initialManicureTechId={selectedBooking?.primaryNailTechId ?? selectedBooking?.nailTechId}
+        initialPedicureTechId={selectedBooking?.secondaryNailTechId}
         currentService={selectedBooking?.service}
         currentServiceLocation={selectedBooking?.serviceLocation}
         currentChosenServices={selectedBooking?.chosenServices}

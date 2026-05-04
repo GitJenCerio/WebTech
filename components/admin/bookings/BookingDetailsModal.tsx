@@ -60,6 +60,8 @@ interface BookingDetailsModalProps {
     nailTechId?: string;
     nailTechName?: string;
     primaryNailTechId?: string;
+    /** Manicure tech display name (booking primary); set when opening from calendar so both techs resolve */
+    primaryNailTechName?: string;
     secondaryNailTechId?: string;
     secondaryNailTechName?: string;
     clientName: string;
@@ -138,31 +140,24 @@ export default function BookingDetailsModal({
 
   if (!booking) return null;
 
-  const resolvedService = getSlotServiceDisplay(booking.service);
-  // Be tolerant of legacy stored service values so the modal consistently
-  // switches to the "Express" single-tech display when a secondary tech exists.
-  const isExpressManiPedi =
-    Boolean(booking.secondaryNailTechName) &&
-    resolvedService.toLowerCase().includes('manicure') &&
-    resolvedService.toLowerCase().includes('pedicure');
-  const expressTechRoleLabel = (() => {
-    if (!isExpressManiPedi) return null;
-    if (booking.nailTechId && booking.primaryNailTechId && booking.secondaryNailTechId) {
-      if (String(booking.nailTechId) === String(booking.primaryNailTechId)) return 'Manicure';
-      if (String(booking.nailTechId) === String(booking.secondaryNailTechId)) return 'Pedicure';
-    }
-    // Fallback: if the currently shown tech matches the secondary name, treat it as Pedicure.
-    if (booking.nailTechName && booking.secondaryNailTechName && booking.nailTechName === booking.secondaryNailTechName) {
-      return 'Pedicure';
-    }
-    return 'Manicure';
-  })();
-
   const isManiPediExpressDual = isManiPediExpressDualFromParts(
     booking.service,
     booking.secondaryNailTechId,
     booking.serviceMode
   );
+
+  const manicureDisplayName =
+    booking.primaryNailTechName ||
+    (booking.primaryNailTechId && booking.nailTechId && String(booking.primaryNailTechId) === String(booking.nailTechId)
+      ? booking.nailTechName
+      : undefined);
+
+  const pedicureDisplayName =
+    booking.secondaryNailTechName ||
+    (booking.secondaryNailTechId && booking.nailTechId && String(booking.secondaryNailTechId) === String(booking.nailTechId)
+      ? booking.nailTechName
+      : undefined);
+
   const expressSeg = isManiPediExpressDual
     ? getExpressSegmentLabels(booking.secondaryServiceType)
     : null;
@@ -170,29 +165,45 @@ export default function BookingDetailsModal({
   const invoiceFooterActions =
     onCreateInvoice &&
     (isManiPediExpressDual && expressSeg ? (
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap w-full">
+      <div className="flex flex-col gap-2 w-full max-w-full">
         <Button
           type="button"
           variant="outline"
-          className="flex-1 min-w-0"
+          className="flex-1 min-w-0 h-auto min-h-10 items-start justify-start gap-2 whitespace-normal py-3 px-3 text-left text-sm leading-snug"
           onClick={() => onCreateInvoice('primary')}
         >
-          <i className="bi bi-receipt mr-2" />
-          {booking.invoice?.quotationId ? 'Invoice' : 'Create invoice'} —{' '}
-          {expressBrandedLineDescription(expressSeg.primary)}{' '}
-          <span className="text-gray-500 font-normal">({booking.nailTechName ? `Ms. ${booking.nailTechName}` : 'Primary'})</span>
+          <i className="bi bi-receipt shrink-0 mt-0.5 text-base leading-none" aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span className="block font-medium">
+              {booking.invoice?.quotationId ? 'View / edit invoice' : 'Create invoice'}
+              <span className="text-gray-600 font-normal">
+                {' '}
+                — {expressBrandedLineDescription(expressSeg.primary)}
+              </span>
+            </span>
+            <span className="mt-1 block text-xs font-normal text-gray-500">
+              {manicureDisplayName ? `Ms. ${manicureDisplayName}` : 'Primary tech'}
+            </span>
+          </span>
         </Button>
         <Button
           type="button"
           variant="outline"
-          className="flex-1 min-w-0"
+          className="flex-1 min-w-0 h-auto min-h-10 items-start justify-start gap-2 whitespace-normal py-3 px-3 text-left text-sm leading-snug"
           onClick={() => onCreateInvoice('secondary')}
         >
-          <i className="bi bi-receipt mr-2" />
-          {booking.secondaryInvoice?.quotationId ? 'Invoice' : 'Create invoice'} —{' '}
-          {expressBrandedLineDescription(expressSeg.secondary)}{' '}
-          <span className="text-gray-500 font-normal">
-            ({booking.secondaryNailTechName ? `Ms. ${booking.secondaryNailTechName}` : 'Secondary'})
+          <i className="bi bi-receipt shrink-0 mt-0.5 text-base leading-none" aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span className="block font-medium">
+              {booking.secondaryInvoice?.quotationId ? 'View / edit invoice' : 'Create invoice'}
+              <span className="text-gray-600 font-normal">
+                {' '}
+                — {expressBrandedLineDescription(expressSeg.secondary)}
+              </span>
+            </span>
+            <span className="mt-1 block text-xs font-normal text-gray-500">
+              {pedicureDisplayName ? `Ms. ${pedicureDisplayName}` : 'Secondary tech'}
+            </span>
           </span>
         </Button>
       </div>
@@ -212,9 +223,14 @@ export default function BookingDetailsModal({
       ? 'Partial'
       : 'Unpaid';
   const contactValue = booking.clientPhone || booking.clientEmail || '-';
-  const timeStr = (booking.slotTimes && booking.slotTimes.length > 0)
-    ? sortTimesChronologically(booking.slotTimes).map(formatTime12Hour).join(' & ')
-    : formatTime12Hour(booking.time);
+  const timeStr = (() => {
+    const raw =
+      booking.slotTimes && booking.slotTimes.length > 0
+        ? sortTimesChronologically(booking.slotTimes).filter(Boolean)
+        : [booking.time].filter(Boolean);
+    const unique = [...new Set(raw)];
+    return unique.map(formatTime12Hour).join(' & ');
+  })();
   const formattedDate = formatDateYyyyMmDd(booking.date);
   const dateTimeStr = `${formattedDate} · ${timeStr}`;
   const locationLabel = booking.serviceLocation === 'home_service' ? 'Home Service' : booking.serviceLocation === 'homebased_studio' ? 'Homebased Studio' : '';
@@ -266,27 +282,33 @@ export default function BookingDetailsModal({
                 <Calendar size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
                 <span>{formattedDate} · <span className="whitespace-nowrap">{timeStr}</span></span>
               </div>
-              {booking.nailTechName && (
-                <div className="flex items-center gap-2">
-                  <User size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
-                  {expressTechRoleLabel ? (
-                    <span>
-                      Ms. {booking.nailTechName}
-                      <span className="text-gray-400 text-[11px] ml-0.5">({expressTechRoleLabel})</span>
-                    </span>
-                  ) : booking.secondaryNailTechName ? (
-                    <span>
-                      Ms. {booking.nailTechName}
-                      <span className="text-gray-400 text-[11px] ml-0.5">(Manicure)</span>
-                      <span className="mx-1.5 text-gray-300">·</span>
-                      Ms. {booking.secondaryNailTechName}
-                      <span className="text-gray-400 text-[11px] ml-0.5">(Pedicure)</span>
-                    </span>
-                  ) : (
-                    <span>Ms. {booking.nailTechName}</span>
+              {(isManiPediExpressDual && (manicureDisplayName || pedicureDisplayName)) ? (
+                <div className="flex flex-col gap-2">
+                  {manicureDisplayName && (
+                    <div className="flex items-start gap-2">
+                      <User size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                      <span>
+                        Ms. {manicureDisplayName}
+                        <span className="text-gray-400 text-[11px] ml-1">(Manicure)</span>
+                      </span>
+                    </div>
+                  )}
+                  {pedicureDisplayName && (
+                    <div className="flex items-start gap-2">
+                      <User size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                      <span>
+                        Ms. {pedicureDisplayName}
+                        <span className="text-gray-400 text-[11px] ml-1">(Pedicure)</span>
+                      </span>
+                    </div>
                   )}
                 </div>
-              )}
+              ) : booking.nailTechName ? (
+                <div className="flex items-center gap-2">
+                  <User size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                  <span>Ms. {booking.nailTechName}</span>
+                </div>
+              ) : null}
               <div className="flex items-center gap-2">
                 <Phone size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
                 <span>{contactValue}</span>
@@ -487,9 +509,9 @@ export default function BookingDetailsModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-none shrink-0 flex-wrap gap-2 px-4 pb-4 pt-2 border-t border-[#e5e5e5] bg-[#f7f7f7] rounded-b-[24px]">
+        <DialogFooter className="flex-none shrink-0 flex flex-col gap-3 w-full max-w-full px-4 pb-4 pt-2 border-t border-[#e5e5e5] bg-[#f7f7f7] rounded-b-[24px] sm:flex-row sm:flex-wrap sm:items-start">
           {isPendingPayment ? (
-            <>
+            <div className="flex flex-wrap gap-2 w-full">
               <Button
                 variant="outline"
                 onClick={onChangeService}
@@ -524,31 +546,14 @@ export default function BookingDetailsModal({
               >
                 <i className="bi bi-x-circle mr-2"></i>Cancel
               </Button>
-            </>
+            </div>
           ) : isCompleted ? (
-            <>
+            <div className="flex w-full max-w-full flex-col gap-3">
               {invoiceFooterActions}
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const paid = booking.pricing?.paidAmount ?? booking.amountPaid ?? 0;
-                  const tip = booking.pricing?.tipAmount ?? 0;
-                  setUpdatePaidAmount(String(paid));
-                  setUpdateTipAmount(String(tip));
-                  setShowUpdatePaymentDialog(true);
-                }}
-                disabled={!onUpdatePayment}
-              >
-                <i className="bi bi-currency-dollar mr-2"></i>
-                Update Payment
-              </Button>
-            </>
-          ) : (
-            ['CONFIRMED', 'confirmed'].includes(booking.status) && (
-              <>
-                {invoiceFooterActions}
+              <div className="flex flex-wrap gap-2 w-full">
                 <Button
                   variant="outline"
+                  className="shrink-0"
                   onClick={() => {
                     const paid = booking.pricing?.paidAmount ?? booking.amountPaid ?? 0;
                     const tip = booking.pricing?.tipAmount ?? 0;
@@ -561,43 +566,50 @@ export default function BookingDetailsModal({
                   <i className="bi bi-currency-dollar mr-2"></i>
                   Update Payment
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={onReschedule}
-                  disabled={!onReschedule}
-                >
-                  <i className="bi bi-calendar-event mr-2"></i>Reschedule
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={onChangeService}
-                  disabled={!onChangeService}
-                >
-                  <i className="bi bi-pencil-square mr-2"></i>Change service
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={onMarkNoShow}
-                  disabled={!onMarkNoShow}
-                >
-                  <i className="bi bi-person-x mr-2"></i>No Show
-                </Button>
-                <Button
-                  variant="default"
-                  onClick={onMarkComplete}
-                  disabled={!onMarkComplete}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <i className="bi bi-check-circle mr-2"></i>Mark Complete
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={onCancel}
-                  disabled={!onCancel}
-                >
-                  <i className="bi bi-x-circle mr-2"></i>Cancel
-                </Button>
-              </>
+              </div>
+            </div>
+          ) : (
+            ['CONFIRMED', 'confirmed'].includes(booking.status) && (
+              <div className="flex w-full max-w-full flex-col gap-3 sm:flex-1 sm:min-w-0">
+                {invoiceFooterActions}
+                <div className="flex flex-wrap gap-2 w-full">
+                  <Button
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => {
+                      const paid = booking.pricing?.paidAmount ?? booking.amountPaid ?? 0;
+                      const tip = booking.pricing?.tipAmount ?? 0;
+                      setUpdatePaidAmount(String(paid));
+                      setUpdateTipAmount(String(tip));
+                      setShowUpdatePaymentDialog(true);
+                    }}
+                    disabled={!onUpdatePayment}
+                  >
+                    <i className="bi bi-currency-dollar mr-2"></i>
+                    Update Payment
+                  </Button>
+                  <Button variant="outline" className="shrink-0" onClick={onReschedule} disabled={!onReschedule}>
+                    <i className="bi bi-calendar-event mr-2"></i>Reschedule
+                  </Button>
+                  <Button variant="outline" className="shrink-0" onClick={onChangeService} disabled={!onChangeService}>
+                    <i className="bi bi-pencil-square mr-2"></i>Change service
+                  </Button>
+                  <Button variant="outline" className="shrink-0" onClick={onMarkNoShow} disabled={!onMarkNoShow}>
+                    <i className="bi bi-person-x mr-2"></i>No Show
+                  </Button>
+                  <Button
+                    variant="default"
+                    className="shrink-0 bg-green-600 hover:bg-green-700"
+                    onClick={onMarkComplete}
+                    disabled={!onMarkComplete}
+                  >
+                    <i className="bi bi-check-circle mr-2"></i>Mark Complete
+                  </Button>
+                  <Button variant="destructive" className="shrink-0" onClick={onCancel} disabled={!onCancel}>
+                    <i className="bi bi-x-circle mr-2"></i>Cancel
+                  </Button>
+                </div>
+              </div>
             )
           )}
         </DialogFooter>

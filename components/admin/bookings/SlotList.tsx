@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import SlotItem from './SlotItem';
 import { BookingStatus } from '../StatusBadge';
 import { sortSlotsWithPairedBookings } from '@/lib/utils';
+import { isManiPediExpressDualFromParts } from '@/lib/utils/bookingInvoice';
 
 interface Slot {
   id: string;
@@ -20,6 +21,7 @@ interface Slot {
   clientPhone?: string;
   clientSocialMediaName?: string;
   service?: string;
+  serviceMode?: 'single_tech' | 'simultaneous_two_techs';
   isHidden?: boolean;
   booking?: {
     id?: string;
@@ -62,8 +64,8 @@ export default function SlotList({
     withIndex.sort((a, b) => {
       const sameBookingId = a.s.booking?.id && b.s.booking?.id && a.s.booking.id === b.s.booking.id;
       const sameTime = a.s.time && b.s.time && a.s.time === b.s.time;
-      const isSimA = a.s.service === 'Manicure + Pedicure' && a.s.primaryNailTechId && a.s.secondaryNailTechId;
-      const isSimB = b.s.service === 'Manicure + Pedicure' && b.s.primaryNailTechId && b.s.secondaryNailTechId;
+      const isSimA = isManiPediExpressDualFromParts(a.s.service, a.s.secondaryNailTechId, a.s.serviceMode);
+      const isSimB = isManiPediExpressDualFromParts(b.s.service, b.s.secondaryNailTechId, b.s.serviceMode);
       if (sameBookingId && sameTime && isSimA && isSimB) {
         const aIsPrimary = String(a.s.nailTechId) === String(a.s.primaryNailTechId);
         const bIsPrimary = String(b.s.nailTechId) === String(b.s.primaryNailTechId);
@@ -208,6 +210,7 @@ export default function SlotList({
                 clientPhone={slot.clientPhone}
                 clientSocialMediaName={slot.clientSocialMediaName}
                 service={slot.service}
+                serviceMode={slot.serviceMode}
                 isHidden={slot.isHidden}
                 onView={() => onView?.(slot)}
                 onEdit={() => onEdit?.(slot)}

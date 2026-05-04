@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,9 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/Select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover';
-import { Calendar } from '@/components/ui/Calendar';
-import { cn } from '@/components/ui/Utils';
 import { getRequiredSlotCountForService } from '@/lib/serviceSlotCount';
 import { mapServiceToStandardDisplay, CHOSEN_SERVICE_LABELS } from '@/lib/serviceLabels';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
@@ -57,6 +53,10 @@ interface Slot {
 interface ChangeServiceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Booking day (YYYY-MM-DD or parseable); express slot picker is limited to this day */
+  appointmentDate?: string;
+  initialManicureTechId?: string;
+  initialPedicureTechId?: string;
   currentService?: string;
   currentServiceLocation?: 'homebased_studio' | 'home_service';
   currentChosenServices?: string[];
@@ -76,9 +76,21 @@ function isSimultaneous(serviceType: string) {
   return k.includes('express') || k.includes('simultaneous');
 }
 
+function toYyyyMmDd(value: string | undefined): string {
+  if (!value?.trim()) return '';
+  const t = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  const d = new Date(t);
+  if (Number.isNaN(d.getTime())) return '';
+  return format(d, 'yyyy-MM-dd');
+}
+
 export default function ChangeServiceModal({
   open,
   onOpenChange,
+  appointmentDate,
+  initialManicureTechId,
+  initialPedicureTechId,
   currentService,
   currentServiceLocation = 'homebased_studio',
   currentChosenServices = [],
@@ -87,6 +99,8 @@ export default function ChangeServiceModal({
   isLoading = false,
 }: ChangeServiceModalProps) {
   const { nailTechs, loading: nailTechsLoading } = useNailTechs();
+
+  const appointmentDay = useMemo(() => toYyyyMmDd(appointmentDate), [appointmentDate]);
 
   const [selectedServiceType, setSelectedServiceType] = useState<string>(
     mapServiceToStandardDisplay(currentService)
@@ -97,8 +111,6 @@ export default function ChangeServiceModal({
   // ── Dual-tech state (Mani + Pedi Express) ─────────────────────
   const [manicureTechId, setManicureTechId] = useState('');
   const [pedicureTechId, setPedicureTechId] = useState('');
-  const [date, setDate] = useState('');
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [maniSlots, setManiSlots] = useState<Slot[]>([]);
   const [pediSlots, setPediSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -133,7 +145,7 @@ export default function ChangeServiceModal({
 
   // Fetch slots for both techs
   const fetchDualSlots = useCallback(async () => {
-    if (!manicureTechId || !pedicureTechId || !date) {
+    if (!manicureTechId || !pedicureTechId || !appointmentDay) {
       setManiSlots([]);
       setPediSlots([]);
       setSelectedTime('');
@@ -143,8 +155,12 @@ export default function ChangeServiceModal({
       setLoadingSlots(true);
       setError(null);
       const [maniRes, pediRes] = await Promise.all([
-        fetch(`/api/slots?${new URLSearchParams({ nailTechId: manicureTechId, startDate: date, endDate: date })}`),
-        fetch(`/api/slots?${new URLSearchParams({ nailTechId: pedicureTechId, startDate: date, endDate: date })}`),
+        fetch(
+          `/api/slots?${new URLSearchParams({ nailTechId: manicureTechId, startDate: appointmentDay, endDate: appointmentDay })}`
+        ),
+        fetch(
+          `/api/slots?${new URLSearchParams({ nailTechId: pedicureTechId, startDate: appointmentDay, endDate: appointmentDay })}`
+        ),
       ]);
       if (!maniRes.ok || !pediRes.ok) throw new Error('Failed to fetch slots');
       const [maniData, pediData] = await Promise.all([maniRes.json(), pediRes.json()]);
@@ -159,17 +175,22 @@ export default function ChangeServiceModal({
     } finally {
       setLoadingSlots(false);
     }
-  }, [manicureTechId, pedicureTechId, date]);
+  }, [manicureTechId, pedicureTechId, appointmentDay]);
 
   // Reset on open
   useEffect(() => {
     if (open) {
-      setSelectedServiceType(mapServiceToStandardDisplay(currentService));
+      const display = mapServiceToStandardDisplay(currentService);
+      setSelectedServiceType(display);
       setChosenServices(Array.isArray(currentChosenServices) ? currentChosenServices : []);
       setError(null);
-      setManicureTechId('');
-      setPedicureTechId('');
-      setDate('');
+      if (isSimultaneous(display)) {
+        setManicureTechId(initialManicureTechId || '');
+        setPedicureTechId(initialPedicureTechId || '');
+      } else {
+        setManicureTechId('');
+        setPedicureTechId('');
+      }
       setManiSlots([]);
       setPediSlots([]);
       setSelectedTime('');
@@ -179,25 +200,33 @@ export default function ChangeServiceModal({
 
   // Reset dual state when service type changes
   useEffect(() => {
-    setManicureTechId('');
-    setPedicureTechId('');
-    setDate('');
+    if (isSimultaneous(selectedServiceType)) {
+      setManicureTechId(initialManicureTechId || '');
+      setPedicureTechId(initialPedicureTechId || '');
+    } else {
+      setManicureTechId('');
+      setPedicureTechId('');
+    }
     setManiSlots([]);
     setPediSlots([]);
     setSelectedTime('');
-  }, [selectedServiceType]);
+  }, [selectedServiceType, initialManicureTechId, initialPedicureTechId]);
 
-  // Fetch slots when both techs + date are selected
+  // Fetch slots when both techs + locked appointment day are set
   useEffect(() => {
-    if (simultaneous && manicureTechId && pedicureTechId && date) {
+    if (simultaneous && manicureTechId && pedicureTechId && appointmentDay) {
       fetchDualSlots();
     }
-  }, [simultaneous, manicureTechId, pedicureTechId, date, fetchDualSlots]);
+  }, [simultaneous, manicureTechId, pedicureTechId, appointmentDay, fetchDualSlots]);
 
   const handleConfirm = async () => {
     setError(null);
     try {
       if (simultaneous) {
+        if (!appointmentDay) {
+          setError('Appointment date is missing. Re-open this booking from the bookings list or calendar.');
+          return;
+        }
         if (dualSlotIds.length < 2) return;
         await onConfirm({
           type: selectedServiceType,
@@ -220,12 +249,8 @@ export default function ChangeServiceModal({
     }
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const selectedDate = date ? new Date(date) : undefined;
-
   const canConfirm = simultaneous
-    ? dualSlotIds.length === 2
+    ? Boolean(appointmentDay) && dualSlotIds.length === 2
     : canChangeWithoutReschedule;
 
   return (
@@ -235,7 +260,7 @@ export default function ChangeServiceModal({
           <DialogTitle>Change service</DialogTitle>
           <DialogDescription>
             {simultaneous
-              ? 'Select 2 nail techs (one for Mani, one for Pedi) and pick a time where both are available.'
+              ? 'Update the service or tech pairing for this booking day only. Pick a time where both selected techs are available — use Reschedule if the client needs a different day.'
               : `Change the service type for this booking. Current booking has ${currentSlotCount} slot(s).`}
           </DialogDescription>
         </DialogHeader>
@@ -329,48 +354,22 @@ export default function ChangeServiceModal({
                 </div>
               </div>
 
-              {/* Date picker */}
               <div>
-                <Label className="text-xs text-gray-500">Date *</Label>
-                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className={cn(
-                        'flex items-center gap-2 w-full mt-1 rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] transition-all h-9 px-3 text-sm',
-                        'hover:border-[#1a1a1a]/30 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]'
-                      )}
-                    >
-                      <CalendarIcon className="h-4 w-4 text-gray-500 shrink-0" />
-                      <span className="truncate">
-                        {date ? format(new Date(date), 'MMM d, yyyy') : 'Pick date'}
-                      </span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="start"
-                    className="admin-date-picker-popover w-auto p-0 rounded-2xl border-[#e5e5e5] shadow-lg bg-white"
-                  >
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(d) => {
-                        if (d) {
-                          setDate(format(d, 'yyyy-MM-dd'));
-                          setDatePickerOpen(false);
-                        }
-                      }}
-                      defaultMonth={selectedDate || new Date()}
-                      disabled={(d) => d < today}
-                      numberOfMonths={1}
-                      navLayout="around"
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label className="text-xs text-gray-500">Appointment day</Label>
+                {appointmentDay ? (
+                  <p className="mt-1 text-sm font-medium text-[#1a1a1a]">
+                    {format(new Date(`${appointmentDay}T12:00:00`), 'MMM d, yyyy')}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-amber-700">
+                    Appointment date is missing. Open this booking from the bookings list or calendar so the correct day
+                    is loaded.
+                  </p>
+                )}
               </div>
 
               {/* Common time slots */}
-              {manicureTechId && pedicureTechId && date && (
+              {manicureTechId && pedicureTechId && appointmentDay && (
                 <div>
                   <Label className="text-xs text-gray-500">Available time *</Label>
                   {loadingSlots ? (

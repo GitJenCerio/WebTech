@@ -387,20 +387,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const secondaryNailTechId = typeof body.secondaryNailTechId === 'string' && body.secondaryNailTechId.trim()
         ? body.secondaryNailTechId.trim()
         : undefined;
-      let booking = await rescheduleBookingToSlots(id, newSlotIds, body.reason, secondaryNailTechId);
-      // Optionally update service when rescheduling (e.g. manicure → mani+pedi)
-      if (body.service && typeof body.service.type === 'string' && body.service.type.trim()) {
-        booking = await updateBookingService(id, {
-          type: body.service.type.trim(),
-          location: body.service.location,
-          clientType: body.service.clientType,
-          chosenServices: Array.isArray(body.service.chosenServices) ? body.service.chosenServices : undefined,
-          secondaryNailTechId:
-            (typeof body.service.secondaryNailTechId === 'string' && body.service.secondaryNailTechId.trim()) ||
-            secondaryNailTechId,
-          newSlotIds,
-        });
-      }
+      const booking = await rescheduleBookingToSlots(id, newSlotIds, body.reason, secondaryNailTechId);
       const customer = await Customer.findById(booking.customerId).lean();
       if (customer?.email) {
         sendBookingRescheduledEmail(booking, customer, booking.statusReason || undefined).catch(err =>

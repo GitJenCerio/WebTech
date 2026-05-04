@@ -56,6 +56,7 @@ interface Slot {
   clientPhone?: string;
   clientSocialMediaName?: string;
   service?: string;
+  serviceMode?: 'single_tech' | 'simultaneous_two_techs';
   isHidden?: boolean;
   booking?: {
     id: string;
@@ -122,8 +123,11 @@ export default function CalendarPage() {
     bookingCode?: string;
     customerId?: string;
     nailTechId?: string;
+    /** YYYY-MM-DD from slot row — use for modals that must not change appointment day */
+    appointmentDateIso?: string;
     nailTechName?: string;
     primaryNailTechId?: string;
+    primaryNailTechName?: string;
     secondaryNailTechId?: string;
     secondaryNailTechName?: string;
     slotType?: 'regular' | 'with_squeeze_fee' | null;
@@ -240,6 +244,7 @@ export default function CalendarPage() {
     clientPhone: slot.booking?.customerPhone,
     clientSocialMediaName: slot.booking?.customerSocialMediaName,
     service: slot.booking?.service?.type,
+    serviceMode: slot.booking?.service?.mode,
     isHidden: slot.isHidden || false,
     booking: slot.booking
       ? {
@@ -527,9 +532,13 @@ export default function CalendarPage() {
         id: slot.booking.id,
         bookingCode: slot.booking.bookingCode,
         customerId: slot.booking.customerId,
+        appointmentDateIso: slot.date,
         nailTechId: slot.nailTechId,
         nailTechName: slot.nailTechId ? nailTechs.find((t) => t.id === slot.nailTechId)?.name : undefined,
         primaryNailTechId: slot.booking?.nailTechId ? String(slot.booking.nailTechId) : undefined,
+        primaryNailTechName: slot.booking?.nailTechId
+          ? nailTechs.find((t) => t.id === String(slot.booking!.nailTechId))?.name
+          : undefined,
         secondaryNailTechId: slot.booking?.service?.secondaryNailTechId ? String(slot.booking.service.secondaryNailTechId) : undefined,
         secondaryNailTechName: slot.booking?.service?.secondaryNailTechId
           ? nailTechs.find((t) => t.id === slot.booking?.service?.secondaryNailTechId)?.name
@@ -712,7 +721,11 @@ export default function CalendarPage() {
     }
   };
 
-  const handleRescheduleConfirm = async (newSlotIds: string[], reason?: string, service?: { type: string; location?: string; clientType?: string; secondaryNailTechId?: string }) => {
+  const handleRescheduleConfirm = async (
+    newSlotIds: string[],
+    reason?: string,
+    opts?: { secondaryNailTechId?: string }
+  ) => {
     if (!selectedBooking?.id) return;
     setRescheduleLoading(true);
     try {
@@ -723,8 +736,7 @@ export default function CalendarPage() {
           action: 'reschedule_to',
           newSlotIds,
           reason: reason || undefined,
-          service: service ? { type: service.type, location: service.location, clientType: service.clientType } : undefined,
-          secondaryNailTechId: service?.secondaryNailTechId || undefined,
+          secondaryNailTechId: opts?.secondaryNailTechId || undefined,
         }),
       });
       if (!response.ok) {
@@ -1089,7 +1101,12 @@ export default function CalendarPage() {
         selectedBooking.secondaryServiceType
       );
       if (segItems.length > 0) setInvoiceItems(segItems);
-    } else if (!loadedQuotation && selectedBooking.service === 'mani_pedi_simultaneous' && pricingRows.length > 0 && !dualExpress) {
+    } else if (
+      !loadedQuotation &&
+      isExpressManiPediServiceType(selectedBooking.service) &&
+      pricingRows.length > 0 &&
+      !dualExpress
+    ) {
       const split = buildManiPediExpressInvoiceItems(pricingRows, pricingHdrs, cleanCurrencyValue);
       if (split.length > 0) setInvoiceItems(split);
     }
@@ -1317,6 +1334,8 @@ export default function CalendarPage() {
         onOpenChange={setShowRescheduleModal}
         bookingId={selectedBooking?.id ?? ''}
         nailTechId={selectedBooking?.nailTechId ?? ''}
+        initialManicureNailTechId={selectedBooking?.primaryNailTechId ?? selectedBooking?.nailTechId}
+        initialPedicureNailTechId={selectedBooking?.secondaryNailTechId}
         currentService={selectedBooking?.service}
         currentServiceLocation={selectedBooking?.serviceLocation}
         onConfirm={handleRescheduleConfirm}
@@ -1328,6 +1347,9 @@ export default function CalendarPage() {
           setShowChangeServiceModal(o);
           if (!o && selectedBooking) setShowModal(true);
         }}
+        appointmentDate={selectedBooking?.appointmentDateIso}
+        initialManicureTechId={selectedBooking?.primaryNailTechId ?? selectedBooking?.nailTechId}
+        initialPedicureTechId={selectedBooking?.secondaryNailTechId}
         currentService={selectedBooking?.service}
         currentServiceLocation={selectedBooking?.serviceLocation}
         currentChosenServices={selectedBooking?.chosenServices}

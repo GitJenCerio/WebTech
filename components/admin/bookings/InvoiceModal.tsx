@@ -438,16 +438,17 @@ export default function InvoiceModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-wrap gap-2 shrink-0 border-t border-gray-100 pt-3 mt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
+        <DialogFooter className="flex flex-wrap gap-2 shrink-0 border-t border-gray-100 pt-3 mt-2 sm:justify-end">
+          <Button type="button" variant="secondary" className="min-w-0 shrink" onClick={onClose}>
             Close
           </Button>
-          <Button type="button" variant="outline" onClick={handleDownload}>
+          <Button type="button" variant="outline" className="min-w-0 shrink" onClick={handleDownload}>
             Download
           </Button>
           <Button
             type="button"
             variant="default"
+            className="min-w-0 max-w-full shrink whitespace-normal px-3 sm:px-4"
             disabled={invoiceSaving}
             onClick={onSave}
             loading={invoiceSaving}

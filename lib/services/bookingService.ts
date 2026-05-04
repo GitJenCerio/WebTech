@@ -972,9 +972,23 @@ export async function updateBookingService(
       throw new Error('Exactly 2 slot IDs are required for Mani + Pedi Express');
     }
 
+    const oldSlotDocs = await Slot.find({ _id: { $in: booking.slotIds || [] } }).lean();
+    const anchorDate = (oldSlotDocs[0] as { date?: string } | undefined)?.date;
+
     const primarySlot = await Slot.findById(service.newSlotIds[0]);
     if (!primarySlot) throw new Error('Primary slot not found');
     const primaryNailTechId = String(primarySlot.nailTechId);
+
+    if (anchorDate) {
+      const newSlotDocs = await Slot.find({ _id: { $in: service.newSlotIds } }).lean();
+      for (const s of newSlotDocs) {
+        if ((s as { date?: string }).date !== anchorDate) {
+          throw new Error(
+            'Change service cannot move the appointment to a different date. Use Reschedule to change the date.'
+          );
+        }
+      }
+    }
 
     await validateSimultaneousSlots({
       slotIds: service.newSlotIds,

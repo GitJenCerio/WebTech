@@ -4,6 +4,7 @@ import StatusBadge, { BookingStatus } from '../StatusBadge';
 import NailTechBadge from '../NailTechBadge';
 import { formatTime12Hour } from '@/lib/utils';
 import { getSlotServiceDisplay } from '@/lib/serviceLabels';
+import { isManiPediExpressDualFromParts } from '@/lib/utils/bookingInvoice';
 
 const SERVICE_BADGE_STYLE: React.CSSProperties = {
   backgroundColor: '#f3f4f6',
@@ -35,6 +36,7 @@ interface SlotItemProps {
   clientPhone?: string;
   clientSocialMediaName?: string;
   service?: string;
+  serviceMode?: 'single_tech' | 'simultaneous_two_techs';
   isHidden?: boolean;
   onView?: () => void;
   onEdit?: () => void;
@@ -57,6 +59,7 @@ export default function SlotItem({
   clientPhone,
   clientSocialMediaName,
   service,
+  serviceMode,
   isHidden = false,
   onView,
   onEdit,
@@ -70,7 +73,11 @@ export default function SlotItem({
   };
   const isClickable = (canViewSlot && onView) || (canEditSlot && onEdit);
 
-  const isSimultaneous = service === 'Manicure + Pedicure' && Boolean(secondaryNailTechName);
+  const isSimultaneous = isManiPediExpressDualFromParts(
+    service,
+    secondaryNailTechId,
+    serviceMode ?? null
+  );
 
   /** Batch badge: same combined label on both simultaneous slot cards */
   const serviceBadge = isSimultaneous
