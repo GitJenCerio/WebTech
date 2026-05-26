@@ -546,43 +546,51 @@ export default function BookingDetailsModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-none shrink-0 flex flex-col gap-3 w-full max-w-full px-4 pb-8 pt-2 border-t border-[#e5e5e5] bg-[#f7f7f7] rounded-b-[24px] sm:flex-row sm:flex-wrap sm:items-start" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
+        <DialogFooter className="flex-none shrink-0 flex flex-col gap-3 w-full max-w-full px-4 pb-12 pt-2 border-t border-[#e5e5e5] bg-[#f7f7f7] rounded-b-[24px] sm:flex-row sm:flex-wrap sm:items-start" style={{ paddingBottom: 'max(3rem, env(safe-area-inset-bottom, 3rem))' }}>
           {isPendingPayment ? (
-            <div className="flex flex-wrap gap-2 w-full">
-              <Button
-                variant="outline"
-                onClick={onChangeService}
-                disabled={!onChangeService}
-              >
-                <i className="bi bi-pencil-square mr-2"></i>Change service
-              </Button>
-              <Button
-                variant="default"
-                onClick={onVerifyPaymentProof}
-                disabled={!canVerify || isVerifyingPaymentProof}
-                loading={isVerifyingPaymentProof}
-              >
-                <i className="bi bi-shield-check mr-2"></i>
-                {isVerifyingPaymentProof ? 'Verifying...' : 'Verify Payment'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setManualAmount(booking.reservationAmount ?? 0);
-                  setShowManualConfirmDialog(true);
-                }}
-                disabled={!onManualConfirmPayment || isManualConfirming}
-              >
-                <i className="bi bi-pencil-square mr-2"></i>
-                Confirm Manually
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={onCancel}
-                disabled={!onCancel}
-              >
-                <i className="bi bi-x-circle mr-2"></i>Cancel
-              </Button>
+            <div className="flex flex-col gap-2 w-full">
+              <div className="grid grid-cols-2 gap-2 w-full">
+                <Button
+                  variant="default"
+                  onClick={onVerifyPaymentProof}
+                  disabled={!canVerify || isVerifyingPaymentProof}
+                  loading={isVerifyingPaymentProof}
+                  className="w-full whitespace-normal h-auto py-2 text-xs sm:text-sm"
+                >
+                  <i className="bi bi-shield-check mr-1.5"></i>
+                  {isVerifyingPaymentProof ? 'Verifying...' : 'Verify Payment'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setManualAmount(booking.reservationAmount ?? 0);
+                    setShowManualConfirmDialog(true);
+                  }}
+                  disabled={!onManualConfirmPayment || isManualConfirming}
+                  className="w-full whitespace-normal h-auto py-2 text-xs sm:text-sm"
+                >
+                  <i className="bi bi-pencil-square mr-1.5"></i>
+                  Confirm Manually
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 w-full">
+                <Button
+                  variant="outline"
+                  onClick={onChangeService}
+                  disabled={!onChangeService}
+                  className="w-full whitespace-normal h-auto py-2 text-xs sm:text-sm"
+                >
+                  <i className="bi bi-pencil-square mr-1.5"></i>Modify
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={onCancel}
+                  disabled={!onCancel}
+                  className="w-full whitespace-normal h-auto py-2 text-xs sm:text-sm"
+                >
+                  <i className="bi bi-x-circle mr-1.5"></i>Cancel
+                </Button>
+              </div>
             </div>
           ) : isCompleted ? (
             <div className="flex w-full max-w-full flex-col gap-3">
