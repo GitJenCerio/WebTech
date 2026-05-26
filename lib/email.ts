@@ -416,11 +416,14 @@ export async function sendBookingConfirmedEmail(booking: any, customer: any) {
     }
 
     const resend = new Resend(process.env.RESEND_API_KEY);
+    const appointment = await getBookingAppointmentSchedule(booking);
     const content = `
       <h1 style="color: #1a1a1a; margin: 0 0 16px; font-size: 24px;">Booking Confirmed</h1>
       <p style="margin: 0 0 16px;">Hi ${customer.name},</p>
       <p style="margin: 0 0 16px;">Your booking has been confirmed by our team.</p>
       <p style="margin: 0 0 24px;"><strong>Booking Code:</strong> ${booking.bookingCode}</p>
+      <p style="margin: 0 0 8px;"><strong>Appointment Date:</strong> ${appointment.date}</p>
+      <p style="margin: 0 0 24px;"><strong>Appointment Time:</strong> ${appointment.time}</p>
 
       <div style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 16px; margin: 24px 0;">
         <p style="margin: 0 0 6px; font-weight: 600; color: #1e40af; font-size: 14px;">Friendly Reminder</p>
@@ -519,11 +522,14 @@ export async function sendAppointmentReminderEmail(booking: any, customer: any, 
       return { emailSent: false };
     }
     const resend = new Resend(process.env.RESEND_API_KEY);
+    const appointment = await getBookingAppointmentSchedule(booking);
     const content = `
       <h1 style="color: #1a1a1a; margin: 0 0 16px; font-size: 24px;">${subjectLabel}</h1>
       <p style="margin: 0 0 16px;">Hi ${customer.name},</p>
       <p style="margin: 0 0 16px;">This is a reminder for your upcoming appointment.</p>
-      <p style="margin: 0 0 24px;"><strong>Booking Code:</strong> ${booking.bookingCode}</p>
+      <p style="margin: 0 0 8px;"><strong>Booking Code:</strong> ${booking.bookingCode}</p>
+      <p style="margin: 0 0 8px;"><strong>Appointment Date:</strong> ${appointment.date}</p>
+      <p style="margin: 0 0 24px;"><strong>Appointment Time:</strong> ${appointment.time}</p>
       <p style="color: #6b7280; font-size: 14px; margin: 0;">We look forward to seeing you.</p>
     `;
 
