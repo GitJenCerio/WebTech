@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Calendar, MapPin, Phone, AtSign, Sparkles, CreditCard, User, Link2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Calendar, MapPin, Phone, AtSign, Sparkles, CreditCard, User, Link2, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import StatusBadge, { BookingStatus } from '../StatusBadge';
 import {
@@ -153,6 +153,8 @@ export default function BookingDetailsModal({
   const [updateTipAmount, setUpdateTipAmount] = useState<string>('0');
   const [generatingLink, setGeneratingLink] = useState(false);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const bookingCardRef = useRef<HTMLDivElement>(null);
 
   if (!booking) return null;
 
@@ -224,7 +226,7 @@ export default function BookingDetailsModal({
         </Button>
       </div>
     ) : (
-      <Button type="button" variant="outline" className="bg-gray-700 hover:bg-gray-800 text-white border-gray-700" onClick={() => onCreateInvoice()}>
+      <Button type="button" variant="outline" className="w-full bg-gray-700 hover:bg-gray-800 text-white border-gray-700" onClick={() => onCreateInvoice()}>
         <i className="bi bi-receipt mr-2" />
         {booking.invoice?.quotationId ? 'View / Edit Invoice' : 'Create Invoice'}
       </Button>
@@ -253,6 +255,40 @@ export default function BookingDetailsModal({
   const isConfirmed = ['CONFIRMED', 'confirmed'].includes(booking.status);
   const isCompletedStatus = ['COMPLETED', 'completed'].includes(booking.status);
 
+  const handleCopy = async () => {
+    if (!bookingCardRef.current) return;
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(bookingCardRef.current, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
+      const pad = 48;
+      const padded = document.createElement('canvas');
+      padded.width = canvas.width + pad * 2;
+      padded.height = canvas.height + pad * 2;
+      const ctx = padded.getContext('2d')!;
+      ctx.fillStyle = '#e8eaed';
+      ctx.fillRect(0, 0, padded.width, padded.height);
+      ctx.shadowColor = 'rgba(0,0,0,0.25)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 6;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(pad, pad, canvas.width, canvas.height);
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.drawImage(canvas, pad, pad);
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        padded.toBlob((b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))), 'image/png')
+      );
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard not supported
+    }
+  };
+
   const getStatusBadge = () => {
     const label = booking.status === 'CONFIRMED' || booking.status === 'confirmed' ? 'CONFIRMED'
       : booking.status === 'COMPLETED' || booking.status === 'completed' ? 'COMPLETED'
@@ -275,7 +311,7 @@ export default function BookingDetailsModal({
           <DialogTitle>Booking Details</DialogTitle>
         </VisuallyHidden.Root>
         <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-10 pr-12 pb-3 space-y-3">
-          <div className="p-3 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm relative sm:p-3">
+          <div ref={bookingCardRef} className="p-3 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm relative sm:p-3">
             <div className="flex justify-between items-start gap-3 mb-2">
               <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-gray-500">BOOKING</span>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -286,33 +322,43 @@ export default function BookingDetailsModal({
                       : 'bg-blue-100 text-blue-800 border border-blue-300'
                   }`}>SQ</span>
                 )}
+                {booking.serviceClientType && (
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold ${
+                    booking.serviceClientType === 'new'
+                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                      : 'bg-blue-100 text-blue-700 border border-blue-300'
+                  }`}>
+                    {booking.serviceClientType === 'new' ? 'New' : 'Repeat'}
+                  </span>
+                )}
                 {getStatusBadge()}
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="inline-flex items-center justify-center rounded-lg p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                  title="Copy booking details as image"
+                >
+                  {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm sm:text-base font-semibold text-[#1a1a1a]">{booking.clientName}</h3>
-              {booking.serviceClientType && (
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                  booking.serviceClientType === 'new'
-                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
-                    : 'bg-blue-100 text-blue-700 border border-blue-300'
-                }`}>
-                  {booking.serviceClientType === 'new' ? 'New Client' : 'Repeat Client'}
-                </span>
-              )}
-            </div>
-            {booking.bookingCode && (
-              <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">{booking.bookingCode}</p>
-            )}
-            {onViewClient && (
-              <button
-                type="button"
-                onClick={onViewClient}
-                className="inline-flex items-center gap-1.5 mt-2 rounded-lg px-2.5 py-1 text-xs font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 cursor-pointer transition-colors"
-              >
-                <i className="bi bi-person-lines-fill"></i>
-                View Client Profile
-              </button>
+            <h3 className="text-sm sm:text-base font-semibold text-[#1a1a1a]">{booking.clientName}</h3>
+            {(booking.bookingCode || onViewClient) && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {booking.bookingCode && (
+                  <span className="text-[11px] sm:text-xs text-gray-500">{booking.bookingCode}</span>
+                )}
+                {onViewClient && (
+                  <button
+                    type="button"
+                    onClick={onViewClient}
+                    title="View Client Profile"
+                    className="inline-flex items-center justify-center text-blue-500 hover:text-blue-700 cursor-pointer transition-colors"
+                  >
+                    <i className="bi bi-person-lines-fill text-sm"></i>
+                  </button>
+                )}
+              </div>
             )}
             <div className="flex flex-col gap-1.5 mt-3 text-xs sm:text-sm text-[#1a1a1a]">
               <div className="flex items-center gap-2">
@@ -595,23 +641,21 @@ export default function BookingDetailsModal({
           ) : isCompleted ? (
             <div className="flex w-full max-w-full flex-col gap-3">
               {invoiceFooterActions}
-              <div className="flex flex-wrap gap-2 w-full">
-                <Button
-                  variant="outline"
-                  className="shrink-0"
-                  onClick={() => {
-                    const paid = booking.pricing?.paidAmount ?? booking.amountPaid ?? 0;
-                    const tip = booking.pricing?.tipAmount ?? 0;
-                    setUpdatePaidAmount(String(paid));
-                    setUpdateTipAmount(String(tip));
-                    setShowUpdatePaymentDialog(true);
-                  }}
-                  disabled={!onUpdatePayment}
-                >
-                  <i className="bi bi-currency-dollar mr-2"></i>
-                  Update Payment
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  const paid = booking.pricing?.paidAmount ?? booking.amountPaid ?? 0;
+                  const tip = booking.pricing?.tipAmount ?? 0;
+                  setUpdatePaidAmount(String(paid));
+                  setUpdateTipAmount(String(tip));
+                  setShowUpdatePaymentDialog(true);
+                }}
+                disabled={!onUpdatePayment}
+              >
+                <i className="bi bi-currency-dollar mr-2"></i>
+                Update Payment
+              </Button>
             </div>
           ) : (
             ['CONFIRMED', 'confirmed'].includes(booking.status) && (

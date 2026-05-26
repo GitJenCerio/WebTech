@@ -597,6 +597,7 @@ export default function CalendarPage() {
 
   const handleViewClientProfile = () => {
     if (!selectedBooking?.customerId) return;
+    setShowModal(false);
     setShowClientProfileModal(true);
   };
 
@@ -1369,7 +1370,10 @@ export default function CalendarPage() {
 
       <ClientProfileModal
         open={showClientProfileModal}
-        onOpenChange={setShowClientProfileModal}
+        onOpenChange={(open) => {
+          setShowClientProfileModal(open);
+          if (!open && selectedBooking) setShowModal(true);
+        }}
         customerId={selectedBooking?.customerId}
       />
 

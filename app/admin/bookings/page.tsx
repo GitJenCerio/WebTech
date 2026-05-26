@@ -472,6 +472,7 @@ export default function BookingsPage() {
 
   const handleViewClientProfile = () => {
     if (!selectedBooking?.customerId) return;
+    setShowModal(false);
     setShowClientProfileModal(true);
   };
 
@@ -1667,7 +1668,10 @@ export default function BookingsPage() {
 
       <ClientProfileModal
         open={showClientProfileModal}
-        onOpenChange={setShowClientProfileModal}
+        onOpenChange={(open) => {
+          setShowClientProfileModal(open);
+          if (!open && selectedBooking) setShowModal(true);
+        }}
         customerId={selectedBooking?.customerId}
       />
 

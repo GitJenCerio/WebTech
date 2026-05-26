@@ -527,12 +527,13 @@ export default function InvoiceModal({
           <Button type="button" variant="secondary" size="sm" className="shrink-0 px-2 bg-red-100 hover:bg-red-200 text-red-600 border-red-200" onClick={onClose} title="Close">
             <X className="h-4 w-4 text-red-600" />
           </Button>
-          <Button type="button" variant="outline" size="sm" className="shrink-0 bg-blue-100 hover:bg-blue-200 text-blue-600 border-blue-200" onClick={handleDownload} title="Save as Image">
-            <Download className="h-4 w-4 text-blue-600 mr-1.5" />Save as Image
+          <Button type="button" variant="outline" size="sm" className="shrink-0 bg-blue-100 hover:bg-blue-200 text-blue-600 border-blue-200 px-2.5" onClick={handleDownload} title="Save as Image">
+            <Download className="h-4 w-4 text-blue-600" />
+            <span className="hidden sm:inline ml-1.5">Save as Image</span>
           </Button>
-          <Button type="button" variant="outline" size="sm" className="shrink-0 bg-violet-100 hover:bg-violet-200 text-violet-600 border-violet-200" onClick={handleCopy} title="Copy Image">
-            {copied ? <Check className="h-4 w-4 text-violet-600 mr-1.5" /> : <Copy className="h-4 w-4 text-violet-600 mr-1.5" />}
-            {copied ? 'Copied!' : 'Copy Image'}
+          <Button type="button" variant="outline" size="sm" className="shrink-0 bg-violet-100 hover:bg-violet-200 text-violet-600 border-violet-200 px-2.5" onClick={handleCopy} title="Copy Image">
+            {copied ? <Check className="h-4 w-4 text-violet-600" /> : <Copy className="h-4 w-4 text-violet-600" />}
+            <span className="hidden sm:inline ml-1.5">{copied ? 'Copied!' : 'Copy Image'}</span>
           </Button>
           <Button
             type="button"
