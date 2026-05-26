@@ -8,10 +8,64 @@
 import { Resend } from 'resend';
 import { createUploadProofToken } from '@/lib/uploadProofToken';
 import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
+import connectDB from '@/lib/mongodb';
+import Slot from '@/lib/models/Slot';
 
 /** Brand logo - direct image URL for email embedding */
 const BRAND_LOGO_URL = 'https://i.imgur.com/igZLzzU.png';
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'glammednailsbyjhen';
+
+function formatSlotDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  const date = new Date(`${dateStr}T00:00:00+08:00`);
+  if (Number.isNaN(date.getTime())) return dateStr;
+  return new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+}
+
+function formatSlotTime(timeStr?: string): string {
+  if (!timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return timeStr || '';
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
+  return `${hour12}:${String(minutes).padStart(2, '0')} ${period}`;
+}
+
+async function getBookingAppointmentSchedule(booking: any): Promise<{ date: string; time: string }> {
+  const fallbackDate = formatSlotDate(booking?.appointmentDate);
+  const fallbackTime = Array.isArray(booking?.appointmentTimes)
+    ? booking.appointmentTimes.map((t: string) => formatSlotTime(t)).filter(Boolean).join(', ')
+    : formatSlotTime(booking?.appointmentTime);
+
+  const slotIds = Array.isArray(booking?.slotIds) ? booking.slotIds : [];
+  if (!slotIds.length) {
+    return { date: fallbackDate || 'TBA', time: fallbackTime || 'TBA' };
+  }
+
+  try {
+    await connectDB();
+    const slots = await Slot.find({ _id: { $in: slotIds } })
+      .sort({ date: 1, time: 1 })
+      .select('date time')
+      .lean();
+
+    const date = formatSlotDate((slots[0] as { date?: string } | undefined)?.date) || fallbackDate || 'TBA';
+    const times = slots
+      .map((slot: any) => formatSlotTime(slot?.time))
+      .filter(Boolean)
+      .join(', ');
+
+    return { date, time: times || fallbackTime || 'TBA' };
+  } catch (error) {
+    console.error('Failed to load booking slots for email schedule:', error);
+    return { date: fallbackDate || 'TBA', time: fallbackTime || 'TBA' };
+  }
+}
 
 /**
  * Wrap email content in branded template with logo
@@ -239,6 +293,7 @@ export async function sendBookingPendingEmail(booking: any, customer: any) {
     const uploadProofLink = getUploadProofLink(booking);
     const depositRequired = booking.pricing?.depositRequired ?? 0;
     const qr = getPaymentQrUrls();
+    const appointment = await getBookingAppointmentSchedule(booking);
 
     const content = `
       <h1 style="color: #1a1a1a; margin: 0 0 16px; font-size: 24px;">Your Booking is Pending</h1>
@@ -254,6 +309,8 @@ export async function sendBookingPendingEmail(booking: any, customer: any) {
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
         <tr><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Booking Code</td><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb;">${booking.bookingCode}</td></tr>
         <tr><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Status</td><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb;">${booking.status}</td></tr>
+        <tr><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Appointment Date</td><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb;">${appointment.date}</td></tr>
+        <tr><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Appointment Time</td><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb;">${appointment.time}</td></tr>
         <tr><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151;">Deposit due</td><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb;"><strong>PHP ${depositRequired.toLocaleString()}</strong></td></tr>
       </table>
 
@@ -393,11 +450,14 @@ export async function sendBookingRescheduledEmail(booking: any, customer: any, r
     }
 
     const resend = new Resend(process.env.RESEND_API_KEY);
+    const appointment = await getBookingAppointmentSchedule(booking);
     const content = `
       <h1 style="color: #1a1a1a; margin: 0 0 16px; font-size: 24px;">Booking Rescheduled</h1>
       <p style="margin: 0 0 16px;">Hi ${customer.name},</p>
       <p style="margin: 0 0 16px;">Your booking was rescheduled by our team.</p>
       <p style="margin: 0 0 8px;"><strong>Booking Code:</strong> ${booking.bookingCode}</p>
+      <p style="margin: 0 0 8px;"><strong>Appointment Date:</strong> ${appointment.date}</p>
+      <p style="margin: 0 0 8px;"><strong>Appointment Time:</strong> ${appointment.time}</p>
       ${reason ? `<p style="margin: 0 0 16px;"><strong>Reason:</strong> ${reason}</p>` : ''}
       <p style="color: #6b7280; font-size: 14px; margin: 0;">Please contact us if you have questions.</p>
     `;
