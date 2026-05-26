@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
+import ClientProfileModal from '@/components/admin/ClientProfileModal';
 import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
 import AddBookingModal from '@/components/admin/bookings/AddBookingModal';
 import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
@@ -146,7 +147,21 @@ export default function BookingsPage() {
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number; discountAmount?: number };
     clientPhotoUploadUrl?: string | null;
     clientPhotoUploadExpiresAt?: string | null;
+    serviceClientType?: 'new' | 'repeat';
+    clientNailHistory?: {
+      hasRussianManicure?: boolean;
+      hasGelOverlay?: boolean;
+      hasSoftgelExtensions?: boolean;
+    };
+    clientHealthInfo?: {
+      allergies?: string;
+      nailConcerns?: string;
+      nailDamageHistory?: string;
+    };
+    clientInspoDescription?: string;
+    clientTotalBookings?: number;
   } | null>(null);
+  const [showClientProfileModal, setShowClientProfileModal] = useState(false);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [isManualConfirming, setIsManualConfirming] = useState(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
@@ -433,10 +448,31 @@ export default function BookingsPage() {
     return () => { cancelled = true; };
   }, [showModal, selectedBooking?.id]);
 
+  // Fetch customer profile data when modal opens to show new/repeat status and nail history
+  useEffect(() => {
+    if (!showModal || !selectedBooking?.customerId) return;
+    let cancelled = false;
+    fetch(`/api/customers/${selectedBooking.customerId}`)
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (cancelled || !data?.customer) return;
+        const c = data.customer;
+        setSelectedBooking((prev) => prev ? {
+          ...prev,
+          serviceClientType: c.clientType === 'NEW' ? 'new' : c.clientType === 'REPEAT' ? 'repeat' : prev.serviceClientType,
+          clientNailHistory: c.nailHistory ?? prev.clientNailHistory,
+          clientHealthInfo: c.healthInfo ?? prev.clientHealthInfo,
+          clientInspoDescription: c.inspoDescription ?? prev.clientInspoDescription,
+          clientTotalBookings: c.totalBookings ?? prev.clientTotalBookings,
+        } : null);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [showModal, selectedBooking?.customerId]);
 
   const handleViewClientProfile = () => {
     if (!selectedBooking?.customerId) return;
-    router.push(`/admin/clients?customerId=${selectedBooking.customerId}`);
+    setShowClientProfileModal(true);
   };
 
   const openReasonDialog = (action: 'cancel' | 'reschedule' | 'mark_no_show') => {
@@ -1600,6 +1636,7 @@ export default function BookingsPage() {
           setSelectedBooking(null);
         }}
         booking={selectedBooking}
+        onViewClient={selectedBooking?.customerId ? handleViewClientProfile : undefined}
         adminNotesDraft={adminNotesDraft}
         onAdminNotesChange={setAdminNotesDraft}
         onSaveNotes={handleSaveNotes}
@@ -1626,6 +1663,12 @@ export default function BookingsPage() {
         onLinkGenerated={(url, expiresAt) => {
           setSelectedBooking((prev) => prev ? { ...prev, clientPhotoUploadUrl: url, clientPhotoUploadExpiresAt: expiresAt } : prev);
         }}
+      />
+
+      <ClientProfileModal
+        open={showClientProfileModal}
+        onOpenChange={setShowClientProfileModal}
+        customerId={selectedBooking?.customerId}
       />
 
       <RescheduleSlotModal

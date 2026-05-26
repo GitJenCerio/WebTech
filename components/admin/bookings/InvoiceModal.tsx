@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
-import { Trash2, ChevronDown } from 'lucide-react';
+import { Trash2, ChevronDown, X, Download } from 'lucide-react';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
 import { getSlotServiceDisplay } from '@/lib/serviceLabels';
@@ -167,9 +167,8 @@ export default function InvoiceModal({
           <div className="space-y-4">
             <Label className="text-base font-semibold">Invoice Items</Label>
             <div className="space-y-2">
-              <Label className="text-sm">Add from Pricing</Label>
-              <div className="relative flex gap-2">
-                <div className="relative flex-1">
+<div className="relative flex gap-2">
+                <div className="relative w-full">
                   <Input
                     ref={searchInputRef}
                     value={serviceSearch}
@@ -215,22 +214,6 @@ export default function InvoiceModal({
                     </div>
                   )}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    const filtered = filteredServices();
-                    if (filtered.length >= 1) {
-                      handleSelectService(filtered[0]);
-                    } else if (selectedPricingService) {
-                      onAddFromPricing(selectedPricingService);
-                      onSelectedPricingServiceChange('');
-                    }
-                  }}
-                  disabled={filteredServices().length === 0 && !selectedPricingService}
-                >
-                  Add
-                </Button>
               </div>
               {pricingLoading && <div className="text-gray-500 text-sm">Loading pricing...</div>}
               {pricingError && <div className="text-red-600 text-sm">{pricingError}</div>}
@@ -241,11 +224,12 @@ export default function InvoiceModal({
                 <p className="text-sm text-gray-500 py-2">No items yet. Select a service from the pricing list above or add items manually below.</p>
               )}
               {invoiceItems.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-12 gap-2 items-end">
+                <div key={idx} className="grid grid-cols-12 gap-2 items-center text-xs">
                   <div className="col-span-12 md:col-span-4">
-                    <Label className="text-xs mb-1">Description</Label>
                     <Input
                       value={item.description}
+                      placeholder="Description"
+                      className="text-xs h-8 border-gray-400" style={{ backgroundColor: '#e5e7eb', backgroundImage: 'none' }}
                       onChange={(e) => {
                         const next = [...invoiceItems];
                         next[idx].description = e.target.value;
@@ -253,12 +237,13 @@ export default function InvoiceModal({
                       }}
                     />
                   </div>
-                  <div className="col-span-4 md:col-span-2">
-                    <Label className="text-xs mb-1">Qty</Label>
+                  <div className="col-span-3 md:col-span-2">
                     <Input
                       type="number"
                       min="1"
                       value={item.quantity}
+                      placeholder="Qty"
+                      className="text-xs h-8 border-gray-400" style={{ backgroundColor: '#e5e7eb', backgroundImage: 'none' }}
                       onChange={(e) => {
                         const qty = Math.max(1, Number(e.target.value) || 1);
                         const next = [...invoiceItems];
@@ -269,11 +254,12 @@ export default function InvoiceModal({
                     />
                   </div>
                   <div className="col-span-4 md:col-span-2">
-                    <Label className="text-xs mb-1">Unit Price</Label>
                     <Input
                       type="number"
                       min="0"
                       value={item.unitPrice}
+                      placeholder="Unit Price"
+                      className="text-xs h-8 border-gray-400" style={{ backgroundColor: '#e5e7eb', backgroundImage: 'none' }}
                       onChange={(e) => {
                         const price = Math.max(0, Number(e.target.value) || 0);
                         const next = [...invoiceItems];
@@ -283,20 +269,17 @@ export default function InvoiceModal({
                       }}
                     />
                   </div>
-                  <div className="col-span-2 md:col-span-2">
-                    <Label className="text-xs mb-1">Total</Label>
-                    <Input value={item.total} disabled />
+                  <div className="col-span-4 md:col-span-2">
+                    <Input value={item.total} disabled className="text-xs h-8 font-bold border-gray-400" style={{ backgroundColor: '#e5e7eb', backgroundImage: 'none', color: '#991b1b' }} />
                   </div>
-                  <div className="col-span-2 md:col-span-2">
-                    <Button
+                  <div className="col-span-1 flex items-center justify-center">
+                    <button
                       type="button"
-                      variant="outline"
-                      size="sm"
                       onClick={() => onInvoiceItemsChange(invoiceItems.filter((_, i) => i !== idx))}
-                      className="w-full"
+                      className="flex items-center justify-center bg-transparent border-none cursor-pointer p-0"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Trash2 className="h-5 w-5 text-black" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -304,8 +287,9 @@ export default function InvoiceModal({
 
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="sm"
+              className="bg-black hover:bg-gray-800 text-white"
               onClick={() => onInvoiceItemsChange([...invoiceItems, { description: '', quantity: 1, unitPrice: 0, total: 0 }])}
             >
               <i className="bi bi-plus-circle mr-2"></i>Add Item
@@ -371,15 +355,6 @@ export default function InvoiceModal({
             )}
           </div>
 
-          <div className="text-right space-y-1 font-semibold">
-            <div>Subtotal: PHP {subtotal.toLocaleString()}</div>
-            <div>Discount: -PHP {discountAmount.toLocaleString()}</div>
-            <div>Squeeze-in Fee: PHP {squeeze.toLocaleString()}</div>
-            <div>Total: PHP {total.toLocaleString()}</div>
-            <div>Deposit Paid: -PHP {depositPaid.toLocaleString()}</div>
-            <div>Balance Due: PHP {balance.toLocaleString()}</div>
-          </div>
-
           <div className="mt-4">
             <div ref={quotationRef} className="p-4 border border-gray-200 rounded-2xl bg-white min-w-0 w-full" style={{ width: '100%', maxWidth: '960px', margin: '0 auto' }}>
               <div className="text-center mb-3 pb-2 border-b-2 border-[#212529]">
@@ -438,24 +413,25 @@ export default function InvoiceModal({
           </div>
         </div>
 
-        <DialogFooter className="flex flex-wrap gap-2 shrink-0 border-t border-gray-100 pt-3 mt-2 sm:justify-end">
-          <Button type="button" variant="secondary" className="min-w-0 shrink" onClick={onClose}>
-            Close
+        <div className="flex flex-row items-center gap-2 shrink-0 border-t border-gray-100 pt-3 mt-2 pb-8" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
+          <Button type="button" variant="secondary" size="sm" className="shrink-0 px-2 bg-red-100 hover:bg-red-200 text-red-600 border-red-200" onClick={onClose} title="Close">
+            <X className="h-4 w-4 text-red-600" />
           </Button>
-          <Button type="button" variant="outline" className="min-w-0 shrink" onClick={handleDownload}>
-            Download
+          <Button type="button" variant="outline" size="sm" className="shrink-0 px-2 bg-blue-100 hover:bg-blue-200 text-blue-600 border-blue-200" onClick={handleDownload} title="Download">
+            <Download className="h-4 w-4 text-blue-600" />
           </Button>
           <Button
             type="button"
             variant="default"
-            className="min-w-0 max-w-full shrink whitespace-normal px-3 sm:px-4"
+            size="sm"
+            className="flex-1"
             disabled={invoiceSaving}
             onClick={onSave}
             loading={invoiceSaving}
           >
-            {invoiceSaving ? 'Saving...' : currentQuotationId ? 'Update Invoice' : 'Create Invoice'}
+            {invoiceSaving ? 'Saving...' : currentQuotationId ? 'Update' : 'Create'}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

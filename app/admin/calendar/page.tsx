@@ -7,6 +7,7 @@ import CalendarPanel from '@/components/admin/bookings/CalendarPanel';
 import SlotList from '@/components/admin/bookings/SlotList';
 import SlotsOverviewTable from '@/components/admin/bookings/SlotsOverviewTable';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
+import ClientProfileModal from '@/components/admin/ClientProfileModal';
 import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
 import AddSlotModal from '@/components/admin/bookings/AddSlotModal';
 import EditSlotModal from '@/components/admin/bookings/EditSlotModal';
@@ -162,7 +163,21 @@ export default function CalendarPage() {
     completedAt?: string | null;
     clientPhotoUploadUrl?: string | null;
     clientPhotoUploadExpiresAt?: string | null;
+    serviceClientType?: 'new' | 'repeat';
+    clientNailHistory?: {
+      hasRussianManicure?: boolean;
+      hasGelOverlay?: boolean;
+      hasSoftgelExtensions?: boolean;
+    };
+    clientHealthInfo?: {
+      allergies?: string;
+      nailConcerns?: string;
+      nailDamageHistory?: string;
+    };
+    clientInspoDescription?: string;
+    clientTotalBookings?: number;
   } | null>(null);
+  const [showClientProfileModal, setShowClientProfileModal] = useState(false);
   const [isVerifyingPaymentProof, setIsVerifyingPaymentProof] = useState(false);
   const [isManualConfirming, setIsManualConfirming] = useState(false);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState(false);
@@ -582,7 +597,7 @@ export default function CalendarPage() {
 
   const handleViewClientProfile = () => {
     if (!selectedBooking?.customerId) return;
-    router.push(`/admin/clients?customerId=${selectedBooking.customerId}`);
+    setShowClientProfileModal(true);
   };
 
   const openReasonDialog = (action: 'cancel' | 'reschedule' | 'mark_no_show') => {
@@ -1000,6 +1015,28 @@ export default function CalendarPage() {
     return () => { cancelled = true; };
   }, [showModal, selectedBooking?.id]);
 
+  // Fetch customer profile data when modal opens to show new/repeat status and nail history
+  useEffect(() => {
+    if (!showModal || !selectedBooking?.customerId) return;
+    let cancelled = false;
+    fetch(`/api/customers/${selectedBooking.customerId}`)
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (cancelled || !data?.customer) return;
+        const c = data.customer;
+        setSelectedBooking((prev) => prev ? {
+          ...prev,
+          serviceClientType: c.clientType === 'NEW' ? 'new' : c.clientType === 'REPEAT' ? 'repeat' : prev.serviceClientType,
+          clientNailHistory: c.nailHistory ?? prev.clientNailHistory,
+          clientHealthInfo: c.healthInfo ?? prev.clientHealthInfo,
+          clientInspoDescription: c.inspoDescription ?? prev.clientInspoDescription,
+          clientTotalBookings: c.totalBookings ?? prev.clientTotalBookings,
+        } : null);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [showModal, selectedBooking?.customerId]);
+
   const handleCreateInvoice = async (target: 'primary' | 'secondary' = 'primary') => {
     if (!selectedBooking?.id) return;
     setInvoiceTarget(target);
@@ -1301,6 +1338,7 @@ export default function CalendarPage() {
           setSelectedBooking(null);
         }}
         booking={selectedBooking}
+        onViewClient={selectedBooking?.customerId ? handleViewClientProfile : undefined}
         adminNotesDraft={adminNotesDraft}
         onAdminNotesChange={setAdminNotesDraft}
         onSaveNotes={handleSaveNotes}
@@ -1327,6 +1365,12 @@ export default function CalendarPage() {
         onLinkGenerated={(url, expiresAt) => {
           setSelectedBooking((prev) => prev ? { ...prev, clientPhotoUploadUrl: url, clientPhotoUploadExpiresAt: expiresAt } : prev);
         }}
+      />
+
+      <ClientProfileModal
+        open={showClientProfileModal}
+        onOpenChange={setShowClientProfileModal}
+        customerId={selectedBooking?.customerId}
       />
 
       <RescheduleSlotModal
