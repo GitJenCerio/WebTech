@@ -128,12 +128,30 @@ export default function InvoiceModal({
 
   const handleDownload = async () => {
     if (!quotationRef.current) return;
-    const canvas = await html2canvas(quotationRef.current, { scale: 2, backgroundColor: '#ffffff' });
-    const imageData = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
+    const canvas = await html2canvas(quotationRef.current, {
+      scale: 3,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+    });
+
+    // Add padding around the invoice in the final image
+    const padded = document.createElement('canvas');
+    const pad = 32;
+    padded.width = canvas.width + pad * 2;
+    padded.height = canvas.height + pad * 2;
+    const ctx = padded.getContext('2d')!;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, padded.width, padded.height);
+    ctx.drawImage(canvas, pad, pad);
+
+    const imageData = padded.toDataURL('image/jpeg', 0.95);
     const ts = new Date().toISOString().split('T')[0];
+    const filename = `Invoice_${booking.clientName.replace(/\s+/g, '_')}_${ts}.jpg`;
+
+    const link = document.createElement('a');
     link.href = imageData;
-    link.download = `Invoice_${booking.clientName.replace(/\s+/g, '_')}_${ts}.png`;
+    link.download = filename;
     link.click();
   };
 
@@ -417,8 +435,8 @@ export default function InvoiceModal({
           <Button type="button" variant="secondary" size="sm" className="shrink-0 px-2 bg-red-100 hover:bg-red-200 text-red-600 border-red-200" onClick={onClose} title="Close">
             <X className="h-4 w-4 text-red-600" />
           </Button>
-          <Button type="button" variant="outline" size="sm" className="shrink-0 px-2 bg-blue-100 hover:bg-blue-200 text-blue-600 border-blue-200" onClick={handleDownload} title="Download">
-            <Download className="h-4 w-4 text-blue-600" />
+          <Button type="button" variant="outline" size="sm" className="shrink-0 bg-blue-100 hover:bg-blue-200 text-blue-600 border-blue-200" onClick={handleDownload} title="Save as Image">
+            <Download className="h-4 w-4 text-blue-600 mr-1.5" />Save as Image
           </Button>
           <Button
             type="button"
