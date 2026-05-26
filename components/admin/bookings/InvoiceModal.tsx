@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
-import { Trash2, ChevronDown, X, Download } from 'lucide-react';
+import { Trash2, ChevronDown, X, Download, Copy, Check } from 'lucide-react';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
 import { getSlotServiceDisplay } from '@/lib/serviceLabels';
@@ -88,6 +88,7 @@ export default function InvoiceModal({
   const quotationRef = useRef<HTMLDivElement>(null);
   const [serviceSearch, setServiceSearch] = useState('');
   const [serviceDropdownOpen, setServiceDropdownOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const serviceNames = useCallback(() => {
@@ -135,14 +136,23 @@ export default function InvoiceModal({
       logging: false,
     });
 
-    // Add padding around the invoice in the final image
     const padded = document.createElement('canvas');
-    const pad = 32;
+    const pad = 48;
     padded.width = canvas.width + pad * 2;
     padded.height = canvas.height + pad * 2;
     const ctx = padded.getContext('2d')!;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#e8eaed';
     ctx.fillRect(0, 0, padded.width, padded.height);
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 6;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(pad, pad, canvas.width, canvas.height);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
     ctx.drawImage(canvas, pad, pad);
 
     const ts = new Date().toISOString().split('T')[0];
@@ -154,23 +164,87 @@ export default function InvoiceModal({
     );
     const file = new File([blob], filename, { type: 'image/jpeg' });
 
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    // Try Web Share API — works on iOS Safari, iOS Chrome, Android Chrome
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: filename });
         return;
-      } catch {
-        // user cancelled share — do nothing
-        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return; // user cancelled
+        // fall through to next option
       }
     }
 
-    // Fallback for desktop / browsers without file sharing
+    if (isMobile) {
+      // Open image in new tab — user can long-press → "Save to Photos / Save Image"
+      const url = URL.createObjectURL(blob);
+      const newTab = window.open(url, '_blank');
+      if (!newTab) {
+        // popup blocked — fall back to download link
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      return;
+    }
+
+    // Desktop: direct file download
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleCopy = async () => {
+    if (!quotationRef.current) return;
+    const canvas = await html2canvas(quotationRef.current, {
+      scale: 3,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+    });
+    const padded = document.createElement('canvas');
+    const pad = 48;
+    padded.width = canvas.width + pad * 2;
+    padded.height = canvas.height + pad * 2;
+    const ctx = padded.getContext('2d')!;
+
+    // Light grey background so the white invoice card stands out
+    ctx.fillStyle = '#e8eaed';
+    ctx.fillRect(0, 0, padded.width, padded.height);
+
+    // Drop shadow under the invoice card
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 6;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(pad, pad, canvas.width, canvas.height);
+
+    // Reset shadow before drawing invoice content
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.drawImage(canvas, pad, pad);
+
+    // Clipboard API only accepts PNG
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      padded.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
+    );
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      alert('Copy not supported in this browser. Try the Save button instead.');
+    }
   };
 
   return (
@@ -455,6 +529,10 @@ export default function InvoiceModal({
           </Button>
           <Button type="button" variant="outline" size="sm" className="shrink-0 bg-blue-100 hover:bg-blue-200 text-blue-600 border-blue-200" onClick={handleDownload} title="Save as Image">
             <Download className="h-4 w-4 text-blue-600 mr-1.5" />Save as Image
+          </Button>
+          <Button type="button" variant="outline" size="sm" className="shrink-0 bg-violet-100 hover:bg-violet-200 text-violet-600 border-violet-200" onClick={handleCopy} title="Copy Image">
+            {copied ? <Check className="h-4 w-4 text-violet-600 mr-1.5" /> : <Copy className="h-4 w-4 text-violet-600 mr-1.5" />}
+            {copied ? 'Copied!' : 'Copy Image'}
           </Button>
           <Button
             type="button"
