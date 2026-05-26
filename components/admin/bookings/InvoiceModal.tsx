@@ -145,14 +145,32 @@ export default function InvoiceModal({
     ctx.fillRect(0, 0, padded.width, padded.height);
     ctx.drawImage(canvas, pad, pad);
 
-    const imageData = padded.toDataURL('image/jpeg', 0.95);
     const ts = new Date().toISOString().split('T')[0];
     const filename = `Invoice_${booking.clientName.replace(/\s+/g, '_')}_${ts}.jpg`;
 
+    // On iOS, use Web Share API so the share sheet offers "Save Image" → Photos library
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      padded.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))), 'image/jpeg', 0.95)
+    );
+    const file = new File([blob], filename, { type: 'image/jpeg' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: filename });
+        return;
+      } catch {
+        // user cancelled share — do nothing
+        return;
+      }
+    }
+
+    // Fallback for desktop / browsers without file sharing
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = imageData;
+    link.href = url;
     link.download = filename;
     link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (

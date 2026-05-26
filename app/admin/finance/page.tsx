@@ -1168,7 +1168,7 @@ function mapBookingToTransactions(booking: any): Transaction[] {
     serviceClientType: (() => {
       const raw = booking.service?.clientType;
       if (!raw) return null;
-      return raw.toLowerCase() === 'repeat' ? 'repeat' : 'new';
+      return (raw.toLowerCase() === 'repeat' ? 'repeat' : 'new') as 'repeat' | 'new';
     })(),
     tip: tipAmount,
     discount: booking.pricing?.discountAmount ?? 0,
