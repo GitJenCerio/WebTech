@@ -374,9 +374,9 @@ export default function InvoiceModal({
           </div>
 
           <div className="mt-4">
-            <div ref={quotationRef} className="p-4 border border-gray-200 rounded-2xl bg-white min-w-0 w-full" style={{ width: '100%', maxWidth: '960px', margin: '0 auto' }}>
-              <div className="text-center mb-3 pb-2 border-b-2 border-[#212529]">
-                <h5 className="mb-1 font-bold tracking-wider">INVOICE</h5>
+            <div ref={quotationRef} className="px-6 pt-1 pb-6 border border-gray-200 rounded-2xl bg-white min-w-0 w-full" style={{ width: '100%', maxWidth: '960px', margin: '0 auto' }}>
+              <div className="text-center mb-2 pb-3 border-b-2 border-[#212529]">
+                <h5 className="mb-0 font-bold tracking-wider">INVOICE</h5>
               </div>
               <div className="mb-3 space-y-1">
                 <div><strong>Client:</strong> {booking.clientName}</div>
@@ -388,12 +388,12 @@ export default function InvoiceModal({
                   </div>
                 ) : null}
               </div>
-              <div className="mb-3 space-y-3">
+              <div className="mb-1 space-y-2">
                 {invoiceItems.map((item, idx) => (
-                  <div key={idx} className="flex justify-between gap-4 items-start">
+                  <div key={idx} className="flex justify-between gap-8 items-start py-1">
                     <div className="min-w-0 flex-1">
                       <div className="break-words font-medium text-xs">{item.description}</div>
-                      <div className="text-xs md:text-sm text-gray-600 mt-0.5">
+                      <div className="text-xs md:text-sm text-gray-600 mt-1">
                         PHP {(item.unitPrice || 0).toLocaleString()} x Qty. {item.quantity}
                       </div>
                     </div>
@@ -401,28 +401,28 @@ export default function InvoiceModal({
                   </div>
                 ))}
               </div>
-              <div className="space-y-1 pt-2 border-t-2 border-[#212529] text-xs md:text-base">
-                <div className="flex justify-between gap-4 font-semibold">
+              <div className="space-y-2 pt-1 border-t-2 border-[#212529] text-xs md:text-base">
+                <div className="flex justify-between gap-8 font-semibold py-0.5">
                   <span className="min-w-0">Subtotal</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between gap-4">
+                <div className="flex justify-between gap-8 py-0.5">
                   <span className="min-w-0">Discount</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">-PHP {discountAmount.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between gap-4">
+                <div className="flex justify-between gap-8 py-0.5">
                   <span className="min-w-0">Squeeze-in Fee</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {squeeze.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between gap-4 font-semibold pt-2 border-t border-[#212529]">
+                <div className="flex justify-between gap-8 font-semibold pt-2 border-t border-[#212529]">
                   <span className="min-w-0">Total</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {total.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between gap-4">
+                <div className="flex justify-between gap-8 py-0.5">
                   <span className="min-w-0">Deposit Paid</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">-PHP {depositPaid.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between gap-4 font-semibold pt-2 border-t border-[#212529]">
+                <div className="flex justify-between gap-8 font-bold pt-2 border-t border-[#212529] text-base md:text-lg">
                   <span className="min-w-0">Balance Due</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {balance.toLocaleString()}</span>
                 </div>
