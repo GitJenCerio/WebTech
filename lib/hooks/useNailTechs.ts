@@ -9,6 +9,8 @@ export interface NailTechBasic {
   discount?: number;
   commissionRate?: number;
   adminCommissionRate?: number;
+  salary?: number;
+  commissionTiers?: Array<{ threshold: number; rate: number }>;
 }
 
 export function useNailTechs(): {
@@ -29,13 +31,15 @@ export function useNailTechs(): {
       if (!res.ok) throw new Error('Failed to load nail techs');
       const data = await res.json();
       const raw = data.nailTechs || [];
-      setNailTechs(raw.map((t: { id?: string; _id?: string; name: string; role?: string; specialties?: string[]; discount?: number; commissionRate?: number; adminCommissionRate?: number }) => ({
+      setNailTechs(raw.map((t: any) => ({
         id: t.id || t._id || '',
         name: t.name,
         role: t.specialties?.[0] || t.role || 'Nail Tech',
         discount: typeof t.discount === 'number' ? t.discount : undefined,
         commissionRate: typeof t.commissionRate === 'number' ? t.commissionRate : undefined,
         adminCommissionRate: typeof t.adminCommissionRate === 'number' ? t.adminCommissionRate : undefined,
+        salary: typeof t.salary === 'number' ? t.salary : undefined,
+        commissionTiers: Array.isArray(t.commissionTiers) ? t.commissionTiers : undefined,
       })));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load nail techs');

@@ -44,6 +44,8 @@ export async function PATCH(
       discount: parseOptionalNumber(body.discount),
       commissionRate: parseOptionalNumber(body.commissionRate),
       adminCommissionRate: parseOptionalNumber(body.adminCommissionRate),
+      salary: parseOptionalNumber(body.salary),
+      commissionTiers: Array.isArray(body.commissionTiers) ? body.commissionTiers : undefined,
       status: body.status,
     };
 

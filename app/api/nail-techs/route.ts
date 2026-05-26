@@ -57,6 +57,8 @@ export async function POST(request: Request) {
       discount: typeof body.discount === 'number' ? body.discount : undefined,
       commissionRate: typeof body.commissionRate === 'number' ? body.commissionRate : undefined,
       adminCommissionRate: typeof body.adminCommissionRate === 'number' ? body.adminCommissionRate : undefined,
+      salary: typeof body.salary === 'number' ? body.salary : undefined,
+      commissionTiers: Array.isArray(body.commissionTiers) ? body.commissionTiers : undefined,
       status: body.status || 'Active',
     };
 

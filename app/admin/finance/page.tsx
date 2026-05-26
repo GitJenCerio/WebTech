@@ -31,6 +31,8 @@ interface Transaction {
   customerSocialMediaName: string;
   service: string;
   serviceLocation?: 'homebased_studio' | 'home_service';
+  slotType?: 'regular' | 'with_squeeze_fee' | null;
+  serviceClientType?: 'new' | 'repeat' | null;
   total: number;
   paid: number;
   tip: number;
@@ -302,6 +304,57 @@ export default function FinancePage() {
       .reduce((sum, t) => sum + getBookingNailTechCommissionAmount(t), 0);
   }, [filteredTransactions, nailTechs]);
 
+  const getQuotaCommissionRate = (weeklySales: number, techId?: string): number => {
+    const tech = techId ? nailTechs.find((n) => n.id === techId) : null;
+    if (tech?.commissionTiers?.length) {
+      const tiers = [...tech.commissionTiers].sort((a, b) => b.threshold - a.threshold);
+      for (const tier of tiers) {
+        if (weeklySales >= tier.threshold) return tier.rate;
+      }
+      return 0;
+    }
+    // Without quota: use flat commission rate if set
+    if (tech && tech.commissionRate != null) {
+      return tech.commissionRate * 100;
+    }
+    return 0;
+  };
+
+  const getMondayKey = (dateStr: string): string => {
+    const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diff);
+    return monday.toISOString().slice(0, 10);
+  };
+
+  const buildWeeklySalesMap = (rows: Transaction[]): Map<string, number> => {
+    const map = new Map<string, number>();
+    for (const t of rows) {
+      if (!t.appointmentDate) continue;
+      const weekKey = getMondayKey(t.appointmentDate);
+      const techKey = `${t.nailTechId || '_unknown'}__${weekKey}`;
+      const bill = t.total - (t.slotType === 'with_squeeze_fee' ? 500 : 0);
+      map.set(techKey, (map.get(techKey) || 0) + bill);
+    }
+    return map;
+  };
+
+  const tableWeeklySalesMap = useMemo(
+    () => buildWeeklySalesMap(filteredTransactions),
+    [filteredTransactions, nailTechs]
+  );
+
+  const getTableCommission = (item: Transaction): number => {
+    const sqFee = item.slotType === 'with_squeeze_fee' ? 500 : 0;
+    const bill = item.total - sqFee;
+    const apptDate = item.appointmentDate?.includes('T') ? item.appointmentDate.slice(0, 10) : item.appointmentDate || '';
+    const weekKey = apptDate ? `${item.nailTechId || '_unknown'}__${getMondayKey(apptDate)}` : '';
+    const rate = getQuotaCommissionRate(tableWeeklySalesMap.get(weekKey) || 0, item.nailTechId);
+    return bill * rate / 100;
+  };
+
   const revenueByNailTech = useMemo(() => {
     const paidTx = filteredTransactions.filter((t) => t.paymentStatus === 'paid');
     const byTech = new Map<string, { name: string; total: number; count: number; commissionRate: number }>();
@@ -340,72 +393,84 @@ export default function FinancePage() {
     }));
   }, [revenueByNailTech, nailTechs]);
 
+  const buildTimeStr = (t: Transaction): string => {
+    const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
+      ? [...t.appointmentTimes].sort((a, b) => {
+          const toMins = (s: string) => {
+            const match = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+            if (!match) return 0;
+            let h = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10);
+            const ampm = (match[3] || '').toUpperCase();
+            if (ampm === 'PM' && h !== 12) h += 12;
+            if (ampm === 'AM' && h === 12) h = 0;
+            return h * 60 + m;
+          };
+          return toMins(a) - toMins(b);
+        })
+      : [];
+    return sortedTimes.length > 0
+      ? sortedTimes.map(formatTime12Hour).join(', ')
+      : (t.appointmentTime ? formatTime12Hour(t.appointmentTime) : '');
+  };
+
   const exportToCsv = () => {
     const dateLabel = dateFrom || dateTo ? `${dateFrom || 'all'}-to-${dateTo || 'all'}` : 'all';
     const headers = [
-      'Appt Date',
-      'Time',
+      'Date',
+      'Timeslot',
       'Social Media Name',
-      'Service',
-      'ST/HS',
-      'Invoice',
+      'Client Type',
+      'Service Availed',
+      'Slot Type',
+      'Location',
+      'Total Bill',
       'Paid Amount',
-      'Balance',
       'Tip',
-      'Admin Commission',
-      'Nail Tech Commission',
+      'Commission',
     ];
     const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
+    const weeklySales = buildWeeklySalesMap(byDateAsc);
+
     const rows = byDateAsc.map((t) => {
-      const totalInvoice = t.total;
-      const tipAmount = t.tip;
-      const adminCom = getBookingAdminCommissionAmount(t);
-      const techCom = getBookingNailTechCommissionAmount(t);
+      const sqFee = t.slotType === 'with_squeeze_fee' ? 500 : 0;
+      const totalBill = t.total - sqFee;
+      const paidNoSq = Math.max(0, t.paid + t.tip - sqFee);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '';
-      const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
-        ? [...t.appointmentTimes].sort((a, b) => {
-            const toMins = (s: string) => {
-              const match = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-              if (!match) return 0;
-              let h = parseInt(match[1], 10);
-              const m = parseInt(match[2], 10);
-              const ampm = (match[3] || '').toUpperCase();
-              if (ampm === 'PM' && h !== 12) h += 12;
-              if (ampm === 'AM' && h === 12) h = 0;
-              return h * 60 + m;
-            };
-            return toMins(a) - toMins(b);
-          })
-        : [];
-      const timeStr = sortedTimes.length > 0
-        ? sortedTimes.map(formatTime12Hour).join(', ')
-        : (t.appointmentTime ? formatTime12Hour(t.appointmentTime) : '');
-      const stHs = t.serviceLocation === 'home_service' ? 'HS' : t.serviceLocation === 'homebased_studio' ? 'ST' : '';
+      const weekKey = apptDate ? `${t.nailTechId || '_unknown'}__${getMondayKey(apptDate)}` : '';
+      const commRate = getQuotaCommissionRate(weeklySales.get(weekKey) || 0, t.nailTechId);
+      const commission = totalBill * commRate / 100;
+      const timeStr = buildTimeStr(t);
+      const clientType = t.serviceClientType === 'new' ? 'New' : t.serviceClientType === 'repeat' ? 'Repeat' : '';
+      const slotLabel = t.slotType === 'with_squeeze_fee' ? 'Squeeze-in' : 'Regular';
+      const location = t.serviceLocation === 'home_service' ? 'Home Service' : t.serviceLocation === 'homebased_studio' ? 'Studio' : '';
       return [
         apptDate,
         `"${(timeStr || '').replace(/"/g, '""')}"`,
         `"${(t.customerSocialMediaName || '').replace(/"/g, '""')}"`,
-        `"${(t.service || '').replace(/"/g, '""')}"`,
-        stHs,
-        totalInvoice,
-        t.paid,
-        t.balance,
-        tipAmount,
-        adminCom,
-        techCom,
+        clientType,
+        `"${(getSlotServiceDisplay(t.service) || '').replace(/"/g, '""')}"`,
+        slotLabel,
+        location,
+        totalBill,
+        paidNoSq,
+        t.tip,
+        commission.toFixed(2),
       ];
     });
-    const sumTotal = filteredTransactions.reduce((s, t) => s + t.total, 0);
-    const sumPaid = filteredTransactions.reduce((s, t) => s + t.paid, 0);
-    const sumTip = filteredTransactions.reduce((s, t) => s + t.tip, 0);
-    const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
-    const sumCommission = filteredTransactions
-      .filter((t) => t.paymentStatus === 'paid')
-      .reduce((s, t) => s + getBookingAdminCommissionAmount(t), 0);
-    const sumTechCommission = filteredTransactions
-      .filter((t) => t.paymentStatus === 'paid')
-      .reduce((s, t) => s + getBookingNailTechCommissionAmount(t), 0);
-    const totalRow = ['Total', '', '', '', '', sumTotal, sumPaid, sumBalance, sumTip, sumCommission, sumTechCommission];
+
+    const sumBill = byDateAsc.reduce((s, t) => s + t.total - (t.slotType === 'with_squeeze_fee' ? 500 : 0), 0);
+    const sumPaid = byDateAsc.reduce((s, t) => s + Math.max(0, t.paid + t.tip - (t.slotType === 'with_squeeze_fee' ? 500 : 0)), 0);
+    const sumTip = byDateAsc.reduce((s, t) => s + t.tip, 0);
+    const sumCommission = byDateAsc.reduce((t, tx) => {
+      const sqFee = tx.slotType === 'with_squeeze_fee' ? 500 : 0;
+      const bill = tx.total - sqFee;
+      const apptDate = tx.appointmentDate?.includes('T') ? tx.appointmentDate.slice(0, 10) : tx.appointmentDate || '';
+      const weekKey = apptDate ? `${tx.nailTechId || '_unknown'}__${getMondayKey(apptDate)}` : '';
+      const rate = getQuotaCommissionRate(weeklySales.get(weekKey) || 0, tx.nailTechId);
+      return t + bill * rate / 100;
+    }, 0);
+    const totalRow = ['Total', '', '', '', '', '', '', sumBill, sumPaid, sumTip, sumCommission.toFixed(2)];
     const csv = [headers.join(','), ...rows.map((r) => r.join(',')), totalRow.join(',')].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -417,7 +482,16 @@ export default function FinancePage() {
   };
 
   const exportToPdf = () => {
-    const dateLabel = dateFrom || dateTo ? `${dateFrom || 'all'} to ${dateTo || 'all'}` : 'All Time';
+    const fmtDateLabel = (d: string | undefined) => {
+      if (!d) return undefined;
+      const dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
+    };
+    const startFmt = fmtDateLabel(dateFrom);
+    const endFmt = fmtDateLabel(dateTo);
+    const dateLabel = startFmt || endFmt
+      ? `${startFmt || 'Start'} - ${endFmt || 'End'}`
+      : 'All Time';
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
     const margin = 10;
@@ -432,95 +506,79 @@ export default function FinancePage() {
 
     const headers = [
       'Date',
-      'Time',
+      'Timeslot',
       'Social Media Name',
-      'Service',
-      'ST/HS',
-      'Invoice',
+      'Client Type',
+      'Service Availed',
+      'Slot Type',
+      'Location',
+      'Total Bill',
       'Paid Amount',
-      'Balance',
       'Tip',
-      'Admin Commission',
-      'Nail Tech Commission',
+      'Commission',
     ];
-    const fmt = (n: number) => `PHP ${String(Number(n).toLocaleString('en-US', { maximumFractionDigits: 0, minimumFractionDigits: 0 })).replace(/[^\d,.]/g, '')}`;
+    const fmt = (n: number) => `PHP ${Math.round(n).toLocaleString('en-US')}`;
+    const fmtComm = (n: number) => `PHP ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const byDateAsc = [...filteredTransactions].sort((a, b) => (a.appointmentDate || '').localeCompare(b.appointmentDate || ''));
+    const weeklySales = buildWeeklySalesMap(byDateAsc);
+
     const rows = byDateAsc.map((t) => {
-      const totalInvoice = t.total;
-      const tipAmount = t.tip;
-      const commission = getBookingAdminCommissionAmount(t);
-      const nailTechCom = getBookingNailTechCommissionAmount(t);
+      const sqFee = t.slotType === 'with_squeeze_fee' ? 500 : 0;
+      const totalBill = t.total - sqFee;
+      const paidNoSq = Math.max(0, t.paid + t.tip - sqFee);
       const apptDate = t.appointmentDate ? (t.appointmentDate.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate) : '—';
-      const sortedTimes = Array.isArray(t.appointmentTimes) && t.appointmentTimes.length > 0
-        ? [...t.appointmentTimes].sort((a, b) => {
-            const toMins = (s: string) => {
-              const match = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-              if (!match) return 0;
-              let h = parseInt(match[1], 10);
-              const m = parseInt(match[2], 10);
-              const ampm = (match[3] || '').toUpperCase();
-              if (ampm === 'PM' && h !== 12) h += 12;
-              if (ampm === 'AM' && h === 12) h = 0;
-              return h * 60 + m;
-            };
-            return toMins(a) - toMins(b);
-          })
-        : [];
-      const timeStr = sortedTimes.length > 0
-        ? sortedTimes.map(formatTime12Hour).join(', ')
-        : (t.appointmentTime ? formatTime12Hour(t.appointmentTime) : '');
-      const stHs = t.serviceLocation === 'home_service' ? 'HS' : t.serviceLocation === 'homebased_studio' ? 'ST' : '—';
+      const weekKey = apptDate !== '—' ? `${t.nailTechId || '_unknown'}__${getMondayKey(apptDate)}` : '';
+      const commRate = getQuotaCommissionRate(weeklySales.get(weekKey) || 0, t.nailTechId);
+      const commission = totalBill * commRate / 100;
+      const timeStr = buildTimeStr(t);
+      const clientType = t.serviceClientType === 'new' ? 'New' : t.serviceClientType === 'repeat' ? 'Repeat' : '—';
+      const slotLabel = t.slotType === 'with_squeeze_fee' ? 'Squeeze-in' : 'Regular';
+      const location = t.serviceLocation === 'home_service' ? 'Home Service' : t.serviceLocation === 'homebased_studio' ? 'Studio' : '—';
       return [
         apptDate,
         timeStr || '—',
         t.customerSocialMediaName || '—',
-        t.service || '—',
-        stHs,
-        fmt(totalInvoice),
-        fmt(t.paid),
-        fmt(t.balance),
-        fmt(tipAmount),
-        fmt(commission),
-        fmt(nailTechCom),
+        clientType,
+        getSlotServiceDisplay(t.service) || '—',
+        slotLabel,
+        location,
+        fmt(totalBill),
+        fmt(paidNoSq),
+        fmt(t.tip),
+        fmtComm(commission),
       ];
     });
 
-    const sumTotal = filteredTransactions.reduce((s, t) => s + t.total, 0);
-    const sumPaid = filteredTransactions.reduce((s, t) => s + t.paid, 0);
-    const sumTip = filteredTransactions.reduce((s, t) => s + t.tip, 0);
-    const sumCommission = filteredTransactions
-      .filter((t) => t.paymentStatus === 'paid')
-      .reduce((s, t) => s + getBookingAdminCommissionAmount(t), 0);
-    const sumNailTechCommission = filteredTransactions
-      .filter((t) => t.paymentStatus === 'paid')
-      .reduce((s, t) => s + getBookingNailTechCommissionAmount(t), 0);
-    const sumBalance = filteredTransactions.reduce((s, t) => s + t.balance, 0);
-    const totalsRow = [
-      'Total',
-      '',
-      '',
-      '',
-      '',
-      fmt(sumTotal),
-      fmt(sumPaid),
-      fmt(sumBalance),
-      fmt(sumTip),
-      fmt(sumCommission),
-      fmt(sumNailTechCommission),
-    ];
+    const sumBill = byDateAsc.reduce((s, t) => s + t.total - (t.slotType === 'with_squeeze_fee' ? 500 : 0), 0);
+    const sumPaid = byDateAsc.reduce((s, t) => s + Math.max(0, t.paid + t.tip - (t.slotType === 'with_squeeze_fee' ? 500 : 0)), 0);
+    const sumTip = byDateAsc.reduce((s, t) => s + t.tip, 0);
+    const sumAdminCommission = byDateAsc.reduce((s, t) => {
+      const tech = nailTechs.find((n) => n.id === t.nailTechId);
+      return s + t.total * (tech?.adminCommissionRate ?? 0); // on full total incl. SQ fee
+    }, 0);
+    const hasAdminCommission = sumAdminCommission > 0;
+    const sumCommission = byDateAsc.reduce((acc, t) => {
+      const sqFee = t.slotType === 'with_squeeze_fee' ? 500 : 0;
+      const bill = t.total - sqFee;
+      const apptDate = t.appointmentDate?.includes('T') ? t.appointmentDate.slice(0, 10) : t.appointmentDate || '';
+      const weekKey = apptDate ? `${t.nailTechId || '_unknown'}__${getMondayKey(apptDate)}` : '';
+      const rate = getQuotaCommissionRate(weeklySales.get(weekKey) || 0, t.nailTechId);
+      return acc + bill * rate / 100;
+    }, 0);
+
+    const totalsRow = ['Total', '', '', '', '', '', '', fmt(sumBill), fmt(sumPaid), fmt(sumTip), fmtComm(sumCommission)];
     const bodyRows = rows.length > 0 ? [...rows, totalsRow] : rows;
     const totalsRowIndex = rows.length;
 
-    const pageWidthMm = 297; // A4 landscape
+    const pageWidthMm = 297;
     const tableWidth = pageWidthMm - 2 * margin;
     autoTable(doc, {
       head: [headers],
-      footStyles: { fillColor: [255, 255, 255], fontStyle: 'bold', textColor: [0, 0, 0] },
       body: bodyRows,
       startY: 28,
       tableWidth,
       margin: { left: margin, right: margin },
-      styles: { fontSize: 8, textColor: [0, 0, 0] },
+      styles: { fontSize: 7.5, textColor: [0, 0, 0] },
       headStyles: { fillColor: [26, 26, 26], textColor: [255, 255, 255] },
       didParseCell: (data) => {
         if (data.section === 'body' && data.row.index === totalsRowIndex) {
@@ -531,6 +589,89 @@ export default function FinancePage() {
     });
 
     const finalY = (doc as any).lastAutoTable?.finalY ?? 28;
+    const selectedTech = nailTechFilter !== 'all' ? nailTechs.find((n) => n.id === nailTechFilter) : null;
+    const salary = selectedTech?.salary ?? 0;
+    const techLabel = selectedTech ? `Ms. ${selectedTech.name}` : 'All Nail Techs';
+    const totalSalary = salary + sumCommission;
+    const periodLabel = startFmt && endFmt ? `${startFmt} - ${endFmt}` : startFmt || endFmt || 'All Time';
+    const summaryX = margin;
+    const valueX = margin + 120;
+    const pageHeight = 210;
+    const summaryBlockHeight = hasAdminCommission ? 73 : 65;
+    let summaryY: number;
+    if (finalY + 10 + summaryBlockHeight > pageHeight - margin) {
+      doc.addPage();
+      summaryY = margin + 10;
+    } else {
+      summaryY = finalY + 10;
+    }
+
+    const effectiveRate = sumBill > 0 ? Math.round((sumCommission / sumBill) * 100) : 0;
+
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Period: ${periodLabel}`, summaryX, summaryY);
+
+    summaryY += 6;
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Salary (${techLabel}):`, summaryX, summaryY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`PHP ${salary.toLocaleString('en-US')}`, valueX, summaryY, { align: 'right' });
+
+    summaryY += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Commission (${effectiveRate}%):`, summaryX, summaryY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(fmtComm(sumCommission), valueX, summaryY, { align: 'right' });
+
+    summaryY += 5;
+    doc.setDrawColor(180, 180, 180);
+    doc.line(summaryX, summaryY, margin + 120, summaryY);
+
+    summaryY += 6;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text(`Total Salary (${techLabel}):`, summaryX, summaryY);
+    doc.text(fmt(totalSalary), valueX, summaryY, { align: 'right' });
+
+    const sumSqFee = byDateAsc.reduce((s, t) => s + (t.slotType === 'with_squeeze_fee' ? 500 : 0), 0);
+    const tipsAndSqFee = sumTip + sumSqFee;
+
+    summaryY += 10;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Total Tips:', summaryX, summaryY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(fmt(sumTip), valueX, summaryY, { align: 'right' });
+
+    summaryY += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.text('Total SQ Fee:', summaryX, summaryY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(fmt(sumSqFee), valueX, summaryY, { align: 'right' });
+
+    summaryY += 5;
+    doc.setDrawColor(180, 180, 180);
+    doc.line(summaryX, summaryY, margin + 120, summaryY);
+
+    summaryY += 6;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Tips + SQ Fee:', summaryX, summaryY);
+    doc.text(fmt(tipsAndSqFee), valueX, summaryY, { align: 'right' });
+
+    if (hasAdminCommission) {
+      const sumTotalWithSq = byDateAsc.reduce((s, t) => s + t.total, 0);
+      const adminRatePct = sumTotalWithSq > 0 ? Math.round((sumAdminCommission / sumTotalWithSq) * 100) : 0;
+      summaryY += 10;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Admin Commission (Total Bill + SQ Fee) (${adminRatePct}%):`, summaryX, summaryY);
+      doc.setFont('helvetica', 'bold');
+      doc.text(fmtComm(sumAdminCommission), valueX, summaryY, { align: 'right' });
+    }
 
     const filename = `finance-report-${dateFrom || 'all'}-${dateTo || 'all'}.pdf`.replace(/\//g, '-');
     doc.save(filename);
@@ -768,8 +909,7 @@ export default function FinancePage() {
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Paid Amount</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Balance</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Tip</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Admin Commission</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Nail Tech Commission</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Commission</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
                 </tr>
               </thead>
@@ -778,7 +918,7 @@ export default function FinancePage() {
                   <>
                     {Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
-                        {Array.from({ length: 11 }).map((_, j) => (
+                        {Array.from({ length: 10 }).map((_, j) => (
                           <td key={j} className="px-4 py-3">
                             <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
                           </td>
@@ -788,7 +928,7 @@ export default function FinancePage() {
                   </>
                 ) : paginatedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="px-4 py-16 text-center">
+                    <td colSpan={10} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
                         <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
                           <Search className="h-6 w-6 text-gray-300" />
@@ -808,8 +948,7 @@ export default function FinancePage() {
                   </tr>
                 ) : (
                   paginatedTransactions.map((item) => {
-                    const adminCom = getBookingAdminCommissionAmount(item);
-                    const techCom = getBookingNailTechCommissionAmount(item);
+                    const commission = getTableCommission(item);
                     return (
                     <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100">
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
@@ -833,8 +972,7 @@ export default function FinancePage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.tip.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{adminCom.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
-                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{techCom.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                      <td className="px-4 py-3 text-gray-500 tabular-nums">₱{Math.round(commission).toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                       <td className="px-4 py-3">{getPaymentStatusBadge(item.paymentStatus)}</td>
                     </tr>
                     );
@@ -930,12 +1068,8 @@ export default function FinancePage() {
                       <p className="text-[#1a1a1a]">₱{item.tip.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                     <div>
-                      <span className="text-gray-400 text-xs">Admin Commission</span>
-                      <p className="text-[#1a1a1a]">₱{getBookingAdminCommissionAmount(item).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 text-xs">Nail Tech Commission</span>
-                      <p className="text-[#1a1a1a]">₱{getBookingNailTechCommissionAmount(item).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      <span className="text-gray-400 text-xs">Commission</span>
+                      <p className="text-[#1a1a1a]">₱{Math.round(getTableCommission(item)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                   </div>
                 </div>
@@ -1030,6 +1164,12 @@ function mapBookingToTransactions(booking: any): Transaction[] {
     customerSocialMediaName: booking.customerSocialMediaName || '',
     service: booking.service?.type || 'Nail Service',
     serviceLocation: booking.service?.location,
+    slotType: booking.service?.slotType ?? booking.slotType ?? null,
+    serviceClientType: (() => {
+      const raw = booking.service?.clientType;
+      if (!raw) return null;
+      return raw.toLowerCase() === 'repeat' ? 'repeat' : 'new';
+    })(),
     tip: tipAmount,
     discount: booking.pricing?.discountAmount ?? 0,
     paymentStatus,

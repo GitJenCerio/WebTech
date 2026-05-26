@@ -10,6 +10,8 @@ export interface INailTech extends Document {
   discount?: number;
   commissionRate?: number;
   adminCommissionRate?: number;
+  salary?: number;
+  commissionTiers?: Array<{ threshold: number; rate: number }>;
   status: NailTechStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -36,6 +38,8 @@ const NailTechSchema = new Schema<INailTech>(
     discount: { type: Number },
     commissionRate: { type: Number },
     adminCommissionRate: { type: Number },
+    salary: { type: Number },
+    commissionTiers: { type: [{ threshold: Number, rate: Number }], default: undefined },
     status: {
       type: String,
       required: true,

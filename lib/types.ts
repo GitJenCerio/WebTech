@@ -45,6 +45,8 @@ export interface NailTech {
   discount?: number; // Discount percentage (e.g., 15 for 15% discount)
   commissionRate?: number; // Commission rate (e.g., 0.3 for 30%)
   adminCommissionRate?: number; // Admin commission rate (e.g., 0.1 for 10%)
+  salary?: number; // Fixed weekly/period salary (e.g., 5000)
+  commissionTiers?: Array<{ threshold: number; rate: number }>; // e.g. [{threshold:15000,rate:10},{threshold:20000,rate:15}]
   status: NailTechStatus;
   createdAt: string;
   updatedAt: string;

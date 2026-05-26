@@ -162,6 +162,8 @@ function docToNailTech(doc: INailTech | (INailTech & { _id?: any })): NailTech {
     discount: data.discount ?? undefined,
     commissionRate: data.commissionRate ?? undefined,
     adminCommissionRate: data.adminCommissionRate ?? undefined,
+    salary: data.salary ?? undefined,
+    commissionTiers: data.commissionTiers ?? undefined,
     status: data.status,
     createdAt: createdAtValue,
     updatedAt: updatedAtValue,

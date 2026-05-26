@@ -19,24 +19,38 @@ import type { NailTech as NailTechType, ServiceAvailability } from '@/lib/types'
 
 const PAGE_SIZE = 10;
 
+type CommissionTierForm = { threshold: string; rate: string };
+
 type NailTechFormState = {
   name: string;
   role: NailTechType['role'];
   serviceAvailability: ServiceAvailability;
   discount: string;
-  commissionRate: string;
   adminCommissionRate: string;
+  salary: string;
+  commissionType: 'with_quota' | 'without_quota';
+  commissionRate: string;
+  commissionTiers: CommissionTierForm[];
   workingDays: string[];
   status: NailTechType['status'];
 };
+
+const DEFAULT_TIERS: CommissionTierForm[] = [
+  { threshold: '15000', rate: '10' },
+  { threshold: '20000', rate: '15' },
+  { threshold: '25000', rate: '20' },
+];
 
 const DEFAULT_FORM_STATE: NailTechFormState = {
   name: '',
   role: 'Junior Tech',
   serviceAvailability: 'Studio only',
   discount: '',
-  commissionRate: '',
   adminCommissionRate: '',
+  salary: '',
+  commissionType: 'with_quota',
+  commissionRate: '',
+  commissionTiers: DEFAULT_TIERS,
   workingDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
   status: 'Active',
 };
@@ -105,13 +119,19 @@ export default function NailTechsPage() {
   };
 
   const handleOpenEdit = (tech: NailTechType) => {
+    const hasTiers = !!tech.commissionTiers?.length;
     setForm({
       name: tech.name,
       role: tech.role,
       serviceAvailability: tech.serviceAvailability,
       discount: tech.discount != null ? String(tech.discount) : '',
-      commissionRate: tech.commissionRate != null ? String(Math.round(tech.commissionRate * 100)) : '',
       adminCommissionRate: tech.adminCommissionRate != null ? String(Math.round(tech.adminCommissionRate * 100)) : '',
+      salary: tech.salary != null ? String(tech.salary) : '',
+      commissionType: hasTiers ? 'with_quota' : 'without_quota',
+      commissionRate: !hasTiers && tech.commissionRate != null ? String(Math.round(tech.commissionRate * 100)) : '',
+      commissionTiers: hasTiers
+        ? tech.commissionTiers!.map((t) => ({ threshold: String(t.threshold), rate: String(t.rate) }))
+        : DEFAULT_TIERS,
       workingDays: tech.workingDays || [],
       status: tech.status,
     });
@@ -121,13 +141,19 @@ export default function NailTechsPage() {
   };
 
   const handleOpenView = (tech: NailTechType) => {
+    const hasTiers = !!tech.commissionTiers?.length;
     setForm({
       name: tech.name,
       role: tech.role,
       serviceAvailability: tech.serviceAvailability,
       discount: tech.discount != null ? String(tech.discount) : '',
-      commissionRate: tech.commissionRate != null ? String(Math.round(tech.commissionRate * 100)) : '',
       adminCommissionRate: tech.adminCommissionRate != null ? String(Math.round(tech.adminCommissionRate * 100)) : '',
+      salary: tech.salary != null ? String(tech.salary) : '',
+      commissionType: hasTiers ? 'with_quota' : 'without_quota',
+      commissionRate: !hasTiers && tech.commissionRate != null ? String(Math.round(tech.commissionRate * 100)) : '',
+      commissionTiers: hasTiers
+        ? tech.commissionTiers!.map((t) => ({ threshold: String(t.threshold), rate: String(t.rate) }))
+        : DEFAULT_TIERS,
       workingDays: tech.workingDays || [],
       status: tech.status,
     });
@@ -169,8 +195,19 @@ export default function NailTechsPage() {
       setError(null);
 
       const discountNumber = form.discount ? Number(form.discount) : undefined;
-      const commissionNumber = form.commissionRate ? Number(form.commissionRate) / 100 : undefined;
       const adminCommissionNumber = form.adminCommissionRate ? Number(form.adminCommissionRate) / 100 : undefined;
+      const salaryNumber = form.salary ? Number(form.salary) : undefined;
+      const isWithQuota = form.commissionType === 'with_quota';
+      const tiersPayload = isWithQuota
+        ? form.commissionTiers
+            .filter((t) => t.threshold && t.rate)
+            .map((t) => ({ threshold: Number(t.threshold), rate: Number(t.rate) }))
+            .filter((t) => !isNaN(t.threshold) && !isNaN(t.rate))
+            .sort((a, b) => a.threshold - b.threshold)
+        : [];
+      const flatCommissionNumber = !isWithQuota && form.commissionRate
+        ? Number(form.commissionRate) / 100
+        : undefined;
 
       const isEdit = modalMode === 'edit' && selectedTechId;
       const url = isEdit ? `/api/nail-techs/${selectedTechId}` : '/api/nail-techs';
@@ -185,8 +222,10 @@ export default function NailTechsPage() {
           serviceAvailability: form.serviceAvailability,
           workingDays: form.workingDays,
           discount: isNaN(discountNumber as number) ? undefined : discountNumber,
-          commissionRate: isNaN(commissionNumber as number) ? undefined : commissionNumber,
           adminCommissionRate: isNaN(adminCommissionNumber as number) ? undefined : adminCommissionNumber,
+          salary: isNaN(salaryNumber as number) ? undefined : salaryNumber,
+          commissionRate: isWithQuota ? null : (isNaN(flatCommissionNumber as number) ? undefined : flatCommissionNumber),
+          commissionTiers: isWithQuota ? (tiersPayload.length ? tiersPayload : undefined) : [],
           status: form.status,
         }),
       });
@@ -361,7 +400,7 @@ export default function NailTechsPage() {
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Name</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Role</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Discount</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Commission</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Commission Tiers</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Admin Commission</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Service Availability</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
@@ -406,7 +445,18 @@ export default function NailTechsPage() {
                         <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">{item.role}</span>
                       </td>
                       <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">{item.discount != null ? `${item.discount}%` : '—'}</td>
-                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">{item.commissionRate != null ? `${Math.round(item.commissionRate * 100)}%` : '—'}</td>
+                      <td className="px-5 py-3.5 text-[#1a1a1a] tabular-nums">
+                        {item.commissionTiers?.length
+                          ? <div className="flex flex-col gap-0.5">
+                              {[...item.commissionTiers].sort((a, b) => a.threshold - b.threshold).map((tier, i) => (
+                                <span key={i} className="text-xs text-gray-600">₱{tier.threshold.toLocaleString()} → {tier.rate}%</span>
+                              ))}
+                            </div>
+                          : item.commissionRate != null
+                            ? <span className="text-xs text-gray-600">{Math.round(item.commissionRate * 100)}% (flat)</span>
+                            : <span className="text-gray-400">—</span>
+                        }
+                      </td>
                       <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">{item.adminCommissionRate != null ? `${Math.round(item.adminCommissionRate * 100)}%` : '—'}</td>
                       <td className="px-5 py-3.5 text-gray-500">{item.serviceAvailability}</td>
                       <td className="px-5 py-3.5">{getStatusBadge(item.status)}</td>
@@ -497,7 +547,16 @@ export default function NailTechsPage() {
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Commission</span>
-                      <p className="text-[#1a1a1a]">{item.commissionRate != null ? `${Math.round(item.commissionRate * 100)}%` : '—'}</p>
+                      {item.commissionTiers?.length
+                        ? <div className="flex flex-col gap-0.5 mt-0.5">
+                            {[...item.commissionTiers].sort((a, b) => a.threshold - b.threshold).map((tier, i) => (
+                              <p key={i} className="text-[#1a1a1a] text-xs">₱{tier.threshold.toLocaleString()} → {tier.rate}%</p>
+                            ))}
+                          </div>
+                        : item.commissionRate != null
+                          ? <p className="text-[#1a1a1a] text-xs">{Math.round(item.commissionRate * 100)}% (flat)</p>
+                          : <p className="text-gray-400">—</p>
+                      }
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Admin Commission</span>
@@ -663,20 +722,6 @@ export default function NailTechsPage() {
                 <small className="text-gray-500 text-xs block mt-1">Optional: Discount percentage for all services</small>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Commission (%)</label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={form.commissionRate}
-                  onChange={(e) => handleChange('commissionRate', e.target.value)}
-                  placeholder="e.g. 40"
-                  disabled={saving || modalMode === 'view'}
-                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
-                />
-                <small className="text-gray-500 text-xs block mt-1">Optional: Commission rate (0-100)</small>
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Admin Commission (%)</label>
                 <Input
                   type="number"
@@ -690,7 +735,98 @@ export default function NailTechsPage() {
                 />
                 <small className="text-gray-500 text-xs block mt-1">Optional: Admin commission rate (0-100)</small>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Salary (PHP)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={form.salary}
+                  onChange={(e) => handleChange('salary', e.target.value)}
+                  placeholder="e.g. 5000"
+                  disabled={saving || modalMode === 'view'}
+                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                />
+                <small className="text-gray-500 text-xs block mt-1">Fixed salary shown in finance export</small>
+              </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Commission Type</label>
+              <Select
+                value={form.commissionType}
+                onValueChange={(v) => handleChange('commissionType', v as 'with_quota' | 'without_quota')}
+                disabled={saving || modalMode === 'view'}
+              >
+                <SelectTrigger className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="with_quota">With Quota (weekly sales tiers)</SelectItem>
+                  <SelectItem value="without_quota">Without Quota (flat rate)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {form.commissionType === 'with_quota' ? (
+              <div>
+                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Commission Tiers (Weekly Sales Quota)</label>
+                <div className="space-y-2">
+                  {form.commissionTiers.map((tier, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 w-12 shrink-0">Tier {idx + 1}</span>
+                      <div className="flex items-center gap-1 flex-1">
+                        <span className="text-xs text-gray-400 shrink-0">If sales ≥ ₱</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={tier.threshold}
+                          onChange={(e) => {
+                            const next = [...form.commissionTiers];
+                            next[idx] = { ...next[idx], threshold: e.target.value };
+                            handleChange('commissionTiers', next);
+                          }}
+                          placeholder="e.g. 15000"
+                          disabled={saving || modalMode === 'view'}
+                          className="h-8 rounded-lg border-[#e5e5e5] bg-[#f9f9f9] text-xs"
+                        />
+                        <span className="text-xs text-gray-400 shrink-0">→</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={tier.rate}
+                          onChange={(e) => {
+                            const next = [...form.commissionTiers];
+                            next[idx] = { ...next[idx], rate: e.target.value };
+                            handleChange('commissionTiers', next);
+                          }}
+                          placeholder="e.g. 10"
+                          disabled={saving || modalMode === 'view'}
+                          className="h-8 rounded-lg border-[#e5e5e5] bg-[#f9f9f9] text-xs w-20"
+                        />
+                        <span className="text-xs text-gray-400 shrink-0">%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <small className="text-gray-500 text-xs block mt-1.5">Commission rate applied based on total weekly sales (Mon–Sun)</small>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Commission Rate (%)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.commissionRate}
+                  onChange={(e) => handleChange('commissionRate', e.target.value)}
+                  placeholder="e.g. 10"
+                  disabled={saving || modalMode === 'view'}
+                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                />
+                <small className="text-gray-500 text-xs block mt-1">Fixed commission percentage applied to all sales</small>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Status <span className="text-red-500">*</span></label>
