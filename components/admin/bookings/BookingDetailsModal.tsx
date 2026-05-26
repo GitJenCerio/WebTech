@@ -259,7 +259,46 @@ export default function BookingDetailsModal({
     if (!bookingCardRef.current) return;
     try {
       const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(bookingCardRef.current, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
+      const el = bookingCardRef.current;
+      const prevBorder = el.style.border;
+      const prevBoxShadow = el.style.boxShadow;
+      el.style.border = 'none';
+      el.style.boxShadow = 'none';
+      const canvas = await html2canvas(el, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        onclone: (_clonedDoc, clonedEl) => {
+          clonedEl.style.border = 'none';
+          clonedEl.style.boxShadow = 'none';
+          clonedEl.style.outline = 'none';
+          clonedEl.querySelectorAll<HTMLElement>('*').forEach((el) => {
+            const cl = el.classList;
+            if (cl.contains('flex')) el.style.display = 'flex';
+            if (cl.contains('inline-flex')) el.style.display = 'inline-flex';
+            if (cl.contains('flex-col')) el.style.flexDirection = 'column';
+            if (cl.contains('flex-wrap')) el.style.flexWrap = 'wrap';
+            if (cl.contains('items-center')) el.style.alignItems = 'center';
+            if (cl.contains('items-start')) el.style.alignItems = 'flex-start';
+            if (cl.contains('justify-between')) el.style.justifyContent = 'space-between';
+            if (cl.contains('justify-center')) el.style.justifyContent = 'center';
+            if (cl.contains('gap-1')) el.style.gap = '4px';
+            if (cl.contains('gap-2')) el.style.gap = '8px';
+            if (cl.contains('gap-3')) el.style.gap = '12px';
+            if (cl.contains('flex-shrink-0') || cl.contains('shrink-0')) el.style.flexShrink = '0';
+            if (cl.contains('flex-1')) el.style.flex = '1 1 0%';
+            if (cl.contains('min-w-0')) el.style.minWidth = '0';
+          });
+          clonedEl.querySelectorAll('svg').forEach((svg) => {
+            const s = svg as SVGElement;
+            s.style.display = 'block';
+            s.style.flexShrink = '0';
+            s.style.alignSelf = 'center';
+          });
+        },
+      });
+      el.style.border = prevBorder;
+      el.style.boxShadow = prevBoxShadow;
       const pad = 48;
       const padded = document.createElement('canvas');
       padded.width = canvas.width + pad * 2;
@@ -267,10 +306,10 @@ export default function BookingDetailsModal({
       const ctx = padded.getContext('2d')!;
       ctx.fillStyle = '#e8eaed';
       ctx.fillRect(0, 0, padded.width, padded.height);
-      ctx.shadowColor = 'rgba(0,0,0,0.25)';
-      ctx.shadowBlur = 24;
+      ctx.shadowColor = 'rgba(0,0,0,0.22)';
+      ctx.shadowBlur = 32;
       ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 6;
+      ctx.shadowOffsetY = 8;
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(pad, pad, canvas.width, canvas.height);
       ctx.shadowColor = 'transparent';
@@ -295,12 +334,12 @@ export default function BookingDetailsModal({
       : booking.status === 'PENDING_PAYMENT' || booking.status === 'pending' || booking.status === 'booked' ? 'PENDING'
       : String(booking.status).toUpperCase().replace(/-/g, ' ');
     if (isConfirmed) {
-      return <span className="inline-flex items-center rounded-lg px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-white bg-emerald-600">CONFIRMED</span>;
+      return <span className="inline-block px-2 pt-[2px] pb-[8px] leading-none rounded-lg text-[9px] font-semibold uppercase tracking-wide text-white bg-emerald-600">CONFIRMED</span>;
     }
     if (isCompletedStatus) {
-      return <span className="inline-flex items-center rounded-lg px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-semibold uppercase tracking-wide text-white bg-gray-700">COMPLETED</span>;
+      return <span className="inline-block px-2 pt-[2px] pb-[8px] leading-none rounded-lg text-[9px] font-semibold uppercase tracking-wide text-white bg-gray-700">COMPLETED</span>;
     }
-    return <StatusBadge status={booking.status} />;
+    return <StatusBadge status={booking.status} className="!inline-block !leading-none !pt-[2px] !pb-[4px] !py-0" />;
   };
 
   return (
@@ -316,14 +355,14 @@ export default function BookingDetailsModal({
               <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-gray-500">BOOKING</span>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {booking.slotType === 'with_squeeze_fee' && (
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold ${
+                  <span className={`inline-block px-2 pt-[2px] pb-[8px] leading-none rounded-full text-[9px] font-semibold ${
                     booking.serviceLocation === 'home_service'
                       ? 'bg-amber-100 text-amber-800 border border-amber-300'
                       : 'bg-blue-100 text-blue-800 border border-blue-300'
                   }`}>SQ</span>
                 )}
                 {booking.serviceClientType && (
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold ${
+                  <span className={`inline-block px-2 pt-[2px] pb-[8px] leading-none rounded-full text-[9px] font-semibold ${
                     booking.serviceClientType === 'new'
                       ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
                       : 'bg-blue-100 text-blue-700 border border-blue-300'
@@ -417,7 +456,7 @@ export default function BookingDetailsModal({
               <div className="flex items-center gap-2">
                 <CreditCard size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
                 <span
-                    className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[11px] sm:text-xs font-medium ${
+                    className={`inline-block px-2 pt-[2px] pb-[8px] leading-none rounded-lg text-[11px] sm:text-xs font-medium ${
                     paymentStatusLabel === 'Paid'
                       ? 'bg-emerald-600 text-white'
                       : paymentStatusLabel === 'Partial'
