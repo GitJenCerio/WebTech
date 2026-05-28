@@ -134,33 +134,20 @@ export default function InvoiceModal({
       backgroundColor: '#ffffff',
       useCORS: true,
       logging: false,
+      onclone: (_clonedDoc, clonedRoot) => {
+        clonedRoot.style.background = '#ffffff';
+        clonedRoot.style.border = 'none';
+        clonedRoot.style.borderRadius = '0';
+        clonedRoot.style.boxShadow = 'none';
+      },
     });
-
-    const padded = document.createElement('canvas');
-    const pad = 48;
-    padded.width = canvas.width + pad * 2;
-    padded.height = canvas.height + pad * 2;
-    const ctx = padded.getContext('2d')!;
-    ctx.fillStyle = '#e8eaed';
-    ctx.fillRect(0, 0, padded.width, padded.height);
-    ctx.shadowColor = 'rgba(0,0,0,0.25)';
-    ctx.shadowBlur = 24;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 6;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(pad, pad, canvas.width, canvas.height);
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    ctx.drawImage(canvas, pad, pad);
 
     const ts = new Date().toISOString().split('T')[0];
     const filename = `Invoice_${booking.clientName.replace(/\s+/g, '_')}_${ts}.jpg`;
 
     // On iOS, use Web Share API so the share sheet offers "Save Image" → Photos library
     const blob = await new Promise<Blob>((resolve, reject) =>
-      padded.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))), 'image/jpeg', 0.95)
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))), 'image/jpeg', 0.95)
     );
     const file = new File([blob], filename, { type: 'image/jpeg' });
 
@@ -208,35 +195,17 @@ export default function InvoiceModal({
       backgroundColor: '#ffffff',
       useCORS: true,
       logging: false,
+      onclone: (_clonedDoc, clonedRoot) => {
+        clonedRoot.style.background = '#ffffff';
+        clonedRoot.style.border = 'none';
+        clonedRoot.style.borderRadius = '0';
+        clonedRoot.style.boxShadow = 'none';
+      },
     });
-    const padded = document.createElement('canvas');
-    const pad = 48;
-    padded.width = canvas.width + pad * 2;
-    padded.height = canvas.height + pad * 2;
-    const ctx = padded.getContext('2d')!;
-
-    // Light grey background so the white invoice card stands out
-    ctx.fillStyle = '#e8eaed';
-    ctx.fillRect(0, 0, padded.width, padded.height);
-
-    // Drop shadow under the invoice card
-    ctx.shadowColor = 'rgba(0,0,0,0.25)';
-    ctx.shadowBlur = 24;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 6;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(pad, pad, canvas.width, canvas.height);
-
-    // Reset shadow before drawing invoice content
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    ctx.drawImage(canvas, pad, pad);
 
     // Clipboard API only accepts PNG
     const blob = await new Promise<Blob>((resolve, reject) =>
-      padded.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
     );
     try {
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
@@ -466,7 +435,7 @@ export default function InvoiceModal({
           </div>
 
           <div className="mt-4">
-            <div ref={quotationRef} className="px-6 pt-1 pb-6 border border-gray-200 rounded-2xl bg-white min-w-0 w-full" style={{ width: '100%', maxWidth: '960px', margin: '0 auto' }}>
+            <div ref={quotationRef} className="px-6 pt-1 pb-6 bg-white min-w-0 w-full" style={{ width: '100%', maxWidth: '960px', margin: '0 auto' }}>
               <div className="text-center mb-2 pb-3 border-b-2 border-[#212529]">
                 <h5 className="mb-0 font-bold tracking-wider">INVOICE</h5>
               </div>

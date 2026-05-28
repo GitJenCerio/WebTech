@@ -1114,6 +1114,7 @@ export default function BookingPage() {
       <BookingFormModal
         isOpen={showBookingFormModal}
         slotCount={selectedSlot ? (isSimultaneous ? 2 : 1 + linkedSlots.length) : 0}
+        isManiPediExpress={isSimultaneous}
         clientType={clientInfo?.clientType || 'new'}
         serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
         clientName={clientInfo?.customerName}

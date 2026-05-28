@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Calendar, MapPin, Phone, AtSign, Sparkles, CreditCard, User, Link2, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import StatusBadge, { BookingStatus } from '../StatusBadge';
+import type { BookingStatus } from '../StatusBadge';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,11 @@ function getBookingDetailsServiceDisplay(service: string | undefined, secondaryN
 }
 
 const iconSize = 14;
+const UNIFORM_BADGE_CLASS =
+  'inline-flex min-h-5 items-center justify-center rounded-md px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide leading-tight whitespace-nowrap';
+const UNIFORM_PILL_BADGE_CLASS =
+  'inline-flex min-h-5 items-center justify-center rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide leading-tight whitespace-nowrap';
+const BADGE_LABEL_NUDGE_CLASS = 'relative -top-[4px]';
 
 interface BookingDetailsModalProps {
   show: boolean;
@@ -269,56 +274,16 @@ export default function BookingDetailsModal({
         useCORS: true,
         backgroundColor: '#ffffff',
         onclone: (_clonedDoc, clonedEl) => {
+          clonedEl.style.background = '#ffffff';
           clonedEl.style.border = 'none';
           clonedEl.style.boxShadow = 'none';
           clonedEl.style.outline = 'none';
-          clonedEl.querySelectorAll<HTMLElement>('*').forEach((el) => {
-            const cl = el.classList;
-            if (cl.contains('flex')) el.style.display = 'flex';
-            if (cl.contains('inline-flex')) el.style.display = 'inline-flex';
-            if (cl.contains('flex-col')) el.style.flexDirection = 'column';
-            if (cl.contains('flex-wrap')) el.style.flexWrap = 'wrap';
-            if (cl.contains('items-center')) el.style.alignItems = 'center';
-            if (cl.contains('items-start')) el.style.alignItems = 'flex-start';
-            if (cl.contains('justify-between')) el.style.justifyContent = 'space-between';
-            if (cl.contains('justify-center')) el.style.justifyContent = 'center';
-            if (cl.contains('gap-1')) el.style.gap = '4px';
-            if (cl.contains('gap-2')) el.style.gap = '8px';
-            if (cl.contains('gap-3')) el.style.gap = '12px';
-            if (cl.contains('flex-shrink-0') || cl.contains('shrink-0')) el.style.flexShrink = '0';
-            if (cl.contains('flex-1')) el.style.flex = '1 1 0%';
-            if (cl.contains('min-w-0')) el.style.minWidth = '0';
-          });
-          clonedEl.querySelectorAll('svg').forEach((svg) => {
-            const s = svg as SVGElement;
-            s.style.display = 'block';
-            s.style.flexShrink = '0';
-            s.style.alignSelf = 'center';
-          });
         },
       });
       el.style.border = prevBorder;
       el.style.boxShadow = prevBoxShadow;
-      const pad = 48;
-      const padded = document.createElement('canvas');
-      padded.width = canvas.width + pad * 2;
-      padded.height = canvas.height + pad * 2;
-      const ctx = padded.getContext('2d')!;
-      ctx.fillStyle = '#e8eaed';
-      ctx.fillRect(0, 0, padded.width, padded.height);
-      ctx.shadowColor = 'rgba(0,0,0,0.22)';
-      ctx.shadowBlur = 32;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 8;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(pad, pad, canvas.width, canvas.height);
-      ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-      ctx.drawImage(canvas, pad, pad);
       const blob = await new Promise<Blob>((resolve, reject) =>
-        padded.toBlob((b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))), 'image/png')
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))), 'image/png')
       );
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       setCopied(true);
@@ -332,14 +297,42 @@ export default function BookingDetailsModal({
     const label = booking.status === 'CONFIRMED' || booking.status === 'confirmed' ? 'CONFIRMED'
       : booking.status === 'COMPLETED' || booking.status === 'completed' ? 'COMPLETED'
       : booking.status === 'PENDING_PAYMENT' || booking.status === 'pending' || booking.status === 'booked' ? 'PENDING'
+      : booking.status === 'CANCELLED' || booking.status === 'cancelled' ? 'CANCELLED'
+      : booking.status === 'NO_SHOW' || booking.status === 'no_show' || booking.status === 'no-show' ? 'NO SHOW'
       : String(booking.status).toUpperCase().replace(/-/g, ' ');
     if (isConfirmed) {
-      return <span className="inline-block px-2 pt-[2px] pb-[8px] leading-none rounded-lg text-[9px] font-semibold uppercase tracking-wide text-white bg-emerald-600">CONFIRMED</span>;
+      return (
+        <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-white bg-emerald-600`}>
+          <span className={BADGE_LABEL_NUDGE_CLASS}>CONFIRMED</span>
+        </span>
+      );
     }
     if (isCompletedStatus) {
-      return <span className="inline-block px-2 pt-[2px] pb-[8px] leading-none rounded-lg text-[9px] font-semibold uppercase tracking-wide text-white bg-gray-700">COMPLETED</span>;
+      return (
+        <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-white bg-gray-700`}>
+          <span className={BADGE_LABEL_NUDGE_CLASS}>COMPLETED</span>
+        </span>
+      );
     }
-    return <StatusBadge status={booking.status} className="!inline-block !leading-none !pt-[2px] !pb-[4px] !py-0" />;
+    if (label === 'PENDING') {
+      return (
+        <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-blue-800 bg-blue-100`}>
+          <span className={BADGE_LABEL_NUDGE_CLASS}>{label}</span>
+        </span>
+      );
+    }
+    if (label === 'CANCELLED' || label === 'NO SHOW') {
+      return (
+        <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-red-600 bg-red-50`}>
+          <span className={BADGE_LABEL_NUDGE_CLASS}>{label}</span>
+        </span>
+      );
+    }
+    return (
+      <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-gray-700 bg-gray-100`}>
+        <span className={BADGE_LABEL_NUDGE_CLASS}>{label}</span>
+      </span>
+    );
   };
 
   return (
@@ -355,19 +348,21 @@ export default function BookingDetailsModal({
               <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-gray-500">BOOKING</span>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {booking.slotType === 'with_squeeze_fee' && (
-                  <span className={`inline-block px-2 pt-[2px] pb-[8px] leading-none rounded-full text-[9px] font-semibold ${
+                  <span data-copy-badge="true" className={`${UNIFORM_PILL_BADGE_CLASS} ${
                     booking.serviceLocation === 'home_service'
                       ? 'bg-amber-100 text-amber-800 border border-amber-300'
                       : 'bg-blue-100 text-blue-800 border border-blue-300'
-                  }`}>SQ</span>
+                  }`}>
+                    <span className={BADGE_LABEL_NUDGE_CLASS}>SQ</span>
+                  </span>
                 )}
                 {booking.serviceClientType && (
-                  <span className={`inline-block px-2 pt-[2px] pb-[8px] leading-none rounded-full text-[9px] font-semibold ${
+                  <span data-copy-badge="true" className={`${UNIFORM_PILL_BADGE_CLASS} ${
                     booking.serviceClientType === 'new'
                       ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
                       : 'bg-blue-100 text-blue-700 border border-blue-300'
                   }`}>
-                    {booking.serviceClientType === 'new' ? 'New' : 'Repeat'}
+                    <span className={BADGE_LABEL_NUDGE_CLASS}>{booking.serviceClientType === 'new' ? 'New' : 'Repeat'}</span>
                   </span>
                 )}
                 {getStatusBadge()}
@@ -400,8 +395,8 @@ export default function BookingDetailsModal({
               </div>
             )}
             <div className="flex flex-col gap-1.5 mt-3 text-xs sm:text-sm text-[#1a1a1a]">
-              <div className="flex items-center gap-2">
-                <Calendar size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+              <div className="flex items-start gap-2">
+                <Calendar size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
                 <span>{formattedDate} · <span className="whitespace-nowrap">{timeStr}</span></span>
               </div>
               {(isManiPediExpressDual && (manicureDisplayName || pedicureDisplayName)) ? (
@@ -426,37 +421,38 @@ export default function BookingDetailsModal({
                   )}
                 </div>
               ) : booking.nailTechName ? (
-                <div className="flex items-center gap-2">
-                  <User size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                <div className="flex items-start gap-2">
+                  <User size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
                   <span>Ms. {booking.nailTechName}</span>
                 </div>
               ) : null}
-              <div className="flex items-center gap-2">
-                <Phone size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+              <div className="flex items-start gap-2">
+                <Phone size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
                 <span>{contactValue}</span>
               </div>
               {booking.clientSocialMediaName && (
-                <div className="flex items-center gap-2">
-                  <AtSign size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                <div className="flex items-start gap-2">
+                  <AtSign size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
                   <span>{booking.clientSocialMediaName}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2">
-                <Sparkles size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+              <div className="flex items-start gap-2">
+                <Sparkles size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
                 <span>
                   {[getBookingDetailsServiceDisplay(booking.service, booking.secondaryNailTechName), getChosenServicesDisplay(booking.chosenServices)].filter(Boolean).join(' · ')}
                 </span>
               </div>
               {locationLabel && (
-                <div className="flex items-center gap-2">
-                  <MapPin size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+                <div className="flex items-start gap-2">
+                  <MapPin size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
                   <span>{locationLabel}{booking.serviceAddress ? ` · ${booking.serviceAddress}` : ''}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2">
-                <CreditCard size={iconSize} className="text-gray-500 flex-shrink-0" strokeWidth={2} />
+              <div className="flex items-start gap-2">
+                <CreditCard size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
                 <span
-                    className={`inline-block px-2 pt-[2px] pb-[8px] leading-none rounded-lg text-[11px] sm:text-xs font-medium ${
+                    data-copy-badge="true"
+                    className={`inline-flex min-h-5 items-center justify-center rounded-md px-2 py-0.5 text-[10px] font-medium leading-tight whitespace-nowrap ${
                     paymentStatusLabel === 'Paid'
                       ? 'bg-emerald-600 text-white'
                       : paymentStatusLabel === 'Partial'
@@ -464,7 +460,7 @@ export default function BookingDetailsModal({
                         : 'bg-gray-100 text-gray-600'
                   }`}
                 >
-                  {paymentStatusLabel}
+                  <span className={BADGE_LABEL_NUDGE_CLASS}>{paymentStatusLabel}</span>
                 </span>
               </div>
             </div>

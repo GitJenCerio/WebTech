@@ -11,6 +11,7 @@ type ClientType = 'new' | 'repeat';
 interface BookingFormModalProps {
   isOpen: boolean;
   slotCount?: number; // Total slots for deposit calc: ₱500 per slot
+  isManiPediExpress?: boolean;
   clientType: ClientType;
   serviceLocation?: 'homebased_studio' | 'home_service';
   clientName?: string;
@@ -43,10 +44,12 @@ interface BookingFormModalProps {
 }
 
 const DEPOSIT_PER_SLOT = 500;
+const MANI_PEDI_EXPRESS_NOTICE_FEE = 300;
 
 export default function BookingFormModal({
   isOpen,
   slotCount = 1,
+  isManiPediExpress = false,
   clientType,
   serviceLocation = 'homebased_studio',
   clientName,
@@ -351,6 +354,13 @@ export default function BookingFormModal({
             </p>
             <p className="text-[10px] sm:text-xs text-green-700 mt-1">
               Your details have been pre-filled. You can update them if needed.
+            </p>
+          </div>
+        )}
+        {isManiPediExpress && (
+          <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-3 py-2 sm:px-4 sm:py-3 mb-3 sm:mb-4">
+            <p className="text-xs sm:text-sm text-amber-900">
+              <strong>💳 Mani + Pedi Express notice:</strong> There will be an additional fee of ₱{MANI_PEDI_EXPRESS_NOTICE_FEE} for Mani + Pedi Express.
             </p>
           </div>
         )}

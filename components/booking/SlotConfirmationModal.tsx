@@ -17,6 +17,7 @@ interface SlotConfirmationModalProps {
 }
 
 const DEPOSIT_PER_SLOT = 500;
+const MANI_PEDI_EXPRESS_FEE = 300;
 
 export default function SlotConfirmationModal({
   isOpen,
@@ -44,6 +45,9 @@ export default function SlotConfirmationModal({
     : '';
 
   const hasSqueezeFee = slotType === 'with_squeeze_fee';
+  const isManiPediExpress =
+    typeof serviceName === 'string' &&
+    serviceName.toLowerCase().includes('mani + pedi express');
   const allSlotTimes = [slotTime, ...linkedSlotTimes].filter(Boolean);
   const toMinutes = (time: string) => {
     const [h, m] = String(time).split(':').map(Number);
@@ -111,6 +115,13 @@ export default function SlotConfirmationModal({
             <div className="rounded-xl border-2 border-purple-200 bg-purple-50 px-4 py-3">
               <p className="text-sm text-purple-800 font-medium">
                 This is a squeeze-in slot with an additional ₱500 fee.
+              </p>
+            </div>
+          )}
+          {isManiPediExpress && (
+            <div className="rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm text-amber-900 font-medium">
+                This is a Mani + Pedi Express service. An additional ₱{MANI_PEDI_EXPRESS_FEE} fee will be charged on top of your total.
               </p>
             </div>
           )}

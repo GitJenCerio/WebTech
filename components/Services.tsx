@@ -44,6 +44,13 @@ const services = [
     image: '/images/service-5.jpg',
   },
   {
+    title: 'Mani + Pedi Express',
+    price: 'Additional PHP 300',
+    description:
+      'Get your manicure and pedicure done at the same time with two nail techs for a faster appointment flow. Perfect for clients who want the complete Mani + Pedi experience in less time. This express option has an additional PHP 300 fee on top of your service total.',
+    image: '/images/service-8.jpg',
+  },
+  {
     title: 'Nail Repair',
     price: 'Price varies',
     description:
