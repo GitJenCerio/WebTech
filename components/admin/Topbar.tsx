@@ -45,6 +45,7 @@ export default function Topbar({ onMobileMenuToggle }: TopbarProps) {
       '/admin/nail-techs': 'Nail Techs',
       '/admin/staff': 'Staff / Users',
       '/admin/settings': 'Settings',
+      '/admin/feedback': 'Feedback',
     };
 
     // Find matching route

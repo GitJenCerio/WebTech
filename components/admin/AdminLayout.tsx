@@ -22,6 +22,7 @@ import {
   ChevronRight,
   ClipboardList,
   User,
+  MessageSquareQuote,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import PushNotificationButton from '@/components/admin/PushNotificationButton';
@@ -49,6 +50,7 @@ const navItems: NavItem[] = [
   { path: '/admin/staff', label: 'Staff / Users', icon: UserCog },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
   { path: '/admin/audit', label: 'Audit Log', icon: ClipboardList },
+  { path: '/admin/feedback', label: 'Feedback', icon: MessageSquareQuote },
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
@@ -62,7 +64,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const sidebarToggleRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    setSidebarOpen(false);
+    const timeoutId = window.setTimeout(() => setSidebarOpen(false), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [pathname]);
 
   // Tablet and up = rail (icons-only, expand via toggle); below = overlay + hamburger

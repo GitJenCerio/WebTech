@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import Customer from '@/lib/models/Customer';
 import Booking from '@/lib/models/Booking';
+import FeedbackLink from '@/lib/models/FeedbackLink';
 import type { CustomerInput } from '@/lib/types';
 import { authOptions } from '@/lib/auth-options';
 import { requireCanDeleteCustomer } from '@/lib/api-rbac';
@@ -57,6 +58,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const bookings = await Booking.find({ customerId: id }).sort({ createdAt: -1 }).lean();
+    const feedbackLink = await FeedbackLink.findOne({ customerId: id }).lean();
     const lifetimeValue = bookings.reduce((total, booking: any) => {
       const hasInvoice = hasAnyRealInvoice(booking);
       const totalAmount = hasInvoice ? getCombinedInvoiceTotal(booking) : 0;
@@ -108,6 +110,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
       })),
+      feedbackLink: feedbackLink ? {
+        token: feedbackLink.token,
+        customerName: feedbackLink.customerName,
+        expiresAt: feedbackLink.expiresAt,
+        usedAt: feedbackLink.usedAt ?? null,
+        usedResponseId: feedbackLink.usedResponseId ?? null,
+        status: feedbackLink.usedAt
+          ? 'used'
+          : new Date(feedbackLink.expiresAt).getTime() < Date.now()
+            ? 'expired'
+            : 'unused',
+      } : null,
       lifetimeValue,
       bookingCount: bookings.length,
     });
@@ -167,6 +181,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found.' }, { status: 404 });
     }
+    const feedbackLink = await FeedbackLink.findOne({ customerId: id }).lean();
     return NextResponse.json({
       customer: {
         id: String(customer._id),
@@ -196,6 +211,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
       }
+      ,feedbackLink: feedbackLink ? {
+        token: feedbackLink.token,
+        customerName: feedbackLink.customerName,
+        expiresAt: feedbackLink.expiresAt,
+        usedAt: feedbackLink.usedAt ?? null,
+        usedResponseId: feedbackLink.usedResponseId ?? null,
+        status: feedbackLink.usedAt
+          ? 'used'
+          : new Date(feedbackLink.expiresAt).getTime() < Date.now()
+            ? 'expired'
+            : 'unused',
+      } : null
     });
   } catch (error) {
     return handleApiError(error, request);
