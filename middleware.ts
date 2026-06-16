@@ -22,6 +22,7 @@ const PUBLIC_PATHS = [
   '/russian-manicure',
   '/russian-pedicure',
   '/russian-manicure-manila',
+  '/client-feedback',
 ];
 
 function isPublicAdminPath(pathname: string): boolean {
@@ -60,6 +61,9 @@ function isPublicApiRoute(pathname: string, method: string): boolean {
 
   // Push notification VAPID public key (safe to expose)
   if (pathname === '/api/push/vapid-public-key' && method === 'GET') return true;
+
+  // Public client feedback survey (POST only; GET is admin-only in route)
+  if (pathname === '/api/client-feedback' && method === 'POST') return true;
 
   return false;
 }
