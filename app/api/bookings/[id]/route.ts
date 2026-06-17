@@ -21,7 +21,7 @@ import Settings from '@/lib/models/Settings';
 import Slot from '@/lib/models/Slot';
 import connectDB from '@/lib/mongodb';
 import Booking from '@/lib/models/Booking';
-import { sendBookingConfirmedEmail, sendBookingRescheduledEmail } from '@/lib/email';
+import { queueBookingConfirmedEmail, sendBookingRescheduledEmail } from '@/lib/email';
 import { sendPushToAll } from '@/lib/services/pushNotificationService';
 import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
 
@@ -171,11 +171,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     if (action === 'confirm') {
       // Confirm booking (requires deposit or full payment)
+      const existing = await Booking.findById(id).select('status').lean();
+      const wasAlreadyConfirmed = existing?.status === 'confirmed';
       const booking = await confirmBooking(id);
-      const customer = await Customer.findById(booking.customerId).lean();
-      if (customer?.email) {
-        sendBookingConfirmedEmail(booking, customer).catch(err =>
-          console.error('Failed to send booking confirmed email:', err)
+      if (!wasAlreadyConfirmed) {
+        queueBookingConfirmedEmail(booking).catch((err) =>
+          console.error('Failed to queue booking confirmed email:', err)
         );
       }
       if (booking.confirmedAt) {
@@ -265,8 +266,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       if (paidAmount < 0 || tipAmount < 0) {
         return NextResponse.json({ error: 'Payment amounts must be non-negative' }, { status: 400 });
       }
-      const booking = await updateBookingPayment(id, paidAmount, tipAmount, body.method);
+      const existing = await Booking.findById(id).select('status').lean();
+      const wasAlreadyConfirmed = existing?.status === 'confirmed';
+      await updateBookingPayment(id, paidAmount, tipAmount, body.method);
       const confirmed = await confirmBooking(id, { skipDepositCheck: true });
+      if (!wasAlreadyConfirmed) {
+        queueBookingConfirmedEmail(confirmed).catch((err) =>
+          console.error('Failed to queue booking confirmed email:', err)
+        );
+      }
       if (confirmed.confirmedAt) {
         backupBooking(confirmed, 'update').catch(err =>
           console.error('Failed to backup booking update to Google Sheets:', err)
@@ -387,7 +395,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const secondaryNailTechId = typeof body.secondaryNailTechId === 'string' && body.secondaryNailTechId.trim()
         ? body.secondaryNailTechId.trim()
         : undefined;
-      const booking = await rescheduleBookingToSlots(id, newSlotIds, body.reason, secondaryNailTechId);
+      const primaryNailTechId = typeof body.primaryNailTechId === 'string' && body.primaryNailTechId.trim()
+        ? body.primaryNailTechId.trim()
+        : undefined;
+      const booking = await rescheduleBookingToSlots(id, newSlotIds, body.reason, secondaryNailTechId, primaryNailTechId);
       const customer = await Customer.findById(booking.customerId).lean();
       if (customer?.email) {
         sendBookingRescheduledEmail(booking, customer, booking.statusReason || undefined).catch(err =>

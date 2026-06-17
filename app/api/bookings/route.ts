@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import mongoose from 'mongoose';
-import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
+import { getCombinedInvoiceTotal, hasAnyRealInvoice, isExpressManiPediServiceType, resolveExpressTechPair } from '@/lib/utils/bookingInvoice';
+import { resolveReservationDeposit } from '@/lib/utils/bookingDeposit';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { createBooking, listBookings, type CreateBookingInput } from '@/lib/services/bookingService';
@@ -138,7 +139,17 @@ export async function POST(request: Request) {
     }
 
     const pricingTotal = typeof pricing?.total === 'number' ? pricing.total : 0;
-    const pricingDeposit = typeof pricing?.depositRequired === 'number' ? pricing.depositRequired : 0;
+    const pricingDeposit = resolveReservationDeposit(slotIds.length, pricing?.depositRequired);
+
+    const isExpress = isExpressManiPediServiceType(service.type);
+    if (isExpress) {
+      if (!service.secondaryNailTechId?.trim()) {
+        return NextResponse.json({ error: 'A pedicure nail tech is required for Mani + Pedi Express' }, { status: 400 });
+      }
+      if (slotIds.length !== 2) {
+        return NextResponse.json({ error: 'Mani + Pedi Express requires exactly 2 slots (one per nail tech)' }, { status: 400 });
+      }
+    }
 
     const input: CreateBookingInput = {
       slotIds,
@@ -150,7 +161,7 @@ export async function POST(request: Request) {
         clientType: (service.clientType || '').toLowerCase() === 'repeat' ? 'repeat' : 'new',
         chosenServices: Array.isArray(service.chosenServices) && service.chosenServices.length > 0 ? service.chosenServices : undefined,
         address: service.location === 'home_service' && service.address?.trim() ? service.address.trim() : undefined,
-        mode: service.mode === 'simultaneous_two_techs' ? 'simultaneous_two_techs' : 'single_tech',
+        mode: isExpress || service.mode === 'simultaneous_two_techs' ? 'simultaneous_two_techs' : 'single_tech',
         secondaryNailTechId: typeof service.secondaryNailTechId === 'string' && service.secondaryNailTechId.trim()
           ? service.secondaryNailTechId.trim()
           : undefined,
@@ -357,6 +368,27 @@ export async function GET(request: Request) {
     }
 
     const bookings = await listBookings(filters);
+
+    const expressGroupIds = Array.from(
+      new Set(
+        bookings
+          .map((b) => (b as { expressGroupId?: string }).expressGroupId)
+          .filter((gid): gid is string => Boolean(gid))
+      )
+    );
+    const expressMembersByGroup = new Map<string, Array<{ _id: unknown; nailTechId?: string; service?: { expressSegment?: string } }>>();
+    if (expressGroupIds.length > 0) {
+      const expressMembers = await Booking.find({ expressGroupId: { $in: expressGroupIds } })
+        .select('expressGroupId nailTechId service')
+        .lean();
+      for (const gid of expressGroupIds) {
+        expressMembersByGroup.set(
+          gid,
+          expressMembers.filter((member: { expressGroupId?: string }) => member.expressGroupId === gid)
+        );
+      }
+    }
+
     const rawCustomerIds = Array.from(new Set(bookings.map(b => String(b.customerId)).filter(Boolean)));
     const customerIds = rawCustomerIds.filter((id) => mongoose.Types.ObjectId.isValid(id) && String(id).length === 24);
     const rawSlotIds = Array.from(new Set(bookings.flatMap((b) => (b.slotIds || []).map(String))));
@@ -408,6 +440,26 @@ export async function GET(request: Request) {
         const depositPaidAt = booking.payment?.depositPaidAt ?? null;
         const fullyPaidAt = booking.payment?.fullyPaidAt ?? null;
 
+        let service = booking.service ? { ...booking.service } : booking.service;
+        const expressGroupId = (booking as { expressGroupId?: string }).expressGroupId;
+        if (expressGroupId && service) {
+          const pair = resolveExpressTechPair(expressMembersByGroup.get(expressGroupId) || []);
+          if (pair) {
+            service = {
+              ...service,
+              mode: 'simultaneous_two_techs',
+              secondaryNailTechId:
+                String(booking._id) === String(
+                  (expressMembersByGroup.get(expressGroupId) || []).find(
+                    (m) => m.service?.expressSegment === 'manicure'
+                  )?._id
+                )
+                  ? pair.pedicureTechId
+                  : pair.manicureTechId,
+            };
+          }
+        }
+
         // Derive payment status: no real invoice yet → never "paid", only "partial" at best
         const hasRealInvoice = hasAnyRealInvoice(booking);
         const paymentStatus = hasRealInvoice && balance <= 0
@@ -437,7 +489,7 @@ export async function GET(request: Request) {
           appointmentTime: slotInfo?.time || null,
           appointmentTimes: appointmentTimes.length > 0 ? appointmentTimes : (slotInfo?.time ? [slotInfo.time] : []),
           slotType: slotInfo?.slotType ?? null,
-          service: booking.service,
+          service,
           status: resolvedStatus,
           paymentStatus,
           pricing: booking.pricing,

@@ -8,8 +8,10 @@
 import { Resend } from 'resend';
 import { createUploadProofToken } from '@/lib/uploadProofToken';
 import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
+import { getBookingDepositDue } from '@/lib/utils/bookingDeposit';
 import connectDB from '@/lib/mongodb';
 import Slot from '@/lib/models/Slot';
+import Customer from '@/lib/models/Customer';
 
 /** Brand logo - direct image URL for email embedding */
 const BRAND_LOGO_URL = 'https://i.imgur.com/igZLzzU.png';
@@ -291,7 +293,7 @@ export async function sendBookingPendingEmail(booking: any, customer: any) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     const uploadProofLink = getUploadProofLink(booking);
-    const depositRequired = booking.pricing?.depositRequired ?? 0;
+    const depositRequired = getBookingDepositDue(booking);
     const qr = getPaymentQrUrls();
     const appointment = await getBookingAppointmentSchedule(booking);
 
@@ -375,9 +377,10 @@ export async function sendPaymentReminderEmail(booking: any, customer: any) {
     const uploadProofLink = getUploadProofLink(booking);
     const hasInvoice = hasAnyRealInvoice(booking);
     const invoiceTotal = hasInvoice ? getCombinedInvoiceTotal(booking) : 0;
+    const depositDue = getBookingDepositDue(booking);
     const amountDue = hasInvoice
       ? Math.max(0, invoiceTotal - (booking.pricing?.paidAmount || 0))
-      : Math.max(0, (booking.pricing?.depositRequired ?? 0) - (booking.pricing?.paidAmount || 0));
+      : Math.max(0, depositDue - (booking.pricing?.paidAmount || 0));
 
     const content = `
       <h1 style="color: #1a1a1a; margin: 0 0 16px; font-size: 24px;">Payment Reminder</h1>
@@ -411,7 +414,13 @@ export async function sendPaymentReminderEmail(booking: any, customer: any) {
 
 export async function sendBookingConfirmedEmail(booking: any, customer: any) {
   try {
-    if (!process.env.RESEND_API_KEY || !customer?.email) {
+    if (!customer?.email) {
+      console.warn(`Booking confirmed email skipped for ${booking?.bookingCode || 'unknown'}: missing customer email`);
+      return { emailSent: false, error: 'Missing customer email' };
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('Resend not configured - skipping booking confirmed email');
       return { emailSent: false };
     }
 
@@ -442,8 +451,27 @@ export async function sendBookingConfirmedEmail(booking: any, customer: any) {
     if (error) return { emailSent: false, error: error.message };
     return { emailSent: true, id: data?.id };
   } catch (error: any) {
+    console.error('Booking confirmed email failed:', error);
     return { emailSent: false, error: error.message };
   }
+}
+
+/** Fire-and-forget helper for API routes after a booking is newly confirmed. */
+export async function queueBookingConfirmedEmail(booking: any) {
+  await connectDB();
+  const customer = await Customer.findById(booking.customerId).lean();
+  if (!customer) {
+    console.warn(`Booking confirmed email skipped for ${booking?.bookingCode || 'unknown'}: customer not found`);
+    return;
+  }
+  const email = customer.email ? String(customer.email).trim().toLowerCase() : '';
+  if (!email) {
+    console.warn(`Booking confirmed email skipped for ${booking?.bookingCode || 'unknown'}: missing customer email`);
+    return;
+  }
+  sendBookingConfirmedEmail(booking, { ...customer, email }).catch((err) =>
+    console.error('Failed to send booking confirmed email:', err)
+  );
 }
 
 export async function sendBookingRescheduledEmail(booking: any, customer: any, reason?: string) {
@@ -487,9 +515,10 @@ export async function sendPaymentUrgentEmail(booking: any, customer: any, subjec
     const uploadProofLink = getUploadProofLink(booking);
     const hasInvoice = hasAnyRealInvoice(booking);
     const invoiceTotal = hasInvoice ? getCombinedInvoiceTotal(booking) : 0;
+    const depositDue = getBookingDepositDue(booking);
     const amountDue = hasInvoice
       ? Math.max(0, invoiceTotal - (booking.pricing?.paidAmount || 0))
-      : Math.max(0, (booking.pricing?.depositRequired ?? 0) - (booking.pricing?.paidAmount || 0));
+      : Math.max(0, depositDue - (booking.pricing?.paidAmount || 0));
     const content = `
       <h1 style="color: #1a1a1a; margin: 0 0 16px; font-size: 24px;">${subjectLabel}</h1>
       <p style="margin: 0 0 16px;">Hi ${customer.name},</p>

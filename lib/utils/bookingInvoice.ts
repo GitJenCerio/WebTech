@@ -36,6 +36,18 @@ export function isDualTechManiPediExpress(booking: {
   return looksExpress;
 }
 
+export function resolveExpressTechPair(
+  members: Array<{ nailTechId?: string; service?: { expressSegment?: string } }>
+): { manicureTechId: string; pedicureTechId: string } | null {
+  const manicure = members.find((m) => m.service?.expressSegment === 'manicure');
+  const pedicure = members.find((m) => m.service?.expressSegment === 'pedicure');
+  if (!manicure?.nailTechId || !pedicure?.nailTechId) return null;
+  return {
+    manicureTechId: String(manicure.nailTechId),
+    pedicureTechId: String(pedicure.nailTechId),
+  };
+}
+
 /** True when `service.type` refers to Mani + Pedi Express (slug or stored display string). */
 export function isExpressManiPediServiceType(type?: string): boolean {
   if (!type) return false;

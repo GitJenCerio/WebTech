@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import { z } from 'zod';
 import connectDB from '@/lib/mongodb';
 import ClientFeedback from '@/lib/models/ClientFeedback';
+import { getNailTechById } from '@/lib/services/nailTechService';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 
@@ -14,6 +15,7 @@ const submitSchema = z.object({
   russianManicureQuality: z.coerce.number().int().min(1).max(5),
   studioCleanliness: z.coerce.number().int().min(1).max(5),
   customerService: z.coerce.number().int().min(1).max(5),
+  nailTechId: z.string().trim().min(1, 'Please select your nail technician.'),
   favoritePart: z.string().trim().max(2000).optional().or(z.literal('')),
   improvementSuggestions: z.string().trim().max(2000).optional().or(z.literal('')),
   testimonialPermission: z.enum(['first_name', 'anonymous', 'no']),
@@ -139,6 +141,8 @@ export async function GET(request: Request) {
       customerService: response.customerService,
       favoritePart: response.favoritePart ?? '',
       improvementSuggestions: response.improvementSuggestions ?? '',
+      nailTechId: response.nailTechId ?? '',
+      nailTechName: response.nailTechName ?? '',
       testimonialPermission: response.testimonialPermission,
       futureBookingIntent: response.futureBookingIntent,
       averageRating: response.averageRating,
@@ -202,6 +206,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: humanCheck.message }, { status: 400 });
     }
 
+    const nailTech = await getNailTechById(data.nailTechId);
+    if (!nailTech || nailTech.status !== 'Active') {
+      return NextResponse.json({ error: 'Please select a valid nail technician.' }, { status: 400 });
+    }
+
     const ratings = [data.overallSatisfaction, data.nailQuality, data.russianManicureQuality, data.studioCleanliness, data.customerService];
     const overallScore = Number((ratings.reduce((sum, value) => sum + value, 0) / ratings.length).toFixed(2));
     const isFlaggedForFollowUp = ratings.some((value) => value <= 3);
@@ -211,6 +220,8 @@ export async function POST(request: Request) {
       responseId,
       ipAddress,
       userAgent,
+      nailTechId: nailTech.id,
+      nailTechName: nailTech.name,
       overallSatisfaction: data.overallSatisfaction,
       nailQuality: data.nailQuality,
       russianManicureQuality: data.russianManicureQuality,

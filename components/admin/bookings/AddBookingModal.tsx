@@ -28,6 +28,7 @@ import { formatTime12Hour } from '@/lib/utils';
 import { normalizeSlotTime } from '@/lib/constants/slots';
 import { CHOSEN_SERVICE_LABELS } from '@/lib/serviceLabels';
 import { getRequiredSlotCountForService } from '@/lib/serviceSlotCount';
+import { isExpressManiPediServiceType } from '@/lib/utils/bookingInvoice';
 import type { ServiceType } from '@/lib/types';
 
 const BOOKED_STATUSES = ['pending', 'confirmed'] as const;
@@ -112,6 +113,12 @@ export default function AddBookingModal({
 
   const [customerId, setCustomerId] = useState('');
   const [nailTechId, setNailTechId] = useState('');
+  const [manicureTechId, setManicureTechId] = useState('');
+  const [pedicureTechId, setPedicureTechId] = useState('');
+  const [maniSlots, setManiSlots] = useState<Slot[]>([]);
+  const [pediSlots, setPediSlots] = useState<Slot[]>([]);
+  const [loadingDualSlots, setLoadingDualSlots] = useState(false);
+  const [selectedTime, setSelectedTime] = useState('');
   const [date, setDate] = useState('');
   const [selectedSlotId, setSelectedSlotId] = useState('');
   const [serviceType, setServiceType] = useState<ServiceType>('Manicure');
@@ -183,6 +190,11 @@ export default function AddBookingModal({
       setError(null);
       setCustomerId('');
       setNailTechId('');
+      setManicureTechId('');
+      setPedicureTechId('');
+      setManiSlots([]);
+      setPediSlots([]);
+      setSelectedTime('');
       setDate('');
       setSelectedSlotId('');
       setServiceType('Manicure');
@@ -197,37 +209,97 @@ export default function AddBookingModal({
     }
   }, [open, fetchCustomers]);
 
+  const isExpress = useMemo(() => isExpressManiPediServiceType(serviceType), [serviceType]);
+
   useEffect(() => {
-    if (open && nailTechId && date) {
+    if (open && !isExpress && nailTechId && date) {
       fetchSlots();
-    } else {
+    } else if (!isExpress) {
       setAllSlots([]);
       setAvailableSlots([]);
       setSelectedSlotId('');
     }
-  }, [open, nailTechId, date, fetchSlots]);
+  }, [open, isExpress, nailTechId, date, fetchSlots]);
+
+  const fetchDualSlots = useCallback(async () => {
+    if (!manicureTechId || !pedicureTechId || !date) {
+      setManiSlots([]);
+      setPediSlots([]);
+      setSelectedTime('');
+      return;
+    }
+    try {
+      setLoadingDualSlots(true);
+      setError(null);
+      const [maniRes, pediRes] = await Promise.all([
+        fetch(`/api/slots?${new URLSearchParams({ nailTechId: manicureTechId, startDate: date, endDate: date })}`),
+        fetch(`/api/slots?${new URLSearchParams({ nailTechId: pedicureTechId, startDate: date, endDate: date })}`),
+      ]);
+      if (!maniRes.ok || !pediRes.ok) throw new Error('Failed to fetch slots');
+      const [maniData, pediData] = await Promise.all([maniRes.json(), pediRes.json()]);
+      setManiSlots(maniData.slots ?? []);
+      setPediSlots(pediData.slots ?? []);
+      setSelectedTime('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load slots');
+      setManiSlots([]);
+      setPediSlots([]);
+      setSelectedTime('');
+    } finally {
+      setLoadingDualSlots(false);
+    }
+  }, [manicureTechId, pedicureTechId, date]);
+
+  useEffect(() => {
+    if (open && isExpress && manicureTechId && pedicureTechId && date) {
+      fetchDualSlots();
+    } else if (isExpress) {
+      setManiSlots([]);
+      setPediSlots([]);
+      setSelectedTime('');
+    }
+  }, [open, isExpress, manicureTechId, pedicureTechId, date, fetchDualSlots]);
+
+  const commonTimes = useMemo(() => {
+    if (!isExpress || maniSlots.length === 0 || pediSlots.length === 0) return [];
+    const maniTimes = new Set(maniSlots.filter((s) => s.status === 'available').map((s) => s.time));
+    return pediSlots
+      .filter((s) => s.status === 'available' && maniTimes.has(s.time))
+      .map((s) => s.time)
+      .sort((a, b) => normalizeSlotTime(a).localeCompare(normalizeSlotTime(b)));
+  }, [isExpress, maniSlots, pediSlots]);
+
+  const dualSlotIds = useMemo(() => {
+    if (!isExpress || !selectedTime) return [];
+    const maniSlot = maniSlots.find((s) => s.time === selectedTime && s.status === 'available');
+    const pediSlot = pediSlots.find((s) => s.time === selectedTime && s.status === 'available');
+    if (!maniSlot || !pediSlot) return [];
+    return [String(maniSlot._id), String(pediSlot._id)];
+  }, [isExpress, selectedTime, maniSlots, pediSlots]);
 
   const requiredSlots = useMemo(
-    () => getRequiredSlotCountForService(serviceType, location),
-    [serviceType, location]
+    () => (isExpress ? 2 : getRequiredSlotCountForService(serviceType, location)),
+    [isExpress, serviceType, location]
   );
 
   const selectedSlotIds = useMemo(() => {
+    if (isExpress) return dualSlotIds;
     if (!selectedSlotId || availableSlots.length === 0) return [];
     const first = availableSlots.find((s) => String((s as { _id?: string; id?: string })._id ?? (s as { id?: string }).id) === selectedSlotId);
     if (!first) return [];
     if (requiredSlots === 1) return [String((first as { _id?: string; id?: string })._id ?? (first as { id?: string }).id)];
     const chain = findNextConsecutiveAvailable(allSlots, availableSlots, first, requiredSlots);
     return chain.map((s) => String((s as { _id?: string; id?: string })._id ?? (s as { id?: string }).id));
-  }, [selectedSlotId, availableSlots, allSlots, requiredSlots, findNextConsecutiveAvailable]);
+  }, [isExpress, dualSlotIds, selectedSlotId, availableSlots, allSlots, requiredSlots, findNextConsecutiveAvailable]);
 
   const compatibleSlots = useMemo(() => {
+    if (isExpress) return [];
     if (requiredSlots <= 1) return availableSlots;
     return availableSlots.filter((slot) => {
       const chain = findNextConsecutiveAvailable(allSlots, availableSlots, slot, requiredSlots);
       return chain.length >= requiredSlots;
     });
-  }, [availableSlots, allSlots, requiredSlots, findNextConsecutiveAvailable]);
+  }, [isExpress, availableSlots, allSlots, requiredSlots, findNextConsecutiveAvailable]);
 
   useEffect(() => {
     if (selectedSlotId && selectedSlotIds.length < requiredSlots) {
@@ -259,12 +331,27 @@ export default function AddBookingModal({
       return;
     }
 
-    if (!nailTechId) {
+    if (isExpress) {
+      if (!manicureTechId || !pedicureTechId) {
+        setError('Please select both manicure and pedicure nail techs');
+        return;
+      }
+      if (manicureTechId === pedicureTechId) {
+        setError('Please select two different nail techs for Mani + Pedi Express');
+        return;
+      }
+    } else if (!nailTechId) {
       setError('Please select a nail tech');
       return;
     }
     if (selectedSlotIds.length === 0) {
-      setError(requiredSlots > 1 ? `Please select a slot with ${requiredSlots} consecutive slots (no slots booked in between)` : 'Please select an available slot');
+      setError(
+        isExpress
+          ? 'Please select a time where both nail techs are available'
+          : requiredSlots > 1
+            ? `Please select a slot with ${requiredSlots} consecutive slots (no slots booked in between)`
+            : 'Please select an available slot'
+      );
       return;
     }
 
@@ -272,7 +359,7 @@ export default function AddBookingModal({
       setSubmitting(true);
       const body: Record<string, unknown> = {
         slotIds: selectedSlotIds,
-        nailTechId,
+        nailTechId: isExpress ? manicureTechId : nailTechId,
         customerId: resolvedCustomerId || undefined,
         customer: customerPayload,
         service: {
@@ -280,6 +367,12 @@ export default function AddBookingModal({
           location,
           clientType: createNewCustomer ? 'new' : 'repeat',
           chosenServices: chosenServices.length > 0 ? chosenServices : undefined,
+          ...(isExpress
+            ? {
+                mode: 'simultaneous_two_techs',
+                secondaryNailTechId: pedicureTechId,
+              }
+            : {}),
         },
         clientNotes: clientNotes.trim() || undefined,
         adminNotes: adminNotes.trim() || undefined,
@@ -307,7 +400,7 @@ export default function AddBookingModal({
 
   const canSubmit =
     (createNewCustomer ? newCustomer.name.trim() : customerId) &&
-    nailTechId &&
+    (isExpress ? manicureTechId && pedicureTechId && manicureTechId !== pedicureTechId : nailTechId) &&
     selectedSlotIds.length >= requiredSlots &&
     !submitting;
 
@@ -435,6 +528,9 @@ export default function AddBookingModal({
                 onValueChange={(v) => {
                   setServiceType(v as ServiceType);
                   setSelectedSlotId('');
+                  setManicureTechId('');
+                  setPedicureTechId('');
+                  setSelectedTime('');
                 }}
               >
                 <SelectTrigger className="h-9 mt-1">
@@ -498,29 +594,87 @@ export default function AddBookingModal({
             </div>
 
             <div>
-              <Label className="text-xs text-gray-500">Nail Tech *</Label>
-              {nailTechsLoading ? (
-                <p className="text-sm text-gray-400 mt-1">Loading...</p>
+              {isExpress ? (
+                <>
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800 mb-3">
+                    Select one nail tech for <strong>Manicure</strong> and a different one for <strong>Pedicure</strong>. Two slots at the same time will be reserved.
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-gray-500">Manicure tech *</Label>
+                      <Select
+                        value={manicureTechId}
+                        onValueChange={(v) => {
+                          setManicureTechId(v);
+                          if (v === pedicureTechId) setPedicureTechId('');
+                          setSelectedTime('');
+                        }}
+                        disabled={nailTechsLoading}
+                      >
+                        <SelectTrigger className="h-9 mt-1">
+                          <SelectValue placeholder="Select tech" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {nailTechs.map((tech) => (
+                            <SelectItem key={tech.id} value={tech.id} disabled={tech.id === pedicureTechId}>
+                              Ms. {tech.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Pedicure tech *</Label>
+                      <Select
+                        value={pedicureTechId}
+                        onValueChange={(v) => {
+                          setPedicureTechId(v);
+                          if (v === manicureTechId) setManicureTechId('');
+                          setSelectedTime('');
+                        }}
+                        disabled={nailTechsLoading}
+                      >
+                        <SelectTrigger className="h-9 mt-1">
+                          <SelectValue placeholder="Select tech" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {nailTechs.map((tech) => (
+                            <SelectItem key={tech.id} value={tech.id} disabled={tech.id === manicureTechId}>
+                              Ms. {tech.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
               ) : (
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {nailTechs.map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => {
-                        setNailTechId(t.id);
-                        setSelectedSlotId('');
-                      }}
-                      className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all truncate ${
-                        nailTechId === t.id
-                          ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
-                          : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
-                      }`}
-                    >
-                      {t.name}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <Label className="text-xs text-gray-500">Nail Tech *</Label>
+                  {nailTechsLoading ? (
+                    <p className="text-sm text-gray-400 mt-1">Loading...</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {nailTechs.map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => {
+                            setNailTechId(t.id);
+                            setSelectedSlotId('');
+                          }}
+                          className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all truncate ${
+                            nailTechId === t.id
+                              ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
+                              : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                          }`}
+                        >
+                          {t.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -562,13 +716,36 @@ export default function AddBookingModal({
               </Popover>
             </div>
 
-            {date && nailTechId && (
+            {date && (isExpress ? manicureTechId && pedicureTechId : nailTechId) && (
               <div>
-                <Label className="text-xs text-gray-500">Available Slot *</Label>
-                {requiredSlots > 1 && (
+                <Label className="text-xs text-gray-500">{isExpress ? 'Available time *' : 'Available Slot *'}</Label>
+                {!isExpress && requiredSlots > 1 && (
                   <p className="text-xs text-gray-500 mt-0.5">Select the first slot — {requiredSlots} consecutive slots (no slots booked in between) will be reserved.</p>
                 )}
-                {loadingSlots ? (
+                {isExpress ? (
+                  loadingDualSlots ? (
+                    <p className="text-sm text-gray-500 mt-1">Loading slots...</p>
+                  ) : commonTimes.length === 0 ? (
+                    <p className="text-sm text-amber-600 mt-1">No common available time slots for both techs on this date.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {commonTimes.map((time) => (
+                        <button
+                          key={time}
+                          type="button"
+                          onClick={() => setSelectedTime(selectedTime === time ? '' : time)}
+                          className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
+                            selectedTime === time
+                              ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
+                              : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                          }`}
+                        >
+                          <span className="whitespace-nowrap">{formatTime12Hour(time)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )
+                ) : loadingSlots ? (
                   <p className="text-sm text-gray-500 mt-1">Loading slots...</p>
                 ) : compatibleSlots.length === 0 ? (
                   <div className="mt-1 space-y-2">

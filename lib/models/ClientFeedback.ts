@@ -7,6 +7,8 @@ export interface IClientFeedback extends Document {
   responseId: string;
   ipAddress?: string;
   userAgent?: string;
+  nailTechId?: string;
+  nailTechName?: string;
   overallSatisfaction: number;
   nailQuality: number;
   russianManicureQuality: number;
@@ -29,6 +31,8 @@ const ClientFeedbackSchema = new Schema<IClientFeedback>(
     responseId: { type: String, required: true, unique: true, index: true },
     ipAddress: { type: String, index: true },
     userAgent: { type: String },
+    nailTechId: { type: String, index: true },
+    nailTechName: { type: String, trim: true },
     overallSatisfaction: { type: Number, required: true, min: 1, max: 5 },
     nailQuality: { type: Number, required: true, min: 1, max: 5 },
     russianManicureQuality: { type: Number, required: true, min: 1, max: 5 },

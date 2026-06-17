@@ -53,6 +53,7 @@ interface Slot {
 interface ChangeServiceModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  bookingId?: string;
   /** Booking day (YYYY-MM-DD or parseable); express slot picker is limited to this day */
   appointmentDate?: string;
   initialManicureTechId?: string;
@@ -88,6 +89,7 @@ function toYyyyMmDd(value: string | undefined): string {
 export default function ChangeServiceModal({
   open,
   onOpenChange,
+  bookingId,
   appointmentDate,
   initialManicureTechId,
   initialPedicureTechId,
@@ -154,13 +156,23 @@ export default function ChangeServiceModal({
     try {
       setLoadingSlots(true);
       setError(null);
+      const maniParams = new URLSearchParams({
+        nailTechId: manicureTechId,
+        startDate: appointmentDay,
+        endDate: appointmentDay,
+      });
+      const pediParams = new URLSearchParams({
+        nailTechId: pedicureTechId,
+        startDate: appointmentDay,
+        endDate: appointmentDay,
+      });
+      if (bookingId) {
+        maniParams.set('excludeBookingId', bookingId);
+        pediParams.set('excludeBookingId', bookingId);
+      }
       const [maniRes, pediRes] = await Promise.all([
-        fetch(
-          `/api/slots?${new URLSearchParams({ nailTechId: manicureTechId, startDate: appointmentDay, endDate: appointmentDay })}`
-        ),
-        fetch(
-          `/api/slots?${new URLSearchParams({ nailTechId: pedicureTechId, startDate: appointmentDay, endDate: appointmentDay })}`
-        ),
+        fetch(`/api/slots?${maniParams.toString()}`),
+        fetch(`/api/slots?${pediParams.toString()}`),
       ]);
       if (!maniRes.ok || !pediRes.ok) throw new Error('Failed to fetch slots');
       const [maniData, pediData] = await Promise.all([maniRes.json(), pediRes.json()]);
@@ -175,7 +187,7 @@ export default function ChangeServiceModal({
     } finally {
       setLoadingSlots(false);
     }
-  }, [manicureTechId, pedicureTechId, appointmentDay]);
+  }, [manicureTechId, pedicureTechId, appointmentDay, bookingId]);
 
   // Reset on open
   useEffect(() => {

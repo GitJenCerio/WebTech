@@ -184,6 +184,10 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
   const [improvementSuggestions, setImprovementSuggestions] = useState('');
   const [testimonialPermission, setTestimonialPermission] = useState<'first_name' | 'anonymous' | 'no'>('no');
   const [futureBookingIntent, setFutureBookingIntent] = useState<'definitely' | 'probably' | 'maybe' | 'unlikely'>('probably');
+  const [nailTechId, setNailTechId] = useState('');
+  const [nailTechs, setNailTechs] = useState<Array<{ id: string; name: string; role?: string }>>([]);
+  const [loadingNailTechs, setLoadingNailTechs] = useState(true);
+  const [nailTechLoadError, setNailTechLoadError] = useState<string | null>(null);
   const [website, setWebsite] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -192,14 +196,51 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
   const hasTurnstile = Boolean(siteKey);
   const isProduction = process.env.NODE_ENV === 'production';
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadNailTechs() {
+      setLoadingNailTechs(true);
+      setNailTechLoadError(null);
+      try {
+        const response = await fetch('/api/nail-techs?activeOnly=true');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to load nail technicians');
+        if (cancelled) return;
+        const options = (data.nailTechs || []).map((tech: { id?: string; _id?: string; name: string; role?: string }) => ({
+          id: tech.id || tech._id || '',
+          name: tech.name,
+          role: tech.role,
+        })).filter((tech: { id: string }) => Boolean(tech.id));
+        setNailTechs(options);
+      } catch (err: any) {
+        if (!cancelled) {
+          setNailTechLoadError(err.message || 'Failed to load nail technicians');
+          setNailTechs([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingNailTechs(false);
+      }
+    }
+
+    loadNailTechs();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const answeredCount = useMemo(() => Object.values(ratings).filter((value) => value > 0).length, [ratings]);
   const progress = Math.round((answeredCount / ratingQuestions.length) * 100);
-  const canSubmit = answeredCount === ratingQuestions.length && (!hasTurnstile || !!turnstileToken || !isProduction) && !isSubmitting;
+  const canSubmit = Boolean(nailTechId)
+    && answeredCount === ratingQuestions.length
+    && (!hasTurnstile || !!turnstileToken || !isProduction)
+    && !isSubmitting
+    && !loadingNailTechs;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) {
-      setError('Please complete the ratings and verification check before submitting.');
+      setError('Please select your nail technician, complete the ratings, and finish verification before submitting.');
       return;
     }
 
@@ -212,6 +253,7 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...ratings,
+          nailTechId,
           favoritePart,
           improvementSuggestions,
           testimonialPermission,
@@ -326,6 +368,43 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
                   aria-hidden="true"
                 />
 
+                <section className="space-y-3 rounded-2xl border border-[#f0e6dc] bg-[#fffdfb] p-4 sm:p-5">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-[#221817]">Who was your nail technician?</Label>
+                    <p className="text-xs leading-5 text-[#8a776d]">Select the technician who served you today.</p>
+                  </div>
+
+                  {loadingNailTechs ? (
+                    <p className="text-sm text-[#8a776d]">Loading technicians...</p>
+                  ) : nailTechLoadError ? (
+                    <p className="text-sm text-rose-700">{nailTechLoadError}</p>
+                  ) : nailTechs.length === 0 ? (
+                    <p className="text-sm text-[#8a776d]">No technicians are available right now. Please try again later.</p>
+                  ) : (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {nailTechs.map((tech) => (
+                        <label
+                          key={tech.id}
+                          className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#eaded4] bg-white px-3 py-2.5 text-sm text-[#4d4038] transition-colors hover:border-[#c9a46a]/40"
+                        >
+                          <input
+                            type="radio"
+                            name="nailTechId"
+                            value={tech.id}
+                            checked={nailTechId === tech.id}
+                            onChange={() => setNailTechId(tech.id)}
+                            className="h-4 w-4 border-[#c9a46a] text-[#c9a46a] focus:ring-[#c9a46a]"
+                          />
+                          <span className="flex flex-col">
+                            <span className="font-medium text-[#221817]">Ms. {tech.name}</span>
+                            {tech.role ? <span className="text-xs text-[#8a776d]">{tech.role}</span> : null}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
                 <section className="space-y-5">
                   <div>
                     <h2 className="text-lg font-semibold text-[#1f1715]">Rating your experience</h2>
@@ -431,7 +510,7 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-[#8a776d]">All ratings are required before submission.</p>
+                  <p className="text-xs text-[#8a776d]">Select your technician and complete all ratings before submission.</p>
                   <Button
                     type="submit"
                     disabled={!canSubmit}

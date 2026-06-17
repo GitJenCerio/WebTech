@@ -54,7 +54,7 @@ interface RescheduleSlotModalProps {
   onConfirm: (
     newSlotIds: string[],
     reason?: string,
-    opts?: { secondaryNailTechId?: string }
+    opts?: { primaryNailTechId?: string; secondaryNailTechId?: string }
   ) => Promise<void>;
   isLoading?: boolean;
 }
@@ -198,6 +198,7 @@ export default function RescheduleSlotModal({
       setLoadingSlots(true);
       setError(null);
       const params = new URLSearchParams({ nailTechId, startDate: date, endDate: date });
+      if (bookingId) params.set('excludeBookingId', bookingId);
       const res = await fetch(`/api/slots?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to fetch slots');
       const data = await res.json();
@@ -213,7 +214,7 @@ export default function RescheduleSlotModal({
     } finally {
       setLoadingSlots(false);
     }
-  }, [nailTechId, date]);
+  }, [nailTechId, date, bookingId]);
 
   // ── Fetch slots (dual-tech) ────────────────────────────────────
   const fetchDualSlots = useCallback(async () => {
@@ -226,9 +227,15 @@ export default function RescheduleSlotModal({
     try {
       setLoadingDualSlots(true);
       setError(null);
+      const maniParams = new URLSearchParams({ nailTechId: manicureTechId, startDate: date, endDate: date });
+      const pediParams = new URLSearchParams({ nailTechId: pedicureTechId, startDate: date, endDate: date });
+      if (bookingId) {
+        maniParams.set('excludeBookingId', bookingId);
+        pediParams.set('excludeBookingId', bookingId);
+      }
       const [maniRes, pediRes] = await Promise.all([
-        fetch(`/api/slots?${new URLSearchParams({ nailTechId: manicureTechId, startDate: date, endDate: date })}`),
-        fetch(`/api/slots?${new URLSearchParams({ nailTechId: pedicureTechId, startDate: date, endDate: date })}`),
+        fetch(`/api/slots?${maniParams.toString()}`),
+        fetch(`/api/slots?${pediParams.toString()}`),
       ]);
       if (!maniRes.ok || !pediRes.ok) throw new Error('Failed to fetch slots');
       const [maniData, pediData] = await Promise.all([maniRes.json(), pediRes.json()]);
@@ -243,7 +250,7 @@ export default function RescheduleSlotModal({
     } finally {
       setLoadingDualSlots(false);
     }
-  }, [manicureTechId, pedicureTechId, date]);
+  }, [manicureTechId, pedicureTechId, date, bookingId]);
 
   // ── Reset on open ──────────────────────────────────────────────
   useEffect(() => {
@@ -297,6 +304,7 @@ export default function RescheduleSlotModal({
       if (isSimultaneous) {
         if (dualSlotIds.length < 2) return;
         await onConfirm(dualSlotIds, reasonText.trim() || undefined, {
+          primaryNailTechId: manicureTechId,
           secondaryNailTechId: pedicureTechId,
         });
       } else {

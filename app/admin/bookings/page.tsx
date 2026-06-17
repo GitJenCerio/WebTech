@@ -70,6 +70,7 @@ interface Booking {
   secondaryServiceType?: string;
   /** From booking.service.mode — required to recognize dual-tech when type is a display string */
   serviceMode?: 'single_tech' | 'simultaneous_two_techs';
+  expressSegment?: 'manicure' | 'pedicure';
   date: string;
   time: string;
   clientName: string;
@@ -219,6 +220,7 @@ export default function BookingsPage() {
             secondaryNailTechId: booking.service?.secondaryNailTechId,
             secondaryServiceType: booking.service?.secondaryServiceType,
             serviceMode: booking.service?.mode,
+            expressSegment: booking.service?.expressSegment,
       status: booking.status || 'booked',
       amount: hasAnyRealInvoice(booking) ? getCombinedInvoiceTotal(booking) : 0,
       amountPaid: booking.pricing?.paidAmount || 0,
@@ -706,7 +708,7 @@ export default function BookingsPage() {
   const handleRescheduleConfirm = async (
     newSlotIds: string[],
     reason?: string,
-    opts?: { secondaryNailTechId?: string }
+    opts?: { primaryNailTechId?: string; secondaryNailTechId?: string }
   ) => {
     if (!selectedBooking?.id) return;
     setRescheduleLoading(true);
@@ -718,6 +720,7 @@ export default function BookingsPage() {
           action: 'reschedule_to',
           newSlotIds,
           reason: reason || undefined,
+          primaryNailTechId: opts?.primaryNailTechId || undefined,
           secondaryNailTechId: opts?.secondaryNailTechId || undefined,
         }),
       });
@@ -1133,16 +1136,26 @@ export default function BookingsPage() {
   };
 
   const openBookingDetails = (item: Booking) => {
+    const isExpress = item.service?.toLowerCase().includes('express');
+    const manicureTechId =
+      isExpress && item.expressSegment === 'pedicure' && item.secondaryNailTechId
+        ? item.secondaryNailTechId
+        : item.nailTechId;
+    const pedicureTechId =
+      isExpress && item.expressSegment === 'pedicure'
+        ? item.nailTechId
+        : item.secondaryNailTechId;
+
     setSelectedBooking({
       id: item.id,
       bookingCode: item.bookingCode,
       customerId: item.customerId,
       nailTechId: item.nailTechId,
-      primaryNailTechId: item.nailTechId,
-      secondaryNailTechId: item.secondaryNailTechId,
-      nailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
-      primaryNailTechName: item.nailTechId ? nailTechs.find((t) => t.id === item.nailTechId)?.name : undefined,
-      secondaryNailTechName: item.secondaryNailTechId ? nailTechs.find((t) => t.id === item.secondaryNailTechId)?.name : undefined,
+      primaryNailTechId: manicureTechId,
+      secondaryNailTechId: pedicureTechId,
+      nailTechName: manicureTechId ? nailTechs.find((t) => t.id === manicureTechId)?.name : undefined,
+      primaryNailTechName: manicureTechId ? nailTechs.find((t) => t.id === manicureTechId)?.name : undefined,
+      secondaryNailTechName: pedicureTechId ? nailTechs.find((t) => t.id === pedicureTechId)?.name : undefined,
       date: item.date,
       time: item.time,
       clientName: item.clientName,
@@ -1693,6 +1706,7 @@ export default function BookingsPage() {
           setShowChangeServiceModal(o);
           if (!o && selectedBooking) setShowModal(true);
         }}
+        bookingId={selectedBooking?.id}
         appointmentDate={selectedBooking?.date}
         initialManicureTechId={selectedBooking?.primaryNailTechId ?? selectedBooking?.nailTechId}
         initialPedicureTechId={selectedBooking?.secondaryNailTechId}

@@ -7,6 +7,8 @@ import { Button, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, Ta
 
 type ResponseItem = {
   responseId: string;
+  nailTechId?: string;
+  nailTechName?: string;
   overallSatisfaction: number;
   nailQuality: number;
   russianManicureQuality: number;
@@ -43,6 +45,7 @@ function exportCsv(rows: ResponseItem[]) {
   const header = [
     'responseId',
     'submittedAt',
+    'nailTechName',
     'overallSatisfaction',
     'nailQuality',
     'russianManicureQuality',
@@ -67,6 +70,7 @@ function exportCsv(rows: ResponseItem[]) {
     ...rows.map((row) => [
       row.responseId,
       row.createdAt,
+      row.nailTechName || '',
       row.overallSatisfaction,
       row.nailQuality,
       row.russianManicureQuality,
@@ -290,6 +294,9 @@ export default function FeedbackAnalytics() {
                     <div>
                       <p className="text-sm font-medium text-[#1a1a1a]">{response.responseId}</p>
                       <p className="text-xs text-gray-500">{format(new Date(response.createdAt), 'PPP p')}</p>
+                      {response.nailTechName ? (
+                        <p className="mt-1 text-xs font-medium text-[#8a776d]">Nail tech: Ms. {response.nailTechName}</p>
+                      ) : null}
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs font-medium">
                       {response.isFlaggedForFollowUp && <span className="rounded-full bg-rose-50 px-2.5 py-1 text-rose-700">Follow-up</span>}
@@ -317,6 +324,9 @@ export default function FeedbackAnalytics() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 text-xs text-[#5e4f48]">
+                    {response.nailTechName ? (
+                      <span className="rounded-full border border-[#eaded4] bg-white px-2.5 py-1">Nail tech: Ms. {response.nailTechName}</span>
+                    ) : null}
                     <span className="rounded-full border border-[#eaded4] bg-white px-2.5 py-1">Future booking: {response.futureBookingIntent}</span>
                     <span className="rounded-full border border-[#eaded4] bg-white px-2.5 py-1">Average: {response.averageRating.toFixed(2)}</span>
                     <span className="rounded-full border border-[#eaded4] bg-white px-2.5 py-1">Overall score: {response.overallScore.toFixed(2)}</span>

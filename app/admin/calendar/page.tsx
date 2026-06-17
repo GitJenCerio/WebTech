@@ -740,7 +740,7 @@ export default function CalendarPage() {
   const handleRescheduleConfirm = async (
     newSlotIds: string[],
     reason?: string,
-    opts?: { secondaryNailTechId?: string }
+    opts?: { primaryNailTechId?: string; secondaryNailTechId?: string }
   ) => {
     if (!selectedBooking?.id) return;
     setRescheduleLoading(true);
@@ -752,6 +752,7 @@ export default function CalendarPage() {
           action: 'reschedule_to',
           newSlotIds,
           reason: reason || undefined,
+          primaryNailTechId: opts?.primaryNailTechId || undefined,
           secondaryNailTechId: opts?.secondaryNailTechId || undefined,
         }),
       });
@@ -1395,6 +1396,7 @@ export default function CalendarPage() {
           setShowChangeServiceModal(o);
           if (!o && selectedBooking) setShowModal(true);
         }}
+        bookingId={selectedBooking?.id}
         appointmentDate={selectedBooking?.appointmentDateIso}
         initialManicureTechId={selectedBooking?.primaryNailTechId ?? selectedBooking?.nailTechId}
         initialPedicureTechId={selectedBooking?.secondaryNailTechId}

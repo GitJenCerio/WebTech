@@ -9,6 +9,8 @@ import NailTech from '@/lib/models/NailTech';
 import Booking from '@/lib/models/Booking';
 import Customer from '@/lib/models/Customer';
 import { cleanupPastSlotsIfDue } from '@/lib/services/cleanupPastSlots';
+import { resolveExpressTechPair } from '@/lib/utils/bookingInvoice';
+import { getSlotIdsHeldByBooking } from '@/lib/utils/bookingSlotOwnership';
 
 const createSlotsSchema = z.object({
   nailTechId: z.string().min(1),
@@ -114,6 +116,11 @@ export async function GET(request: Request) {
 
     const slots = await Slot.find(query).sort({ date: 1, time: 1 }).lean();
 
+    const excludeBookingId = searchParams.get('excludeBookingId')?.trim() || '';
+    const heldSlotIds = new Set(
+      excludeBookingId ? await getSlotIdsHeldByBooking(excludeBookingId) : []
+    );
+
     // Enrich slots with active booking details for admin workflows
     const slotIds = slots.map((slot: any) => String(slot._id));
     const bookings = slotIds.length
@@ -145,10 +152,43 @@ export async function GET(request: Request) {
     );
 
     const bookingBySlotId = new Map<string, any>();
+    const expressGroupIds = Array.from(
+      new Set(
+        (bookings as Array<{ expressGroupId?: string }>)
+          .map((booking) => booking.expressGroupId)
+          .filter((gid): gid is string => Boolean(gid))
+      )
+    );
+    const expressMembersByGroup = new Map<string, Array<{ _id: unknown; nailTechId?: string; service?: { expressSegment?: string } }>>();
+    if (expressGroupIds.length > 0) {
+      const expressMembers = await Booking.find({ expressGroupId: { $in: expressGroupIds } })
+        .select('expressGroupId nailTechId service')
+        .lean();
+      for (const gid of expressGroupIds) {
+        expressMembersByGroup.set(
+          gid,
+          expressMembers.filter((member: { expressGroupId?: string }) => member.expressGroupId === gid)
+        );
+      }
+    }
+
     for (const booking of bookings as any[]) {
       for (const slotId of booking.slotIds || []) {
         const slotKey = String(slotId);
         if (!bookingBySlotId.has(slotKey)) {
+          let service = booking.service;
+          if (booking.expressGroupId) {
+            const pair = resolveExpressTechPair(expressMembersByGroup.get(booking.expressGroupId) || []);
+            if (pair && service) {
+              service = {
+                ...service,
+                mode: 'simultaneous_two_techs',
+                secondaryNailTechId:
+                  service.expressSegment === 'manicure' ? pair.pedicureTechId : pair.manicureTechId,
+              };
+            }
+          }
+
           bookingBySlotId.set(slotKey, {
             id: String(booking._id),
             bookingCode: booking.bookingCode,
@@ -160,7 +200,7 @@ export async function GET(request: Request) {
             customerPhone: customerById.get(String(booking.customerId))?.phone || '',
             customerSocialMediaName: customerById.get(String(booking.customerId))?.socialMediaName || '',
             slotIds: booking.slotIds || [],
-            service: booking.service,
+            service,
             status: booking.status,
             paymentStatus: booking.paymentStatus,
             clientNotes: booking.clientNotes || '',
@@ -178,10 +218,17 @@ export async function GET(request: Request) {
       }
     }
 
-    const enrichedSlots = slots.map((slot: any) => ({
-      ...slot,
-      booking: bookingBySlotId.get(String(slot._id)) || null,
-    }));
+    const enrichedSlots = slots.map((slot: any) => {
+      const slotId = String(slot._id);
+      const heldByCurrentBooking = heldSlotIds.has(slotId);
+      return {
+        ...slot,
+        // Treat the booking's own slots as selectable while rescheduling / changing service
+        status: heldByCurrentBooking && slot.status !== 'blocked' ? 'available' : slot.status,
+        heldByCurrentBooking,
+        booking: bookingBySlotId.get(slotId) || null,
+      };
+    });
 
     return NextResponse.json({ slots: enrichedSlots });
   } catch (error: any) {

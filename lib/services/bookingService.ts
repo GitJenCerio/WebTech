@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { resolveReservationDeposit } from '../utils/bookingDeposit';
 import connectDB from '../mongodb';
 import Booking, { IBooking } from '../models/Booking';
 import BookingCounter from '../models/BookingCounter';
@@ -7,6 +8,7 @@ import Customer from '../models/Customer';
 import NailTech from '../models/NailTech';
 import type { BookingStatus, PaymentStatus, ServiceType } from '../types';
 import { hasAnyRealInvoice } from '../utils/bookingInvoice';
+import { getSlotIdsHeldByBooking, isSlotSelectableForBooking } from '../utils/bookingSlotOwnership';
 
 /**
  * Get Manila-local date key in YYYYMMDD format
@@ -53,7 +55,11 @@ async function generateBookingCode(): Promise<string> {
  * slots can be from any nail tech but must all belong to the same one.
  * Returns the nail tech ID of the slots.
  */
-async function validateSlots(slotIds: string[], nailTechId?: string): Promise<string> {
+async function validateSlots(
+  slotIds: string[],
+  nailTechId?: string,
+  allowedOccupiedSlotIds?: Set<string>
+): Promise<string> {
   if (!slotIds || slotIds.length === 0) {
     throw new Error('At least one slot is required');
   }
@@ -71,7 +77,7 @@ async function validateSlots(slotIds: string[], nailTechId?: string): Promise<st
     if (slotTechId !== firstTechId) {
       throw new Error('All slots must belong to the same nail tech');
     }
-    if (slot.status !== 'available') {
+    if (!isSlotSelectableForBooking(slot, allowedOccupiedSlotIds)) {
       throw new Error(`Slot ${slot._id} is not available (status: ${slot.status})`);
     }
     if (nailTechId != null && slotTechId !== String(nailTechId)) {
@@ -100,8 +106,9 @@ async function validateSimultaneousSlots(params: {
   primaryNailTechId: string;
   secondaryNailTechId: string;
   location: 'homebased_studio' | 'home_service';
+  allowedOccupiedSlotIds?: Set<string>;
 }): Promise<void> {
-  const { slotIds, primaryNailTechId, secondaryNailTechId, location } = params;
+  const { slotIds, primaryNailTechId, secondaryNailTechId, location, allowedOccupiedSlotIds } = params;
   if (!Array.isArray(slotIds) || slotIds.length !== 2) {
     throw new Error('Simultaneous Mani+Pedi requires exactly 2 slots');
   }
@@ -121,8 +128,12 @@ async function validateSimultaneousSlots(params: {
     throw new Error('Slots must belong to the selected nail techs');
   }
   if (slotA.isHidden || slotB.isHidden) throw new Error('One or more slots are not available for booking');
-  if (slotA.status !== 'available') throw new Error(`Slot ${slotA._id} is not available (status: ${slotA.status})`);
-  if (slotB.status !== 'available') throw new Error(`Slot ${slotB._id} is not available (status: ${slotB.status})`);
+  if (!isSlotSelectableForBooking(slotA, allowedOccupiedSlotIds)) {
+    throw new Error(`Slot ${slotA._id} is not available (status: ${slotA.status})`);
+  }
+  if (!isSlotSelectableForBooking(slotB, allowedOccupiedSlotIds)) {
+    throw new Error(`Slot ${slotB._id} is not available (status: ${slotB.status})`);
+  }
   if (String(slotA.date) !== String(slotB.date) || String(slotA.time) !== String(slotB.time)) {
     throw new Error('Simultaneous Mani+Pedi requires the same date and time for both slots');
   }
@@ -368,10 +379,26 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
     throw new Error('Valid deposit required amount is required');
   }
 
+  input.pricing.depositRequired = resolveReservationDeposit(
+    input.slotIds.length,
+    input.pricing.depositRequired
+  );
+
   // Validate customer exists
   const customer = await Customer.findById(input.customerId);
   if (!customer) {
     throw new Error('Customer not found');
+  }
+
+  const { isExpressManiPediServiceType } = await import('../utils/bookingInvoice');
+  if (isExpressManiPediServiceType(input.service.type)) {
+    if (!input.service.secondaryNailTechId) {
+      throw new Error('secondaryNailTechId is required for Mani + Pedi Express');
+    }
+    if (input.slotIds.length !== 2) {
+      throw new Error('Mani + Pedi Express requires exactly 2 slots (one per nail tech)');
+    }
+    input.service.mode = 'simultaneous_two_techs';
   }
 
   // Simultaneous Mani + Pedi Express → two booking documents (grouped by expressGroupId)
@@ -769,7 +796,9 @@ export async function markBookingAsRescheduled(bookingId: string, reason: string
 async function rescheduleExpressPairToSlots(
   anchor: IBooking,
   newSlotIds: string[],
-  reason?: string
+  reason?: string,
+  primaryNailTechId?: string,
+  secondaryNailTechId?: string
 ): Promise<IBooking> {
   validateBookingEditable(anchor, 'reschedule');
   if (anchor.status === 'cancelled') {
@@ -786,11 +815,15 @@ async function rescheduleExpressPairToSlots(
   const primary = members.find((m) => m.service?.expressSegment === 'manicure') || members[0];
   const secondary = members.find((m) => m.service?.expressSegment === 'pedicure') || members[1];
 
+  const maniTechId = primaryNailTechId || String(primary.nailTechId);
+  const pediTechId = secondaryNailTechId || String(secondary.nailTechId);
+
   await validateSimultaneousSlots({
     slotIds: newSlotIds,
-    primaryNailTechId: String(primary.nailTechId),
-    secondaryNailTechId: String(secondary.nailTechId),
+    primaryNailTechId: maniTechId,
+    secondaryNailTechId: pediTechId,
     location: (primary.service?.location as 'homebased_studio' | 'home_service') || 'homebased_studio',
+    allowedOccupiedSlotIds: new Set(await getSlotIdsHeldByBooking(String(anchor._id))),
   });
 
   const oldSlotIds = members.flatMap((m) => [...(m.slotIds || [])]);
@@ -809,14 +842,16 @@ async function rescheduleExpressPairToSlots(
     throw new Error('One or more slots not found');
   }
 
-  const ps = foundSlots.find((s) => String(s.nailTechId) === String(primary.nailTechId));
-  const ss = foundSlots.find((s) => String(s.nailTechId) === String(secondary.nailTechId));
+  const ps = foundSlots.find((s) => String(s.nailTechId) === maniTechId);
+  const ss = foundSlots.find((s) => String(s.nailTechId) === pediTechId);
   if (!ps || !ss) {
     await releaseSlots(newSlotIds);
     await reserveSlots(oldSlotIds);
     throw new Error('Each new slot must match the manicure and pedicure nail techs');
   }
 
+  primary.nailTechId = maniTechId;
+  secondary.nailTechId = pediTechId;
   primary.slotIds = [String(ps._id)];
   secondary.slotIds = [String(ss._id)];
 
@@ -844,7 +879,8 @@ export async function rescheduleBookingToSlots(
   bookingId: string,
   newSlotIds: string[],
   reason?: string,
-  secondaryNailTechId?: string
+  secondaryNailTechId?: string,
+  primaryNailTechId?: string
 ): Promise<IBooking> {
   await connectDB();
 
@@ -862,11 +898,13 @@ export async function rescheduleBookingToSlots(
     throw new Error('At least one new slot is required');
   }
 
+  const heldSlotIds = new Set(await getSlotIdsHeldByBooking(bookingId));
+
   if (booking.expressGroupId) {
     if (newSlotIds.length !== 2) {
       throw new Error('Mani + Pedi Express requires exactly 2 new slots (one per tech)');
     }
-    return rescheduleExpressPairToSlots(booking, newSlotIds, reason);
+    return rescheduleExpressPairToSlots(booking, newSlotIds, reason, primaryNailTechId, secondaryNailTechId);
   }
 
   let newNailTechId: string;
@@ -874,20 +912,20 @@ export async function rescheduleBookingToSlots(
   if (secondaryNailTechId) {
     // Simultaneous two-tech mode (Mani + Pedi Express)
     // newSlotIds = [primarySlotId, secondarySlotId]
-    // derive primary nail tech from first slot
     const primarySlot = await Slot.findById(newSlotIds[0]);
     if (!primarySlot) throw new Error('Primary slot not found');
-    newNailTechId = String(primarySlot.nailTechId);
+    newNailTechId = primaryNailTechId || String(primarySlot.nailTechId);
 
     await validateSimultaneousSlots({
       slotIds: newSlotIds,
       primaryNailTechId: newNailTechId,
       secondaryNailTechId,
       location: (booking.service?.location as 'homebased_studio' | 'home_service') || 'homebased_studio',
+      allowedOccupiedSlotIds: heldSlotIds,
     });
   } else {
     // Single-tech mode: all slots must belong to same nail tech
-    newNailTechId = await validateSlots(newSlotIds);
+    newNailTechId = await validateSlots(newSlotIds, undefined, heldSlotIds);
   }
 
   const oldSlotIds = [...(booking.slotIds || [])];
@@ -995,6 +1033,7 @@ export async function updateBookingService(
       primaryNailTechId,
       secondaryNailTechId: service.secondaryNailTechId,
       location: service.location || (booking.service?.location as 'homebased_studio' | 'home_service') || 'homebased_studio',
+      allowedOccupiedSlotIds: new Set(await getSlotIdsHeldByBooking(bookingId)),
     });
 
     // Release old slots and reserve new ones
