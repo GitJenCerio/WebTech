@@ -22,9 +22,6 @@ type BookingServiceType =
   | 'pedicure'
   | 'mani_pedi'
   | 'mani_pedi_simultaneous'
-  | 'group_manicure'
-  | 'group_pedicure'
-  | 'group_mani_pedi'
   | 'home_service_2slots'
   | 'home_service_3slots';
 import { getNextSlotTime, SLOT_TIMES, normalizeSlotTime } from '@/lib/constants/slots';
@@ -36,30 +33,21 @@ const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; labe
     { value: 'pedicure', label: 'Pedicure (1 slot)' },
     { value: 'mani_pedi', label: 'Mani + Pedi Combo (2 slots)' },
     { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express (2 techs)' },
-    { value: 'group_manicure', label: 'Mani for 2' },
-    { value: 'group_pedicure', label: 'Pedi for 2' },
-    { value: 'group_mani_pedi', label: 'Mani + Pedi for 2' },
   ],
   home_service: [
     { value: 'manicure', label: 'Manicure' },
     { value: 'pedicure', label: 'Pedicure' },
     { value: 'mani_pedi', label: 'Mani + Pedi Combo (2 slots)' },
     { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express (2 techs)' },
-    { value: 'group_manicure', label: 'Mani for 2' },
-    { value: 'group_pedicure', label: 'Pedi for 2' },
-    { value: 'group_mani_pedi', label: 'Mani + Pedi for 2' },
   ],
 };
 
 function getRequiredSlotCount(
   serviceType: BookingServiceType | null,
-  serviceLocation?: ServiceLocation,
-  personCount = 2
+  serviceLocation?: ServiceLocation
 ): number {
   if (serviceType === null) return 1;
   if (serviceType === 'mani_pedi_simultaneous') return 1;
-  if (serviceType === 'group_manicure' || serviceType === 'group_pedicure') return Math.max(2, personCount);
-  if (serviceType === 'group_mani_pedi') return Math.max(2, personCount) * 2;
   // For home service, manicure and pedicure require 2 slots (2 pax)
   if (serviceLocation === 'home_service' && (serviceType === 'manicure' || serviceType === 'pedicure')) {
     return 2;
@@ -81,10 +69,9 @@ function canSlotAccommodateService(
   slot: Slot,
   serviceType: BookingServiceType,
   allSlots: Slot[],
-  serviceLocation?: ServiceLocation,
-  personCount = 2
+  serviceLocation?: ServiceLocation
 ): boolean {
-  const requiredSlots = getRequiredSlotCount(serviceType, serviceLocation, personCount);
+  const requiredSlots = getRequiredSlotCount(serviceType, serviceLocation);
   if (requiredSlots === 1) return true;
 
   // Get all slots for this date and same nail tech, sorted by time
@@ -172,7 +159,6 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [selectedService, setSelectedService] = useState<BookingServiceType | null>(null);
-  const [selectedPersonCount, setSelectedPersonCount] = useState<number>(2);
   const [linkedSlots, setLinkedSlots] = useState<Slot[]>([]);
   const [serviceMessage, setServiceMessage] = useState<string | null>(null);
   const [squeezeFeeAcknowledged, setSqueezeFeeAcknowledged] = useState(false);
@@ -318,7 +304,7 @@ export default function BookingPage() {
       return;
     }
 
-    const requiredSlots = getRequiredSlotCount(selectedService, clientInfo?.serviceLocation, selectedPersonCount);
+    const requiredSlots = getRequiredSlotCount(selectedService, clientInfo?.serviceLocation);
     if (requiredSlots === 1) {
       setLinkedSlots([]);
       setServiceMessage(null);
@@ -430,14 +416,14 @@ export default function BookingPage() {
   // Filter slots that can accommodate the selected service
   const compatibleSlotsForDate = useMemo(
     () => {
-      if (!selectedService || getRequiredSlotCount(selectedService, clientInfo?.serviceLocation, selectedPersonCount) === 1) {
+      if (!selectedService || getRequiredSlotCount(selectedService, clientInfo?.serviceLocation) === 1) {
         return availableSlotsForDate;
       }
       return availableSlotsForDate.filter((slot) =>
-        canSlotAccommodateService(slot, selectedService, slots, clientInfo?.serviceLocation, selectedPersonCount)
+        canSlotAccommodateService(slot, selectedService, slots, clientInfo?.serviceLocation)
       );
     },
-    [availableSlotsForDate, selectedService, slots, clientInfo?.serviceLocation, selectedPersonCount],
+    [availableSlotsForDate, selectedService, slots, clientInfo?.serviceLocation],
   );
 
 
@@ -454,7 +440,7 @@ export default function BookingPage() {
   // Removed auto-select behavior - users must manually click on a time slot to open the modal
 
   // Determine available days based on required consecutive slots for selected service
-  const requiredSlots = getRequiredSlotCount(selectedService, clientInfo?.serviceLocation, selectedPersonCount);
+  const requiredSlots = getRequiredSlotCount(selectedService, clientInfo?.serviceLocation);
   
   // Filter calendar dates to show only those with enough consecutive available slots
   const availableDatesForService = useMemo(() => {
@@ -474,13 +460,13 @@ export default function BookingPage() {
     
     // Check each date for consecutive available slots (required for home service 2/4 slots)
     Object.entries(dateGroups).forEach(([dateKey, dateSlots]) => {
-      if (canSlotAccommodateService(dateSlots[0], selectedService, slots, clientInfo?.serviceLocation, selectedPersonCount)) {
+      if (canSlotAccommodateService(dateSlots[0], selectedService, slots, clientInfo?.serviceLocation)) {
         available.add(dateKey);
       }
     });
     
     return available;
-  }, [slots, selectedService, clientInfo, selectedPersonCount]);
+  }, [slots, selectedService, clientInfo]);
 
   // Dates that don't have enough consecutive slots for the selected service
   const noAvailableSlotsDates = useMemo(() => {
@@ -587,7 +573,7 @@ export default function BookingPage() {
     
     setIsBooking(true);
     try {
-      const requiredSlots = getRequiredSlotCount(selectedService, clientInfo.serviceLocation, selectedPersonCount);
+      const requiredSlots = getRequiredSlotCount(selectedService, clientInfo.serviceLocation);
       const linkedSlotIds = linkedSlots.map((slot) => slot.id);
 
       if (requiredSlots > 1 && linkedSlotIds.length !== requiredSlots - 1) {
@@ -649,9 +635,6 @@ export default function BookingPage() {
       const total = basePrice + (clientInfo.serviceLocation === 'home_service' ? 1000 : 0);
 
       const payloadServiceType = (() => {
-        if (selectedService === 'group_manicure') return `Manicure for ${Math.max(2, selectedPersonCount)}`;
-        if (selectedService === 'group_pedicure') return `Pedicure for ${Math.max(2, selectedPersonCount)}`;
-        if (selectedService === 'group_mani_pedi') return `Manicure + Pedicure for ${Math.max(2, selectedPersonCount)}`;
         if (isSimultaneous) return 'Manicure + Pedicure';
         return selectedService;
       })();
@@ -915,9 +898,9 @@ export default function BookingPage() {
                     <p className="text-xs sm:text-sm" style={{ color: '#495057', fontFamily: "'Lato', sans-serif" }}>
                       Tap a time to reserve it.
                     </p>
-                    {clientInfo && selectedService && getRequiredSlotCount(selectedService, clientInfo.serviceLocation, selectedPersonCount) > 1 && (
+                    {clientInfo && selectedService && getRequiredSlotCount(selectedService, clientInfo.serviceLocation) > 1 && (
                       <p className="text-[10px] sm:text-xs mt-1 leading-relaxed" style={{ color: '#856404', fontFamily: "'Lato', sans-serif" }}>
-                        Select the <strong>first</strong> slot for {getRequiredSlotCount(selectedService, clientInfo.serviceLocation, selectedPersonCount)}-slot services.
+                        Select the <strong>first</strong> slot for {getRequiredSlotCount(selectedService, clientInfo.serviceLocation)}-slot services.
                       </p>
                     )}
                   </header>
@@ -999,7 +982,6 @@ export default function BookingPage() {
         onContinue={(data) => {
           setClientInfo(data);
           setSelectedService(null);
-          setSelectedPersonCount(2);
           setSelectedNailTechId(null);
           setSelectedSecondaryNailTechId(null);
           setShowClientTypeModal(false);
@@ -1012,9 +994,8 @@ export default function BookingPage() {
         isOpen={showServiceTypeModal}
         serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
         selectedService={selectedService}
-        onContinue={(serviceType, personCount) => {
+        onContinue={(serviceType) => {
           setSelectedService(serviceType);
-          setSelectedPersonCount(Math.max(2, personCount ?? 2));
           setShowServiceTypeModal(false);
           setShowNailTechModal(true);
           setServiceChangeMode(false);

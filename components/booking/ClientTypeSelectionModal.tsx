@@ -311,9 +311,9 @@ export default function ClientTypeSelectionModal({
 
               <div className="w-full grid place-items-center">
                 <OptionCard className="w-[300px] max-w-full" selected={false} onClick={() => handleLocationSelect('home_service')}>
-                  <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">Base starts at ₱1,500</span></OptionCardTitle>
+                  <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">₱1,500–₱2,000 fee</span></OptionCardTitle>
                   <OptionCardDescription>
-                    Service at your home. Base rate starts at ₱1,500 (depends on location) + ₱500 for each additional head.
+                    Service at your home. Home service within Manila or 3km radius from the studio: ₱1,500. Outside Manila city (e.g. Taguig, San Juan, Caloocan): ₱2,000 home service fee on top of the service. Transportation is shouldered by the client.
                   </OptionCardDescription>
                 </OptionCard>
               </div>

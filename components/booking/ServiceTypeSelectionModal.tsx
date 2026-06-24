@@ -12,9 +12,6 @@ type BookingServiceType =
   | 'pedicure'
   | 'mani_pedi'
   | 'mani_pedi_simultaneous'
-  | 'group_manicure'
-  | 'group_pedicure'
-  | 'group_mani_pedi'
   | 'home_service_2slots'
   | 'home_service_3slots';
 
@@ -31,18 +28,12 @@ const servicesByLocation: Record<ServiceLocation, ServiceOption[]> = {
     { value: 'pedicure', label: 'Pedicure', description: 'Professional pedicure at our studio', slots: 1 },
     { value: 'mani_pedi', label: 'Mani + Pedi Combo', description: 'Manicure and pedicure combo', slots: 2 },
     { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express', description: 'Manicure and pedicure with 2 nail techs at the same time (+₱300 additional fee)', slots: 1 },
-    { value: 'group_manicure', label: 'Mani for 2', description: 'Professional manicure for 2 or more clients', slots: 2 },
-    { value: 'group_pedicure', label: 'Pedi for 2', description: 'Professional pedicure for 2 or more clients', slots: 2 },
-    { value: 'group_mani_pedi', label: 'Mani + Pedi for 2', description: 'Mani + Pedi for 2 or more clients', slots: 4 },
   ],
   home_service: [
     { value: 'manicure', label: 'Manicure', description: 'Professional manicure at your home', slots: 1 },
     { value: 'pedicure', label: 'Pedicure', description: 'Professional pedicure at your home', slots: 1 },
     { value: 'mani_pedi', label: 'Mani + Pedi Combo', description: 'Manicure and pedicure combo', slots: 2 },
     { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express', description: 'Manicure and pedicure with 2 nail techs at the same time (+₱300 additional fee)', slots: 1 },
-    { value: 'group_manicure', label: 'Mani for 2', description: 'Professional manicure for groups at your home', slots: 2 },
-    { value: 'group_pedicure', label: 'Pedi for 2', description: 'Professional pedicure for groups at your home', slots: 2 },
-    { value: 'group_mani_pedi', label: 'Mani + Pedi for 2', description: 'Mani + Pedi for groups at your home', slots: 4 },
   ],
 };
 
@@ -50,7 +41,7 @@ interface ServiceTypeSelectionModalProps {
   isOpen: boolean;
   serviceLocation: ServiceLocation;
   selectedService: BookingServiceType | null;
-  onContinue: (serviceType: BookingServiceType, personCount?: number) => void;
+  onContinue: (serviceType: BookingServiceType) => void;
   onBack: () => void;
 }
 
@@ -63,7 +54,6 @@ export default function ServiceTypeSelectionModal({
 }: ServiceTypeSelectionModalProps) {
   const services = servicesByLocation[serviceLocation];
   const [localSelectedService, setLocalSelectedService] = useState<BookingServiceType | null>(selectedService);
-  const [groupPersonCountInput, setGroupPersonCountInput] = useState<string>('2');
 
   const normalizeServiceValue = (value: BookingServiceType | string): BookingServiceType | null => {
     if (value === 'Russian Manicure') return 'manicure';
@@ -72,17 +62,8 @@ export default function ServiceTypeSelectionModal({
     return (value as BookingServiceType) || null;
   };
 
-  const isGroupService = (value: BookingServiceType | null) =>
-    value === 'group_manicure' || value === 'group_pedicure' || value === 'group_mani_pedi';
-
   const handleContinue = () => {
     if (!localSelectedService) return;
-    if (isGroupService(localSelectedService)) {
-      const parsed = Number(groupPersonCountInput);
-      const personCount = Number.isFinite(parsed) ? Math.max(2, Math.floor(parsed)) : 2;
-      onContinue(localSelectedService, personCount);
-      return;
-    }
     onContinue(localSelectedService);
   };
 
@@ -90,7 +71,6 @@ export default function ServiceTypeSelectionModal({
   useEffect(() => {
     if (isOpen) {
       setLocalSelectedService(selectedService);
-      setGroupPersonCountInput('2');
     }
   }, [isOpen, selectedService]);
 
@@ -115,13 +95,16 @@ export default function ServiceTypeSelectionModal({
         <h3 className="text-2xl font-semibold mb-2 text-gray-900 flex-shrink-0">What Service?</h3>
         <p className="text-sm text-gray-600 mb-4 flex-shrink-0">
           Select the service you'd like to book. We'll show only available dates for your selection.
+          Booking for more than one client? Please submit a separate booking for each person.
         </p>
 
         <div className="flex-1 overflow-y-auto -mr-6 pr-0">
           {serviceLocation === 'home_service' && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-6 text-sm text-amber-900">
-              <p className="font-medium">Home Service charges</p>
-              <p className="text-amber-800 mt-0.5">Base rate starts at ₱1,500 (depends on location) + ₱500 for each additional head</p>
+              <p className="font-medium">Home Service fee</p>
+              <p className="text-amber-800 mt-0.5">
+                ₱1,500 within Manila or 3km radius from the studio. ₱2,000 outside Manila city (e.g. Taguig, San Juan, Caloocan) on top of the service. Transportation is shouldered by the client.
+              </p>
             </div>
           )}
 
@@ -151,30 +134,6 @@ export default function ServiceTypeSelectionModal({
               );
             })}
           </div>
-
-          {localSelectedService && isGroupService(localSelectedService) && (
-            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-              <p className="text-sm font-medium text-gray-900">How many person(s)?</p>
-              <input
-                type="number"
-                min={2}
-                value={groupPersonCountInput}
-                onChange={(e) => setGroupPersonCountInput(e.target.value)}
-                onBlur={() => {
-                  const parsed = Number(groupPersonCountInput);
-                  if (!Number.isFinite(parsed) || parsed < 2) {
-                    setGroupPersonCountInput('2');
-                    return;
-                  }
-                  setGroupPersonCountInput(String(Math.floor(parsed)));
-                }}
-                className="mt-2 h-10 w-full rounded-md border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
-              />
-              <p className="mt-1 text-xs text-gray-600">
-                Slot requirement will be based on selected persons. If not complete, please contact our FB page for special requests.
-              </p>
-            </div>
-          )}
         </div>
 
         <div className="mt-4 pt-4 border-t border-gray-300 flex gap-3 flex-shrink-0 bg-white">
