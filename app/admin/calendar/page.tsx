@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import CalendarPanel from '@/components/admin/bookings/CalendarPanel';
 import SlotList from '@/components/admin/bookings/SlotList';
-import SlotsOverviewTable from '@/components/admin/bookings/SlotsOverviewTable';
+import AvailableSlotsExport from '@/components/admin/bookings/AvailableSlotsExport';
 import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal';
 import ClientProfileModal from '@/components/admin/ClientProfileModal';
 import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
@@ -1325,12 +1325,8 @@ export default function CalendarPage() {
         )}
       </div>
 
-      {/* Slots Overview Table - full width, independent nail tech filter */}
-      <SlotsOverviewTable
-        currentMonth={currentMonth}
-        showNailTechFilter={userRole.canManageAllTechs && !nailTechsLoading}
-        onSlotClick={(slot, slotTimes) => handleSlotClick(slot as Slot, slotTimes)}
-      />
+      {/* Shareable Available Slots - downloadable summary to send to clients */}
+      <AvailableSlotsExport />
 
       {/* Booking Details Modal */}
       <BookingDetailsModal

@@ -103,7 +103,7 @@ export default function ServiceTypeSelectionModal({
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-6 text-sm text-amber-900">
               <p className="font-medium">Home Service fee</p>
               <p className="text-amber-800 mt-0.5">
-                ₱1,500 within Manila or 3km radius from the studio. ₱2,000 outside Manila city (e.g. Taguig, San Juan, Caloocan) on top of the service. Transportation is shouldered by the client.
+                Within Manila City: ₱1,500 · Within Metro Manila: ₱2,000 · Outside Metro Manila (Luzon only): ₱3,000 — on top of the service. Covers 1 client (+₱500 per additional client). Grab transport fee applies.
               </p>
             </div>
           )}

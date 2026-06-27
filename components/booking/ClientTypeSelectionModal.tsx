@@ -31,7 +31,7 @@ export default function ClientTypeSelectionModal({
   onContinue,
 }: ClientTypeSelectionModalProps) {
   const router = useRouter();
-  const [step, setStep] = useState<'type' | 'lookup' | 'location'>('type');
+  const [step, setStep] = useState<'type' | 'lookup' | 'location' | 'home_terms'>('type');
   const [clientType, setClientType] = useState<ClientType | null>(null);
   const [originalClientType, setOriginalClientType] = useState<ClientType | null>(null);
   const [phone, setPhone] = useState('');
@@ -109,6 +109,19 @@ export default function ClientTypeSelectionModal({
   };
 
   const handleLocationSelect = (location: ServiceLocation) => {
+    if (!clientType) return;
+
+    // Home Service requires the client to review and agree to the areas & fees first
+    if (location === 'home_service') {
+      setError(null);
+      setStep('home_terms');
+      return;
+    }
+
+    proceedWithLocation(location);
+  };
+
+  const proceedWithLocation = (location: ServiceLocation) => {
     if (!clientType) return;
 
     const data: {
@@ -311,9 +324,9 @@ export default function ClientTypeSelectionModal({
 
               <div className="w-full grid place-items-center">
                 <OptionCard className="w-[300px] max-w-full" selected={false} onClick={() => handleLocationSelect('home_service')}>
-                  <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">₱1,500–₱2,000 fee</span></OptionCardTitle>
+                  <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">₱1,500–₱3,000 fee</span></OptionCardTitle>
                   <OptionCardDescription>
-                    Service at your home. Home service within Manila or 3km radius from the studio: ₱1,500. Outside Manila city (e.g. Taguig, San Juan, Caloocan): ₱2,000 home service fee on top of the service. Transportation is shouldered by the client.
+                    Service at your home. Fee depends on location (Manila ₱1,500 · Metro Manila ₱2,000 · Outside Metro Manila ₱3,000) on top of the service. You&apos;ll review the full areas &amp; fees before continuing.
                   </OptionCardDescription>
                 </OptionCard>
               </div>
@@ -324,6 +337,88 @@ export default function ClientTypeSelectionModal({
                 <p className="text-sm text-gray-800 font-medium">{error}</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Step 4: Home Service Areas & Fees Agreement */}
+        {step === 'home_terms' && (
+          <div>
+            <button
+              onClick={() => setStep('location')}
+              className="text-sm text-gray-600 hover:text-gray-900 underline mb-4 flex items-center gap-1"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+
+            <h4 className="text-lg font-semibold text-gray-900 mb-1">Home Service Areas &amp; Fees</h4>
+            <p className="text-sm text-gray-600 mb-4">
+              Home service requires extra preparation, travel time, and transporting full equipment outside the studio.
+              It also blocks several studio slots due to travel. Because of this, the rates were reviewed carefully and
+              adjusted accordingly.
+            </p>
+
+            <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1">
+              {/* Within Manila City */}
+              <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4">
+                <div className="flex items-baseline justify-between gap-2 mb-2">
+                  <p className="text-sm font-semibold text-gray-900">Within Manila City</p>
+                  <span className="text-sm font-bold text-green-700 whitespace-nowrap">₱1,500 Fee</span>
+                </div>
+                <ul className="text-xs text-gray-700 space-y-1 list-disc pl-4">
+                  <li>Covers 1 client (single-client bookings)</li>
+                  <li>+₱500 per additional client</li>
+                  <li>Grab transport fee applies</li>
+                </ul>
+              </div>
+
+              {/* Within Metro Manila */}
+              <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4">
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <p className="text-sm font-semibold text-gray-900">Within Metro Manila</p>
+                  <span className="text-sm font-bold text-green-700 whitespace-nowrap">₱2,000 Fee</span>
+                </div>
+                <p className="text-[11px] text-gray-500 mb-2">
+                  Makati, Taguig, Pasig, Mandaluyong, Quezon City, San Juan, Marikina, Pasay, Parañaque, Las Piñas,
+                  Muntinlupa, Caloocan, Valenzuela, Malabon, Navotas, Pateros
+                </p>
+                <ul className="text-xs text-gray-700 space-y-1 list-disc pl-4">
+                  <li>Covers 1 client (single-client bookings)</li>
+                  <li>+₱500 per additional client</li>
+                  <li>Grab transport fee applies</li>
+                </ul>
+              </div>
+
+              {/* Outside Metro Manila */}
+              <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4">
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <p className="text-sm font-semibold text-gray-900">Outside Metro Manila (Luzon only)</p>
+                  <span className="text-sm font-bold text-green-700 whitespace-nowrap">₱3,000 Fee</span>
+                </div>
+                <p className="text-[11px] text-gray-500 mb-2">
+                  e.g. Bulacan, Rizal, Cavite, Laguna, Pampanga, Batangas
+                </p>
+                <ul className="text-xs text-gray-700 space-y-1 list-disc pl-4">
+                  <li>Covers 1 client (single-client bookings)</li>
+                  <li>Mani &amp; Pedi package required</li>
+                  <li>+₱500 per additional client</li>
+                  <li>Grab transport fee applies</li>
+                </ul>
+              </div>
+
+              {/* Setup requirement */}
+              <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-semibold text-amber-900 mb-1">Service Setup Requirement</p>
+                <p className="text-xs text-amber-800">
+                  Please ensure a table and chair are available at the location to allow proper service setup and
+                  quality results.
+                </p>
+              </div>
+            </div>
+
+            <Button variant="default" className="w-full mt-5" onClick={() => proceedWithLocation('home_service')}>
+              I Agree &amp; Continue
+            </Button>
           </div>
         )}
       </div>
