@@ -44,6 +44,7 @@ export default function Topbar({ onMobileMenuToggle }: TopbarProps) {
       '/admin/clients': 'Clients',
       '/admin/nail-techs': 'Nail Techs',
       '/admin/staff': 'Staff / Users',
+      '/admin/media': 'Website Media',
       '/admin/settings': 'Settings',
       '/admin/feedback': 'Feedback',
     };

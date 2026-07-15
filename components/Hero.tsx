@@ -1,15 +1,40 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 
+const FALLBACK_HERO = '/images/hero-1.JPG';
+
 export default function Hero() {
+  const [heroSrc, setHeroSrc] = useState(FALLBACK_HERO);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/media?category=hero');
+        if (!res.ok) return;
+        const data = await res.json();
+        const media = Array.isArray(data.media) ? data.media : [];
+        const preferred =
+          media.find((m: { refKey?: string }) => m.refKey === 'hero') || media[0];
+        if (!cancelled && preferred?.url) setHeroSrc(preferred.url);
+      } catch {
+        // Keep static hero
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section id="home" className="relative h-[calc(72px+28vh)] sm:h-[60vh] md:h-[70vh] lg:h-screen flex items-center justify-center overflow-hidden pt-[72px] sm:pt-[80px] md:pt-[90px] pb-8 sm:pb-8">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/images/hero-1.JPG"
+          src={heroSrc}
           alt="Hero background"
           fill
           className="object-cover"

@@ -32,6 +32,13 @@ const nextConfig = {
     // Ensure all image extensions are supported
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+    ],
   },
   compress: true,
   poweredByHeader: false,

@@ -1,23 +1,27 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 
 const items = [
   {
+    refKey: 'service-1',
     title: 'Russian Manicure',
     description: 'E-file cuticle work and long-lasting finish. Clean, precise, and built to last.',
     image: '/images/service-1.jpg',
     href: '/russian-manicure',
   },
   {
+    refKey: 'service-5',
     title: 'Russian Pedicure',
     description: 'Same precision for your feet. Gel overlay and optional nail art for toes.',
     image: '/images/service-5.jpg',
     href: '/russian-pedicure',
   },
   {
+    refKey: 'service-4',
     title: 'Nail Art & More',
     description: 'Gel overlay, extensions, nail art. We bring your vision to life.',
     image: '/images/service-3-v3.jpg',
@@ -26,6 +30,34 @@ const items = [
 ];
 
 export default function HomeServicesPreview() {
+  const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/media?category=service');
+        if (!res.ok) return;
+        const data = await res.json();
+        const media = Array.isArray(data.media) ? data.media : [];
+        const map: Record<string, string> = {};
+        for (const item of media) {
+          if (item.refKey && item.url && !map[item.refKey]) {
+            map[item.refKey] = item.url;
+          }
+        }
+        if (!cancelled && Object.keys(map).length > 0) {
+          setImageOverrides(map);
+        }
+      } catch {
+        // Keep static images
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section className="section-padding bg-white">
       <motion.div
@@ -42,7 +74,9 @@ export default function HomeServicesPreview() {
           Professional nail care tailored to you. Russian manicure, pedicure, nail art, and more.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
-          {items.map((item, index) => (
+          {items.map((item, index) => {
+            const imageSrc = imageOverrides[item.refKey] || item.image;
+            return (
             <motion.div
               key={item.title}
               initial={{ opacity: 0, y: 24 }}
@@ -53,7 +87,7 @@ export default function HomeServicesPreview() {
               <Link href={item.href} className="group block">
                 <div className="relative h-48 sm:h-56 rounded-xl overflow-hidden mb-3 bg-gray-100">
                   <Image
-                    src={item.image}
+                    src={imageSrc}
                     alt={item.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -67,7 +101,8 @@ export default function HomeServicesPreview() {
                 </span>
               </Link>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
         <div className="text-center mt-8">
           <Link

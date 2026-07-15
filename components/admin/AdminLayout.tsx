@@ -23,6 +23,7 @@ import {
   ClipboardList,
   User,
   MessageSquareQuote,
+  Images,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import PushNotificationButton from '@/components/admin/PushNotificationButton';
@@ -48,6 +49,7 @@ const navItems: NavItem[] = [
   { path: '/admin/clients', label: 'Clients', icon: Users },
   { path: '/admin/nail-techs', label: 'Nail Techs', icon: Scissors },
   { path: '/admin/staff', label: 'Staff / Users', icon: UserCog },
+  { path: '/admin/media', label: 'Website Media', icon: Images },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
   { path: '/admin/audit', label: 'Audit Log', icon: ClipboardList },
   { path: '/admin/feedback', label: 'Feedback', icon: MessageSquareQuote },
@@ -156,6 +158,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   if (item.path === '/admin/staff') return userRole.canManageUsers;
                   if (item.path === '/admin/audit') return userRole.canViewAudit;
                   if (item.path === '/admin/settings') return userRole.canManageSettings;
+                  if (item.path === '/admin/media') return userRole.canManageAllTechs;
                   return true;
                 })
                 .map((item) => {

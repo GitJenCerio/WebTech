@@ -65,6 +65,9 @@ function isPublicApiRoute(pathname: string, method: string): boolean {
   // Public client feedback survey (POST only; GET is admin-only in route)
   if (pathname === '/api/client-feedback' && method === 'POST') return true;
 
+  // Public website media (gallery, services, hero) — active images only
+  if (pathname === '/api/media' && method === 'GET') return true;
+
   return false;
 }
 

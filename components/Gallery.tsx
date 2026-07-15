@@ -1,26 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
-// Build images 1..41, skipping 27 (file is misspelled as galley-27.JPG)
-// Note: File extensions vary - use lowercase for files 1-9, uppercase for 10+
-const galleryImages = Array.from({ length: 41 }, (_, i) => i + 1)
+// Fallback when no CMS gallery images are published yet
+const FALLBACK_GALLERY = Array.from({ length: 41 }, (_, i) => i + 1)
   .filter((n) => n !== 27)
-  .map((n) => ({ 
-    src: n <= 9 ? `/images/gallery-${n}.jpg` : `/images/gallery-${n}.JPG` 
+  .map((n) => ({
+    src: n <= 9 ? `/images/gallery-${n}.jpg` : `/images/gallery-${n}.JPG`,
+    alt: `Gallery image ${n}`,
   }));
 
+type GalleryItem = { src: string; alt: string };
+
 export default function Gallery() {
+  const [images, setImages] = useState<GalleryItem[]>(FALLBACK_GALLERY);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // Deterministic, varied heights so adjacent items rarely match
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/media?category=gallery');
+        if (!res.ok) return;
+        const data = await res.json();
+        const media = Array.isArray(data.media) ? data.media : [];
+        if (!cancelled && media.length > 0) {
+          setImages(
+            media.map((item: { url: string; alt?: string }, index: number) => ({
+              src: item.url,
+              alt: item.alt || `Gallery image ${index + 1}`,
+            }))
+          );
+        }
+      } catch {
+        // Keep static fallback
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const getTileHeight = (index: number) => {
-    // Slightly shorter heights so tiles are not too tall on mobile
     const baseHeights = [150, 180, 210, 240, 260, 280, 300, 320];
     const base = baseHeights[(index * 7 + 3) % baseHeights.length];
-    const jitter = ((index * 13) % 40) - 20; // -20..19px
+    const jitter = ((index * 13) % 40) - 20;
     return Math.max(140, base + jitter);
   };
 
@@ -35,34 +61,30 @@ export default function Gallery() {
         </p>
 
         <div className="columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4">
-          {galleryImages.map((item, index) => (
+          {images.map((item, index) => (
             <motion.div
-              key={index}
+              key={`${item.src}-${index}`}
               initial={{ opacity: 0, scale: 0.98 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, margin: "0px" }}
+              viewport={{ once: true, margin: '0px' }}
               transition={{ duration: 0.4, delay: Math.min(index * 0.015, 0.15) }}
-              className={`mb-4 break-inside-avoid overflow-hidden rounded-2xl md:rounded-3xl cursor-pointer group relative`}
+              className="mb-4 break-inside-avoid overflow-hidden rounded-2xl md:rounded-3xl cursor-pointer group relative"
               style={{ height: `${getTileHeight(index)}px` }}
               onClick={() => setSelectedImage(item.src)}
             >
               <Image
                 src={item.src}
-                alt={`Gallery image ${index + 1}`}
+                alt={item.alt}
                 fill
                 className="object-cover rounded-2xl md:rounded-3xl group-hover:opacity-95 transition"
                 loading="lazy"
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                onError={(e) => {
-                  console.error(`Failed to load image: ${item.src}`);
-                }}
               />
             </motion.div>
           ))}
         </div>
       </div>
 
-      {/* Lightbox */}
       <AnimatePresence>
         {selectedImage && (
           <motion.div
@@ -98,4 +120,3 @@ export default function Gallery() {
     </section>
   );
 }
-

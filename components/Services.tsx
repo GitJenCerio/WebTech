@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 
 const services = [
   {
+    refKey: 'service-1',
     title: 'Russian Manicure (Cleaning Only)',
     price: 'PHP 1,000',
     description:
@@ -14,6 +15,7 @@ const services = [
     image: '/images/service-1.jpg',
   },
   {
+    refKey: 'service-2',
     title: 'BIAB/Gel/Hardgel Overlay',
     titleLine2: '(No Extensions)',
     price: 'Starts at PHP 1,300',
@@ -22,6 +24,7 @@ const services = [
     image: '/images/service-2.jpg',
   },
   {
+    refKey: 'service-3',
     title: 'BIAB/Gel/Hardgel Overlay',
     titleLine2: '(With Extensions)',
     price: 'Starts at PHP 1,800',
@@ -30,6 +33,7 @@ const services = [
     image: '/images/service-4.jpg',
   },
   {
+    refKey: 'service-4',
     title: 'Nail Art',
     price: 'Starts at PHP 2,000',
     description:
@@ -37,6 +41,7 @@ const services = [
     image: '/images/service-3-v3.jpg',
   },
   {
+    refKey: 'service-5',
     title: 'Russian Pedicure with Gel Overlay',
     price: 'Starts at PHP 1,500',
     description:
@@ -44,6 +49,7 @@ const services = [
     image: '/images/service-5.jpg',
   },
   {
+    refKey: 'service-6',
     title: 'Mani + Pedi Express',
     price: 'Additional PHP 300',
     description:
@@ -51,6 +57,7 @@ const services = [
     image: '/images/service-8.jpg',
   },
   {
+    refKey: 'service-7',
     title: 'Nail Repair',
     price: 'Price varies',
     description:
@@ -61,6 +68,33 @@ const services = [
 
 export default function Services() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageOverrides, setImageOverrides] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/media?category=service');
+        if (!res.ok) return;
+        const data = await res.json();
+        const media = Array.isArray(data.media) ? data.media : [];
+        const map: Record<string, string> = {};
+        for (const item of media) {
+          if (item.refKey && item.url && !map[item.refKey]) {
+            map[item.refKey] = item.url;
+          }
+        }
+        if (!cancelled && Object.keys(map).length > 0) {
+          setImageOverrides(map);
+        }
+      } catch {
+        // Keep static images
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section id="services" className="section-padding bg-white">
@@ -78,7 +112,9 @@ export default function Services() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-2 sm:px-4">
-          {services.map((service, index) => (
+          {services.map((service, index) => {
+            const imageSrc = imageOverrides[service.refKey] || service.image;
+            return (
             <motion.div
               key={`${service.title}-${service.titleLine2 ?? 'default'}`}
               initial={{ opacity: 0, y: 50 }}
@@ -89,10 +125,10 @@ export default function Services() {
             >
               <div
                 className="relative h-64 sm:h-72 md:h-80 lg:h-96 mb-3 sm:mb-4 overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl"
-                onClick={() => setSelectedImage(service.image)}
+                onClick={() => setSelectedImage(imageSrc)}
               >
                 <Image
-                  src={service.image}
+                  src={imageSrc}
                   alt={service.title}
                   fill
                   loading="lazy"
@@ -117,7 +153,8 @@ export default function Services() {
                 </Link>
               )}
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </motion.div>
 

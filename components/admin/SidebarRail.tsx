@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquareQuote,
+  Images,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { path: '/admin/clients', label: 'Clients', icon: Users },
   { path: '/admin/nail-techs', label: 'Nail Techs', icon: Scissors },
   { path: '/admin/staff', label: 'Staff / Users', icon: UserCog },
+  { path: '/admin/media', label: 'Website Media', icon: Images },
   { path: '/admin/settings', label: 'Settings', icon: Settings },
   { path: '/admin/feedback', label: 'Feedback', icon: MessageSquareQuote },
 ];
