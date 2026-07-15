@@ -66,7 +66,7 @@ export default function SlotConfirmationModal({
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white border-2 border-gray-300 rounded-xl max-w-md w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[90vh] overflow-y-auto relative"
+        className="bg-white border border-[#e4e4e7] max-w-md w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[90vh] overflow-y-auto relative"
       >
         <button
           onClick={onBack}
@@ -84,7 +84,7 @@ export default function SlotConfirmationModal({
 
         <div className="space-y-4">
           {/* Date & Time */}
-          <div className="rounded-xl border-2 border-gray-300 bg-gray-50 p-4 space-y-3">
+          <div className="border border-[#e4e4e7] bg-[#fafafa] p-4 space-y-3">
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5 text-gray-700 flex-shrink-0" />
               <div>
@@ -112,8 +112,8 @@ export default function SlotConfirmationModal({
 
           {/* Squeeze Fee Notice */}
           {hasSqueezeFee && (
-            <div className="rounded-xl border-2 border-purple-200 bg-purple-50 px-4 py-3">
-              <p className="text-sm text-purple-800 font-medium">
+            <div className="border border-[#e4e4e7] bg-[#fafafa] px-4 py-3">
+              <p className="text-sm text-[#52525b] font-medium">
                 This is a squeeze-in slot with an additional ₱500 fee.
               </p>
             </div>
@@ -127,7 +127,7 @@ export default function SlotConfirmationModal({
           )}
 
           {/* Deposit Info */}
-          <div className="rounded-xl border-2 border-gray-300 bg-gray-50 px-4 py-3 space-y-2 text-left">
+          <div className="border border-[#e4e4e7] bg-[#fafafa] px-4 py-3 space-y-2 text-left">
             <p className="text-sm text-gray-900 flex items-start gap-2 text-left">
               <CheckCircle2 className="w-4 h-4 text-gray-700 flex-shrink-0 mt-0.5" />
               <span><span className="font-medium">₱{totalDeposit.toLocaleString()} deposit</span> is required ({slotCount} slot{slotCount !== 1 ? 's' : ''} × ₱500) upon booking</span>
@@ -143,13 +143,13 @@ export default function SlotConfirmationModal({
         <div className="mt-6 pt-6 border-t border-gray-300 space-y-3">
           <button
             onClick={onConfirm}
-            className="w-full px-4 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-900 active:scale-[0.98] transition-all touch-manipulation text-sm"
+            className="brand-cta w-full active:scale-[0.98] touch-manipulation"
           >
             Proceed to Booking
           </button>
           <button
             onClick={onBack}
-            className="w-full px-4 py-3 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 active:scale-[0.98] transition-all touch-manipulation text-sm flex items-center justify-center gap-2"
+            className="brand-cta-outline w-full active:scale-[0.98] touch-manipulation flex items-center justify-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Choose Another Slot

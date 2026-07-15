@@ -23,7 +23,7 @@ export function NoRecordFoundModal({
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white border-2 border-gray-300 rounded-xl max-w-md w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[90vh] overflow-y-auto relative"
+        className="bg-white border border-[#e4e4e7] max-w-md w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[90vh] overflow-y-auto relative"
       >
         <button
           onClick={(e) => {
@@ -68,7 +68,7 @@ export function NoRecordFoundModal({
               e.stopPropagation();
               onProceedAsNew();
             }}
-            className="w-full px-4 py-3 sm:py-2 bg-black text-white font-medium border-2 border-white shadow-[0_0_0_2px_#000000] hover:bg-white hover:text-black hover:border hover:border-black hover:shadow-[0_0_0_2px_#ffffff,0_0_0_3px_#000000] active:scale-[0.98] transition-all duration-300 touch-manipulation text-sm sm:text-base"
+            className="brand-cta w-full active:scale-[0.98] touch-manipulation"
           >
             Book as New Client
           </button>
@@ -78,7 +78,7 @@ export function NoRecordFoundModal({
               e.stopPropagation();
               onClose();
             }}
-            className="w-full px-4 py-3 sm:py-2 bg-slate-200 text-slate-800 font-medium border-2 border-slate-300 rounded-lg hover:bg-slate-300 active:scale-[0.98] transition-all duration-300 touch-manipulation text-sm sm:text-base"
+            className="brand-cta-outline w-full active:scale-[0.98] touch-manipulation"
           >
             Try Different Email/Phone
           </button>

@@ -68,7 +68,7 @@ export default function NailTechSelectionModal({
             })}
           </div>
         ) : (
-          <div className="rounded-lg border-2 border-gray-300 bg-gray-50 p-4 text-center">
+          <div className="border border-[#e4e4e7] bg-[#fafafa] p-4 text-center">
             <p className="text-sm text-gray-600">No technicians available for this service location.</p>
           </div>
         )}

@@ -51,12 +51,13 @@ export default function Gallery() {
   };
 
   return (
-    <section id="gallery" className="section-padding bg-white">
+    <section id="gallery" className="section-padding section-ash">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading text-center mb-3 sm:mb-4 px-2 sm:px-3">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-heading text-center mb-3 sm:mb-4 px-2 sm:px-3 text-[#1c1917]">
           Gallery
         </h2>
-        <p className="text-center text-gray-600 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-2 sm:px-3 text-sm sm:text-base">
+        <div className="brand-rule w-24 mx-auto mb-4" aria-hidden />
+        <p className="text-center text-[#78716c] mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-2 sm:px-3 text-sm sm:text-base">
           Browse our latest work and get inspired
         </p>
 
@@ -68,7 +69,7 @@ export default function Gallery() {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, margin: '0px' }}
               transition={{ duration: 0.4, delay: Math.min(index * 0.015, 0.15) }}
-              className="mb-4 break-inside-avoid overflow-hidden rounded-2xl md:rounded-3xl cursor-pointer group relative"
+              className="mb-3 sm:mb-4 break-inside-avoid overflow-hidden cursor-pointer group relative"
               style={{ height: `${getTileHeight(index)}px` }}
               onClick={() => setSelectedImage(item.src)}
             >
@@ -76,7 +77,7 @@ export default function Gallery() {
                 src={item.src}
                 alt={item.alt}
                 fill
-                className="object-cover rounded-2xl md:rounded-3xl group-hover:opacity-95 transition"
+                className="object-cover group-hover:opacity-90 transition-opacity duration-300"
                 loading="lazy"
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
               />

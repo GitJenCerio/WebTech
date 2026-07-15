@@ -24,7 +24,7 @@ export default function PricingPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50 pt-[72px] sm:pt-[88px]">
+      <main className="min-h-screen section-ash pt-[72px] sm:pt-[88px]">
         <Pricing asPage />
       </main>
       <Footer />

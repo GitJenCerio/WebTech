@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const FALLBACK_HERO = '/images/hero-1.JPG';
 
@@ -30,107 +31,110 @@ export default function Hero() {
   }, []);
 
   return (
-    <section id="home" className="relative h-[calc(72px+28vh)] sm:h-[60vh] md:h-[70vh] lg:h-screen flex items-center justify-center overflow-hidden pt-[72px] sm:pt-[80px] md:pt-[90px] pb-8 sm:pb-8">
-      {/* Background Image */}
+    <section
+      id="home"
+      className="relative h-[min(68vh,520px)] sm:h-[min(78vh,680px)] md:h-[min(85vh,820px)] lg:min-h-screen lg:h-auto flex items-end sm:items-center overflow-hidden pt-[4.5rem] sm:pt-24"
+    >
       <div className="absolute inset-0 z-0">
         <Image
           src={heroSrc}
-          alt="Hero background"
+          alt="glammednailsbyjhen studio"
           fill
-          className="object-cover"
+          className="object-cover object-[center_35%] sm:object-center"
           priority
           sizes="100vw"
           placeholder="blur"
           blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
         />
+        {/* Soft pearl haze + ink depth for luxury legibility */}
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-[#1c1917]/80 via-[#1c1917]/35 to-[#1c1917]/10 sm:bg-gradient-to-r sm:from-[#1c1917]/75 sm:via-[#1c1917]/40 sm:to-[#1c1917]/10"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-0 opacity-40 mix-blend-soft-light bg-[radial-gradient(ellipse_at_30%_20%,rgba(196,181,160,0.35),transparent_55%)]"
+          aria-hidden
+        />
       </div>
 
-      {/* Frame Effect - Black Border Box */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8 }}
-        className="relative z-10 max-w-[72vw] sm:max-w-md md:max-w-2xl lg:max-w-3xl w-full mx-auto px-1 sm:px-4"
-      >
-        <div className="border-2 md:border-[6px] border-white shadow-[0_0_0_2px_#000000] md:shadow-[0_0_0_6px_#000000] bg-white/60 backdrop-blur-sm px-3 py-2.5 sm:p-6 md:px-10 md:py-8 lg:px-12 lg:py-10">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pb-8 sm:pb-16 lg:pb-24 pt-4 sm:pt-8">
+        <div className="max-w-xl">
           <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            className="hidden sm:flex justify-center mb-2 sm:mb-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-4 sm:mb-7"
           >
             <Image
               src="/logo.png"
-              alt="glammednailsbyjhen logo"
-              width={800}
-              height={150}
-              className="w-full h-auto max-w-[140px] sm:max-w-[320px] md:max-w-[420px] drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]"
+              alt="glammednailsbyjhen"
+              width={520}
+              height={120}
+              className="w-full h-auto max-w-[180px] sm:max-w-[300px] md:max-w-[380px] brightness-0 invert drop-shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
               priority
             />
           </motion.div>
 
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="origin-left h-px w-16 sm:w-24 mb-4 sm:mb-5 bg-gradient-to-r from-[#c4b5a0] to-transparent"
+            aria-hidden
+          />
+
           <motion.h1
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.35, duration: 0.8 }}
-            className="text-sm sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-balgor font-normal text-center text-black mb-1 sm:mb-2 drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]"
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="font-heading text-[1.65rem] leading-[1.2] sm:text-4xl md:text-5xl lg:text-[3.25rem] text-[#fffcfa] mb-3 sm:mb-5"
           >
-            Russian Manicure Specialist
-            <br />
-            in Metro Manila
+            Russian Manicure Specialist in Metro Manila
           </motion.h1>
+
           <motion.p
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.55, duration: 0.8 }}
-            className="text-[10px] sm:text-base md:text-lg text-center text-black mb-4 sm:mb-8 drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.28, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            className="text-[#e7e2db]/90 text-sm sm:text-lg max-w-md mb-5 sm:mb-9 leading-relaxed"
           >
             Precision dry technique. Clean cuticles. Long-lasting results.
           </motion.p>
+
           <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.8 }}
-            className="flex justify-center pt-1"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-5"
           >
-            <a
+            <Link
               href="/booking"
-              className="px-2.5 py-1.5 text-[10px] sm:px-6 sm:py-3 sm:text-base bg-black text-white font-semibold border-2 border-white shadow-[0_0_0_2px_#000000] hover:bg-white hover:text-black hover:border hover:border-black hover:shadow-[0_0_0_2px_#ffffff,0_0_0_3px_#000000] transition-all duration-300 whitespace-nowrap"
+              className="inline-flex items-center justify-center px-7 py-3 text-xs sm:text-sm font-medium tracking-[0.16em] uppercase text-[#1c1917] bg-[#fffcfa] border border-[#c4b5a0]/60 hover:bg-transparent hover:text-[#fffcfa] hover:border-[#c4b5a0] transition-all duration-300 shadow-[0_8px_28px_rgba(0,0,0,0.25)]"
             >
               Book Now
-            </a>
+            </Link>
+            <p className="text-[#c4b5a0]/90 text-[11px] sm:text-sm tracking-[0.12em] uppercase">
+              Private Home Studio · By Appointment Only
+            </p>
           </motion.div>
-          <motion.p
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.8 }}
-            className="text-[9px] sm:text-xs md:text-sm text-center text-black/90 mt-2 sm:mt-3 drop-shadow-[0_0_6px_rgba(255,255,255,0.9)]"
-          >
-            Private Home Studio • By Appointment Only
-          </motion.p>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Scroll Indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
-        className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-20"
+        transition={{ delay: 1.1, duration: 0.6 }}
+        className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 hidden md:block"
+        aria-hidden
       >
         <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          className="w-6 h-10 border-2 border-black rounded-full flex justify-center bg-white/80 backdrop-blur-sm"
+          animate={{ y: [0, 8, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+          className="w-5 h-8 border border-[#c4b5a0]/50 flex justify-center pt-1.5"
         >
-          <motion.div
-            animate={{ y: [0, 12, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-1 h-3 bg-black rounded-full mt-2"
-          />
+          <div className="w-px h-2.5 bg-[#c4b5a0]/80" />
         </motion.div>
       </motion.div>
     </section>
   );
 }
-

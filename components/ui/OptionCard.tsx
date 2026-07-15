@@ -6,17 +6,13 @@ import { cn } from './Utils';
 const OptionCardSelectedContext = React.createContext<boolean>(false);
 
 export interface OptionCardProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Whether this option is selected (black background, white text) */
   selected?: boolean;
-  /** Optional right-side content (e.g. badge) */
   right?: React.ReactNode;
   children: React.ReactNode;
 }
 
 /**
  * Selectable option card for dialogs. Use for "pick one" flows (client type, service, nail tech).
- * - Unselected: white bg, gray border, hover:border-black
- * - Selected: black bg, white text
  */
 const OptionCard = React.forwardRef<HTMLButtonElement, OptionCardProps>(
   ({ className, selected = false, right, children, ...props }, ref) => {
@@ -26,10 +22,10 @@ const OptionCard = React.forwardRef<HTMLButtonElement, OptionCardProps>(
           type="button"
           ref={ref}
           className={cn(
-            'w-full text-left rounded-lg border-2 p-4 transition-all active:scale-[0.98] touch-manipulation',
+            'w-full text-left border p-4 transition-all active:scale-[0.98] touch-manipulation',
             selected
-              ? 'border-black bg-black text-white'
-              : 'border-gray-300 bg-white text-gray-900 hover:border-gray-500 focus-visible:border-[#212529]',
+              ? 'border-[#111] bg-[#111] text-white'
+              : 'border-[#e4e4e7] bg-white text-[#111] hover:border-[#a1a1aa] focus-visible:border-[#111]',
             className
           )}
           aria-pressed={selected}
@@ -46,12 +42,10 @@ const OptionCard = React.forwardRef<HTMLButtonElement, OptionCardProps>(
 );
 OptionCard.displayName = 'OptionCard';
 
-/** Title inside OptionCard. */
 function OptionCardTitle({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('font-semibold text-base', className)} {...props} />;
+  return <p className={cn('font-medium text-base tracking-wide', className)} {...props} />;
 }
 
-/** Description text. Uses context when used inside OptionCard. */
 function OptionCardDescription({
   className,
   selected: selectedProp,
@@ -62,8 +56,8 @@ function OptionCardDescription({
   return (
     <p
       className={cn(
-        'text-xs sm:text-sm opacity-75 mt-1',
-        selected ? 'text-white/75' : 'text-gray-600',
+        'text-xs sm:text-sm mt-1',
+        selected ? 'text-white/70' : 'text-[#71717a]',
         className
       )}
       {...props}
@@ -71,7 +65,6 @@ function OptionCardDescription({
   );
 }
 
-/** Small badge for the right slot (e.g. "1 slot"). Uses context when inside OptionCard. */
 function OptionCardBadge({
   className,
   selected: selectedProp,
@@ -82,10 +75,10 @@ function OptionCardBadge({
   return (
     <span
       className={cn(
-        'whitespace-nowrap text-xs sm:text-sm font-medium px-2.5 py-1 rounded-full border',
+        'inline-flex items-center px-2 py-0.5 text-[10px] tracking-wide uppercase border',
         selected
-          ? 'bg-white/20 border-white/30 text-white'
-          : 'bg-gray-100 border-gray-300 text-gray-700',
+          ? 'border-white/30 text-white/80'
+          : 'border-[#e4e4e7] text-[#71717a]',
         className
       )}
       {...props}
@@ -93,24 +86,14 @@ function OptionCardBadge({
   );
 }
 
-/** Extra line (e.g. discount). Uses context for selected styling. */
-function OptionCardExtra({
-  className,
-  selected: selectedProp,
-  ...props
-}: React.HTMLAttributes<HTMLParagraphElement> & { selected?: boolean }) {
-  const fromContext = React.useContext(OptionCardSelectedContext);
-  const selected = selectedProp ?? fromContext;
-  return (
-    <p
-      className={cn(
-        'text-xs sm:text-sm font-semibold mt-2',
-        selected ? 'text-green-300' : 'text-green-700',
-        className
-      )}
-      {...props}
-    />
-  );
+function OptionCardExtra({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn('mt-2', className)} {...props} />;
 }
 
-export { OptionCard, OptionCardTitle, OptionCardDescription, OptionCardBadge, OptionCardExtra };
+export {
+  OptionCard,
+  OptionCardTitle,
+  OptionCardDescription,
+  OptionCardBadge,
+  OptionCardExtra,
+};

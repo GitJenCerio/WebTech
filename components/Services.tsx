@@ -97,34 +97,37 @@ export default function Services() {
   }, []);
 
   return (
-    <section id="services" className="section-padding bg-white">
+    <section id="services" className="section-padding section-white">
       <motion.div
-        initial={{ opacity: 0, y: 50 }}
+        initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
         className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-0"
       >
         <div id="services" style={{ scrollMarginTop: '180px', height: 0 }} />
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-4 sm:mb-5 font-heading px-2 sm:px-3">Our Services</h2>
-        <p className="text-center text-gray-600 mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-2 sm:px-3 text-sm sm:text-base">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center mb-3 sm:mb-4 font-heading text-[#1c1917] px-2 sm:px-3">
+          Our Services
+        </h2>
+        <div className="brand-rule w-24 mx-auto mb-4 sm:mb-5" aria-hidden />
+        <p className="text-center text-[#78716c] mb-8 sm:mb-10 md:mb-12 max-w-2xl mx-auto px-2 sm:px-3 text-sm sm:text-base">
           Professional nail care services tailored to your needs
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-2 sm:px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 px-2 sm:px-4">
           {services.map((service, index) => {
             const imageSrc = imageOverrides[service.refKey] || service.image;
             return (
             <motion.div
               key={`${service.title}-${service.titleLine2 ?? 'default'}`}
-              initial={{ opacity: 0, y: 50 }}
+              initial={{ opacity: 0, y: 36 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.3) }}
               className="group cursor-pointer"
             >
               <div
-                className="relative h-64 sm:h-72 md:h-80 lg:h-96 mb-3 sm:mb-4 overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl"
+                className="relative h-64 sm:h-72 md:h-80 lg:h-96 mb-4 overflow-hidden"
                 onClick={() => setSelectedImage(imageSrc)}
               >
                 <Image
@@ -133,23 +136,23 @@ export default function Services() {
                   fill
                   loading="lazy"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-110 transition-transform duration-300 rounded-xl sm:rounded-2xl md:rounded-3xl"
+                  className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
                 />
               </div>
               <div className="mb-2 flex flex-col gap-1">
-                <h3 className="text-lg sm:text-xl md:text-2xl font-heading font-normal leading-tight">
+                <h3 className="text-xl sm:text-2xl font-heading leading-tight text-[#111]">
                   {service.title}
-                  {service.titleLine2 && <span className="block">{service.titleLine2}</span>}
+                  {service.titleLine2 && <span className="block text-[#71717a]">{service.titleLine2}</span>}
                 </h3>
-                <p className="text-base sm:text-lg font-medium text-gray-600">{service.price}</p>
+                <p className="text-sm sm:text-base tracking-wide text-[#a1a1aa]">{service.price}</p>
               </div>
-              <p className="text-gray-600 text-sm sm:text-sm md:text-base text-justify leading-relaxed">{service.description}</p>
+              <p className="text-[#71717a] text-sm md:text-base leading-relaxed">{service.description}</p>
               {index === 0 && (
                 <Link
                   href="/russian-manicure"
-                  className="inline-block mt-2 text-sm font-medium text-black hover:underline"
+                  className="inline-block mt-3 text-sm font-medium text-[#111] border-b border-[#d4d4d8] hover:border-[#111] transition-colors"
                 >
-                  Russian manicure in Manila — learn more →
+                  Russian manicure in Manila — learn more
                 </Link>
               )}
             </motion.div>
@@ -158,7 +161,6 @@ export default function Services() {
         </div>
       </motion.div>
 
-      {/* Lightbox */}
       <AnimatePresence>
         {selectedImage && (
           <motion.div
@@ -175,10 +177,10 @@ export default function Services() {
               className="relative max-w-5xl w-full h-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <Image src={selectedImage} alt="Service image" fill className="object-contain rounded-lg" />
+              <Image src={selectedImage} alt="Service image" fill className="object-contain" />
               <button
                 onClick={() => setSelectedImage(null)}
-                className="absolute top-4 right-4 text-white text-4xl font-bold hover:text-gray-300"
+                className="absolute top-4 right-4 text-white text-4xl font-light hover:text-[#d4d4d8]"
               >
                 ×
               </button>

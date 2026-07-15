@@ -23,7 +23,7 @@ export default function BookingSuccessModal({
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white border-2 border-gray-300 rounded-xl max-w-md w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[90vh] overflow-y-auto relative"
+        className="bg-white border border-[#e4e4e7] max-w-md w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[90vh] overflow-y-auto relative"
       >
         <div className="flex items-start gap-3 mb-4">
           <div className="w-11 h-11 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
@@ -35,7 +35,7 @@ export default function BookingSuccessModal({
           </div>
         </div>
 
-        <div className="rounded-xl border-2 border-gray-300 bg-gray-50 p-4 space-y-3 mb-5">
+        <div className="border border-[#e4e4e7] bg-[#fafafa] p-4 space-y-3 mb-5">
           <p className="text-sm text-gray-800">
             Please complete your deposit payment to finalize your appointment.
           </p>
@@ -68,7 +68,7 @@ export default function BookingSuccessModal({
         <button
           type="button"
           onClick={onClose}
-          className="w-full px-4 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-900 active:scale-[0.98] transition-all touch-manipulation text-sm"
+          className="brand-cta w-full active:scale-[0.98] touch-manipulation"
         >
           Okay, I Understand
         </button>

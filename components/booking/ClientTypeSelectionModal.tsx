@@ -251,7 +251,7 @@ export default function ClientTypeSelectionModal({
 
               {/* Lookup Error */}
               {lookupError && (
-                <div className="rounded-lg border-2 border-gray-300 bg-gray-50 px-4 py-3 flex items-start gap-3">
+                <div className="border border-[#e4e4e7] bg-[#fafafa] px-4 py-3 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-gray-700 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-gray-800 font-medium">{lookupError}</p>
                 </div>
@@ -324,16 +324,16 @@ export default function ClientTypeSelectionModal({
 
               <div className="w-full grid place-items-center">
                 <OptionCard className="w-[300px] max-w-full" selected={false} onClick={() => handleLocationSelect('home_service')}>
-                  <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">₱1,500–₱3,000 fee</span></OptionCardTitle>
+                  <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">₱1,500–₱3,000+ fee</span></OptionCardTitle>
                   <OptionCardDescription>
-                    Service at your home. Fee depends on location (Manila ₱1,500 · Metro Manila ₱2,000 · Outside Metro Manila ₱3,000) on top of the service. You&apos;ll review the full areas &amp; fees before continuing.
+                    Service at your home. Fee depends on location (Manila ₱1,500 · Metro Manila ₱2,000 · Outside Metro Manila or Group Bookings starts at ₱3,000, min. 3 clients). You&apos;ll review the full areas &amp; fees before continuing.
                   </OptionCardDescription>
                 </OptionCard>
               </div>
             </div>
 
             {error && (
-              <div className="rounded-lg border-2 border-gray-300 bg-gray-50 px-4 py-3 mt-4">
+              <div className="border border-[#e4e4e7] bg-[#fafafa] px-4 py-3 mt-4">
                 <p className="text-sm text-gray-800 font-medium">{error}</p>
               </div>
             )}
@@ -389,20 +389,20 @@ export default function ClientTypeSelectionModal({
                 </ul>
               </div>
 
-              {/* Outside Metro Manila */}
+              {/* Outside Metro Manila or Group Bookings */}
               <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4">
                 <div className="flex items-baseline justify-between gap-2 mb-1">
-                  <p className="text-sm font-semibold text-gray-900">Outside Metro Manila (Luzon only)</p>
-                  <span className="text-sm font-bold text-green-700 whitespace-nowrap">₱3,000 Fee</span>
+                  <p className="text-sm font-semibold text-gray-900">Outside Metro Manila or Group Bookings</p>
+                  <span className="text-sm font-bold text-green-700 whitespace-nowrap">Starts at ₱3,000</span>
                 </div>
                 <p className="text-[11px] text-gray-500 mb-2">
-                  e.g. Bulacan, Rizal, Cavite, Laguna, Pampanga, Batangas
+                  Luzon only — e.g. Bulacan, Rizal, Cavite, Laguna, Pampanga, Batangas · or group bookings (3+ clients)
                 </p>
                 <ul className="text-xs text-gray-700 space-y-1 list-disc pl-4">
-                  <li>Covers 1 client (single-client bookings)</li>
-                  <li>Mani &amp; Pedi package required</li>
-                  <li>+₱500 per additional client</li>
+                  <li>Minimum of 3 clients required</li>
+                  <li>Home service fee starts at ₱3,000</li>
                   <li>Grab transport fee applies</li>
+                  <li>DM us for more info for special arrangements</li>
                 </ul>
               </div>
 

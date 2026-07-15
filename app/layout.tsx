@@ -107,7 +107,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: '#ffffff',
+  themeColor: '#f7f6f4',
   viewportFit: 'cover', // Enables safe-area-inset on notched devices
 };
 

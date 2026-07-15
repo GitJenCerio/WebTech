@@ -17,44 +17,52 @@ const quickLinks = [
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-100 section-padding safe-bottom">
+    <footer className="section-padding safe-bottom border-t border-[#e7e2db] bg-[linear-gradient(180deg,#fffcfa_0%,#f0ebe4_100%)]">
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-10 md:gap-12 mb-6 sm:mb-8">
+        <div className="brand-rule mb-10 sm:mb-12" aria-hidden />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 sm:gap-12 mb-10">
           <div>
-            <div className="mb-3 sm:mb-4">
-              <Image src="/logo.png" alt="glammednailsbyjhen logo" width={250} height={80} className="h-10 sm:h-12 md:h-14 w-auto" />
+            <div className="mb-4">
+              <Image
+                src="/logo.png"
+                alt="glammednailsbyjhen"
+                width={250}
+                height={80}
+                className="h-10 sm:h-12 w-auto"
+              />
             </div>
-            <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">
-              Premium nail care services for the modern you.
+            <p className="text-[#78716c] mb-5 text-sm sm:text-base leading-relaxed max-w-xs">
+              Premium nail care for the modern you. Precision Russian technique in Metro Manila.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <a
                 href="https://www.facebook.com/profile.php?id=61557672954391"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 min-w-[44px] min-h-[44px] flex items-center justify-center bg-black text-white hover:bg-gray-800 transition-colors rounded"
+                className="w-10 h-10 min-w-[44px] min-h-[44px] flex items-center justify-center border border-[#c4b5a0]/70 text-[#1c1917] hover:bg-[#1c1917] hover:text-[#fffcfa] hover:border-[#1c1917] transition-colors"
                 aria-label="Facebook"
               >
-                <IoLogoFacebook className="w-6 h-6" />
+                <IoLogoFacebook className="w-5 h-5" />
               </a>
               <a
                 href="https://www.instagram.com/glammednailsbyjhen"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 min-w-[44px] min-h-[44px] flex items-center justify-center bg-black text-white hover:bg-gray-800 transition-colors rounded"
+                className="w-10 h-10 min-w-[44px] min-h-[44px] flex items-center justify-center border border-[#c4b5a0]/70 text-[#1c1917] hover:bg-[#1c1917] hover:text-[#fffcfa] hover:border-[#1c1917] transition-colors"
                 aria-label="Instagram"
               >
-                <IoLogoInstagram className="w-6 h-6" />
+                <IoLogoInstagram className="w-5 h-5" />
               </a>
             </div>
           </div>
 
           <div>
-            <h4 className="font-heading font-normal text-base sm:text-lg md:text-xl mb-3 sm:mb-4">Quick Links</h4>
-            <ul className="space-y-1.5 sm:space-y-2 text-gray-600 text-sm sm:text-base">
+            <h4 className="font-heading text-xl sm:text-2xl mb-4 text-[#1c1917]">Quick Links</h4>
+            <ul className="space-y-2 text-[#78716c] text-sm sm:text-base">
               {quickLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="hover:text-black transition-colors">
+                  <Link href={link.href} className="hover:text-[#1c1917] transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -63,16 +71,19 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-heading font-normal text-base sm:text-lg md:text-xl mb-3 sm:mb-4">Contact Us</h4>
-            <div className="text-gray-600 space-y-1.5 sm:space-y-2 text-sm sm:text-base">
+            <h4 className="font-heading text-xl sm:text-2xl mb-4 text-[#1c1917]">Contact</h4>
+            <div className="text-[#78716c] space-y-2 text-sm sm:text-base">
               <p>Manila, Philippines</p>
-              <p className="mt-3 sm:mt-4">
-                <a href="tel:+639451781774" className="hover:text-black transition-colors">
+              <p className="mt-3">
+                <a href="tel:+639451781774" className="hover:text-[#1c1917] transition-colors">
                   +639451781774
                 </a>
               </p>
               <p>
-                <a href="mailto:glammednailsbyjhen@gmail.com" className="hover:text-black transition-colors break-words">
+                <a
+                  href="mailto:glammednailsbyjhen@gmail.com"
+                  className="hover:text-[#1c1917] transition-colors break-words"
+                >
                   glammednailsbyjhen@gmail.com
                 </a>
               </p>
@@ -80,12 +91,20 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t-2 border-black pt-6 sm:pt-8 text-center text-gray-600">
-          <span className="text-xs sm:text-sm text-gray-600 block mb-2 sm:mb-3">© {new Date().getFullYear()} glammednailsbyjhen</span>
-          <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-            <Link href="/privacy-policy" className="text-gray-500 hover:text-black text-xs sm:text-sm">Privacy Policy</Link>
-            <Link href="/cookies-policy" className="text-gray-500 hover:text-black text-xs sm:text-sm">Cookies Policy</Link>
-            <Link href="/studio-policies" className="text-gray-500 hover:text-black text-xs sm:text-sm">Studio Policies</Link>
+        <div className="border-t border-[#e7e2db] pt-6 sm:pt-8 text-center text-[#a8a29e]">
+          <span className="text-xs sm:text-sm block mb-3 tracking-wide">
+            © {new Date().getFullYear()} glammednailsbyjhen
+          </span>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link href="/privacy-policy" className="text-xs sm:text-sm hover:text-[#1c1917] transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/cookies-policy" className="text-xs sm:text-sm hover:text-[#1c1917] transition-colors">
+              Cookies Policy
+            </Link>
+            <Link href="/studio-policies" className="text-xs sm:text-sm hover:text-[#1c1917] transition-colors">
+              Studio Policies
+            </Link>
           </div>
         </div>
       </div>

@@ -27,8 +27,8 @@ export const metadata: Metadata = {
 
 export default function StudioPoliciesPage() {
   return (
-    <main className="max-w-3xl mx-auto py-12 sm:py-16 px-2 sm:px-4">
-      <Link href="/" className="inline-block text-sm text-gray-600 hover:text-black underline mb-5">
+    <main className="max-w-3xl mx-auto py-12 sm:py-16 px-2 sm:px-4 section-ash min-h-screen">
+      <Link href="/" className="inline-block text-sm text-[#71717a] hover:text-[#111] mb-5 tracking-wide">
         ← Back to Home
       </Link>
       <h1 className="text-2xl sm:text-3xl font-bold mb-2">Studio Policies & Booking Policies</h1>

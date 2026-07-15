@@ -6,26 +6,32 @@
 
 @layer base {
   :root {
-    /* Public site — warm theme (full values for var() compatibility) */
-    --background: hsl(30, 75%, 98%);
-    --foreground: hsl(0, 0%, 20%);
-    --card: hsl(0, 0%, 100%);
-    --card-foreground: hsl(0, 0%, 20%);
-    --popover: hsl(0, 0%, 100%);
-    --popover-foreground: hsl(0, 0%, 20%);
-    --primary: hsl(24, 40%, 26%);
-    --primary-foreground: hsl(0, 0%, 100%);
-    --secondary: hsl(35, 75%, 95%);
-    --secondary-foreground: hsl(0, 0%, 20%);
-    --muted: hsl(35, 50%, 94%);
-    --muted-foreground: hsl(0, 0%, 60%);
-    --accent: hsl(35, 75%, 95%);
-    --accent-foreground: hsl(24, 40%, 26%);
+    /* Public site — pearl / charcoal luxury (soft stone, champagne silver, ink) */
+    --background: #f7f6f4;
+    --foreground: #1c1917;
+    --card: #fffcfa;
+    --card-foreground: #1c1917;
+    --popover: #fffcfa;
+    --popover-foreground: #1c1917;
+    --primary: #1c1917;
+    --primary-foreground: #fffcfa;
+    --secondary: #f0ebe4;
+    --secondary-foreground: #1c1917;
+    --muted: #f0ebe4;
+    --muted-foreground: #78716c;
+    --accent: #f0ebe4;
+    --accent-foreground: #1c1917;
     --destructive: hsl(0, 84.2%, 60.2%);
-    --destructive-foreground: hsl(0, 0%, 100%);
-    --border: hsl(30, 20%, 90%);
-    --input: hsl(30, 20%, 90%);
-    --ring: hsl(24, 40%, 26%);
+    --destructive-foreground: #ffffff;
+    --border: #e7e2db;
+    --input: #e7e2db;
+    --ring: #1c1917;
+    --silver: #b5a99a;
+    --silver-light: #d9d2c8;
+    --champagne: #c4b5a0;
+    --pearl: #fffcfa;
+    --stone: #f0ebe4;
+    --ink: #1c1917;
     /* Jost & Cormorant set by next/font on body */
     --font-balgor: 'Balgor', sans-serif;
     --font-acollia: 'Acollia', sans-serif;
@@ -89,15 +95,19 @@
   }
 }
 
-/* Force normal weight on Balgor/heading — override browser defaults for h1-h6 */
+/* Display headings — refined serif weight for Cormorant */
 .font-heading,
-.font-balgor,
 h1.font-heading,
 h2.font-heading,
 h3.font-heading,
 h4.font-heading,
 h5.font-heading,
 h6.font-heading {
+  font-weight: 500 !important;
+  letter-spacing: -0.01em;
+}
+
+.font-balgor {
   font-weight: 400 !important;
 }
 
@@ -111,7 +121,7 @@ h6.font-heading {
     overflow-x: hidden;
     max-width: 100vw;
     font-family: var(--font-jost), 'Jost', sans-serif;
-    letter-spacing: 0.02em; /* Jost's spa-like airiness */
+    letter-spacing: 0.015em;
   }
 }
 
@@ -137,6 +147,64 @@ h6.font-heading {
   font-weight: 600;
   font-style: normal;
   font-display: swap;
+}
+
+@layer components {
+  .brand-cta {
+    @apply inline-flex items-center justify-center px-7 py-3.5 text-sm font-medium tracking-[0.14em] uppercase
+      text-[#fffcfa] border border-transparent whitespace-nowrap
+      transition-all duration-300;
+    background: linear-gradient(135deg, #2a2522 0%, #1c1917 45%, #3d342c 100%);
+    box-shadow: 0 1px 0 rgba(255, 252, 250, 0.08) inset, 0 8px 24px rgba(28, 25, 23, 0.18);
+  }
+
+  .brand-cta:hover {
+    background: linear-gradient(135deg, #3d342c 0%, #2a2522 100%);
+    box-shadow: 0 1px 0 rgba(255, 252, 250, 0.12) inset, 0 12px 28px rgba(28, 25, 23, 0.22);
+    transform: translateY(-1px);
+  }
+
+  .brand-cta-outline {
+    @apply inline-flex items-center justify-center px-7 py-3.5 text-sm font-medium tracking-[0.14em] uppercase
+      bg-transparent text-[#1c1917] border border-[#c4b5a0]
+      hover:bg-[#1c1917] hover:text-[#fffcfa] hover:border-[#1c1917]
+      transition-all duration-300 whitespace-nowrap;
+  }
+
+  .brand-cta-sm {
+    @apply inline-flex items-center justify-center px-5 py-2.5 text-xs font-medium tracking-[0.14em] uppercase
+      text-[#fffcfa] border border-transparent whitespace-nowrap
+      transition-all duration-300;
+    background: linear-gradient(135deg, #2a2522 0%, #1c1917 45%, #3d342c 100%);
+    box-shadow: 0 6px 18px rgba(28, 25, 23, 0.16);
+  }
+
+  .brand-cta-sm:hover {
+    background: linear-gradient(135deg, #3d342c 0%, #2a2522 100%);
+  }
+
+  .section-ash {
+    background: linear-gradient(180deg, #fffcfa 0%, #f7f6f4 48%, #f0ebe4 100%);
+  }
+
+  .section-white {
+    background: linear-gradient(180deg, #fffcfa 0%, #faf8f6 100%);
+  }
+
+  .divider-silver {
+    @apply border-t border-[#e7e2db];
+  }
+
+  .brand-notice {
+    @apply border-y border-[#e7e2db] text-center text-sm tracking-wide;
+    background: linear-gradient(90deg, #f0ebe4 0%, #fffcfa 50%, #f0ebe4 100%);
+    color: #57534e;
+  }
+
+  .brand-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #c4b5a0, transparent);
+  }
 }
 
 @layer utilities {

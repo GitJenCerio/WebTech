@@ -45,13 +45,13 @@ export default function BlogPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white pt-[72px] sm:pt-[88px] pb-16">
+      <main className="min-h-screen section-ash pt-[72px] sm:pt-[88px] pb-16">
         <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
           <header className="text-center py-10 sm:py-14">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-heading text-gray-900 mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-heading text-[#111] mb-4">
               Blog
             </h1>
-            <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
+            <p className="text-[#71717a] text-base sm:text-lg max-w-2xl mx-auto">
               Nail care tips, Russian manicure guides, and advice for our clients.
             </p>
           </header>
@@ -61,29 +61,29 @@ export default function BlogPage() {
               <li key={post.slug}>
                 <article className="group">
                   <Link href={`/blog/${post.slug}`} className="block">
-                    <div className="relative aspect-video sm:aspect-[2/1] rounded-xl overflow-hidden bg-gray-100 mb-4">
+                    <div className="relative aspect-video sm:aspect-[2/1] overflow-hidden bg-[#f4f4f5] mb-4">
                       <Image
                         src={post.image}
                         alt={post.imageAlt}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 896px"
                       />
                     </div>
                     <time
                       dateTime={post.date}
-                      className="text-sm text-gray-500"
+                      className="text-sm text-[#a1a1aa]"
                     >
                       {formatDate(post.date)}
                     </time>
-                    <h2 className="text-xl sm:text-2xl font-heading font-normal text-gray-900 mt-1 group-hover:text-black group-hover:underline">
+                    <h2 className="text-xl sm:text-2xl font-heading text-[#111] mt-1 group-hover:opacity-80 transition-opacity">
                       {post.title}
                     </h2>
-                    <p className="text-gray-600 text-sm sm:text-base mt-2 line-clamp-2">
+                    <p className="text-[#71717a] text-sm sm:text-base mt-2 line-clamp-2">
                       {post.description}
                     </p>
-                    <span className="inline-block mt-2 text-sm font-medium text-black">
-                      Read more →
+                    <span className="inline-block mt-3 text-sm font-medium text-[#111] border-b border-[#d4d4d8] group-hover:border-[#111] transition-colors">
+                      Read more
                     </span>
                   </Link>
                 </article>
@@ -94,7 +94,7 @@ export default function BlogPage() {
           <div className="mt-12 text-center">
             <Link
               href="/"
-              className="text-gray-600 hover:text-black text-sm font-medium transition-colors"
+              className="text-[#71717a] hover:text-black text-sm font-medium transition-colors"
             >
               ← Back to home
             </Link>

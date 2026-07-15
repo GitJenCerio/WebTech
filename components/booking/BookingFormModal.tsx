@@ -312,7 +312,7 @@ export default function BookingFormModal({
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-white border-2 border-gray-300 rounded-xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[95vh] overflow-y-auto relative"
+        className="bg-white border border-[#e4e4e7] max-w-2xl w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[95vh] overflow-y-auto relative"
       >
         <button
           onClick={(e) => {
@@ -386,7 +386,7 @@ export default function BookingFormModal({
                     setError(null);
                   }}
                   placeholder="e.g., Maria Santos"
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors"
+                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
                   disabled={isSubmitting}
                   required
                 />
@@ -405,7 +405,7 @@ export default function BookingFormModal({
                     setError(null);
                   }}
                   placeholder="e.g., maria@example.com"
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors"
+                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
                   disabled={isSubmitting}
                   required
                 />
@@ -424,7 +424,7 @@ export default function BookingFormModal({
                     setError(null);
                   }}
                   placeholder="e.g., 09123456789"
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors"
+                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
                   disabled={isSubmitting}
                   required
                 />
@@ -442,7 +442,7 @@ export default function BookingFormModal({
                     setError(null);
                   }}
                   placeholder="e.g., Maria Santos or @maria.nails"
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors"
+                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
                   disabled={isSubmitting}
                   required
                 />
@@ -462,7 +462,7 @@ export default function BookingFormModal({
                     }}
                     placeholder="e.g., Street, Barangay, City"
                     rows={2}
-                    className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors resize-none"
+                    className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors resize-none"
                     disabled={isSubmitting}
                     required
                   />
@@ -503,7 +503,7 @@ export default function BookingFormModal({
                       value={howDidYouFindUsOther}
                       onChange={(e) => setHowDidYouFindUsOther(e.target.value)}
                       placeholder="Please specify"
-                      className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors mt-2"
+                      className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors mt-2"
                       disabled={isSubmitting}
                       required
                     />
@@ -639,7 +639,7 @@ export default function BookingFormModal({
                   onChange={(e) => setAllergies(e.target.value)}
                   placeholder="Please specify any allergies or sensitivities, or write 'None'"
                   rows={2}
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors resize-none"
+                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors resize-none"
                   disabled={isSubmitting}
                 />
               </div>
@@ -656,7 +656,7 @@ export default function BookingFormModal({
                   }}
                   placeholder="Describe any nail concerns, or write 'None'"
                   rows={2}
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors resize-none"
+                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors resize-none"
                   disabled={isSubmitting}
                   required
                 />
@@ -671,7 +671,7 @@ export default function BookingFormModal({
                   onChange={(e) => setNailDamageHistory(e.target.value)}
                   placeholder="Please describe any past nail damage or infections, or write 'None'"
                   rows={2}
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors resize-none"
+                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors resize-none"
                   disabled={isSubmitting}
                 />
               </div>
@@ -693,7 +693,7 @@ export default function BookingFormModal({
                   accept="image/*"
                   multiple
                   onChange={handleCurrentNailUpload}
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors"
+                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
                   disabled={isSubmitting}
                 />
                 {currentNailPictures.length > 0 && (
@@ -713,7 +713,7 @@ export default function BookingFormModal({
                   accept="image/*"
                   multiple
                   onChange={handleInspoUpload}
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors"
+                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
                   disabled={isSubmitting}
                 />
                 {inspoPictures.length > 0 && (
@@ -743,7 +743,7 @@ export default function BookingFormModal({
                   onChange={(e) => setInspoDescription(e.target.value)}
                   placeholder="Describe your desired nail look..."
                   rows={3}
-                  className="w-full rounded-lg border-2 border-gray-300 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-400 hover:border-gray-400 transition-colors resize-none"
+                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors resize-none"
                   disabled={isSubmitting}
                 />
               </div>
@@ -1007,7 +1007,7 @@ export default function BookingFormModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-3 py-2.5 sm:px-4 sm:py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-900 active:scale-[0.98] transition-all disabled:cursor-not-allowed disabled:opacity-60 touch-manipulation text-xs sm:text-sm"
+              className="flex-1 brand-cta disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] touch-manipulation text-xs sm:text-sm"
             >
               {isSubmitting ? 'Submitting...' : currentStep === totalSteps ? 'Submit Booking' : 'Next'}
             </button>

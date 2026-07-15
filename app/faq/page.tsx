@@ -24,7 +24,7 @@ export default function FAQPage() {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-white pt-[72px] sm:pt-[88px]">
+      <main className="min-h-screen section-ash pt-[72px] sm:pt-[88px]">
         <FAQ asPage />
       </main>
       <Footer />

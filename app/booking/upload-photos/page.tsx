@@ -13,18 +13,12 @@ const CHOSEN_SERVICE_OPTIONS = Object.entries(CHOSEN_SERVICE_LABELS).map(([value
 
 function Shell({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen section-ash">
       <Header />
-      <section
-        className="pt-[90px] sm:pt-[105px] md:pt-[120px] lg:pt-[140px] px-2 sm:px-4 pb-10 sm:pb-14"
-        style={{ fontFamily: "'Lato', sans-serif" }}
-      >
-        <div
-          className="max-w-2xl mx-auto rounded-xl border-2 p-4 sm:p-6 lg:p-8 shadow-sm"
-          style={{ borderColor: '#212529', backgroundColor: '#f8f9fa' }}
-        >
-          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 mb-2">{title}</h1>
-          {subtitle ? <p className="text-sm sm:text-base text-slate-600 mb-6">{subtitle}</p> : null}
+      <section className="pt-[90px] sm:pt-[105px] md:pt-[120px] lg:pt-[140px] px-2 sm:px-4 pb-10 sm:pb-14">
+        <div className="max-w-2xl mx-auto border border-[#e4e4e7] bg-white p-4 sm:p-6 lg:p-8">
+          <h1 className="text-2xl sm:text-3xl font-heading text-[#111] mb-2">{title}</h1>
+          {subtitle ? <p className="text-sm sm:text-base text-[#71717a] mb-6">{subtitle}</p> : null}
           {children}
         </div>
       </section>
@@ -109,8 +103,8 @@ function UploadSection({
 
   return (
     <div className="mb-8">
-      <h3 className="text-lg font-semibold text-slate-900 mb-1">{label}</h3>
-      <p className="text-sm text-slate-600 mb-3">{description}</p>
+      <h3 className="text-lg font-semibold text-[#111] mb-1">{label}</h3>
+      <p className="text-sm text-[#71717a] mb-3">{description}</p>
       <p className="text-xs text-slate-500 mb-2">
         {currentCount} / {maxCount} uploaded. {isFull ? 'Maximum reached.' : `You can add ${slotsLeft} more.`}
       </p>
@@ -181,7 +175,7 @@ function UploadPhotosContent() {
         <div className="text-center">
           <Link
             href="/booking"
-            className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors"
+            className="brand-cta"
           >
             Book an appointment
           </Link>
@@ -207,7 +201,7 @@ function UploadPhotosContent() {
         <div className="text-center">
           <Link
             href="/booking"
-            className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors"
+            className="brand-cta"
           >
             Book an appointment
           </Link>
@@ -228,10 +222,10 @@ function UploadPhotosContent() {
       </div>
 
       <div className="mb-8">
-        <h3 className="text-lg font-semibold text-slate-900 mb-1">
+        <h3 className="text-lg font-semibold text-[#111] mb-1">
           Specific services / Add-ons <span className="text-red-600">*</span>
         </h3>
-        <p className="text-sm text-slate-600 mb-3">
+        <p className="text-sm text-[#71717a] mb-3">
           Select at least one service you need for your appointment. (Required)
         </p>
         <div className="flex flex-wrap gap-2 mb-3">
@@ -326,7 +320,7 @@ function UploadPhotosContent() {
         disabled={!servicesSaved || chosenServices.length === 0}
       />
 
-      <p className="text-sm text-slate-600 mb-4">
+      <p className="text-sm text-[#71717a] mb-4">
         Accepted formats: JPEG, PNG, WebP, HEIC. Max 10MB per image. Up to 3 photos per section.
       </p>
 

@@ -728,7 +728,7 @@ export default function BookingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen section-ash">
       <Header />
       
       <section className="pt-[80px] sm:pt-[90px] md:pt-[100px] lg:pt-[130px] px-2 sm:px-3 pb-8 sm:pb-12">
@@ -737,14 +737,14 @@ export default function BookingPage() {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-7xl mx-auto"
         >
-          <h1 id="booking-heading" className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-heading text-center mb-3 sm:mb-4 px-2 sm:px-3 text-slate-900 scroll-mt-28 sm:scroll-mt-32 lg:scroll-mt-36">
+          <h1 id="booking-heading" className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-heading text-center mb-3 sm:mb-4 px-2 sm:px-3 text-[#111] scroll-mt-28 sm:scroll-mt-32 lg:scroll-mt-36">
             Book Your Appointment
           </h1>
 
           {/* Nail Tech Selection - Now shown in modal */}
           {selectedNailTechId && (
             <div className="mb-6 sm:mb-8 max-w-4xl mx-auto px-2 sm:px-3">
-              <div className="rounded-xl border-2 px-5 py-4" style={{ borderColor: '#212529', backgroundColor: '#f8f9fa' }}>
+              <div className="border border-[#e4e4e7] px-5 py-4 bg-[#fafafa]">
                 {(() => {
                   const selectedTech = nailTechs.find(t => t.id === selectedNailTechId);
                   if (!selectedTech) return null;
@@ -753,15 +753,15 @@ export default function BookingPage() {
                     const secondaryTech = nailTechs.find(t => t.id === selectedSecondaryNailTechId);
                     return (
                       <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-widest mb-1" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>Mani+Pedi Express</p>
-                        <p className="text-sm" style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}>
-                          <strong style={{ fontFamily: "'Lato', sans-serif" }}>Ms. {selectedTech.name}</strong>
-                          <span className="ml-1 text-xs" style={{ color: '#6c757d' }}>(Manicure (Nail Tech))</span>
+                        <p className="text-xs uppercase tracking-widest mb-1" style={{ color: '#71717a' }}>Mani+Pedi Express</p>
+                        <p className="text-sm" style={{ color: '#111' }}>
+                          <strong >Ms. {selectedTech.name}</strong>
+                          <span className="ml-1 text-xs" style={{ color: '#71717a' }}>(Manicure (Nail Tech))</span>
                           {secondaryTech && (
                             <>
-                              <span className="mx-2" style={{ color: '#adb5bd' }}>·</span>
-                              <strong style={{ fontFamily: "'Lato', sans-serif" }}>Ms. {secondaryTech.name}</strong>
-                              <span className="ml-1 text-xs" style={{ color: '#6c757d' }}>(Pedicure (Nail Tech))</span>
+                              <span className="mx-2" style={{ color: '#a1a1aa' }}>·</span>
+                              <strong >Ms. {secondaryTech.name}</strong>
+                              <span className="ml-1 text-xs" style={{ color: '#71717a' }}>(Pedicure (Nail Tech))</span>
                             </>
                           )}
                         </p>
@@ -775,7 +775,7 @@ export default function BookingPage() {
                             setShowNailTechModal(true);
                           }}
                           className="text-sm hover:opacity-75 underline mt-2 transition-opacity"
-                          style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
+                          style={{ color: '#111' }}
                         >
                           Change nail techs
                         </button>
@@ -786,7 +786,7 @@ export default function BookingPage() {
                             setShowServiceTypeModal(true);
                           }}
                           className="text-sm hover:opacity-75 underline mt-2 transition-opacity ml-4"
-                          style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
+                          style={{ color: '#111' }}
                         >
                           Change service
                         </button>
@@ -797,11 +797,11 @@ export default function BookingPage() {
                   const hasDiscount = selectedTech.discount !== undefined && selectedTech.discount !== null && selectedTech.discount > 0;
                   return (
                     <div className="space-y-1">
-                      <p className="text-sm" style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}>
-                        Viewing calendar for: <strong style={{ fontFamily: "'Lato', sans-serif" }}>Ms. {selectedTech.name}</strong>
+                      <p className="text-sm" style={{ color: '#111' }}>
+                        Viewing calendar for: <strong >Ms. {selectedTech.name}</strong>
                       </p>
                       {hasDiscount && (
-                        <p className="text-sm font-semibold text-green-600" style={{ fontFamily: "'Lato', sans-serif" }}>
+                        <p className="text-sm font-semibold text-green-600" >
                           🎉 Special Offer: {selectedTech.discount}% discount on all services!
                         </p>
                       )}
@@ -815,7 +815,7 @@ export default function BookingPage() {
                           setShowNailTechModal(true);
                         }}
                         className="text-sm hover:opacity-75 underline mt-2 transition-opacity"
-                        style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
+                        style={{ color: '#111' }}
                       >
                         Change nail tech
                       </button>
@@ -828,7 +828,7 @@ export default function BookingPage() {
                           setShowServiceTypeModal(true);
                         }}
                         className="text-sm hover:opacity-75 underline mt-2 transition-opacity ml-4"
-                        style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
+                        style={{ color: '#111' }}
                       >
                         Change service
                       </button>
@@ -875,31 +875,30 @@ export default function BookingPage() {
 
                   <section 
                     ref={slotsSectionRef}
-                    className="rounded-xl border-2 p-3 sm:p-4 lg:p-6 shadow-sm scroll-mt-24 order-1 lg:order-2 flex flex-col"
-                    style={{ borderColor: '#212529', backgroundColor: '#f8f9fa' }}
+                    className="border border-[#e4e4e7] p-3 sm:p-4 lg:p-6 scroll-mt-24 order-1 lg:order-2 flex flex-col bg-white"
                   >
                   <header className="mb-3 sm:mb-4">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em]" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>Available slots</p>
+                      <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em]" style={{ color: '#71717a' }}>Available slots</p>
                       <button
                         type="button"
                         onClick={() => loadData(true)}
                         disabled={loading}
                         className="text-[10px] sm:text-xs underline disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        style={{ color: '#495057', fontFamily: "'Lato', sans-serif" }}
+                        style={{ color: '#52525b' }}
                         title="Refresh slots"
                       >
                         {loading ? 'Refreshing...' : 'Refresh'}
                       </button>
                     </div>
-                    <h2 className="text-base sm:text-lg lg:text-xl font-semibold break-words" style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}>
+                    <h2 className="text-base sm:text-lg lg:text-xl font-heading break-words text-[#111]">
                       {format(parseISO(selectedDate), 'EEEE, MMM d')}
                     </h2>
-                    <p className="text-xs sm:text-sm" style={{ color: '#495057', fontFamily: "'Lato', sans-serif" }}>
+                    <p className="text-xs sm:text-sm" style={{ color: '#52525b' }}>
                       Tap a time to reserve it.
                     </p>
                     {clientInfo && selectedService && getRequiredSlotCount(selectedService, clientInfo.serviceLocation) > 1 && (
-                      <p className="text-[10px] sm:text-xs mt-1 leading-relaxed" style={{ color: '#856404', fontFamily: "'Lato', sans-serif" }}>
+                      <p className="text-[10px] sm:text-xs mt-1 leading-relaxed" style={{ color: '#856404' }}>
                         Select the <strong>first</strong> slot for {getRequiredSlotCount(selectedService, clientInfo.serviceLocation)}-slot services.
                       </p>
                     )}
@@ -909,7 +908,7 @@ export default function BookingPage() {
                     {(() => {
                       const slotsToDisplay = requiredSlots === 1 ? availableSlotsForDate : compatibleSlotsForDate;
                       return slotsToDisplay.length === 0 ? (
-                        <div className="rounded-xl border-2 border-dashed p-3 sm:p-4 text-sm" style={{ borderColor: '#f5c6cb', backgroundColor: '#f8d7da', fontFamily: "'Lato', sans-serif" }}>
+                        <div className="rounded-xl border-2 border-dashed p-3 sm:p-4 text-sm" style={{ borderColor: '#f5c6cb', backgroundColor: '#f8d7da' }}>
                           <p className="font-semibold text-sm" style={{ color: '#721c24' }}>
                             No available slots for this day.
                           </p>
@@ -929,30 +928,17 @@ export default function BookingPage() {
                           key={slot.id}
                           type="button"
                           onClick={() => handleSelectSlotAndOpenForm(slot)}
-                          className="w-full rounded-lg sm:rounded-xl border-2 px-3 sm:px-4 py-2.5 sm:py-3 text-left transition-all active:scale-[0.98] focus:outline-none focus:ring-2 touch-manipulation"
-                          style={{ 
-                            borderColor: '#c3e6cb',
-                            backgroundColor: '#d4edda',
-                            fontFamily: "'Lato', sans-serif"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#28a745';
-                            e.currentTarget.style.backgroundColor = '#c3e6cb';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#c3e6cb';
-                            e.currentTarget.style.backgroundColor = '#d4edda';
-                          }}
+                          className="w-full border border-[#d4d4d8] bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-left transition-all active:scale-[0.98] focus:outline-none focus:ring-1 focus:ring-[#111] touch-manipulation hover:border-[#111]"
                         >
                           {slot.slotType === 'with_squeeze_fee' && (
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-1">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold self-start sm:self-auto" style={{ backgroundColor: '#e2d5f3', color: '#6f42c1', border: '1px solid #c5a7e8', fontFamily: "'Lato', sans-serif" }}>
+                              <span className="inline-flex items-center px-2 py-0.5 text-[9px] sm:text-[10px] font-medium tracking-wide uppercase self-start sm:self-auto border border-[#d4d4d8] text-[#52525b] bg-[#f4f4f5]">
                                 ₱500 Squeeze-in Fee
                               </span>
                             </div>
                           )}
-                          <p className="text-base sm:text-lg font-semibold" style={{ color: '#155724', fontFamily: "'Lato', sans-serif" }}>{formatTime12Hour(slot.time)}</p>
-                          {slot.notes && <p className="text-xs sm:text-sm mt-0.5" style={{ color: '#155724', fontFamily: "'Lato', sans-serif" }}>{slot.notes}</p>}
+                          <p className="text-base sm:text-lg font-medium text-[#111]">{formatTime12Hour(slot.time)}</p>
+                          {slot.notes && <p className="text-xs sm:text-sm mt-0.5 text-[#71717a]">{slot.notes}</p>}
                         </button>
                       ));
                     })()}
@@ -961,7 +947,7 @@ export default function BookingPage() {
                 </div>
               </div>
 
-              <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm px-2 sm:px-3" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>
+              <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm px-2 sm:px-3" style={{ color: '#71717a' }}>
                 {error ? (
                   <p style={{ color: '#721c24' }}>{error}</p>
                 ) : (

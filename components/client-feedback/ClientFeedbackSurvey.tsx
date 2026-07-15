@@ -39,12 +39,12 @@ function StarRating({ value, onChange, label }: { value: number; onChange: (next
             key={rating}
             type="button"
             onClick={() => onChange(rating)}
-            className="rounded-full p-1 transition-transform duration-150 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9a46a]/40"
+            className=" p-1 transition-transform duration-150 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a1a1aa]/40"
             aria-label={`${label}: ${rating} star${rating > 1 ? 's' : ''}`}
             aria-checked={active}
             role="radio"
           >
-            <Star className={`h-6 w-6 ${active ? 'fill-[#c9a46a] text-[#c9a46a]' : 'text-[#d6c7bb]'}`} />
+            <Star className={`h-6 w-6 ${active ? 'fill-[#111] text-[#111]' : 'text-[#d4d4d8]'}`} />
           </button>
         );
       })}
@@ -134,14 +134,14 @@ function TurnstileWidget({ onTokenChange, siteKey }: { onTokenChange: (token: st
   if (!key) {
     if (isProduction) {
       return (
-        <div className="rounded-2xl border border-dashed border-[#eaded4] bg-[#fffdfb] px-4 py-3 text-sm text-[#8a776d]">
+        <div className=" border border-dashed border-[#e4e4e7] bg-white px-4 py-3 text-sm text-[#71717a]">
           Human verification is not configured yet. Add the <span className="font-medium">TURNSTILE_SITE_KEY</span> env var in production.
         </div>
       );
     }
 
     return (
-      <div className="rounded-2xl border border-dashed border-[#eaded4] bg-[#fffdfb] px-4 py-3 text-sm text-[#8a776d]">
+      <div className=" border border-dashed border-[#e4e4e7] bg-white px-4 py-3 text-sm text-[#71717a]">
         Human verification is disabled in local development.
       </div>
     );
@@ -149,7 +149,7 @@ function TurnstileWidget({ onTokenChange, siteKey }: { onTokenChange: (token: st
 
   if (scriptError) {
     return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+      <div className=" border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
         <div className="font-medium">Unable to load Turnstile</div>
         <p className="mt-1">Check that the site key is correct, the domain is allowed in Cloudflare Turnstile settings, and your network or CSP isn&apos;t blocking the widget.</p>
         <div className="mt-2 flex gap-2">
@@ -278,23 +278,22 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
 
   if (submittedResponseId) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-[#fffaf7] text-[#221817]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(231,194,180,0.35),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(201,164,106,0.2),_transparent_22%),linear-gradient(180deg,_#fffaf7_0%,_#fffdfb_100%)]" />
+      <div className="relative min-h-screen overflow-hidden bg-[#fafafa] text-[#111]">
         <main className="relative mx-auto flex min-h-screen w-full max-w-4xl items-center px-4 py-12 sm:px-6 lg:px-8">
-          <Card className="w-full border border-[#eaded4] bg-white/90 shadow-[0_24px_70px_rgba(72,44,26,0.10)] backdrop-blur">
+          <Card className="w-full border border-[#e4e4e7] bg-white shadow-sm">
             <CardContent className="space-y-5 p-6 text-center sm:p-10">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f8efe6] text-[#b98b57] shadow-inner">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center bg-[#f4f4f5] text-[#111]">
                 <CheckCircle2 className="h-7 w-7" />
               </div>
               <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.35em] text-[#b58f68]">Feedback received</p>
-                <h1 className="font-[family-name:var(--font-cormorant)] text-4xl text-[#1f1715] sm:text-5xl">Thank you</h1>
-                <p className="mx-auto max-w-2xl text-sm leading-6 text-[#6d5d54] sm:text-base">
+                <p className="text-xs uppercase tracking-[0.35em] text-[#a1a1aa]">Feedback received</p>
+                <h1 className="font-heading text-4xl text-[#111] sm:text-5xl">Thank you</h1>
+                <p className="mx-auto max-w-2xl text-sm leading-6 text-[#71717a] sm:text-base">
                   Thank you for your feedback! We appreciate your trust and support. We look forward to seeing you again at Glammed Nails by Jhen.
                 </p>
               </div>
-              <div className="rounded-2xl border border-[#eaded4] bg-[#fffaf6] px-4 py-3 text-sm text-[#6d5d54]">
-                Response ID: <span className="font-medium text-[#221817]">{submittedResponseId}</span>
+              <div className="border border-[#e4e4e7] bg-[#f4f4f5] px-4 py-3 text-sm text-[#71717a]">
+                Response ID: <span className="font-medium text-[#111]">{submittedResponseId}</span>
               </div>
             </CardContent>
           </Card>
@@ -304,54 +303,50 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#fffaf7] text-[#221817]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(231,194,180,0.35),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(201,164,106,0.2),_transparent_22%),linear-gradient(180deg,_#fffaf7_0%,_#fffdfb_100%)]" />
-      <div className="absolute left-0 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-[#f1d7cc]/30 blur-3xl" />
-      <div className="absolute bottom-0 right-0 h-80 w-80 translate-x-1/3 rounded-full bg-[#f4e7d1]/30 blur-3xl" />
-
+    <div className="relative min-h-screen overflow-hidden bg-[#fafafa] text-[#111]">
       <main className="relative mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
-        <div className="mb-6 flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-[#b58f68]">
+        <div className="mb-6 flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-[#a1a1aa]">
           <Sparkles className="h-4 w-4" /> Private client survey
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.35fr] lg:items-start">
-          <Card className="border border-[#eaded4] bg-white/85 shadow-[0_20px_60px_rgba(72,44,26,0.08)] backdrop-blur">
+          <Card className="border border-[#e4e4e7] bg-white shadow-sm">
             <CardHeader className="space-y-4 p-6 sm:p-8">
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#eaded4] bg-[#fff7f2] px-3 py-1 text-xs font-medium text-[#a97d50]">
+              <div className="inline-flex w-fit items-center gap-2 border border-[#e4e4e7] bg-[#f4f4f5] px-3 py-1 text-xs font-medium text-[#71717a]">
                 <ShieldCheck className="h-3.5 w-3.5" /> Private QR survey
               </div>
               <div className="space-y-3">
-                <CardTitle className="font-[family-name:var(--font-cormorant)] text-4xl leading-tight text-[#1f1715] sm:text-5xl">
+                <CardTitle className="font-heading text-4xl leading-tight text-[#111] sm:text-5xl">
                   Client Feedback
                 </CardTitle>
-                <CardDescription className="max-w-md text-sm leading-6 text-[#6d5d54] sm:text-base">
+                <CardDescription className="max-w-md text-sm leading-6 text-[#71717a] sm:text-base">
                   Thank you for choosing Glammed Nails by Jhen. Your feedback helps us improve and continue providing exceptional service.
                 </CardDescription>
               </div>
-              <div className="grid gap-3 rounded-3xl border border-[#eaded4] bg-[#fffaf6] p-4 text-sm text-[#5e4f48]">
+              <div className="grid gap-3  border border-[#e4e4e7] bg-[#f4f4f5] p-4 text-sm text-[#52525b]">
                 <div className="flex items-start gap-3">
-                  <Clock3 className="mt-0.5 h-4 w-4 text-[#b58f68]" />
+                  <Clock3 className="mt-0.5 h-4 w-4 text-[#a1a1aa]" />
                   <span>Completes in about 1 to 2 minutes.</span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <ShieldCheck className="mt-0.5 h-4 w-4 text-[#b58f68]" />
+                  <ShieldCheck className="mt-0.5 h-4 w-4 text-[#a1a1aa]" />
                   <span>Protected with human verification and anti-spam checks.</span>
                 </div>
               </div>
-              <div className="rounded-3xl border border-[#eaded4] bg-[#1f1715] px-4 py-4 text-white">
-                <p className="text-xs uppercase tracking-[0.28em] text-[#d8c2a2]">Progress</p>
-                <div className="mt-2 h-2 rounded-full bg-white/10">
-                  <div className="h-2 rounded-full bg-gradient-to-r from-[#d8b18a] via-[#e8caa2] to-[#c8a15f] transition-all" style={{ width: `${progress}%` }} />
+              <div className=" border border-[#e4e4e7] bg-[#111] px-4 py-4 text-white">
+                <p className="text-xs uppercase tracking-[0.28em] text-[#d4d4d8]">Progress</p>
+                <div className="mt-2 h-2  bg-white/10">
+                  <div className="h-2  bg-gradient-to-r from-[#a1a1aa] via-[#d4d4d8] to-white transition-all" style={{ width: `${progress}%` }} />
                 </div>
                 <p className="mt-3 text-sm text-white/80">{answeredCount} of {ratingQuestions.length} ratings completed</p>
               </div>
             </CardHeader>
           </Card>
 
-          <Card className="border border-[#eaded4] bg-white/90 shadow-[0_24px_70px_rgba(72,44,26,0.10)] backdrop-blur">
+          <Card className="border border-[#e4e4e7] bg-white shadow-sm">
             <CardContent className="p-5 sm:p-8">
               {error && (
-                <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
+                <div className="mb-5  border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
                   {error}
                 </div>
               )}
@@ -368,24 +363,24 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
                   aria-hidden="true"
                 />
 
-                <section className="space-y-3 rounded-2xl border border-[#f0e6dc] bg-[#fffdfb] p-4 sm:p-5">
+                <section className="space-y-3  border border-[#e4e4e7] bg-white p-4 sm:p-5">
                   <div className="space-y-1">
-                    <Label className="text-sm font-medium text-[#221817]">Who was your nail technician?</Label>
-                    <p className="text-xs leading-5 text-[#8a776d]">Select the technician who served you today.</p>
+                    <Label className="text-sm font-medium text-[#111]">Who was your nail technician?</Label>
+                    <p className="text-xs leading-5 text-[#71717a]">Select the technician who served you today.</p>
                   </div>
 
                   {loadingNailTechs ? (
-                    <p className="text-sm text-[#8a776d]">Loading technicians...</p>
+                    <p className="text-sm text-[#71717a]">Loading technicians...</p>
                   ) : nailTechLoadError ? (
                     <p className="text-sm text-rose-700">{nailTechLoadError}</p>
                   ) : nailTechs.length === 0 ? (
-                    <p className="text-sm text-[#8a776d]">No technicians are available right now. Please try again later.</p>
+                    <p className="text-sm text-[#71717a]">No technicians are available right now. Please try again later.</p>
                   ) : (
                     <div className="grid gap-2 sm:grid-cols-2">
                       {nailTechs.map((tech) => (
                         <label
                           key={tech.id}
-                          className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#eaded4] bg-white px-3 py-2.5 text-sm text-[#4d4038] transition-colors hover:border-[#c9a46a]/40"
+                          className="flex cursor-pointer items-center gap-3 border border-[#e4e4e7] bg-white px-3 py-2.5 text-sm text-[#52525b] transition-colors hover:border-[#111]/40"
                         >
                           <input
                             type="radio"
@@ -393,11 +388,11 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
                             value={tech.id}
                             checked={nailTechId === tech.id}
                             onChange={() => setNailTechId(tech.id)}
-                            className="h-4 w-4 border-[#c9a46a] text-[#c9a46a] focus:ring-[#c9a46a]"
+                            className="h-4 w-4 border-[#111] text-[#111] focus:ring-[#111]"
                           />
                           <span className="flex flex-col">
-                            <span className="font-medium text-[#221817]">Ms. {tech.name}</span>
-                            {tech.role ? <span className="text-xs text-[#8a776d]">{tech.role}</span> : null}
+                            <span className="font-medium text-[#111]">Ms. {tech.name}</span>
+                            {tech.role ? <span className="text-xs text-[#71717a]">{tech.role}</span> : null}
                           </span>
                         </label>
                       ))}
@@ -407,17 +402,17 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
 
                 <section className="space-y-5">
                   <div>
-                    <h2 className="text-lg font-semibold text-[#1f1715]">Rating your experience</h2>
-                    <p className="mt-1 text-sm text-[#6d5d54]">Tap a star for each section below.</p>
+                    <h2 className="text-lg font-semibold text-[#111]">Rating your experience</h2>
+                    <p className="mt-1 text-sm text-[#71717a]">Tap a star for each section below.</p>
                   </div>
 
                   <div className="space-y-5">
                     {ratingQuestions.map((question) => (
-                      <div key={question.key} className="rounded-2xl border border-[#f0e6dc] bg-[#fffdfb] p-4 sm:p-5">
+                      <div key={question.key} className=" border border-[#e4e4e7] bg-white p-4 sm:p-5">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
                           <div className="space-y-1">
-                            <Label className="text-sm font-medium text-[#221817]">{question.label}</Label>
-                            <p className="text-xs leading-5 text-[#8a776d]">{question.helper}</p>
+                            <Label className="text-sm font-medium text-[#111]">{question.label}</Label>
+                            <p className="text-xs leading-5 text-[#71717a]">{question.helper}</p>
                           </div>
                           <StarRating
                             value={ratings[question.key]}
@@ -432,46 +427,46 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
 
                 <section className="space-y-5">
                   <div>
-                    <h2 className="text-lg font-semibold text-[#1f1715]">Share your thoughts</h2>
-                    <p className="mt-1 text-sm text-[#6d5d54]">Short answers are enough.</p>
+                    <h2 className="text-lg font-semibold text-[#111]">Share your thoughts</h2>
+                    <p className="mt-1 text-sm text-[#71717a]">Short answers are enough.</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="favoritePart" className="text-sm font-medium text-[#221817]">What did you love most about your appointment?</Label>
+                    <Label htmlFor="favoritePart" className="text-sm font-medium text-[#111]">What did you love most about your appointment?</Label>
                     <Textarea
                       id="favoritePart"
                       value={favoritePart}
                       onChange={(event) => setFavoritePart(event.target.value)}
                       placeholder="Tell us what stood out, what felt special, or what you appreciated most..."
-                      className="min-h-28 border-[#eaded4] bg-[#fffdfb] text-[#221817] placeholder:text-[#aa9a91] focus-visible:ring-[#c9a46a]/30"
+                      className="min-h-28 border-[#e4e4e7] bg-white text-[#111] placeholder:text-[#a1a1aa] focus-visible:ring-[#111]/30"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="improvements" className="text-sm font-medium text-[#221817]">Is there anything we can improve?</Label>
+                    <Label htmlFor="improvements" className="text-sm font-medium text-[#111]">Is there anything we can improve?</Label>
                     <Textarea
                       id="improvements"
                       value={improvementSuggestions}
                       onChange={(event) => setImprovementSuggestions(event.target.value)}
                       placeholder="Share any suggestions, requests, or small details we should refine..."
-                      className="min-h-28 border-[#eaded4] bg-[#fffdfb] text-[#221817] placeholder:text-[#aa9a91] focus-visible:ring-[#c9a46a]/30"
+                      className="min-h-28 border-[#e4e4e7] bg-white text-[#111] placeholder:text-[#a1a1aa] focus-visible:ring-[#111]/30"
                     />
                   </div>
                 </section>
 
                 <section className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-3 rounded-2xl border border-[#f0e6dc] bg-[#fffdfb] p-4">
-                    <Label className="text-sm font-medium text-[#221817]">May we share your feedback on our social media or website?</Label>
+                  <div className="space-y-3  border border-[#e4e4e7] bg-white p-4">
+                    <Label className="text-sm font-medium text-[#111]">May we share your feedback on our social media or website?</Label>
                     <div className="space-y-2.5">
                       {testimonialOptions.map((option) => (
-                        <label key={option.value} className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#eaded4] bg-white px-3 py-2 text-sm text-[#4d4038] transition-colors hover:border-[#c9a46a]/40">
+                        <label key={option.value} className="flex cursor-pointer items-center gap-3 border border-[#e4e4e7] bg-white px-3 py-2 text-sm text-[#52525b] transition-colors hover:border-[#111]/40">
                           <input
                             type="radio"
                             name="testimonialPermission"
                             value={option.value}
                             checked={testimonialPermission === option.value}
                             onChange={() => setTestimonialPermission(option.value)}
-                            className="h-4 w-4 border-[#c9a46a] text-[#c9a46a] focus:ring-[#c9a46a]"
+                            className="h-4 w-4 border-[#111] text-[#111] focus:ring-[#111]"
                           />
                           <span>{option.label}</span>
                         </label>
@@ -479,18 +474,18 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
                     </div>
                   </div>
 
-                  <div className="space-y-3 rounded-2xl border border-[#f0e6dc] bg-[#fffdfb] p-4">
-                    <Label className="text-sm font-medium text-[#221817]">Would you book with us again?</Label>
+                  <div className="space-y-3  border border-[#e4e4e7] bg-white p-4">
+                    <Label className="text-sm font-medium text-[#111]">Would you book with us again?</Label>
                     <div className="grid gap-2">
                       {futureBookingOptions.map((option) => (
-                        <label key={option.value} className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#eaded4] bg-white px-3 py-2 text-sm text-[#4d4038] transition-colors hover:border-[#c9a46a]/40">
+                        <label key={option.value} className="flex cursor-pointer items-center gap-3 border border-[#e4e4e7] bg-white px-3 py-2 text-sm text-[#52525b] transition-colors hover:border-[#111]/40">
                           <input
                             type="radio"
                             name="futureBookingIntent"
                             value={option.value}
                             checked={futureBookingIntent === option.value}
                             onChange={() => setFutureBookingIntent(option.value)}
-                            className="h-4 w-4 border-[#c9a46a] text-[#c9a46a] focus:ring-[#c9a46a]"
+                            className="h-4 w-4 border-[#111] text-[#111] focus:ring-[#111]"
                           />
                           <span>{option.label}</span>
                         </label>
@@ -499,23 +494,23 @@ export default function ClientFeedbackSurvey({ siteKey }: { siteKey?: string }) 
                   </div>
                 </section>
 
-                <div className="space-y-3 rounded-2xl border border-[#f0e6dc] bg-[#fffdfb] p-4">
-                  <Label className="text-sm font-medium text-[#221817]">Human verification</Label>
+                <div className="space-y-3  border border-[#e4e4e7] bg-white p-4">
+                  <Label className="text-sm font-medium text-[#111]">Human verification</Label>
                   <TurnstileWidget onTokenChange={setTurnstileToken} siteKey={siteKey} />
                 </div>
 
-                <div className="rounded-2xl border border-[#eaded4] bg-[#1f1715] p-4 text-sm text-white/80">
+                <div className=" border border-[#e4e4e7] bg-[#111] p-4 text-sm text-white/80">
                   <p className="font-medium text-white">Your response is private.</p>
                   <p className="mt-1 text-white/70">The form is protected against spam and repeated submissions.</p>
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-[#8a776d]">Select your technician and complete all ratings before submission.</p>
+                  <p className="text-xs text-[#71717a]">Select your technician and complete all ratings before submission.</p>
                   <Button
                     type="submit"
                     disabled={!canSubmit}
                     loading={isSubmitting}
-                    className="h-11 rounded-full bg-gradient-to-r from-[#1f1715] to-[#3d2b22] px-6 text-sm font-medium text-white shadow-lg shadow-[#1f1715]/15 hover:from-[#2b1f1a] hover:to-[#4a3429]"
+                    className="h-11  bg-gradient-to-r from-[#1f1715] to-[#3d2b22] px-6 text-sm font-medium text-white shadow-lg shadow-[#1f1715]/15 hover:from-[#2b1f1a] hover:to-[#4a3429]"
                   >
                     Submit Feedback
                   </Button>

@@ -16,15 +16,12 @@ function UploadProofShell({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen section-ash">
       <Header />
       <section className="pt-[90px] sm:pt-[105px] md:pt-[120px] lg:pt-[140px] px-2 sm:px-4 pb-10 sm:pb-14">
-        <div
-          className="max-w-2xl mx-auto rounded-xl border-2 p-4 sm:p-6 lg:p-8 shadow-sm"
-          style={{ borderColor: '#212529', backgroundColor: '#f8f9fa', fontFamily: "'Lato', sans-serif" }}
-        >
-          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 mb-2">{title}</h1>
-          {subtitle ? <p className="text-sm sm:text-base text-slate-600 mb-6">{subtitle}</p> : null}
+        <div className="max-w-2xl mx-auto border border-[#e4e4e7] bg-white p-4 sm:p-6 lg:p-8">
+          <h1 className="text-2xl sm:text-3xl font-heading text-[#111] mb-2">{title}</h1>
+          {subtitle ? <p className="text-sm sm:text-base text-[#71717a] mb-6">{subtitle}</p> : null}
           {children}
         </div>
       </section>
@@ -114,7 +111,7 @@ function UploadProofContent() {
         <div className="text-center">
           <Link
             href="/booking"
-            className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors"
+            className="brand-cta"
           >
             Book an appointment
           </Link>
@@ -140,7 +137,7 @@ function UploadProofContent() {
         <div className="text-center">
           <Link
             href="/booking"
-            className="inline-block bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors"
+            className="brand-cta"
           >
             Book an appointment
           </Link>
@@ -189,7 +186,7 @@ function UploadProofContent() {
         <button
           type="submit"
           disabled={uploading || !file}
-          className="w-full bg-black text-white py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-900 transition-colors"
+          className="brand-cta w-full disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {uploading ? 'Uploading...' : 'Upload proof'}
         </button>

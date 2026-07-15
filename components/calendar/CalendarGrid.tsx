@@ -104,25 +104,24 @@ export function CalendarGrid({
   const todayStr = format(today, 'yyyy-MM-dd');
 
   return (
-    <div className="rounded-xl border-2 bg-white p-3 sm:p-4 lg:p-6 shadow-sm" style={{ borderColor: '#212529', fontFamily: "'Lato', sans-serif" }}>
+    <div className="border border-[#e4e4e7] bg-white p-3 sm:p-4 lg:p-6">
       <div className="mb-3 sm:mb-4 flex items-center justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] sm:text-xs uppercase tracking-wider mb-1" style={{ color: '#6c757d', fontFamily: "'Lato', sans-serif" }}>Calendar</p>
-          <h2 className="text-base sm:text-lg lg:text-xl font-semibold break-words" style={{ color: '#212529', fontFamily: "'Playfair Display', serif" }}>
+          <p className="text-[10px] sm:text-xs uppercase tracking-[0.15em] mb-1 text-[#a1a1aa]">
+            Calendar
+          </p>
+          <h2 className="text-base sm:text-lg lg:text-xl font-heading text-[#111] break-words">
             {format(referenceDate, 'MMMM yyyy')}
           </h2>
           {nailTechName && (
-            <p className="text-xs sm:text-sm mt-1 break-words" style={{ color: '#495057', fontFamily: "'Lato', sans-serif" }}>{nailTechName}</p>
+            <p className="text-xs sm:text-sm mt-1 break-words text-[#71717a]">{nailTechName}</p>
           )}
         </div>
         <div className="flex gap-1 sm:gap-2 ml-2">
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="rounded-lg p-2 sm:p-2.5 text-xl sm:text-2xl font-bold transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
-            style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            className="p-2 sm:p-2.5 text-xl sm:text-2xl text-[#111] hover:bg-[#f4f4f5] transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Previous month"
           >
             ‹
@@ -130,10 +129,7 @@ export function CalendarGrid({
           <button
             type="button"
             onClick={handleNextMonth}
-            className="rounded-lg p-2 sm:p-2.5 text-xl sm:text-2xl font-bold transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
-            style={{ color: '#212529', fontFamily: "'Lato', sans-serif" }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            className="p-2 sm:p-2.5 text-xl sm:text-2xl text-[#111] hover:bg-[#f4f4f5] transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Next month"
           >
             ›
@@ -143,7 +139,7 @@ export function CalendarGrid({
 
       <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="text-center text-[10px] sm:text-xs font-semibold py-1.5 sm:py-2" style={{ color: '#495057', fontFamily: "'Lato', sans-serif" }}>
+          <div key={day} className="text-center text-[10px] sm:text-xs font-medium tracking-wide py-1.5 sm:py-2 text-[#71717a]">
             {day}
           </div>
         ))}
@@ -159,41 +155,40 @@ export function CalendarGrid({
           const hasNoSlots = noAvailableSlotsDates.includes(dateStr);
 
           let bgColorStyle = '#ffffff';
-          let textColorStyle = '#495057';
-          let borderColorStyle = '#dee2e6';
+          let textColorStyle = '#52525b';
+          let borderColorStyle = '#e4e4e7';
 
           if (!isCurrentMonth) {
-            textColorStyle = '#adb5bd';
+            textColorStyle = '#a1a1aa';
           } else if (isPast) {
-            textColorStyle = '#adb5bd';
-            bgColorStyle = '#f8f9fa';
+            textColorStyle = '#a1a1aa';
+            bgColorStyle = '#fafafa';
           } else if (status === 'blocked') {
-            bgColorStyle = '#f8d7da';
-            textColorStyle = '#721c24';
-            borderColorStyle = '#f5c6cb';
+            bgColorStyle = '#fafafa';
+            textColorStyle = '#71717a';
+            borderColorStyle = '#e4e4e7';
           } else if (status === 'booked') {
-            bgColorStyle = '#fff3cd';
-            textColorStyle = '#856404';
-            borderColorStyle = '#ffeaa7';
+            bgColorStyle = '#f4f4f5';
+            textColorStyle = '#52525b';
+            borderColorStyle = '#d4d4d8';
           } else if (hasNoSlots) {
-            // Day has slots but not enough consecutive ones for selected service (e.g. home service)
-            bgColorStyle = '#f8f9fa';
-            textColorStyle = '#6c757d';
-            borderColorStyle = '#dee2e6';
+            bgColorStyle = '#fafafa';
+            textColorStyle = '#71717a';
+            borderColorStyle = '#e4e4e7';
           } else if (status === 'available') {
-            bgColorStyle = '#d4edda';
-            textColorStyle = '#155724';
-            borderColorStyle = '#c3e6cb';
+            bgColorStyle = '#ffffff';
+            textColorStyle = '#111111';
+            borderColorStyle = '#d4d4d8';
           }
 
           if (isSelected) {
-            borderColorStyle = '#9ca3af';
-            bgColorStyle = isCurrentMonth ? '#e5e7eb' : bgColorStyle;
-            textColorStyle = isCurrentMonth && isSelected ? '#374151' : textColorStyle;
+            borderColorStyle = '#111111';
+            bgColorStyle = '#111111';
+            textColorStyle = '#ffffff';
           }
 
           if (isToday && !isSelected) {
-            borderColorStyle = '#495057';
+            borderColorStyle = '#a1a1aa';
           }
 
           return (
@@ -203,40 +198,48 @@ export function CalendarGrid({
               onClick={() => handleDateClick(date)}
               disabled={isPast && disablePastDates}
               className={`
-                aspect-square rounded-lg border-2 p-2 sm:p-2.5 text-[11px] sm:text-xs lg:text-sm font-medium
+                aspect-square border p-2 sm:p-2.5 text-[11px] sm:text-xs lg:text-sm font-medium
                 transition-all active:scale-95 touch-manipulation
                 min-h-[44px] sm:min-h-[48px]
                 ${!isCurrentMonth ? 'opacity-50' : ''}
-                ${isPast && disablePastDates ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-105'}
+                ${isPast && disablePastDates ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-[#111]'}
               `}
               style={{
                 backgroundColor: bgColorStyle,
                 color: textColorStyle,
                 borderColor: borderColorStyle,
-                fontFamily: "'Lato', sans-serif"
               }}
             >
               <div className="flex flex-col h-full w-full">
                 <div className="flex justify-center items-center shrink-0 pt-0.5">
-                  <span className="font-semibold text-center">{format(date, 'd')}</span>
+                  <span className="font-medium text-center">{format(date, 'd')}</span>
                 </div>
                 <div className="flex-1 flex items-center justify-center min-h-0">
                   {status === 'blocked' ? (
-                    <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight text-center">Blocked</span>
+                    <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight text-center opacity-70">Blocked</span>
                   ) : slotCounts.total > 0 && !hasNoSlots ? (
                     <div className="flex flex-col items-center justify-center gap-0.5">
                       {slotCounts.available > 0 && (
-                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: '#28a745' }}>
+                        <span
+                          className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-medium"
+                          style={{ color: isSelected ? 'rgba(255,255,255,0.85)' : '#111111' }}
+                        >
                           {slotCounts.available}
                         </span>
                       )}
                       {slotCounts.booked > 0 && (
-                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: '#212529' }}>
+                        <span
+                          className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-medium"
+                          style={{ color: isSelected ? 'rgba(255,255,255,0.55)' : '#a1a1aa' }}
+                        >
                           {slotCounts.booked}
                         </span>
                       )}
                       {slotCounts.pending > 0 && (
-                        <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-semibold" style={{ color: '#007bff' }}>
+                        <span
+                          className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-medium"
+                          style={{ color: isSelected ? 'rgba(255,255,255,0.55)' : '#71717a' }}
+                        >
                           {slotCounts.pending}
                         </span>
                       )}

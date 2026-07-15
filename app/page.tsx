@@ -13,9 +13,9 @@ const FAQ = lazy(() => import('@/components/FAQ'));
 const Footer = lazy(() => import('@/components/Footer'));
 
 const LoadingPlaceholder = () => (
-  <div className="section-padding bg-white">
+  <div className="section-padding section-ash">
     <div className="max-w-7xl mx-auto">
-      <div className="h-96 animate-pulse bg-gray-100 rounded-lg" />
+      <div className="h-96 animate-pulse bg-[#e4e4e7]/60" />
     </div>
   </div>
 );
@@ -43,10 +43,10 @@ export default function Home() {
     <main className="min-h-screen">
       <Header />
       <Hero />
-      <section className="bg-amber-50 border-y border-amber-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center">
-          <p className="text-sm sm:text-base text-amber-900">
-            Price update: Starting April 2026, there is a +300 PHP increase for main services. Prices shown on this site are already updated.
+      <section className="brand-notice">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-3.5">
+          <p className="text-sm sm:text-[15px] tracking-wide">
+            Price update: Starting April 2026, main services increase by +300 PHP. Prices shown are already updated.
           </p>
         </div>
       </section>

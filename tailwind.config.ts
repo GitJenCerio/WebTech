@@ -71,6 +71,24 @@ const config: Config = {
           DEFAULT: "#1a1a1a",
           light: "#2d2d2d",
         },
+        silver: {
+          DEFAULT: "#b5a99a",
+          light: "#d9d2c8",
+          soft: "#e7e2db",
+        },
+        champagne: {
+          DEFAULT: "#c4b5a0",
+        },
+        pearl: {
+          DEFAULT: "#fffcfa",
+        },
+        ash: {
+          DEFAULT: "#f0ebe4",
+          soft: "#f7f6f4",
+        },
+        ink: {
+          DEFAULT: "#1c1917",
+        },
       },
       boxShadow: {
         sm: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
@@ -80,12 +98,13 @@ const config: Config = {
         hover: "0 6px 16px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)",
       },
       fontFamily: {
-        heading: ['Balgor', 'sans-serif'],
+        heading: ['var(--font-cormorant)', 'Cormorant Garamond', 'Georgia', 'serif'],
         body: ['var(--font-jost)', 'Jost', 'sans-serif'],
         sans: ['var(--font-jost)', 'Jost', 'sans-serif'],
         balgor: ['Balgor', 'sans-serif'],
         acollia: ['Acollia', 'sans-serif'],
         ladinta: ['Ladinta', 'sans-serif'],
+        cormorant: ['var(--font-cormorant)', 'Cormorant Garamond', 'Georgia', 'serif'],
       },
       spacing: {
         xs: '0.5rem',
