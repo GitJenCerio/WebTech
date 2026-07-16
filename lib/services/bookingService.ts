@@ -971,7 +971,7 @@ export async function rescheduleBookingToSlots(
 /**
  * Update booking service (admin)
  * - Updates service type, optionally location and chosenServices
- * - When new service needs MORE slots than current, throws (use reschedule instead)
+ * - When new service needs MORE slots, accepts newSlotIds (same appointment day) to reserve them
  * - When new service needs FEWER slots, keeps first N slots and releases the rest
  */
 export async function updateBookingService(
@@ -1067,9 +1067,49 @@ export async function updateBookingService(
     const requiredSlots = getRequiredSlotCountForService(service.type, service.location || booking.service?.location);
 
     if (requiredSlots > currentSlotCount) {
-      throw new Error(
-        `New service requires ${requiredSlots} slot(s) but booking has ${currentSlotCount}. Please reschedule to select more slots.`
-      );
+      if (!service.newSlotIds || service.newSlotIds.length !== requiredSlots) {
+        throw new Error(
+          `New service requires ${requiredSlots} slot(s) but booking has ${currentSlotCount}. Select ${requiredSlots} consecutive slot(s) for this day, or use Reschedule for a different date.`
+        );
+      }
+
+      const oldSlotDocs = await Slot.find({ _id: { $in: booking.slotIds || [] } }).lean();
+      const anchorDate = (oldSlotDocs[0] as { date?: string } | undefined)?.date;
+
+      if (anchorDate) {
+        const newSlotDocs = await Slot.find({ _id: { $in: service.newSlotIds } }).lean();
+        for (const s of newSlotDocs) {
+          if ((s as { date?: string }).date !== anchorDate) {
+            throw new Error(
+              'Change service cannot move the appointment to a different date. Use Reschedule to change the date.'
+            );
+          }
+        }
+      }
+
+      const heldSlotIds = new Set(await getSlotIdsHeldByBooking(bookingId));
+      const newNailTechId = await validateSlots(service.newSlotIds, undefined, heldSlotIds);
+
+      const oldSlotIds = [...(booking.slotIds || [])];
+      await releaseSlots(oldSlotIds);
+      try {
+        await reserveSlots(service.newSlotIds);
+      } catch (err) {
+        await reserveSlots(oldSlotIds);
+        throw err;
+      }
+
+      booking.slotIds = service.newSlotIds;
+      booking.nailTechId = newNailTechId;
+
+      if (booking.status === 'confirmed') {
+        await confirmSlots(service.newSlotIds);
+      }
+    } else if (requiredSlots < currentSlotCount && booking.slotIds && booking.slotIds.length > requiredSlots) {
+      const keepIds = booking.slotIds.slice(0, requiredSlots);
+      const releaseIds = booking.slotIds.slice(requiredSlots);
+      await releaseSlots(releaseIds);
+      booking.slotIds = keepIds;
     }
 
     if (booking.service) {
@@ -1080,14 +1120,6 @@ export async function updateBookingService(
       // Clear simultaneous mode if switching away from Express
       booking.service.mode = 'single_tech';
       booking.service.secondaryNailTechId = undefined;
-    }
-
-    // If new service needs fewer slots, release the extras
-    if (requiredSlots < currentSlotCount && booking.slotIds && booking.slotIds.length > requiredSlots) {
-      const keepIds = booking.slotIds.slice(0, requiredSlots);
-      const releaseIds = booking.slotIds.slice(requiredSlots);
-      await releaseSlots(releaseIds);
-      booking.slotIds = keepIds;
     }
   }
 

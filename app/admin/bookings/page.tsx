@@ -708,7 +708,7 @@ export default function BookingsPage() {
   const handleRescheduleConfirm = async (
     newSlotIds: string[],
     reason?: string,
-    opts?: { primaryNailTechId?: string; secondaryNailTechId?: string }
+    opts?: { primaryNailTechId?: string; secondaryNailTechId?: string; serviceType?: string }
   ) => {
     if (!selectedBooking?.id) return;
     setRescheduleLoading(true);
@@ -728,7 +728,31 @@ export default function BookingsPage() {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to reschedule');
       }
-      toast.success('Booking rescheduled');
+
+      if (opts?.serviceType) {
+        const isExpress =
+          opts.serviceType.toLowerCase().includes('express') ||
+          opts.serviceType.toLowerCase().includes('simultaneous');
+        const serviceRes = await fetch(`/api/bookings/${selectedBooking.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_service',
+            service: {
+              type: opts.serviceType,
+              location: selectedBooking.serviceLocation,
+            },
+            secondaryNailTechId: isExpress ? opts.secondaryNailTechId : undefined,
+            newSlotIds: isExpress ? newSlotIds : undefined,
+          }),
+        });
+        if (!serviceRes.ok) {
+          const data = await serviceRes.json().catch(() => ({}));
+          throw new Error(data.error || 'Rescheduled, but failed to update service type');
+        }
+      }
+
+      toast.success(opts?.serviceType ? 'Booking rescheduled and service updated' : 'Booking rescheduled');
       setShowRescheduleModal(false);
       setSelectedBooking(null);
       await fetchBookings();
