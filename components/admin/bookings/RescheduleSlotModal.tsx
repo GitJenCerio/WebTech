@@ -26,11 +26,10 @@ import { cn } from '@/components/ui/Utils';
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import { formatTime12Hour } from '@/lib/utils';
 import { normalizeSlotTime } from '@/lib/constants/slots';
+import { findConsecutiveAvailableSlots } from '@/lib/utils/consecutiveSlots';
 import { getRequiredSlotCountForService } from '@/lib/serviceSlotCount';
 import { mapServiceToStandardDisplay } from '@/lib/serviceLabels';
 import type { ServiceType } from '@/lib/types';
-
-const BOOKED_STATUSES = ['pending', 'confirmed'] as const;
 
 const SERVICE_TYPES: ServiceType[] = [
   'Manicure',
@@ -126,39 +125,11 @@ export default function RescheduleSlotModal({
   );
 
   // ── Consecutive slot helpers (single-tech) ─────────────────────
-  const hasBookedBetween = useCallback(
-    (slots: Slot[], timeA: string, timeB: string) => {
-      const na = normalizeSlotTime(timeA);
-      const nb = normalizeSlotTime(timeB);
-      return slots.some((s) => {
-        const nt = normalizeSlotTime(s.time);
-        return nt > na && nt < nb && (BOOKED_STATUSES as readonly string[]).includes(s.status);
-      });
-    },
-    []
-  );
-
   const findNextConsecutiveAvailable = useCallback(
     (slots: Slot[], avail: Slot[], fromSlot: Slot, count: number): Slot[] => {
-      if (count <= 0) return [];
-      const result: Slot[] = [fromSlot];
-      const sortedAvail = [...avail].sort((a, b) =>
-        normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time))
-      );
-      let ref = fromSlot;
-      for (let i = 1; i < count; i++) {
-        const refTime = normalizeSlotTime(ref.time);
-        const next = sortedAvail.find((s) => {
-          const st = normalizeSlotTime(s.time);
-          return st > refTime && !hasBookedBetween(slots, ref.time, s.time);
-        });
-        if (!next) return [];
-        result.push(next);
-        ref = next;
-      }
-      return result;
+      return findConsecutiveAvailableSlots(slots, avail, fromSlot, count);
     },
-    [hasBookedBetween]
+    []
   );
 
   const compatibleSlots = useMemo(() => {

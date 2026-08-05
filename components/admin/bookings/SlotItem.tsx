@@ -37,6 +37,9 @@ interface SlotItemProps {
   clientSocialMediaName?: string;
   service?: string;
   serviceMode?: 'single_tech' | 'simultaneous_two_techs';
+  /** Express pair role for this slot's booking doc */
+  expressSegment?: 'manicure' | 'pedicure' | null;
+  expressGroupId?: string | null;
   isHidden?: boolean;
   onView?: () => void;
   onEdit?: () => void;
@@ -60,6 +63,7 @@ export default function SlotItem({
   clientSocialMediaName,
   service,
   serviceMode,
+  expressSegment,
   isHidden = false,
   onView,
   onEdit,
@@ -83,6 +87,17 @@ export default function SlotItem({
   const serviceBadge = isSimultaneous
     ? { label: 'Mani+Pedi Express', style: SERVICE_BADGE_STYLE }
     : getServiceBadge(service);
+
+  const expressTechSuffix =
+    expressSegment === 'manicure'
+      ? ' (Manicure)'
+      : expressSegment === 'pedicure'
+        ? ' (Pedicure)'
+        : String(nailTechId) === String(primaryNailTechId)
+          ? ' (Manicure)'
+          : String(nailTechId) === String(secondaryNailTechId)
+            ? ' (Pedicure)'
+            : '';
 
   return (
     <div
@@ -185,15 +200,9 @@ export default function SlotItem({
                 {nailTechName && !isSimultaneous && (
                   <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
                 )}
-                {isSimultaneous && nailTechName && nailTechId && primaryNailTechId && secondaryNailTechId && (
+                {isSimultaneous && nailTechName && nailTechId && (
                   <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: '#374151' }}>
-                    {String(nailTechId) === String(primaryNailTechId) ? (
-                      <NailTechBadge name={`${nailTechName} (Manicure)`} nailTechId={nailTechId} />
-                    ) : String(nailTechId) === String(secondaryNailTechId) ? (
-                      <NailTechBadge name={`${nailTechName} (Pedicure)`} nailTechId={nailTechId} />
-                    ) : (
-                      <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
-                    )}
+                    <NailTechBadge name={`${nailTechName}${expressTechSuffix}`} nailTechId={nailTechId} />
                   </span>
                 )}
               </div>

@@ -9,6 +9,7 @@ import NailTech from '../models/NailTech';
 import type { BookingStatus, PaymentStatus, ServiceType } from '../types';
 import { hasAnyRealInvoice } from '../utils/bookingInvoice';
 import { getSlotIdsHeldByBooking, isSlotSelectableForBooking } from '../utils/bookingSlotOwnership';
+import { assertConsecutiveSlots } from '../utils/consecutiveSlots';
 
 /**
  * Get Manila-local date key in YYYYMMDD format
@@ -71,6 +72,7 @@ async function validateSlots(
   }
 
   const firstTechId = String(slots[0].nailTechId);
+  const firstDate = String(slots[0].date);
 
   for (const slot of slots) {
     const slotTechId = String(slot.nailTechId);
@@ -83,6 +85,14 @@ async function validateSlots(
     if (nailTechId != null && slotTechId !== String(nailTechId)) {
       throw new Error('All slots must belong to the specified nail tech');
     }
+  }
+
+  // Multi-slot single-tech bookings must be consecutive (next free slots, no clients in between)
+  if (slots.length > 1) {
+    const allForDay = await Slot.find({ date: firstDate, nailTechId: firstTechId });
+    assertConsecutiveSlots(slots, allForDay, {
+      treatSlotIdsAsAvailable: allowedOccupiedSlotIds,
+    });
   }
 
   return firstTechId;
@@ -211,6 +221,20 @@ async function createSimultaneousExpressPair(input: CreateBookingInput): Promise
   const half1 = Math.floor(total / 2);
   const half2 = total - half1;
 
+  const foundSlots = await Slot.find({ _id: { $in: input.slotIds } });
+  if (foundSlots.length !== 2) {
+    await releaseSlots(input.slotIds);
+    throw new Error('Mani + Pedi Express requires exactly 2 slots');
+  }
+  const maniSlot = foundSlots.find((s) => String(s.nailTechId) === String(input.nailTechId));
+  const pediSlot = foundSlots.find(
+    (s) => String(s.nailTechId) === String(input.service.secondaryNailTechId)
+  );
+  if (!maniSlot || !pediSlot) {
+    await releaseSlots(input.slotIds);
+    throw new Error('Each Express slot must match the manicure and pedicure nail techs');
+  }
+
   const baseService = {
     type: 'Mani + Pedi Express' as ServiceType,
     location: input.service.location,
@@ -227,10 +251,13 @@ async function createSimultaneousExpressPair(input: CreateBookingInput): Promise
     bookingCode: bookingCodePrimary,
     customerId: input.customerId,
     nailTechId: input.nailTechId,
-    slotIds: [input.slotIds[0]],
+    slotIds: [String(maniSlot._id)],
     service: {
       ...baseService,
       expressSegment: 'manicure',
+      mode: 'simultaneous_two_techs',
+      secondaryNailTechId: input.service.secondaryNailTechId,
+      secondaryServiceType: 'Pedicure',
     },
     expressGroupId,
     status: 'pending',
@@ -251,10 +278,13 @@ async function createSimultaneousExpressPair(input: CreateBookingInput): Promise
     bookingCode: bookingCodeSecondary,
     customerId: input.customerId,
     nailTechId: input.service.secondaryNailTechId,
-    slotIds: [input.slotIds[1]],
+    slotIds: [String(pediSlot._id)],
     service: {
       ...baseService,
       expressSegment: 'pedicure',
+      mode: 'simultaneous_two_techs',
+      secondaryNailTechId: input.nailTechId,
+      secondaryServiceType: 'Pedicure',
     },
     expressGroupId,
     status: 'pending',
@@ -404,6 +434,14 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
   // Simultaneous Mani + Pedi Express → two booking documents (grouped by expressGroupId)
   if (input.service?.mode === 'simultaneous_two_techs') {
     return createSimultaneousExpressPair(input);
+  }
+
+  const { getRequiredSlotCountForService } = await import('../serviceSlotCount');
+  const requiredSlots = getRequiredSlotCountForService(input.service.type, input.service.location);
+  if (input.slotIds.length !== requiredSlots) {
+    throw new Error(
+      `This service requires ${requiredSlots} consecutive slot${requiredSlots === 1 ? '' : 's'}, but ${input.slotIds.length} were selected`
+    );
   }
 
   await validateSlots(input.slotIds, input.nailTechId);

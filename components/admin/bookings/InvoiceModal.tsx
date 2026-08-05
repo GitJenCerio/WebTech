@@ -49,6 +49,11 @@ interface InvoiceModalProps {
   suggestedDiscountAmount: number;
   /** Shown under the title for Mani + Pedi Express (which tech’s invoice). */
   invoiceSubtitle?: string | null;
+  /**
+   * When false, deposit paid is not subtracted (Express pedicure invoice).
+   * Deposit lives on the manicure invoice only so it is not doubled.
+   */
+  includeDepositPaid?: boolean;
   pricingData: any[];
   selectedPricingService: string;
   pricingLoading: boolean;
@@ -73,6 +78,7 @@ export default function InvoiceModal({
   invoiceDiscountAmount,
   suggestedDiscountAmount,
   invoiceSubtitle,
+  includeDepositPaid = true,
   pricingData,
   selectedPricingService,
   pricingLoading,
@@ -124,7 +130,8 @@ export default function InvoiceModal({
   const discountAmount = invoiceDiscountAmount;
   const squeeze = booking.slotType === 'with_squeeze_fee' ? 500 : 0;
   const total = subtotal - discountAmount + squeeze;
-  const depositPaid = booking.paidAmount ?? 0;
+  // Express: deposit is only deducted on the manicure invoice
+  const depositPaid = includeDepositPaid ? booking.paidAmount ?? 0 : 0;
   const balance = Math.max(0, total - depositPaid);
 
   const handleDownload = async () => {
@@ -481,7 +488,11 @@ export default function InvoiceModal({
                 </div>
                 <div className="flex justify-between gap-8 py-0.5">
                   <span className="min-w-0">Deposit Paid</span>
-                  <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">-PHP {depositPaid.toLocaleString()}</span>
+                  <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">
+                    {includeDepositPaid
+                      ? `-PHP ${depositPaid.toLocaleString()}`
+                      : 'PHP 0'}
+                  </span>
                 </div>
                 <div className="flex justify-between gap-8 font-bold pt-2 border-t border-[#212529] text-base md:text-lg">
                   <span className="min-w-0">Balance Due</span>

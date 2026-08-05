@@ -159,10 +159,15 @@ export async function GET(request: Request) {
           .filter((gid): gid is string => Boolean(gid))
       )
     );
-    const expressMembersByGroup = new Map<string, Array<{ _id: unknown; nailTechId?: string; service?: { expressSegment?: string } }>>();
+    const expressMembersByGroup = new Map<string, Array<{
+      _id: unknown;
+      nailTechId?: string;
+      service?: { expressSegment?: string };
+      invoice?: unknown;
+    }>>();
     if (expressGroupIds.length > 0) {
       const expressMembers = await Booking.find({ expressGroupId: { $in: expressGroupIds } })
-        .select('expressGroupId nailTechId service')
+        .select('expressGroupId nailTechId service invoice')
         .lean();
       for (const gid of expressGroupIds) {
         expressMembersByGroup.set(
@@ -177,8 +182,16 @@ export async function GET(request: Request) {
         const slotKey = String(slotId);
         if (!bookingBySlotId.has(slotKey)) {
           let service = booking.service;
+          let partnerBookingId: string | null = null;
+          let partnerInvoice: unknown = null;
           if (booking.expressGroupId) {
-            const pair = resolveExpressTechPair(expressMembersByGroup.get(booking.expressGroupId) || []);
+            const members = expressMembersByGroup.get(booking.expressGroupId) || [];
+            const pair = resolveExpressTechPair(members);
+            const partner = members.find((m) => String(m._id) !== String(booking._id));
+            if (partner) {
+              partnerBookingId = String(partner._id);
+              partnerInvoice = partner.invoice || null;
+            }
             if (pair && service) {
               service = {
                 ...service,
@@ -193,6 +206,9 @@ export async function GET(request: Request) {
             id: String(booking._id),
             bookingCode: booking.bookingCode,
             expressGroupId: booking.expressGroupId || null,
+            expressSegment: booking.service?.expressSegment || null,
+            partnerBookingId,
+            partnerInvoice,
             customerId: booking.customerId,
             nailTechId: booking.nailTechId ? String(booking.nailTechId) : undefined,
             customerName: customerById.get(String(booking.customerId))?.name || 'Unknown Client',

@@ -24,6 +24,7 @@ import { mapServiceToStandardDisplay, CHOSEN_SERVICE_LABELS } from '@/lib/servic
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import { formatTime12Hour } from '@/lib/utils';
 import { normalizeSlotTime } from '@/lib/constants/slots';
+import { findConsecutiveAvailableSlots } from '@/lib/utils/consecutiveSlots';
 import type { ServiceType } from '@/lib/types';
 
 const CHOSEN_SERVICE_OPTIONS = Object.entries(CHOSEN_SERVICE_LABELS).map(([value, label]) => ({ value, label }));
@@ -41,8 +42,6 @@ const SERVICE_TYPES: ServiceType[] = [
   'Manicure + Pedicure for 2',
   'Manicure + Pedicure for 2 or more',
 ];
-
-const BOOKED_STATUSES = ['pending', 'confirmed'] as const;
 
 interface Slot {
   _id: string;
@@ -152,36 +151,11 @@ export default function ChangeServiceModal({
     return [String(maniSlot._id), String(pediSlot._id)];
   }, [simultaneous, selectedTime, maniSlots, pediSlots]);
 
-  const hasBookedBetween = useCallback((slots: Slot[], timeA: string, timeB: string) => {
-    const na = normalizeSlotTime(timeA);
-    const nb = normalizeSlotTime(timeB);
-    return slots.some((s) => {
-      const nt = normalizeSlotTime(s.time);
-      return nt > na && nt < nb && (BOOKED_STATUSES as readonly string[]).includes(s.status);
-    });
-  }, []);
-
   const findNextConsecutiveAvailable = useCallback(
     (slots: Slot[], avail: Slot[], fromSlot: Slot, count: number): Slot[] => {
-      if (count <= 0) return [];
-      const result: Slot[] = [fromSlot];
-      const sortedAvail = [...avail].sort((a, b) =>
-        normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time))
-      );
-      let ref = fromSlot;
-      for (let i = 1; i < count; i++) {
-        const refTime = normalizeSlotTime(ref.time);
-        const next = sortedAvail.find((s) => {
-          const st = normalizeSlotTime(s.time);
-          return st > refTime && !hasBookedBetween(slots, ref.time, s.time);
-        });
-        if (!next) return [];
-        result.push(next);
-        ref = next;
-      }
-      return result;
+      return findConsecutiveAvailableSlots(slots, avail, fromSlot, count);
     },
-    [hasBookedBetween]
+    []
   );
 
   const compatibleSlots = useMemo(() => {

@@ -75,12 +75,17 @@ export async function GET(request: Request) {
       dateRange: `${startDate} to ${endDate}`
     });
     
-    // Query slots from MongoDB - client sees only available slots (no pending/confirmed/booked)
+    // Return available slots for booking, plus occupied/blocked slots so the client
+    // can enforce consecutive multi-slot rules (no jumping over other bookings).
+    // Hidden available slots stay private; occupied hidden slots are still returned
+    // so they correctly break a consecutive chain.
     let slots = await Slot.find({
       nailTechId: targetNailTechId,
       date: { $gte: startDate, $lte: endDate },
-      status: 'available',
-      isHidden: { $ne: true } // Exclude hidden slots from public view
+      $or: [
+        { status: 'available', isHidden: { $ne: true } },
+        { status: { $in: ['pending', 'confirmed', 'booked', 'blocked'] } },
+      ],
     }).lean();
 
     // Normalize slot times and ensure each slot has `id` for frontend (booking uses slot.id)

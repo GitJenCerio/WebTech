@@ -22,12 +22,16 @@ interface Slot {
   clientSocialMediaName?: string;
   service?: string;
   serviceMode?: 'single_tech' | 'simultaneous_two_techs';
+  expressSegment?: 'manicure' | 'pedicure' | null;
+  expressGroupId?: string | null;
   isHidden?: boolean;
   booking?: {
     id?: string;
     bookingCode?: string;
     customerId?: string;
     status?: string;
+    expressGroupId?: string | null;
+    expressSegment?: 'manicure' | 'pedicure' | null;
     [key: string]: unknown;
   } | null;
 }
@@ -58,18 +62,25 @@ export default function SlotList({
 
   const sortedSlots = useMemo(() => {
     const base = sortSlotsWithPairedBookings(slots);
-    // Deterministic ordering for simultaneous Mani+Pedi:
-    // primary tech (Manicure) slot card first, secondary tech (Pedicure) second.
+    // Deterministic ordering for Express: manicure card before pedicure at same time/group
     const withIndex = base.map((s, i) => ({ s, i }));
     withIndex.sort((a, b) => {
+      const sameGroup =
+        a.s.expressGroupId &&
+        b.s.expressGroupId &&
+        a.s.expressGroupId === b.s.expressGroupId;
       const sameBookingId = a.s.booking?.id && b.s.booking?.id && a.s.booking.id === b.s.booking.id;
       const sameTime = a.s.time && b.s.time && a.s.time === b.s.time;
       const isSimA = isManiPediExpressDualFromParts(a.s.service, a.s.secondaryNailTechId, a.s.serviceMode);
       const isSimB = isManiPediExpressDualFromParts(b.s.service, b.s.secondaryNailTechId, b.s.serviceMode);
-      if (sameBookingId && sameTime && isSimA && isSimB) {
-        const aIsPrimary = String(a.s.nailTechId) === String(a.s.primaryNailTechId);
-        const bIsPrimary = String(b.s.nailTechId) === String(b.s.primaryNailTechId);
-        if (aIsPrimary !== bIsPrimary) return aIsPrimary ? -1 : 1;
+      if ((sameGroup || sameBookingId) && sameTime && isSimA && isSimB) {
+        const aIsMani =
+          a.s.expressSegment === 'manicure' ||
+          (!a.s.expressSegment && String(a.s.nailTechId) === String(a.s.primaryNailTechId));
+        const bIsMani =
+          b.s.expressSegment === 'manicure' ||
+          (!b.s.expressSegment && String(b.s.nailTechId) === String(b.s.primaryNailTechId));
+        if (aIsMani !== bIsMani) return aIsMani ? -1 : 1;
       }
       return a.i - b.i;
     });
@@ -211,6 +222,8 @@ export default function SlotList({
                 clientSocialMediaName={slot.clientSocialMediaName}
                 service={slot.service}
                 serviceMode={slot.serviceMode}
+                expressSegment={slot.expressSegment}
+                expressGroupId={slot.expressGroupId}
                 isHidden={slot.isHidden}
                 onView={() => onView?.(slot)}
                 onEdit={() => onEdit?.(slot)}

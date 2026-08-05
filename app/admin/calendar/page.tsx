@@ -58,6 +58,8 @@ interface Slot {
   clientSocialMediaName?: string;
   service?: string;
   serviceMode?: 'single_tech' | 'simultaneous_two_techs';
+  expressSegment?: 'manicure' | 'pedicure' | null;
+  expressGroupId?: string | null;
   isHidden?: boolean;
   booking?: {
     id: string;
@@ -69,6 +71,10 @@ interface Slot {
     customerSocialMediaName?: string;
     nailTechId?: string;
     slotIds?: string[];
+    expressGroupId?: string | null;
+    expressSegment?: 'manicure' | 'pedicure' | null;
+    partnerBookingId?: string | null;
+    partnerInvoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     service?: {
       type?: string;
       mode?: 'single_tech' | 'simultaneous_two_techs';
@@ -76,6 +82,7 @@ interface Slot {
       chosenServices?: string[];
       secondaryNailTechId?: string;
       secondaryServiceType?: string;
+      expressSegment?: 'manicure' | 'pedicure';
       address?: string;
     };
     status: string;
@@ -141,6 +148,12 @@ export default function CalendarPage() {
     service: string;
     secondaryServiceType?: string;
     serviceMode?: 'single_tech' | 'simultaneous_two_techs';
+    expressSegment?: 'manicure' | 'pedicure' | null;
+    expressGroupId?: string | null;
+    /** Booking doc that owns manicure invoice (paired Express) */
+    manicureBookingId?: string;
+    /** Booking doc that owns pedicure invoice (paired Express) */
+    pedicureBookingId?: string;
     chosenServices?: string[];
     serviceLocation?: 'homebased_studio' | 'home_service';
     serviceAddress?: string;
@@ -158,7 +171,9 @@ export default function CalendarPage() {
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number };
     clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
     slotTimes?: string[];
+    /** Manicure invoice (canonical for Express dual UI) */
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
+    /** Pedicure invoice (canonical for Express dual UI) */
     secondaryInvoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     completedAt?: string | null;
     clientPhotoUploadUrl?: string | null;
@@ -239,47 +254,75 @@ export default function CalendarPage() {
     return 'booked';
   }, []);
 
-  const mapApiSlotToViewSlot = useCallback((slot: any): Slot => ({
-    id: slot.id || slot._id,
-    date: slot.date,
-    time: slot.time,
-    status: mapSlotStatus(slot),
-    type: slot.slotType,
-    nailTechId: slot.nailTechId,
-    primaryNailTechId: slot.booking?.nailTechId ? String(slot.booking.nailTechId) : undefined,
-    secondaryNailTechId: slot.booking?.service?.secondaryNailTechId ? String(slot.booking.service.secondaryNailTechId) : undefined,
-    // Show the tech that owns THIS slot card (primary slot = Manicure, secondary slot = Pedicure)
-    nailTechName: nailTechs.find(t => t.id === slot.nailTechId)?.name,
-    secondaryNailTechName: (() => {
-      const secondaryId = slot.booking?.service?.secondaryNailTechId;
-      return secondaryId ? nailTechs.find(t => t.id === String(secondaryId))?.name : undefined;
-    })(),
-    clientName: slot.booking?.customerName,
-    clientEmail: slot.booking?.customerEmail,
-    clientPhone: slot.booking?.customerPhone,
-    clientSocialMediaName: slot.booking?.customerSocialMediaName,
-    service: slot.booking?.service?.type,
-    serviceMode: slot.booking?.service?.mode,
-    isHidden: slot.isHidden || false,
-    booking: slot.booking
-      ? {
-          id: slot.booking.id,
-          bookingCode: slot.booking.bookingCode,
-          customerId: slot.booking.customerId,
-          customerName: slot.booking.customerName,
-          customerEmail: slot.booking.customerEmail,
-          customerPhone: slot.booking.customerPhone,
-          customerSocialMediaName: slot.booking.customerSocialMediaName,
-          slotIds: slot.booking.slotIds,
-          service: slot.booking.service,
-          status: slot.booking.status,
-          paymentStatus: slot.booking.paymentStatus,
-          pricing: slot.booking.pricing,
-          payment: slot.booking.payment,
-          clientPhotos: slot.booking.clientPhotos,
-        }
-      : null,
-  }), [mapSlotStatus, nailTechs]);
+  const mapApiSlotToViewSlot = useCallback((slot: any): Slot => {
+    const expressSegment =
+      (slot.booking?.expressSegment as 'manicure' | 'pedicure' | null | undefined) ||
+      (slot.booking?.service?.expressSegment as 'manicure' | 'pedicure' | undefined) ||
+      null;
+    const thisTechId = slot.booking?.nailTechId ? String(slot.booking.nailTechId) : undefined;
+    const partnerTechId = slot.booking?.service?.secondaryNailTechId
+      ? String(slot.booking.service.secondaryNailTechId)
+      : undefined;
+    // Always expose manicure as primary and pedicure as secondary for UI
+    const manicureTechId =
+      expressSegment === 'pedicure' ? partnerTechId : thisTechId;
+    const pedicureTechId =
+      expressSegment === 'pedicure' ? thisTechId : partnerTechId;
+
+    return {
+      id: slot.id || slot._id,
+      date: slot.date,
+      time: slot.time,
+      status: mapSlotStatus(slot),
+      type: slot.slotType,
+      nailTechId: slot.nailTechId,
+      primaryNailTechId: manicureTechId,
+      secondaryNailTechId: pedicureTechId,
+      expressSegment,
+      expressGroupId: slot.booking?.expressGroupId || null,
+      nailTechName: nailTechs.find((t) => t.id === slot.nailTechId)?.name,
+      secondaryNailTechName: pedicureTechId
+        ? nailTechs.find((t) => t.id === pedicureTechId)?.name
+        : undefined,
+      clientName: slot.booking?.customerName,
+      clientEmail: slot.booking?.customerEmail,
+      clientPhone: slot.booking?.customerPhone,
+      clientSocialMediaName: slot.booking?.customerSocialMediaName,
+      service: slot.booking?.service?.type,
+      serviceMode: slot.booking?.service?.mode,
+      isHidden: slot.isHidden || false,
+      booking: slot.booking
+        ? {
+            id: slot.booking.id,
+            bookingCode: slot.booking.bookingCode,
+            customerId: slot.booking.customerId,
+            customerName: slot.booking.customerName,
+            customerEmail: slot.booking.customerEmail,
+            customerPhone: slot.booking.customerPhone,
+            customerSocialMediaName: slot.booking.customerSocialMediaName,
+            nailTechId: slot.booking.nailTechId,
+            slotIds: slot.booking.slotIds,
+            expressGroupId: slot.booking.expressGroupId || null,
+            expressSegment,
+            partnerBookingId: slot.booking.partnerBookingId || null,
+            partnerInvoice: slot.booking.partnerInvoice || null,
+            service: slot.booking.service,
+            status: slot.booking.status,
+            paymentStatus: slot.booking.paymentStatus,
+            pricing: slot.booking.pricing,
+            payment: slot.booking.payment,
+            clientPhotos: slot.booking.clientPhotos,
+            clientNotes: slot.booking.clientNotes,
+            adminNotes: slot.booking.adminNotes,
+            clientPhotoUploadUrl: slot.booking.clientPhotoUploadUrl,
+            clientPhotoUploadExpiresAt: slot.booking.clientPhotoUploadExpiresAt,
+            invoice: slot.booking.invoice,
+            secondaryInvoice: slot.booking.secondaryInvoice,
+            completedAt: slot.booking.completedAt,
+          }
+        : null,
+    };
+  }, [mapSlotStatus, nailTechs]);
 
   useEffect(() => {
     const techId = getTechIdFromQuery(searchParams);
@@ -543,21 +586,57 @@ export default function CalendarPage() {
       const displayDate = slot.date
         ? new Date(slot.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : selectedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+      const expressSegment =
+        slot.expressSegment ||
+        slot.booking.expressSegment ||
+        slot.booking.service?.expressSegment ||
+        null;
+      const partnerBookingId = slot.booking.partnerBookingId || null;
+      const thisTechId = slot.booking.nailTechId ? String(slot.booking.nailTechId) : slot.nailTechId;
+      const partnerTechId = slot.booking.service?.secondaryNailTechId
+        ? String(slot.booking.service.secondaryNailTechId)
+        : slot.secondaryNailTechId;
+      const manicureTechId =
+        expressSegment === 'pedicure' ? partnerTechId : thisTechId;
+      const pedicureTechId =
+        expressSegment === 'pedicure' ? thisTechId : partnerTechId;
+      const manicureBookingId =
+        expressSegment === 'pedicure' && partnerBookingId
+          ? partnerBookingId
+          : slot.booking.id;
+      const pedicureBookingId =
+        expressSegment === 'pedicure'
+          ? slot.booking.id
+          : partnerBookingId || undefined;
+
+      // Canonical dual invoices: invoice = manicure, secondaryInvoice = pedicure
+      const thisInvoice = slot.booking.invoice || null;
+      const partnerInvoice = slot.booking.partnerInvoice || null;
+      const manicureInvoice =
+        expressSegment === 'pedicure' ? partnerInvoice : thisInvoice;
+      const pedicureInvoice =
+        expressSegment === 'pedicure' ? thisInvoice : partnerInvoice;
+
       setSelectedBooking({
         id: slot.booking.id,
         bookingCode: slot.booking.bookingCode,
         customerId: slot.booking.customerId,
         appointmentDateIso: slot.date,
-        nailTechId: slot.nailTechId,
-        nailTechName: slot.nailTechId ? nailTechs.find((t) => t.id === slot.nailTechId)?.name : undefined,
-        primaryNailTechId: slot.booking?.nailTechId ? String(slot.booking.nailTechId) : undefined,
-        primaryNailTechName: slot.booking?.nailTechId
-          ? nailTechs.find((t) => t.id === String(slot.booking!.nailTechId))?.name
+        nailTechId: thisTechId,
+        nailTechName: thisTechId ? nailTechs.find((t) => t.id === thisTechId)?.name : undefined,
+        primaryNailTechId: manicureTechId,
+        primaryNailTechName: manicureTechId
+          ? nailTechs.find((t) => t.id === manicureTechId)?.name
           : undefined,
-        secondaryNailTechId: slot.booking?.service?.secondaryNailTechId ? String(slot.booking.service.secondaryNailTechId) : undefined,
-        secondaryNailTechName: slot.booking?.service?.secondaryNailTechId
-          ? nailTechs.find((t) => t.id === slot.booking?.service?.secondaryNailTechId)?.name
+        secondaryNailTechId: pedicureTechId,
+        secondaryNailTechName: pedicureTechId
+          ? nailTechs.find((t) => t.id === pedicureTechId)?.name
           : undefined,
+        expressSegment,
+        expressGroupId: slot.booking.expressGroupId || null,
+        manicureBookingId,
+        pedicureBookingId,
         date: displayDate,
         time: slot.time,
         slotTimes: bookingSlotTimes.length > 0 ? bookingSlotTimes : undefined,
@@ -566,8 +645,8 @@ export default function CalendarPage() {
         clientPhone: slot.booking?.customerPhone,
         clientSocialMediaName: slot.booking?.customerSocialMediaName,
         service: slot.booking?.service?.type || slot.service || 'Nail Service',
-        secondaryServiceType: slot.booking?.service?.secondaryServiceType,
-        serviceMode: slot.booking?.service?.mode,
+        secondaryServiceType: slot.booking?.service?.secondaryServiceType || 'Pedicure',
+        serviceMode: slot.booking?.service?.mode || (expressSegment ? 'simultaneous_two_techs' : undefined),
         chosenServices: slot.booking?.service?.chosenServices,
         serviceLocation: slot.booking?.service?.location,
         serviceAddress: slot.booking?.service?.address,
@@ -586,8 +665,8 @@ export default function CalendarPage() {
         clientPhotos: slot.booking?.clientPhotos,
         clientPhotoUploadUrl: slot.booking?.clientPhotoUploadUrl ?? null,
         clientPhotoUploadExpiresAt: slot.booking?.clientPhotoUploadExpiresAt ?? null,
-        invoice: slot.booking?.invoice || null,
-        secondaryInvoice: slot.booking?.secondaryInvoice || null,
+        invoice: manicureInvoice,
+        secondaryInvoice: pedicureInvoice ?? slot.booking?.secondaryInvoice ?? null,
         completedAt: (slot.booking as { completedAt?: string | null } | null)?.completedAt ?? null,
       });
       setAdminNotesDraft(slot.booking?.adminNotes || '');
@@ -958,7 +1037,7 @@ export default function CalendarPage() {
   };
 
   const activeInvoiceTechId = useMemo(() => {
-    if (!selectedBooking?.nailTechId) return undefined;
+    if (!selectedBooking) return undefined;
     if (
       isManiPediExpressDualFromParts(
         selectedBooking.service,
@@ -968,7 +1047,7 @@ export default function CalendarPage() {
     ) {
       return invoiceTarget === 'secondary'
         ? selectedBooking.secondaryNailTechId
-        : selectedBooking.nailTechId;
+        : selectedBooking.primaryNailTechId || selectedBooking.nailTechId;
     }
     return selectedBooking.nailTechId;
   }, [selectedBooking, invoiceTarget]);
@@ -990,7 +1069,7 @@ export default function CalendarPage() {
     const techName =
       invoiceTarget === 'secondary'
         ? selectedBooking.secondaryNailTechName
-        : selectedBooking.nailTechName;
+        : selectedBooking.primaryNailTechName || selectedBooking.nailTechName;
     return `${label} · Ms. ${techName || '—'}`;
   }, [selectedBooking, invoiceTarget]);
 
@@ -1019,23 +1098,57 @@ export default function CalendarPage() {
       .then((data) => {
         if (cancelled || !data?.booking) return;
         const b = data.booking;
+        const partner = data.partnerBooking;
         const freshAdminNotes = b.adminNotes ?? '';
         setAdminNotesDraft(freshAdminNotes);
-        setSelectedBooking((prev) => prev ? {
-          ...prev,
-          invoice: b.invoice ?? prev.invoice,
-          secondaryInvoice: b.secondaryInvoice ?? prev.secondaryInvoice,
-          secondaryServiceType: b.service?.secondaryServiceType ?? prev.secondaryServiceType,
-          serviceMode: b.service?.mode ?? prev.serviceMode,
-          paymentStatus: b.paymentStatus ?? prev.paymentStatus,
-          adminNotes: freshAdminNotes,
-          completedAt: b.completedAt ?? prev.completedAt,
-          clientPhotoUploadUrl: b.clientPhotoUploadUrl ?? prev.clientPhotoUploadUrl,
-          clientPhotoUploadExpiresAt: b.clientPhotoUploadExpiresAt ?? prev.clientPhotoUploadExpiresAt,
-          amountPaid: b.pricing?.paidAmount ?? prev.amountPaid ?? prev.paidAmount ?? prev.pricing?.paidAmount,
-          pricing: b.pricing ?? prev.pricing,
-          serviceAddress: b.service?.address ?? prev.serviceAddress,
-        } : null);
+        setSelectedBooking((prev) => {
+          if (!prev) return null;
+          const segment =
+            prev.expressSegment ||
+            b.service?.expressSegment ||
+            null;
+          const paired = Boolean(b.expressGroupId && partner?.id);
+          const manicureInvoice = paired
+            ? segment === 'pedicure'
+              ? partner?.invoice ?? prev.invoice
+              : b.invoice ?? prev.invoice
+            : b.invoice ?? prev.invoice;
+          const pedicureInvoice = paired
+            ? segment === 'pedicure'
+              ? b.invoice ?? prev.secondaryInvoice
+              : partner?.invoice ?? prev.secondaryInvoice
+            : b.secondaryInvoice ?? prev.secondaryInvoice;
+          const manicureBookingId = paired
+            ? segment === 'pedicure'
+              ? partner.id
+              : b.id
+            : prev.manicureBookingId;
+          const pedicureBookingId = paired
+            ? segment === 'pedicure'
+              ? b.id
+              : partner.id
+            : prev.pedicureBookingId;
+
+          return {
+            ...prev,
+            expressSegment: segment,
+            expressGroupId: b.expressGroupId ?? prev.expressGroupId,
+            manicureBookingId,
+            pedicureBookingId,
+            invoice: manicureInvoice,
+            secondaryInvoice: pedicureInvoice,
+            secondaryServiceType: b.service?.secondaryServiceType ?? prev.secondaryServiceType,
+            serviceMode: b.service?.mode ?? prev.serviceMode ?? (paired ? 'simultaneous_two_techs' : prev.serviceMode),
+            paymentStatus: b.paymentStatus ?? prev.paymentStatus,
+            adminNotes: freshAdminNotes,
+            completedAt: b.completedAt ?? prev.completedAt,
+            clientPhotoUploadUrl: b.clientPhotoUploadUrl ?? prev.clientPhotoUploadUrl,
+            clientPhotoUploadExpiresAt: b.clientPhotoUploadExpiresAt ?? prev.clientPhotoUploadExpiresAt,
+            amountPaid: b.pricing?.paidAmount ?? prev.amountPaid ?? prev.paidAmount ?? prev.pricing?.paidAmount,
+            pricing: b.pricing ?? prev.pricing,
+            serviceAddress: b.service?.address ?? prev.serviceAddress,
+          };
+        });
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -1103,18 +1216,31 @@ export default function CalendarPage() {
       selectedBooking.serviceMode
     );
     const segment = dualExpress && target === 'secondary' ? 'secondary' : 'primary';
+    const pairedExpress = Boolean(
+      selectedBooking.expressGroupId &&
+        selectedBooking.manicureBookingId &&
+        selectedBooking.pedicureBookingId
+    );
+    const bookingIdForInvoice = pairedExpress
+      ? target === 'secondary'
+        ? selectedBooking.pedicureBookingId!
+        : selectedBooking.manicureBookingId!
+      : selectedBooking.id!;
 
     let loadedQuotation = false;
     try {
-      const bookingRes = await fetch(`/api/bookings/${selectedBooking.id}`);
+      const bookingRes = await fetch(`/api/bookings/${bookingIdForInvoice}`);
       if (bookingRes.ok) {
         const bookingData = await bookingRes.json();
         const b = bookingData?.booking;
-        const quotationId = dualExpress
-          ? target === 'secondary'
-            ? b?.secondaryInvoice?.quotationId
-            : b?.invoice?.quotationId
-          : b?.invoice?.quotationId;
+        // Paired Express: each booking doc has its own invoice slice only
+        const quotationId = pairedExpress
+          ? b?.invoice?.quotationId
+          : dualExpress
+            ? target === 'secondary'
+              ? b?.secondaryInvoice?.quotationId
+              : b?.invoice?.quotationId
+            : b?.invoice?.quotationId;
         if (quotationId) {
           const quoteRes = await fetch(`/api/quotations/${quotationId}`);
           if (quoteRes.ok) {
@@ -1129,7 +1255,7 @@ export default function CalendarPage() {
                 unitPrice: item.unitPrice || 0,
                 total: item.total || 0,
               }));
-              if (dualExpress) {
+              if (dualExpress && !pairedExpress) {
                 rawItems = maybeNormalizeManiPediExpressInvoiceItems(
                   selectedBooking.service,
                   rawItems,
@@ -1203,11 +1329,21 @@ export default function CalendarPage() {
         selectedBooking.secondaryNailTechId,
         selectedBooking.serviceMode
       );
+      const pairedExpress = Boolean(
+        selectedBooking.expressGroupId &&
+          selectedBooking.manicureBookingId &&
+          selectedBooking.pedicureBookingId
+      );
       const nailTechIdForSave = dualExpress
         ? invoiceTarget === 'secondary'
           ? selectedBooking.secondaryNailTechId
-          : selectedBooking.nailTechId
+          : selectedBooking.primaryNailTechId || selectedBooking.nailTechId
         : selectedBooking.nailTechId;
+      const bookingIdForSave = pairedExpress
+        ? invoiceTarget === 'secondary'
+          ? selectedBooking.pedicureBookingId!
+          : selectedBooking.manicureBookingId!
+        : selectedBooking.id!;
       const squeezeInFee =
         dualExpress && invoiceTarget === 'secondary'
           ? 0
@@ -1215,7 +1351,7 @@ export default function CalendarPage() {
             ? 500
             : 0;
 
-      const response = await fetch(`/api/bookings/${selectedBooking.id}/invoice`, {
+      const response = await fetch(`/api/bookings/${bookingIdForSave}/invoice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1246,12 +1382,27 @@ export default function CalendarPage() {
       toast.success(currentQuotationId ? 'Invoice updated successfully.' : 'Invoice created successfully.');
       setShowInvoiceModal(false);
       if (selectedBooking && data?.booking) {
-        setSelectedBooking({
-          ...selectedBooking,
-          invoice: data.booking.invoice ?? selectedBooking.invoice,
-          secondaryInvoice: data.booking.secondaryInvoice ?? selectedBooking.secondaryInvoice,
-          pricing: data.booking.pricing ?? selectedBooking.pricing,
-        });
+        const savedInvoice = data.booking.invoice ?? null;
+        if (pairedExpress) {
+          setSelectedBooking({
+            ...selectedBooking,
+            invoice:
+              invoiceTarget === 'primary'
+                ? savedInvoice
+                : selectedBooking.invoice,
+            secondaryInvoice:
+              invoiceTarget === 'secondary'
+                ? savedInvoice
+                : selectedBooking.secondaryInvoice,
+          });
+        } else {
+          setSelectedBooking({
+            ...selectedBooking,
+            invoice: data.booking.invoice ?? selectedBooking.invoice,
+            secondaryInvoice: data.booking.secondaryInvoice ?? selectedBooking.secondaryInvoice,
+            pricing: data.booking.pricing ?? selectedBooking.pricing,
+          });
+        }
       }
       await refreshSelectedDateSlots();
       await refreshMonthlySlots();
@@ -1487,6 +1638,7 @@ export default function CalendarPage() {
         invoiceDiscountAmount={invoiceDiscountAmount}
         suggestedDiscountAmount={suggestedDiscountAmount}
         invoiceSubtitle={invoiceSubtitle}
+        includeDepositPaid={invoiceTarget !== 'secondary'}
         pricingData={pricingData}
         selectedPricingService={selectedPricingService}
         pricingLoading={pricingLoading}

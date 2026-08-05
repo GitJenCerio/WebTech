@@ -26,12 +26,11 @@ import {
 import { useNailTechs } from '@/lib/hooks/useNailTechs';
 import { formatTime12Hour } from '@/lib/utils';
 import { normalizeSlotTime } from '@/lib/constants/slots';
+import { findConsecutiveAvailableSlots } from '@/lib/utils/consecutiveSlots';
 import { CHOSEN_SERVICE_LABELS } from '@/lib/serviceLabels';
 import { getRequiredSlotCountForService } from '@/lib/serviceSlotCount';
 import { isExpressManiPediServiceType } from '@/lib/utils/bookingInvoice';
 import type { ServiceType } from '@/lib/types';
-
-const BOOKED_STATUSES = ['pending', 'confirmed'] as const;
 
 const CHOSEN_SERVICE_OPTIONS = Object.entries(CHOSEN_SERVICE_LABELS).map(([value, label]) => ({ value, label }));
 
@@ -82,32 +81,9 @@ export default function AddBookingModal({
   const [allSlots, setAllSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const hasBookedBetween = useCallback((slots: Slot[], timeA: string, timeB: string) => {
-    const na = normalizeSlotTime(timeA);
-    const nb = normalizeSlotTime(timeB);
-    return slots.some((s) => {
-      const nt = normalizeSlotTime(s.time);
-      return nt > na && nt < nb && (BOOKED_STATUSES as readonly string[]).includes(s.status);
-    });
-  }, []);
-
   const findNextConsecutiveAvailable = useCallback((slots: Slot[], avail: Slot[], fromSlot: Slot, count: number): Slot[] => {
-    if (count <= 0) return [];
-    const result: Slot[] = [fromSlot];
-    const sortedAvail = [...avail].sort((a, b) => normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time)));
-    let ref = fromSlot;
-    for (let i = 1; i < count; i++) {
-      const refTime = normalizeSlotTime(ref.time);
-      const next = sortedAvail.find((s) => {
-        const st = normalizeSlotTime(s.time);
-        return st > refTime && !hasBookedBetween(slots, ref.time, s.time);
-      });
-      if (!next) return [];
-      result.push(next);
-      ref = next;
-    }
-    return result;
-  }, [hasBookedBetween]);
+    return findConsecutiveAvailableSlots(slots, avail, fromSlot, count);
+  }, []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

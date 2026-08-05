@@ -24,7 +24,8 @@ type BookingServiceType =
   | 'mani_pedi_simultaneous'
   | 'home_service_2slots'
   | 'home_service_3slots';
-import { getNextSlotTime, SLOT_TIMES, normalizeSlotTime } from '@/lib/constants/slots';
+import { normalizeSlotTime } from '@/lib/constants/slots';
+import { findConsecutiveAvailableSlots } from '@/lib/utils/consecutiveSlots';
 import { formatTime12Hour } from '@/lib/utils';
 
 const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; label: string }[]> = {
@@ -74,58 +75,12 @@ function canSlotAccommodateService(
   const requiredSlots = getRequiredSlotCount(serviceType, serviceLocation);
   if (requiredSlots === 1) return true;
 
-  // Get all slots for this date and same nail tech, sorted by time
-  const slotsForDate = allSlots
-    .filter((s) => s.date === slot.date && s.nailTechId === slot.nailTechId)
-    .sort((a, b) => normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time)));
-
-  let referenceSlot = slot;
-  // Consecutive means: available slots with no booked/blocked slots in between
-  // We skip over slot times that don't exist in the schedule at all
-  for (let step = 1; step < requiredSlots; step += 1) {
-    let nextSlot: Slot | null = null;
-    let currentCheckTime = referenceSlot.time.trim();
-    
-    // Keep looking for the next available slot in sequence
-    while (!nextSlot) {
-      const nextTime = getNextSlotTime(currentCheckTime);
-      if (!nextTime) {
-        // No more slot times in the sequence
-        return false;
-      }
-      
-      // Check if a slot exists at this time (normalize time strings for comparison)
-      const normalizedNextTime = nextTime.trim();
-      const slotAtTime = slotsForDate.find(
-        (candidate) => candidate.time.trim() === normalizedNextTime
-      );
-      
-      if (slotAtTime) {
-        // Slot exists at this time
-        // Check status
-        if (slotAtTime.status === 'available') {
-          // Found the next available slot - this is consecutive
-          nextSlot = slotAtTime;
-          break;
-        } else {
-          // Slot exists but is not available (pending, confirmed, blocked, etc.)
-          // This breaks consecutiveness - there's a gap
-          return false;
-        }
-      }
-      // Slot doesn't exist at this time - skip it (not a gap, just not created)
-      // Continue to next time in sequence
-      
-      currentCheckTime = normalizedNextTime;
-    }
-    
-    if (!nextSlot) {
-      // Couldn't find the next available slot
-      return false;
-    }
-    referenceSlot = nextSlot;
-  }
-  return true;
+  const slotsForDate = allSlots.filter(
+    (s) => s.date === slot.date && s.nailTechId === slot.nailTechId
+  );
+  const availableForDate = slotsForDate.filter((s) => s.status === 'available');
+  const chain = findConsecutiveAvailableSlots(slotsForDate, availableForDate, slot, requiredSlots);
+  return chain.length === requiredSlots;
 }
 
 type ClientType = 'new' | 'repeat';
@@ -255,11 +210,14 @@ export default function BookingPage() {
         })) as Slot[];
 
         const mapB = new Map<string, Slot>();
-        normB.forEach((s) => mapB.set(`${s.date}T${normalizeSlotTime(s.time)}`, s));
+        normB
+          .filter((s) => s.status === 'available')
+          .forEach((s) => mapB.set(`${s.date}T${normalizeSlotTime(s.time)}`, s));
 
         const intersection: Slot[] = [];
         const secondaryIdMap = new Map<string, string>();
         normA.forEach((s) => {
+          if (s.status !== 'available') return;
           const key = `${s.date}T${normalizeSlotTime(s.time)}`;
           const other = mapB.get(key);
           if (other) {
@@ -276,7 +234,12 @@ export default function BookingPage() {
           // Use default cache behavior - API route handles caching headers
         });
         const data = await response.json();
-        setSlots(data.slots);
+        const normalized = (data.slots || []).map((slot: any) => ({
+          ...slot,
+          id: slot.id || slot._id || slot._id?.toString?.(),
+          time: normalizeSlotTime(String(slot.time || '')),
+        })) as Slot[];
+        setSlots(normalized);
       }
     } catch (err) {
       console.error('Error loading availability', err);
@@ -312,68 +275,37 @@ export default function BookingPage() {
     }
 
     const collected: Slot[] = [];
-    let referenceSlot = selectedSlot;
     let errorMessage: string | null = null;
 
     // Get all slots for this date and same nail tech (only check slots for the chosen nail tech)
-    // Sort by time to ensure consistent ordering
-    const slotsForDate = slots
-      .filter((s) => s.date === selectedSlot.date && s.nailTechId === selectedSlot.nailTechId)
-      .sort((a, b) => normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time)));
+    const slotsForDate = slots.filter(
+      (s) => s.date === selectedSlot.date && s.nailTechId === selectedSlot.nailTechId
+    );
+    const availableForDate = slotsForDate.filter((s) => s.status === 'available');
+    const chain = findConsecutiveAvailableSlots(
+      slotsForDate,
+      availableForDate,
+      selectedSlot,
+      requiredSlots
+    );
 
-    // Check for consecutive slots starting from the selected slot
-    // Consecutive means: available slots with no booked/blocked slots in between
-    // We skip over slot times that don't exist in the schedule at all
-    for (let step = 1; step < requiredSlots; step += 1) {
-      let nextSlotAny: Slot | null = null;
-      let currentCheckTime = referenceSlot.time.trim();
-      
-      // Keep looking for the next available slot in sequence
-      while (!nextSlotAny) {
-        const nextTime = getNextSlotTime(currentCheckTime);
-        if (!nextTime) {
-          // No more slot times in the predefined sequence
-          const availableTimes = slotsForDate
-            .filter((s) => s.status === 'available' && s.nailTechId === selectedSlot.nailTechId)
-            .map((s) => formatTime12Hour(s.time))
-            .join(', ');
-          errorMessage = `This service requires ${requiredSlots} consecutive available slots starting from ${formatTime12Hour(selectedSlot.time)}, but there aren't enough slots available after this time. Available slots on this date: ${availableTimes || 'none'}. Please select a different time or date. If this is not complete, please contact our FB page for special requests.`;
-          break;
-        }
-        
-        // Check if a slot exists at this time (normalize time strings for comparison)
-        const normalizedNextTime = nextTime.trim();
-        const slotAtTime = slotsForDate.find(
-          (candidate) => candidate.time.trim() === normalizedNextTime
-        );
-        
-        if (slotAtTime) {
-          // Slot exists at this time
-          // Check status
-          if (slotAtTime.status === 'available') {
-            // Found the next available slot - this is consecutive
-            nextSlotAny = slotAtTime;
-            break;
-          } else {
-            // Slot exists but is not available (pending, confirmed, blocked, etc.)
-            // This breaks consecutiveness - there's a gap
-            errorMessage = `This service requires ${requiredSlots} consecutive slots, but there is a ${slotAtTime.status} slot at ${formatTime12Hour(nextTime)} between the slots. There is a gap in the consecutive slots. Please select a different time or date. If this is not complete, please contact our FB page for special requests.`;
-            break;
-          }
-        }
-        // Slot doesn't exist at this time - skip it (not a gap, just not created)
-        // Continue to next time in sequence
-        
-        currentCheckTime = normalizedNextTime;
+    if (chain.length !== requiredSlots) {
+      const availableTimes = availableForDate
+        .map((s) => formatTime12Hour(s.time))
+        .join(', ');
+      const blocking = slotsForDate
+        .filter((s) => s.status !== 'available')
+        .sort((a, b) => normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time)));
+      const firstBlockingAfter = blocking.find(
+        (s) => normalizeSlotTime(s.time) > normalizeSlotTime(selectedSlot.time)
+      );
+      if (firstBlockingAfter) {
+        errorMessage = `This service requires ${requiredSlots} consecutive slots, but there is a ${firstBlockingAfter.status} slot at ${formatTime12Hour(firstBlockingAfter.time)} between the slots. There is a gap in the consecutive slots. Please select a different time or date. If this is not complete, please contact our FB page for special requests.`;
+      } else {
+        errorMessage = `This service requires ${requiredSlots} consecutive available slots starting from ${formatTime12Hour(selectedSlot.time)}, but there aren't enough slots available after this time. Available slots on this date: ${availableTimes || 'none'}. Please select a different time or date. If this is not complete, please contact our FB page for special requests.`;
       }
-
-      // If we couldn't find the next available slot, break with error
-      if (!nextSlotAny) {
-        break;
-      }
-
-      collected.push(nextSlotAny);
-      referenceSlot = nextSlotAny;
+    } else {
+      collected.push(...chain.slice(1));
     }
 
     if (errorMessage) {
@@ -458,9 +390,13 @@ export default function BookingPage() {
       }
     });
     
-    // Check each date for consecutive available slots (required for home service 2/4 slots)
+    // Check each date for consecutive available slots (required for multi-slot services)
     Object.entries(dateGroups).forEach(([dateKey, dateSlots]) => {
-      if (canSlotAccommodateService(dateSlots[0], selectedService, slots, clientInfo?.serviceLocation)) {
+      if (
+        dateSlots.some((slot) =>
+          canSlotAccommodateService(slot, selectedService, slots, clientInfo?.serviceLocation)
+        )
+      ) {
         available.add(dateKey);
       }
     });

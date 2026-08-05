@@ -1801,6 +1801,7 @@ export default function BookingsPage() {
         invoiceDiscountAmount={invoiceDiscountAmount}
         suggestedDiscountAmount={suggestedDiscountAmount}
         invoiceSubtitle={invoiceSubtitle}
+        includeDepositPaid={invoiceTarget !== 'secondary'}
         pricingData={pricingData}
         selectedPricingService={selectedPricingService}
         pricingLoading={pricingLoading}

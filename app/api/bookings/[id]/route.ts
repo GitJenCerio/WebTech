@@ -64,6 +64,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       nailTechId: string;
       slotIds: string[];
       service: unknown;
+      invoice?: unknown;
+      status?: string;
+      pricing?: unknown;
     } | null = null;
     if ((booking as { expressGroupId?: string }).expressGroupId) {
       await connectDB();
@@ -71,7 +74,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         expressGroupId: (booking as { expressGroupId?: string }).expressGroupId,
         _id: { $ne: booking._id },
       })
-        .select('bookingCode nailTechId slotIds service')
+        .select('bookingCode nailTechId slotIds service invoice status pricing')
         .lean();
       if (p) {
         partnerBooking = {
@@ -80,6 +83,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           nailTechId: String(p.nailTechId),
           slotIds: (p.slotIds || []).map(String),
           service: p.service,
+          invoice: p.invoice || null,
+          status: p.status,
+          pricing: p.pricing,
         };
       }
     }

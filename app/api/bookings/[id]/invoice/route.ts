@@ -46,8 +46,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const requestedInvoiceNailTechId =
       typeof body.nailTechId === 'string' && body.nailTechId.trim() ? body.nailTechId.trim() : undefined;
+
+    const isPairedExpress = Boolean(
+      (booking as { expressGroupId?: string }).expressGroupId &&
+        booking.service?.expressSegment
+    );
+
     const allowedNailTechIds = new Set(
-      [booking.nailTechId, booking.service?.secondaryNailTechId]
+      (isPairedExpress
+        ? [booking.nailTechId]
+        : [booking.nailTechId, booking.service?.secondaryNailTechId]
+      )
         .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
         .map((id) => id.trim())
     );
@@ -60,7 +69,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
     const invoiceNailTechId = requestedInvoiceNailTechId;
 
-    const dual = isDualTechManiPediExpress(booking);
+    const dual = !isPairedExpress && isDualTechManiPediExpress(booking);
     const secondaryTechId = booking.service?.secondaryNailTechId?.trim();
     const isSecondarySegment = Boolean(dual && secondaryTechId && invoiceNailTechId === secondaryTechId);
 
