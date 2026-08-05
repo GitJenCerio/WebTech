@@ -12,7 +12,7 @@ import {
   addWeeks,
   subWeeks,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Download, Copy, RefreshCw, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { SLOT_TIMES, normalizeSlotTime } from '@/lib/constants/slots';
 import { formatTime12Hour } from '@/lib/utils';
@@ -66,7 +66,6 @@ export default function AvailableSlotsExport() {
   const [slots, setSlots] = useState<ApiSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   // Staff with an assigned nail tech can only see their own availability
   useEffect(() => {
@@ -234,7 +233,7 @@ export default function AvailableSlotsExport() {
   const expressTotal = expressDays.reduce((sum, d) => sum + d.times.length, 0);
   const hasContent = viewMode === 'express' ? expressTotal > 0 : grandTotal > 0;
 
-  const handleDownloadImage = async () => {
+  const handleSaveAsImage = async () => {
     if (!exportRef.current) return;
     try {
       setDownloading(true);
@@ -244,88 +243,74 @@ export default function AvailableSlotsExport() {
         scale: 2,
         useCORS: true,
         logging: false,
+        onclone: (_clonedDoc, clonedRoot) => {
+          clonedRoot.style.background = '#ffffff';
+          clonedRoot.style.border = 'none';
+          clonedRoot.style.borderRadius = '0';
+          clonedRoot.style.boxShadow = 'none';
+          clonedRoot.style.maxWidth = 'none';
+          clonedRoot.style.width = '640px';
+        },
       });
-      const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
+
       const techPart =
         viewMode === 'express'
           ? 'express'
           : techFilter !== 'all'
             ? (nailTechs.find((t) => t.id === techFilter)?.name || 'tech').replace(/\s+/g, '-').toLowerCase()
             : 'all';
-      link.download = `available-slots-${techPart}-${filePeriodPart}.png`;
-      link.href = dataUrl;
+      const filename = `available-slots-${techPart}-${filePeriodPart}.jpg`;
+
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
+          'image/jpeg',
+          0.95
+        )
+      );
+      const file = new File([blob], filename, { type: 'image/jpeg' });
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      // Web Share API → iOS/Android share sheet with "Save Image" / Photos
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: filename });
+          toast.success('Share sheet opened — choose Save Image / Photos');
+          return;
+        } catch (err: unknown) {
+          if (err instanceof Error && err.name === 'AbortError') return;
+          // fall through
+        }
+      }
+
+      if (isMobile) {
+        // Open JPEG in a tab so user can long-press → Save to Photos
+        const url = URL.createObjectURL(blob);
+        const newTab = window.open(url, '_blank');
+        if (!newTab) {
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          link.click();
+        }
+        toast.success('Opened image — long-press to Save to Photos');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        return;
+      }
+
+      // Desktop fallback: download JPEG
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
       link.click();
-      toast.success('Image downloaded');
+      URL.revokeObjectURL(url);
+      toast.success('JPEG saved');
     } catch (e) {
-      console.error('Download image error:', e);
+      console.error('Save as image error:', e);
       toast.error('Could not generate image');
     } finally {
       setDownloading(false);
-    }
-  };
-
-  const buildText = useCallback(() => {
-    const lines: string[] = [];
-    if (viewMode === 'express') {
-      lines.push(`${STUDIO_NAME} — Mani + Pedi Express Available Slots`);
-      lines.push(periodLabel);
-      lines.push('');
-      if (expressDays.length === 0) {
-        lines.push('No Express slots available (needs 2 nail techs free at the same time).');
-      } else {
-        for (const d of expressDays) {
-          const times = d.times
-            .map((t) => {
-              const base = formatTime12Hour(t.time);
-              if (t.squeezeUnits >= 2) return `${base} (SQ x2 +1,000)`;
-              if (t.squeezeUnits === 1) return `${base} (SQ +500)`;
-              return base;
-            })
-            .join(', ');
-          lines.push(`  • ${d.label}: ${times}`);
-        }
-      }
-      lines.push('');
-      lines.push('Mani + Pedi Express = 2 nail techs at the same time (+₱300 fee).');
-      lines.push('SQ = squeeze-in slot (+₱500 each). Express uses 2 slots, so 2 squeeze slots = x2 fee (+₱1,000).');
-      lines.push(`Book online: ${SITE_BOOKING_URL}`);
-      lines.push('Slots are subject to change.');
-      return lines.join('\n');
-    }
-
-    lines.push(`${STUDIO_NAME} — Available Slots`);
-    lines.push(periodLabel);
-    lines.push('');
-    for (const g of techGroups) {
-      lines.push(`${g.techName}`);
-      if (g.days.length === 0) {
-        lines.push('  (Fully booked — no available slots)');
-      } else {
-        for (const d of g.days) {
-          const times = d.times
-            .map((t) => (t.squeeze ? `${formatTime12Hour(t.time)} (SQ +500)` : formatTime12Hour(t.time)))
-            .join(', ');
-          lines.push(`  • ${d.label}: ${times}`);
-        }
-      }
-      lines.push('');
-    }
-    lines.push('Legend: Regular slots = standard. SQ slots = squeeze-in with +500 add-on fee.');
-    lines.push(`Book online: ${SITE_BOOKING_URL}`);
-    lines.push('Slots are subject to change.');
-    return lines.join('\n');
-  }, [techGroups, expressDays, periodLabel, viewMode]);
-
-  const handleCopyText = async () => {
-    try {
-      await navigator.clipboard.writeText(buildText());
-      setCopied(true);
-      toast.success('Copied to clipboard');
-      setTimeout(() => setCopied(false), 2000);
-    } catch (e) {
-      console.error('Copy error:', e);
-      toast.error('Could not copy text');
     }
   };
 
@@ -425,21 +410,13 @@ export default function AvailableSlotsExport() {
               </button>
               <button
                 type="button"
-                onClick={handleCopyText}
-                disabled={loading || !hasContent}
-                className="h-9 px-3 text-xs rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-1.5 disabled:opacity-50"
-              >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                Copy Text
-              </button>
-              <button
-                type="button"
-                onClick={handleDownloadImage}
+                onClick={handleSaveAsImage}
                 disabled={downloading || loading || !hasContent}
                 className="h-9 px-3 text-xs rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-all flex items-center gap-1.5 disabled:opacity-50"
+                title="Save as JPEG (use Share → Save Image on phone)"
               >
                 <Download className={`h-3.5 w-3.5 ${downloading ? 'animate-pulse' : ''}`} />
-                {downloading ? 'Generating…' : 'Download Image'}
+                {downloading ? 'Generating…' : 'Save as Image'}
               </button>
             </div>
           </div>
