@@ -158,7 +158,7 @@ export const faqSections: FAQSection[] = [
     items: [
       {
         question: 'Location',
-        answer: '701-B Carola, Sampaloc, Manila\n(Google Map Pin: Granma Laundry Shoppe)',
+        answer: '1046 San Diego St. Sampaloc Manila\n(Google Map Pin: Granma Laundry Shoppe)',
       },
       {
         question: 'Do you serve clients outside Manila?',
