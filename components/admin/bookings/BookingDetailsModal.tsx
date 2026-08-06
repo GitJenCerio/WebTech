@@ -338,11 +338,11 @@ export default function BookingDetailsModal({
   return (
     <>
     <Dialog open={show} onOpenChange={(open) => { if (!open) { setShowMoreActions(false); onHide(); } }}>
-      <DialogContent className="sm:max-w-2xl md:max-w-lg max-h-[85vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl max-h-[94vh] flex flex-col overflow-hidden p-0">
         <VisuallyHidden.Root>
           <DialogTitle>Booking Details</DialogTitle>
         </VisuallyHidden.Root>
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-10 pr-12 pb-3 space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-8 pr-10 pb-2 space-y-2.5">
           <div ref={bookingCardRef} className="p-3 rounded-none bg-pearl border border-[#e7e2db] shadow-sm relative sm:p-3">
             <div className="flex justify-between items-start gap-3 mb-2">
               <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">BOOKING</span>
@@ -627,7 +627,7 @@ export default function BookingDetailsModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-none shrink-0 flex flex-col gap-3 w-full max-w-full px-4 pb-12 pt-3 border-t border-border bg-ash-soft rounded-none sm:flex-row sm:flex-wrap sm:items-start" style={{ paddingBottom: 'max(3rem, env(safe-area-inset-bottom, 3rem))' }}>
+        <DialogFooter className="flex-none shrink-0 flex flex-col gap-2 w-full max-w-full px-3 pb-8 pt-2 border-t border-border bg-ash-soft rounded-none sm:flex-row sm:flex-wrap sm:items-start" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
           {isPendingPayment ? (
             <div className="flex flex-col gap-2 w-full">
               <div className="grid grid-cols-2 gap-2 w-full">
@@ -771,7 +771,7 @@ export default function BookingDetailsModal({
     />
 
     <Dialog open={showManualConfirmDialog} onOpenChange={setShowManualConfirmDialog}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Confirm Manually</DialogTitle>
         </DialogHeader>
@@ -810,7 +810,7 @@ export default function BookingDetailsModal({
     </Dialog>
 
     <Dialog open={showUpdatePaymentDialog} onOpenChange={setShowUpdatePaymentDialog}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Update Payment</DialogTitle>
         </DialogHeader>

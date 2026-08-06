@@ -47,7 +47,7 @@ export default function MarkCompleteModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl max-h-[94vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Mark Complete</DialogTitle>
           <DialogDescription>

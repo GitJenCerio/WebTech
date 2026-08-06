@@ -1,3 +1,8 @@
+import {
+  trackMetaInitiateCheckout,
+  trackMetaSchedule,
+} from '@/lib/metaPixel';
+
 export type AnalyticsEventType = 'page_view' | 'book_now_click' | 'booking_started' | 'booking_completed';
 
 export interface AnalyticsEventData {
@@ -52,6 +57,7 @@ export function trackBookNowClick(source?: string) {
     type: 'book_now_click',
     page: source || window.location.pathname,
   });
+  trackMetaInitiateCheckout(source || window.location.pathname);
 }
 
 export function trackBookingStarted(bookingId: string) {
@@ -59,6 +65,7 @@ export function trackBookingStarted(bookingId: string) {
     type: 'booking_started',
     bookingId,
   });
+  trackMetaInitiateCheckout('booking_started');
 }
 
 export function trackBookingCompleted(bookingId: string) {
@@ -66,5 +73,6 @@ export function trackBookingCompleted(bookingId: string) {
     type: 'booking_completed',
     bookingId,
   });
+  trackMetaSchedule(bookingId);
 }
 

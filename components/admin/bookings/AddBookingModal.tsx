@@ -382,12 +382,12 @@ export default function AddBookingModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-xl md:max-w-lg max-h-[90vh] flex flex-col overflow-hidden p-0">
-        <DialogHeader className="shrink-0 border-b border-[#e7e2db] bg-[#f7f6f4] px-6 py-4">
+      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl max-h-[94vh] flex flex-col overflow-hidden p-0">
+        <DialogHeader className="shrink-0 border-b border-[#e7e2db] bg-[#f7f6f4] px-3 sm:px-4 py-2.5 pr-10">
           <DialogTitle>Add Booking</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto py-4 px-6 space-y-4 min-h-0">
+          <div className="flex-1 overflow-y-auto py-3 px-3 sm:px-4 space-y-3 min-h-0">
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
                 {error}
@@ -787,7 +787,7 @@ export default function AddBookingModal({
               />
             </div>
           </div>
-          <DialogFooter className="shrink-0 border-t border-[#e7e2db] bg-[#f7f6f4] px-6 py-4">
+          <DialogFooter className="shrink-0 border-t border-[#e7e2db] bg-[#f7f6f4] px-3 sm:px-4 py-2.5">
             <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
               Cancel
             </Button>

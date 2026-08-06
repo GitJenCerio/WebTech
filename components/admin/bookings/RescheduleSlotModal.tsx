@@ -341,7 +341,7 @@ export default function RescheduleSlotModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
+      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl flex flex-col max-h-[94vh]">
         <DialogHeader className="shrink-0">
           <DialogTitle>Reschedule</DialogTitle>
           <DialogDescription>
@@ -349,7 +349,7 @@ export default function RescheduleSlotModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-y-auto flex-1 space-y-4 py-4 pr-1">
+        <div className="overflow-y-auto flex-1 space-y-2.5 py-1 min-h-0">
           <div>
             <Label>Service type *</Label>
             <Select

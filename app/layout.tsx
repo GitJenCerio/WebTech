@@ -3,6 +3,8 @@ import { Jost, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { StructuredData } from "@/components/StructuredData";
 import SessionProvider from "@/components/providers/SessionProvider";
+import CookieConsent from "@/components/CookieConsent";
+import MetaPixel from "@/components/MetaPixel";
 import { Toaster } from "sonner";
 
 const jost = Jost({
@@ -140,6 +142,8 @@ export default function RootLayout({
       </head>
       <body className={`${jost.variable} ${cormorant.variable} font-sans antialiased`}>
         <SessionProvider>{children}</SessionProvider>
+        <CookieConsent />
+        <MetaPixel />
         <Toaster position="top-right" richColors closeButton />
       </body>
     </html>

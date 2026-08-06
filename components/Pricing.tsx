@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { trackBookNowClick } from '@/lib/utils/analytics';
 
 // Fallback pricing data
 const defaultPricingPlans = [
@@ -189,7 +190,11 @@ export default function Pricing({ asPage }: PricingProps) {
                   • ₱500 per slot advance deposit upon booking is required to secure your slot(s); non-refundable, but deductible from the total payment.
                 </p>
               </div>
-              <Link href="/booking" className="brand-cta w-full mt-auto text-center text-sm">
+              <Link
+                href="/booking"
+                className="brand-cta w-full mt-auto text-center text-sm"
+                onClick={() => trackBookNowClick(`pricing_${plan.name}`)}
+              >
                 Book Now
               </Link>
             </motion.div>

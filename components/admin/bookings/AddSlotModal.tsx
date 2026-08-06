@@ -198,17 +198,20 @@ export default function AddSlotModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
-      <DialogContent className="sm:max-w-2xl md:max-w-lg flex flex-col max-h-[90vh]">
-        <DialogHeader className="shrink-0">
-          <DialogTitle className="text-lg">
+      <DialogContent
+        className="max-w-[min(100%,36rem)] sm:max-w-xl flex flex-col max-h-[94vh] gap-2 p-3 sm:p-3.5"
+        viewportClassName="px-2 sm:px-3 pt-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom,0px))]"
+      >
+        <DialogHeader className="shrink-0 pb-1 mb-0 pr-7">
+          <DialogTitle className="text-base sm:text-lg">
             {addMode === 'single' ? 'Add Slot' : 'Add Bulk Slots'}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
-          <div className="overflow-y-auto flex-1 space-y-3 pr-1">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 gap-0">
+          <div className="overflow-y-auto flex-1 space-y-2.5 min-h-0">
             {/* Step 1: Select Nail Tech First */}
             {nailTechs.length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label htmlFor="nailTech">
                   Nail Technician <span className="text-red-500">*</span>
                 </Label>
@@ -220,7 +223,7 @@ export default function AddSlotModal({
                   }}
                   required
                 >
-                  <SelectTrigger id="nailTech" className="w-[130px] h-9 text-xs rounded-xl px-3">
+                  <SelectTrigger id="nailTech" className="w-full h-9 text-xs rounded-none px-3">
                     <SelectValue placeholder="-- Select Nail Tech --" />
                   </SelectTrigger>
                   <SelectContent className="text-xs">
@@ -239,7 +242,7 @@ export default function AddSlotModal({
 
             {/* Step 2: Toggle Add Mode */}
             {selectedNailTechId && (
-              <div className="space-y-1.5 mt-2">
+              <div className="space-y-1 mt-1">
                 <Label>Add Mode</Label>
                 <div className="flex gap-2">
                   <Button
@@ -272,7 +275,7 @@ export default function AddSlotModal({
             {selectedNailTechId && (
               <>
                 {addMode === 'single' ? (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <Label htmlFor="singleDate">
                       Date <span className="text-red-500">*</span>
                     </Label>
@@ -293,8 +296,8 @@ export default function AddSlotModal({
                     </small>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
                       <Label htmlFor="startDate">
                         Start Date <span className="text-red-500">*</span>
                       </Label>
@@ -310,7 +313,7 @@ export default function AddSlotModal({
                         className="h-9"
                       />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <Label htmlFor="endDate">
                         End Date <span className="text-red-500">*</span>
                       </Label>
@@ -334,7 +337,7 @@ export default function AddSlotModal({
 
             {/* Step 4: Time Selection */}
             {selectedNailTechId && (
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <Label>
                     Select Time Slots <span className="text-red-500">*</span>
@@ -354,8 +357,8 @@ export default function AddSlotModal({
                   )}
                 </div>
                 {availableTimeOptions.length > 0 ? (
-                  <div className="border border-border rounded-none p-2 bg-ash-soft">
-                    <div className="grid grid-cols-3 gap-1.5">
+                  <div className="border border-border rounded-none p-1.5 bg-ash-soft">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-1">
                       {availableTimeOptions.map((time) => (
                         <Button
                           key={time}
@@ -363,7 +366,7 @@ export default function AddSlotModal({
                           variant={selectedTimes.includes(time) ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => handleTimeToggle(time)}
-                          className="text-xs h-7 px-2"
+                          className="text-xs h-7 px-1.5"
                         >
                           {time}
                         </Button>
@@ -389,8 +392,8 @@ export default function AddSlotModal({
             {/* Step 5: Slot Configuration */}
             {selectedNailTechId && selectedTimes.length > 0 && (
               <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
                     <Label htmlFor="slotStatus">Status</Label>
                     <Select
                       value={status}
@@ -406,7 +409,7 @@ export default function AddSlotModal({
                     </Select>
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <Label htmlFor="slotType">Slot Type</Label>
                     <Select
                       value={slotType}
@@ -423,14 +426,14 @@ export default function AddSlotModal({
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <Label>Total Slots to Create</Label>
                   <div className="px-3 py-1.5 bg-ash rounded-none font-semibold text-sm">
                     {totalSlots} slot{totalSlots !== 1 ? 's' : ''}
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <Label htmlFor="slotNotes">Notes (Optional)</Label>
                   <Textarea
                     id="slotNotes"
@@ -443,7 +446,7 @@ export default function AddSlotModal({
               </>
             )}
           </div>
-          <DialogFooter className="pt-3 pb-2 shrink-0 border-t border-border mt-2">
+          <DialogFooter className="pt-2 pb-0 shrink-0 border-t border-border mt-2 gap-2">
             <Button type="button" variant="secondary" onClick={onHide} className="h-9 text-sm">
               Cancel
             </Button>
@@ -451,7 +454,7 @@ export default function AddSlotModal({
               type="submit"
               variant="default"
               disabled={!selectedNailTechId || selectedTimes.length === 0}
-              className="h-9 text-sm"
+              className="h-9 text-sm sm:col-span-2"
             >
               <i className="bi bi-plus-circle mr-1.5"></i>
               Add {totalSlots} Slot{totalSlots !== 1 ? 's' : ''}

@@ -77,7 +77,7 @@ export default function ResetPasswordDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl max-h-[94vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Reset Password</DialogTitle>
         </DialogHeader>

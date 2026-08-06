@@ -76,12 +76,12 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl max-h-[94vh] flex flex-col overflow-hidden p-0">
         <VisuallyHidden.Root>
           <DialogTitle>Client Profile</DialogTitle>
         </VisuallyHidden.Root>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-8 pb-3 space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 pt-7 pb-2 space-y-2.5">
           {loading ? (
             <p className="text-sm text-muted-foreground py-4 text-center">Loading...</p>
           ) : !customer ? (

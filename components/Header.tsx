@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { IoMenu, IoClose } from 'react-icons/io5';
+import { trackBookNowClick } from '@/lib/utils/analytics';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -76,12 +77,20 @@ export default function Header() {
         </Link>
 
         <div className="hidden lg:block flex-shrink-0">
-          <Link href="/booking" className="brand-cta-sm">
+          <Link
+            href="/booking"
+            className="brand-cta-sm"
+            onClick={() => trackBookNowClick('header_desktop')}
+          >
             Book Now
           </Link>
         </div>
 
-        <Link href="/booking" className="lg:hidden brand-cta-sm min-h-[44px] z-10">
+        <Link
+          href="/booking"
+          className="lg:hidden brand-cta-sm min-h-[44px] z-10"
+          onClick={() => trackBookNowClick('header_mobile')}
+        >
           Book
         </Link>
       </nav>
@@ -107,7 +116,14 @@ export default function Header() {
                 </Link>
               ))}
               <div className="pt-3 mt-2 border-t border-[#e7e2db]">
-                <Link href="/booking" onClick={() => setIsOpen(false)} className="brand-cta w-full">
+                <Link
+                  href="/booking"
+                  onClick={() => {
+                    trackBookNowClick('header_menu');
+                    setIsOpen(false);
+                  }}
+                  className="brand-cta w-full"
+                >
                   Book Now
                 </Link>
               </div>

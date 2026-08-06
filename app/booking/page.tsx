@@ -27,6 +27,7 @@ type BookingServiceType =
 import { normalizeSlotTime } from '@/lib/constants/slots';
 import { findConsecutiveAvailableSlots } from '@/lib/utils/consecutiveSlots';
 import { formatTime12Hour } from '@/lib/utils';
+import { trackBookingCompleted, trackBookNowClick } from '@/lib/utils/analytics';
 
 const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; label: string }[]> = {
   homebased_studio: [
@@ -137,6 +138,10 @@ export default function BookingPage() {
 
   useEffect(() => {
     loadNailTechs();
+  }, []);
+
+  useEffect(() => {
+    trackBookNowClick('booking_page');
   }, []);
 
   useEffect(() => {
@@ -654,6 +659,9 @@ export default function BookingPage() {
       );
       setBookingSuccessNote(photoUploadWarning);
       setShowBookingSuccessModal(true);
+      if (bookingId) {
+        trackBookingCompleted(String(bookingId));
+      }
     } catch (error: any) {
       console.error('Error creating booking:', error);
       // Re-throw for modal to handle and display

@@ -150,7 +150,7 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-lg md:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl max-h-[94vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             <i className="bi bi-pencil-square mr-2"></i>

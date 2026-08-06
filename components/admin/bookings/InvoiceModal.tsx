@@ -225,17 +225,17 @@ export default function InvoiceModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl md:max-w-lg flex flex-col max-h-[90vh]">
-        <DialogHeader className="shrink-0">
+      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl flex flex-col max-h-[94vh]">
+        <DialogHeader className="shrink-0 pb-1 mb-0 pr-7">
           <DialogTitle>{currentQuotationId ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
           {invoiceSubtitle ? (
             <p className="text-sm text-muted-foreground font-normal pt-0.5">{invoiceSubtitle}</p>
           ) : null}
         </DialogHeader>
 
-        <div className="overflow-y-auto flex-1 space-y-3 pr-1" style={{ fontSize: '0.92rem' }}>
-          <div className="p-4 border border-border rounded-none bg-ash-soft">
-            <div className="flex flex-col gap-2">
+        <div className="overflow-y-auto flex-1 space-y-2.5 min-h-0" style={{ fontSize: '0.92rem' }}>
+          <div className="p-2.5 border border-border rounded-none bg-ash-soft">
+            <div className="flex flex-col gap-1.5 text-sm">
               {booking.bookingCode && (
                 <div><strong>Booking Code:</strong> {booking.bookingCode}</div>
               )}
@@ -245,12 +245,12 @@ export default function InvoiceModal({
           </div>
 
           {invoiceError && (
-            <Alert variant="destructive">
-              <AlertDescription>{invoiceError}</AlertDescription>
+            <Alert variant="destructive" className="py-2">
+              <AlertDescription className="text-xs">{invoiceError}</AlertDescription>
             </Alert>
           )}
 
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             <Label className="admin-section-label">Invoice Items</Label>
             <div className="space-y-2">
 <div className="relative flex gap-2">
@@ -278,7 +278,7 @@ export default function InvoiceModal({
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   {serviceDropdownOpen && (
                     <div
-                      className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-auto rounded-xl border border-border bg-pearl shadow-lg z-50 py-1"
+                      className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-auto rounded-none border border-border bg-pearl shadow-lg z-50 py-1"
                     >
                       {filteredServices().length === 0 ? (
                         <div className="px-3 py-2 text-sm text-muted-foreground">No matching services</div>
@@ -503,7 +503,7 @@ export default function InvoiceModal({
           </div>
         </div>
 
-        <div className="flex flex-row items-center gap-2 shrink-0 border-t border-border pt-3 mt-2 pb-8" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
+        <div className="flex flex-row items-center gap-2 shrink-0 border-t border-border pt-2 mt-2 pb-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
           <Button type="button" variant="ghost" size="sm" className="shrink-0 px-2" onClick={onClose} title="Close">
             <X className="h-4 w-4 text-red-600" />
           </Button>

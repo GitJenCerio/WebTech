@@ -109,16 +109,21 @@ export default function EditSlotModal({
   return (
     <>
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
-      <DialogContent className="sm:max-w-lg md:max-w-md flex flex-col max-h-[90vh]">
-        <DialogHeader className="shrink-0">
-          <DialogTitle>Edit Slot: <span className="whitespace-nowrap">{formatTime12Hour(slot.time)}</span> on {slot.date}</DialogTitle>
+      <DialogContent
+        className="max-w-[min(100%,36rem)] sm:max-w-xl flex flex-col max-h-[94vh] gap-2 p-3 sm:p-3.5"
+        viewportClassName="px-2 sm:px-3 pt-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom,0px))]"
+      >
+        <DialogHeader className="shrink-0 pb-1 mb-0 pr-7">
+          <DialogTitle className="text-base sm:text-lg">
+            Edit Slot: <span className="whitespace-nowrap">{formatTime12Hour(slot.time)}</span> on {slot.date}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
-          <div className="overflow-y-auto flex-1 space-y-3 pr-1">
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 gap-0">
+          <div className="overflow-y-auto flex-1 space-y-2.5 min-h-0">
             {/* Nail Tech Info */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label>Nail Technician</Label>
-              <div className="px-4 py-2 bg-ash rounded-none text-sm">
+              <div className="px-3 py-1.5 bg-ash rounded-none text-sm">
                 {slot.nailTechName || 'Unknown'}
               </div>
               <small className="text-muted-foreground text-xs block">
@@ -127,14 +132,14 @@ export default function EditSlotModal({
             </div>
 
             {/* Slot Type */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label htmlFor="slotType">Slot Type</Label>
               <Select
                 value={slotType}
                 onValueChange={(value) => setSlotType(value as SlotType)}
                 disabled={isLoading}
               >
-                <SelectTrigger id="slotType">
+                <SelectTrigger id="slotType" className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -145,11 +150,11 @@ export default function EditSlotModal({
             </div>
 
             {/* Notes */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea
                 id="notes"
-                rows={3}
+                rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add any notes for this slot..."
@@ -177,20 +182,20 @@ export default function EditSlotModal({
 
             {/* Error Message */}
             {(error || externalError) && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="py-2">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error || externalError}</AlertDescription>
+                <AlertDescription className="text-xs">{error || externalError}</AlertDescription>
               </Alert>
             )}
           </div>
-          <DialogFooter className="flex-wrap gap-2 shrink-0 border-t border-border pt-3 mt-2">
+          <DialogFooter className="flex-wrap gap-2 shrink-0 border-t border-border pt-2 pb-0 mt-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleRequestDelete}
               disabled={isLoading || isDeleting}
-              className="mr-auto"
+              className="mr-auto h-9"
             >
               {isDeleting ? (
                 <>
@@ -210,6 +215,7 @@ export default function EditSlotModal({
               size="sm"
               onClick={onHide}
               disabled={isLoading || isDeleting}
+              className="h-9"
             >
               Cancel
             </Button>
@@ -219,6 +225,7 @@ export default function EditSlotModal({
               size="sm"
               disabled={isLoading || isDeleting}
               loading={isLoading}
+              className="h-9"
             >
               {isLoading ? (
                 'Saving...'
