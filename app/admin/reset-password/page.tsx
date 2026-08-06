@@ -114,7 +114,7 @@ function ResetPasswordForm() {
             <div className="flex justify-center mb-4">
               <Image src="/logo.png" alt="Admin" width={180} height={60} className="mx-auto" priority />
             </div>
-            <CardTitle className="text-xl font-bold text-[#1a1a1a]">Reset password</CardTitle>
+            <CardTitle className="text-xl font-bold text-[#1c1917]">Reset password</CardTitle>
             <CardDescription>
               Enter your new password below.
             </CardDescription>
@@ -132,7 +132,7 @@ function ResetPasswordForm() {
                   required
                   minLength={8}
                   disabled={loading}
-                  className="bg-[#f9f9f9] border-[#e5e5e5]"
+                  className="bg-[#f7f6f4] border-[#e7e2db]"
                 />
               </div>
 
@@ -147,7 +147,7 @@ function ResetPasswordForm() {
                   required
                   minLength={8}
                   disabled={loading}
-                  className="bg-[#f9f9f9] border-[#e5e5e5]"
+                  className="bg-[#f7f6f4] border-[#e7e2db]"
                 />
               </div>
 
@@ -159,7 +159,7 @@ function ResetPasswordForm() {
 
               <Button
                 type="submit"
-                className="w-full bg-[#1a1a1a] text-white hover:bg-[#2d2d2d]"
+                className="w-full bg-[#1c1917] text-white hover:bg-[#2a2522]"
                 disabled={loading}
               >
                 {loading ? (

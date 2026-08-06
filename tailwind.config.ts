@@ -68,8 +68,8 @@ const config: Config = {
           foreground: "var(--card-foreground)",
         },
         charcoal: {
-          DEFAULT: "#1a1a1a",
-          light: "#2d2d2d",
+          DEFAULT: "#1c1917",
+          light: "#2a2522",
         },
         silver: {
           DEFAULT: "#b5a99a",

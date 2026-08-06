@@ -4,6 +4,10 @@ import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { cn } from "./Utils";
 
+/**
+ * Brand form label — matches public site: uppercase Jost, muted stone, wide tracking.
+ * Use `label-inline` className for checkbox/radio companions (sentence case next to control).
+ */
 const Label = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
@@ -11,7 +15,7 @@ const Label = React.forwardRef<
   <LabelPrimitive.Root
     ref={ref}
     className={cn(
-      "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+      "admin-field-label block text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground leading-snug mb-1.5 peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
       className
     )}
     {...props}

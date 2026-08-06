@@ -5,6 +5,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { SLOT_TIMES, normalizeSlotTime } from '@/lib/constants/slots';
 import { getChosenServicesDisplay, getSlotServiceDisplay } from '@/lib/serviceLabels';
 import { formatTime12Hour } from '@/lib/utils';
+import { CALENDAR_STATUS } from '@/lib/calendarStatusColors';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { ImageViewModal } from '@/components/ui/ImageViewModal';
@@ -125,7 +126,7 @@ const PhotoLinksCell = ({ urls }: { urls: Array<{ url?: string }> | undefined })
               e.stopPropagation();
               if (item.url) setPreviewUrl(item.url);
             }}
-            className="text-[#1a1a1a] underline hover:no-underline font-medium bg-transparent border-none cursor-pointer p-0"
+            className="text-[#1c1917] underline hover:no-underline font-medium bg-transparent border-none cursor-pointer p-0"
           >
             {list.length > 1 ? `View ${i + 1}` : 'View'}
           </button>
@@ -192,15 +193,15 @@ export default function SlotsOverviewTable({ currentMonth, showNailTechFilter = 
   const isEmpty = slotsList.length === 0 && !loading;
 
   return (
-    <Card className="w-full max-w-full mt-6 border border-[#e5e5e5] rounded-2xl bg-white shadow-sm overflow-hidden">
+    <Card className="w-full max-w-full mt-6 border border-[#e7e2db] rounded-2xl bg-white shadow-sm overflow-hidden">
       <CardContent className="p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <h3 className="text-sm font-semibold text-[#1a1a1a]" style={{ fontFamily: "'Lato', sans-serif" }}>
+          <h3 className="font-heading text-base text-ink">
             Slots Overview — {format(currentMonth, 'MMMM yyyy')}
           </h3>
           {showNailTechFilter && nailTechs.length > 0 && (
             <Select value={tableNailTechId} onValueChange={setTableNailTechId}>
-              <SelectTrigger className="h-9 w-[140px] shrink-0 text-xs px-3 rounded-xl border border-[#e5e5e5]">
+              <SelectTrigger className="h-9 w-[140px] shrink-0 text-xs px-3 rounded-xl border border-[#e7e2db]">
                 <SelectValue placeholder="All Nail Techs" />
               </SelectTrigger>
               <SelectContent className="text-xs">
@@ -217,26 +218,26 @@ export default function SlotsOverviewTable({ currentMonth, showNailTechFilter = 
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1a1a1a] border-t-transparent" role="status" aria-label="Loading" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1c1917] border-t-transparent" role="status" aria-label="Loading" />
           </div>
         ) : isEmpty ? (
-          <p className="text-sm text-gray-500 py-8 text-center" style={{ fontFamily: "'Lato', sans-serif" }}>
+          <p className="text-sm text-muted-foreground py-8 text-center">
             No slots in this period.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[#e5e5e5]">
-            <table className="w-full text-xs border-collapse min-w-[800px]" style={{ fontFamily: "'Lato', sans-serif" }}>
+          <div className="overflow-x-auto rounded-xl border border-[#e7e2db]">
+            <table className="w-full text-xs border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-[#f8f9fa]">
-                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e5e5e5]">Date & Time</th>
-                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e5e5e5]">Nail Tech</th>
-                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e5e5e5]">Status</th>
-                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e5e5e5]">Client</th>
-                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e5e5e5]">Service</th>
-                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e5e5e5]">Specific</th>
-                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e5e5e5]">Location</th>
-                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e5e5e5]">Current</th>
-                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e5e5e5]">Inspo</th>
+                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e7e2db]">Date & Time</th>
+                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e7e2db]">Nail Tech</th>
+                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e7e2db]">Status</th>
+                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e7e2db]">Client</th>
+                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e7e2db]">Service</th>
+                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e7e2db]">Specific</th>
+                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e7e2db]">Location</th>
+                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e7e2db]">Current</th>
+                  <th className="text-left py-2.5 px-3 font-semibold text-gray-600 uppercase tracking-wider border-b border-[#e7e2db]">Inspo</th>
                 </tr>
               </thead>
               <tbody>
@@ -245,8 +246,8 @@ export default function SlotsOverviewTable({ currentMonth, showNailTechFilter = 
                   const isAvail = slot.status === 'available';
                   const isBooked = ['booked', 'confirmed', 'CONFIRMED', 'pending', 'PENDING_PAYMENT', 'completed', 'COMPLETED'].includes(slot.status);
                   const statusLabel = isAvail ? 'Available' : isBooked ? 'Booked' : slot.status;
-                  const statusBg = isAvail ? '#fef2f2' : '#fff3cd';
-                  const statusColor = isAvail ? '#dc2626' : '#856404';
+                  const statusBg = isAvail ? '#f0e0dc' : '#efe6d8';
+                  const statusColor = isAvail ? CALENDAR_STATUS.available.bg : '#5c4a32';
                   const svc = slot.booking?.service;
                   const serviceType = svc?.type ? getSlotServiceDisplay(svc.type) : '—';
                   const specific = svc?.chosenServices?.length ? getChosenServicesDisplay(svc.chosenServices) : '—';
@@ -270,14 +271,14 @@ export default function SlotsOverviewTable({ currentMonth, showNailTechFilter = 
                     <tr
                       key={slot.id || `${dateStr}-${time}-${idx}`}
                       onClick={handleRowClick}
-                      className={`border-b border-[#e5e5e5] transition-colors ${
+                      className={`border-b border-[#e7e2db] transition-colors ${
                         isClickable ? 'cursor-pointer hover:bg-gray-100' : 'hover:bg-gray-50/50'
                       }`}
                     >
                       <td className="py-2.5 px-3 whitespace-nowrap text-gray-900">{dateTimeLabel}</td>
                       <td className="py-2.5 px-3 text-gray-900">{slot.nailTechName || '—'}</td>
                       <td className="py-2.5 px-3">
-                        <span style={{ backgroundColor: statusBg, color: statusColor, fontWeight: 500 }} className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px]">
+                        <span style={{ backgroundColor: statusBg, color: statusColor, fontWeight: 500 }} className="inline-flex items-center rounded-none px-2 py-0.5 text-[10px]">
                           {statusLabel}
                         </span>
                       </td>

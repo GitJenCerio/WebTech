@@ -55,9 +55,9 @@ export default function MarkCompleteModal({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <div className="rounded-xl bg-gray-50 p-4 space-y-2">
+          <div className="rounded-xl bg-ash-soft p-4 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Remaining Balance:</span>
+              <span className="text-muted-foreground">Remaining Balance:</span>
               <span className="font-semibold">PHP {balanceDue.toLocaleString()}</span>
             </div>
           </div>
@@ -77,8 +77,8 @@ export default function MarkCompleteModal({
             />
           </div>
           {paid > 0 && (
-            <div className="rounded-xl border border-gray-200 p-3 space-y-1 text-sm">
-              <div className="flex justify-between text-gray-600">
+            <div className="rounded-xl border border-border p-3 space-y-1 text-sm">
+              <div className="flex justify-between text-muted-foreground">
                 <span>Applied to balance:</span>
                 <span>PHP {appliedToBalance.toLocaleString()}</span>
               </div>

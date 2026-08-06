@@ -14,7 +14,7 @@ export default function AdminDashboard() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1a1a1a] border-t-transparent mx-auto" role="status" aria-label="Loading" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1c1917] border-t-transparent mx-auto" role="status" aria-label="Loading" />
         <p className="mt-3 text-sm text-gray-500">Redirecting...</p>
       </div>
     </div>

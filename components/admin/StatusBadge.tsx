@@ -33,21 +33,21 @@ interface StatusBadgeProps {
 export default function StatusBadge({ status, className = '' }: StatusBadgeProps) {
   const statusConfig: Record<BookingStatus, { label: string; variant: BadgeVariant }> = {
     PENDING_PAYMENT: { label: 'Pending', variant: 'info' },
-    CONFIRMED: { label: 'Confirmed', variant: 'default' },
+    CONFIRMED: { label: 'Confirmed', variant: 'confirmed' },
     COMPLETED: { label: 'Completed', variant: 'completed' },
     CANCELLED: { label: 'Cancelled', variant: 'destructive' },
     NO_SHOW: { label: 'No Show', variant: 'destructive' },
     pending: { label: 'Pending', variant: 'info' },
-    confirmed: { label: 'Confirmed', variant: 'default' },
+    confirmed: { label: 'Confirmed', variant: 'confirmed' },
     no_show: { label: 'No Show', variant: 'destructive' },
-    blocked: { label: 'Blocked', variant: 'default' },
-    // Legacy status support: available=green, pending=blue, confirmed=black
-    available: { label: 'Available', variant: 'success' },
-    booked: { label: 'Booked', variant: 'info' },
+    blocked: { label: 'Blocked', variant: 'secondary' },
+    // Legacy status support
+    available: { label: 'Available', variant: 'available' },
+    booked: { label: 'Booked', variant: 'default' },
     completed: { label: 'Completed', variant: 'completed' },
     cancelled: { label: 'Cancelled', variant: 'destructive' },
     'no-show': { label: 'No Show', variant: 'destructive' },
-    disabled: { label: 'Disabled', variant: 'default' },
+    disabled: { label: 'Disabled', variant: 'disabled' },
   };
   
   const config = statusConfig[status];

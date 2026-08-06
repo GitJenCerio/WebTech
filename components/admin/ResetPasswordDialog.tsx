@@ -99,7 +99,7 @@ export default function ResetPasswordDialog({
           )}
           {tempPassword && (
             <div className="space-y-2">
-              <Label className="text-xs text-gray-500">Temporary password (copy and share securely)</Label>
+              <Label>Temporary password (copy and share securely)</Label>
               <div className="flex items-center gap-2">
                 <Input readOnly value={tempPassword} className="font-mono text-sm bg-gray-50" />
                 <Button

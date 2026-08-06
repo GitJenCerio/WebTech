@@ -384,7 +384,7 @@ export default function ChangeServiceModal({
         <div className="overflow-y-auto flex-1 space-y-4 py-4 pr-1">
           {/* Service type */}
           <div>
-            <Label className="text-xs text-gray-500">Service type *</Label>
+            <Label>Service type *</Label>
             <Select value={selectedServiceType} onValueChange={setSelectedServiceType}>
               <SelectTrigger className="h-9 mt-1">
                 <SelectValue placeholder="Select service" />
@@ -411,7 +411,7 @@ export default function ChangeServiceModal({
               </div>
 
               <div>
-                <Label className="text-xs text-gray-500">Nail tech *</Label>
+                <Label>Nail tech *</Label>
                 <Select
                   value={upgradeTechId}
                   onValueChange={setUpgradeTechId}
@@ -431,9 +431,9 @@ export default function ChangeServiceModal({
               </div>
 
               <div>
-                <Label className="text-xs text-gray-500">Appointment day</Label>
+                <Label>Appointment day</Label>
                 {appointmentDay ? (
-                  <p className="mt-1 text-sm font-medium text-[#1a1a1a]">
+                  <p className="mt-1 text-sm font-medium text-[#1c1917]">
                     {format(new Date(`${appointmentDay}T12:00:00`), 'MMM d, yyyy')}
                   </p>
                 ) : (
@@ -446,12 +446,12 @@ export default function ChangeServiceModal({
 
               {upgradeTechId && appointmentDay && (
                 <div>
-                  <Label className="text-xs text-gray-500">Available time *</Label>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <Label>Available time *</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Select the first slot — {requiredSlots} consecutive slots will be reserved.
                   </p>
                   {loadingSlots ? (
-                    <p className="text-sm text-gray-500 mt-1">Loading slots...</p>
+                    <p className="text-sm text-muted-foreground mt-1">Loading slots...</p>
                   ) : compatibleSlots.length === 0 ? (
                     <p className="text-sm text-amber-600 mt-1">
                       No {requiredSlots} consecutive available slots on this day. Use Reschedule and select{' '}
@@ -470,8 +470,8 @@ export default function ChangeServiceModal({
                             onClick={() => setSelectedSlotId(isFirst ? '' : slotId)}
                             className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
                               isSelected
-                                ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
-                                : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                                ? 'bg-[#1c1917] border-[#1c1917] text-white'
+                                : 'border-[#e7e2db] bg-pearl text-[#1c1917] hover:border-[#1c1917]'
                             }`}
                           >
                             <span className="whitespace-nowrap">{formatTime12Hour(slot.time)}</span>
@@ -494,7 +494,7 @@ export default function ChangeServiceModal({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-gray-500">Manicure tech *</Label>
+                  <Label>Manicure tech *</Label>
                   <Select
                     value={manicureTechId}
                     onValueChange={(v) => {
@@ -521,7 +521,7 @@ export default function ChangeServiceModal({
                 </div>
 
                 <div>
-                  <Label className="text-xs text-gray-500">Pedicure tech *</Label>
+                  <Label>Pedicure tech *</Label>
                   <Select
                     value={pedicureTechId}
                     onValueChange={(v) => {
@@ -549,9 +549,9 @@ export default function ChangeServiceModal({
               </div>
 
               <div>
-                <Label className="text-xs text-gray-500">Appointment day</Label>
+                <Label>Appointment day</Label>
                 {appointmentDay ? (
-                  <p className="mt-1 text-sm font-medium text-[#1a1a1a]">
+                  <p className="mt-1 text-sm font-medium text-[#1c1917]">
                     {format(new Date(`${appointmentDay}T12:00:00`), 'MMM d, yyyy')}
                   </p>
                 ) : (
@@ -564,9 +564,9 @@ export default function ChangeServiceModal({
 
               {manicureTechId && pedicureTechId && appointmentDay && (
                 <div>
-                  <Label className="text-xs text-gray-500">Available time *</Label>
+                  <Label>Available time *</Label>
                   {loadingSlots ? (
-                    <p className="text-sm text-gray-500 mt-1">Loading slots...</p>
+                    <p className="text-sm text-muted-foreground mt-1">Loading slots...</p>
                   ) : commonTimes.length === 0 ? (
                     <p className="text-sm text-amber-600 mt-1">
                       No common available times for both techs on this date.
@@ -580,8 +580,8 @@ export default function ChangeServiceModal({
                           onClick={() => setSelectedTime(selectedTime === time ? '' : time)}
                           className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
                             selectedTime === time
-                              ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
-                              : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                              ? 'bg-[#1c1917] border-[#1c1917] text-white'
+                              : 'border-[#e7e2db] bg-pearl text-[#1c1917] hover:border-[#1c1917]'
                           }`}
                         >
                           <span className="whitespace-nowrap">{formatTime12Hour(time)}</span>
@@ -590,7 +590,7 @@ export default function ChangeServiceModal({
                     </div>
                   )}
                   {selectedTime && dualSlotIds.length === 2 && (
-                    <div className="mt-2 rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-600 space-y-1">
+                    <div className="mt-2 rounded-xl bg-ash-soft border border-border px-3 py-2 text-xs text-muted-foreground space-y-1">
                       <p><strong>Manicure:</strong> Ms. {nailTechs.find((t) => t.id === manicureTechId)?.name} — {formatTime12Hour(selectedTime)}</p>
                       <p><strong>Pedicure:</strong> Ms. {nailTechs.find((t) => t.id === pedicureTechId)?.name} — {formatTime12Hour(selectedTime)}</p>
                     </div>
@@ -603,12 +603,12 @@ export default function ChangeServiceModal({
           {/* Specific / Add-ons (for non-simultaneous) */}
           {!simultaneous && (
             <div>
-              <Label className="text-xs text-gray-500">Specific / Add-ons</Label>
+              <Label>Specific / Add-ons</Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {CHOSEN_SERVICE_OPTIONS.map(({ value, label }) => (
                   <label
                     key={value}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e5e5e5] bg-white cursor-pointer hover:border-[#1a1a1a]/30 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e7e2db] bg-pearl cursor-pointer hover:border-[#1c1917]/30 transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -618,9 +618,9 @@ export default function ChangeServiceModal({
                           prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
                         )
                       }
-                      className="rounded border-gray-300"
+                      className="rounded border-border"
                     />
-                    <span className="text-sm text-[#1a1a1a]">{label}</span>
+                    <span className="text-sm text-[#1c1917]">{label}</span>
                   </label>
                 ))}
               </div>
@@ -634,7 +634,7 @@ export default function ChangeServiceModal({
           )}
         </div>
 
-        <DialogFooter className="shrink-0 border-t border-gray-100 pt-3">
+        <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button
             type="button"
             variant="secondary"

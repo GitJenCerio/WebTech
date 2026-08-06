@@ -12,8 +12,8 @@ export function PageHeader({ title, description, actions, children }: PageHeader
   return (
     <div className="admin-page-header w-full max-w-full overflow-x-hidden flex flex-col gap-3 border-b border-border/60 pb-4 sm:pb-5 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-col gap-1.5 sm:gap-2 min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-2xl md:text-2xl truncate">{title}</h1>
-        {description && <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{description}</p>}
+        <h1 className="admin-page-title font-heading text-2xl sm:text-3xl text-ink truncate">{title}</h1>
+        {description && <p className="text-sm sm:text-base text-muted-foreground leading-relaxed tracking-wide">{description}</p>}
         {children}
       </div>
       {actions ? <div className={cn('w-full max-w-full overflow-x-hidden grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mt-2 lg:mt-0 lg:w-auto [&>*]:min-h-8 [&>*]:text-xs sm:[&>*]:min-h-10 sm:[&>*]:text-sm')}>{actions}</div> : null}

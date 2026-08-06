@@ -1,13 +1,113 @@
-/* Admin Dashboard — Monochrome Theme */
+/* Admin Dashboard — pearl / champagne / ink (matches public site) */
 /* Bootstrap kept for legacy pages (calendar, quotation) */
 @import 'bootstrap/dist/css/bootstrap.min.css';
 @import 'react-day-picker/style.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
+/* —— Typography: Jost body + Cormorant headings (matches public site) —— */
+.admin-dashboard {
+  font-family: var(--font-jost), 'Jost', sans-serif;
+  letter-spacing: 0.015em;
+  color: #1c1917;
+}
+
+.admin-dashboard h1,
+.admin-dashboard h2,
+.admin-dashboard .admin-page-title,
+.admin-dashboard .font-heading {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em;
+  color: #1c1917;
+}
+
+.admin-dashboard h3,
+.admin-dashboard h4 {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.admin-dashboard .admin-label,
+.admin-dashboard label.admin-label,
+.admin-dashboard thead th,
+.admin-dashboard .data-table-card .table thead th {
+  font-family: var(--font-jost), 'Jost', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #78716c;
+}
+
+/* —— Form / modal field labels (color, font, shape) —— */
+.admin-dashboard label:not(.label-inline):not([class*="sr-only"]),
+.admin-dashboard .admin-field-label,
+.admin-dashboard .form-label,
+[role='dialog'] label:not(.label-inline):not([class*="sr-only"]),
+[data-radix-dialog-content] label:not(.label-inline):not([class*="sr-only"]),
+[data-radix-dialog-content] .admin-field-label {
+  display: block;
+  font-family: var(--font-jost), 'Jost', sans-serif !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: #78716c !important;
+  line-height: 1.35;
+  margin-bottom: 0.375rem;
+}
+
+/* Checkbox / toggle companion labels stay readable next to the control */
+.admin-dashboard label.label-inline,
+[role='dialog'] label.label-inline,
+[data-radix-dialog-content] label.label-inline,
+.admin-dashboard .label-inline,
+[data-radix-dialog-content] .label-inline {
+  display: inline !important;
+  margin-bottom: 0 !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  color: #1c1917 !important;
+  cursor: pointer;
+}
+
+/* Section headings wrongly using Label — prefer .admin-section-label */
+.admin-dashboard .admin-section-label,
+[data-radix-dialog-content] .admin-section-label {
+  display: block;
+  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif !important;
+  font-size: 1.125rem !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  color: #1c1917 !important;
+  margin-bottom: 0.5rem;
+}
+
+/* Modal / dialog polish inside admin */
+.admin-dashboard [role='dialog'],
+[data-radix-dialog-content] {
+  font-family: var(--font-jost), 'Jost', sans-serif;
+}
+
+.admin-dashboard [role='dialog'] h1,
+.admin-dashboard [role='dialog'] h2,
+.admin-dashboard [role='dialog'] h3,
+[data-radix-dialog-content] h1,
+[data-radix-dialog-content] h2,
+[data-radix-dialog-content] h3 {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
 /* Admin Login Page */
 .admin-login-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background: linear-gradient(180deg, #fffcfa 0%, #f7f6f4 50%, #f0ebe4 100%);
   padding: 1rem;
   display: flex;
   align-items: center;
@@ -15,10 +115,10 @@
 }
 
 .admin-login-card {
-  border-radius: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-  background-color: #ffffff;
-  border: 1px solid #e5e5e5;
+  border-radius: 0;
+  box-shadow: 0 8px 30px rgba(28, 25, 23, 0.06);
+  background-color: #fffcfa;
+  border: 1px solid #e7e2db;
 }
 
 /* Layout */
@@ -37,8 +137,8 @@
   overflow-x: hidden;
   overflow-y: auto;
   transition: transform 0.3s ease, width 0.3s ease;
-  background-color: #ffffff;
-  border-right: 1px solid #e5e5e5;
+  background-color: #fffcfa;
+  border-right: 1px solid #e7e2db;
 }
 
 @media (min-width: 768px) {
@@ -109,8 +209,8 @@
 }
 
 .admin-sidebar-toggle:hover {
-  background: #f5f5f5;
-  color: #1a1a1a;
+  background: #f0ebe4;
+  color: #1c1917;
 }
 
 .admin-navbar-sidebar-toggle {
@@ -121,33 +221,34 @@
 
 /* Sidebar nav links — Jost + letter-spacing for spa-like airiness */
 .admin-sidebar .nav-link {
-  color: #4b5563;
+  color: #78716c;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
+  border-radius: 0;
   margin: 0 0.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   transition: all 0.15s ease;
-  font-size: 0.875rem;
-  font-weight: 400;
+  font-size: 0.8125rem;
+  font-weight: 500;
   text-decoration: none;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .admin-sidebar .nav-link:hover {
-  background-color: #f5f5f5;
-  color: #1a1a1a;
+  background-color: #f0ebe4;
+  color: #1c1917;
 }
 
 .admin-sidebar .nav-link.active {
-  background-color: #1a1a1a;
-  color: #ffffff;
+  background: linear-gradient(135deg, #2a2522 0%, #1c1917 50%, #3d342c 100%);
+  color: #fffcfa;
   font-weight: 500;
 }
 
 .admin-sidebar .nav-link.active i {
-  color: #ffffff;
+  color: #fffcfa;
 }
 
 .admin-sidebar .nav-link i {
@@ -159,9 +260,9 @@
 
 /* Header */
 .admin-navbar {
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e5e5;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  background-color: rgba(255, 252, 250, 0.95);
+  border-bottom: 1px solid #e7e2db;
+  box-shadow: 0 4px 24px rgba(28, 25, 23, 0.04);
 }
 
 /* Main content area */
@@ -193,66 +294,67 @@
 
 /* Stat card */
 .stat-card {
-  background: linear-gradient(145deg, #ffffff 0%, #f9f9f9 100%);
-  border: 1px solid #e5e5e5;
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.2s ease;
+  background: linear-gradient(145deg, #fffcfa 0%, #f7f6f4 100%);
+  border: 1px solid #e7e2db;
+  border-radius: 0;
+  box-shadow: 0 8px 30px rgba(28, 25, 23, 0.04);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
   height: 100%;
 }
 
 .stat-card:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 10px 32px rgba(28, 25, 23, 0.08);
+  border-color: #c4b5a0;
 }
 
 .stat-card.dark-bg {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: linear-gradient(135deg, #2a2522 0%, #1c1917 50%, #3d342c 100%);
   border-color: transparent;
-  color: #ffffff;
+  color: #fffcfa;
 }
 
 .stat-card-icon {
-  background-color: #f5f5f5;
-  color: #4b5563;
-  border-radius: 0.5rem;
+  background-color: #f0ebe4;
+  color: #c4b5a0;
+  border-radius: 0;
 }
 
 .stat-card.dark-bg .stat-card-icon {
-  background-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 252, 250, 0.12);
+  color: rgba(255, 252, 250, 0.8);
 }
 
 /* Data table */
 .data-table-card {
-  background-color: #ffffff;
-  border: 1px solid #e5e5e5;
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background-color: #fffcfa;
+  border: 1px solid #e7e2db;
+  border-radius: 0;
+  box-shadow: 0 8px 30px rgba(28, 25, 23, 0.04);
 }
 
 .data-table-card .table thead th {
-  background: linear-gradient(to right, #fafafa, #f5f5f5);
-  color: #9ca3af;
+  background: linear-gradient(to right, #fffcfa, #f7f6f4);
+  color: #78716c;
   font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   font-weight: 600;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #e7e2db;
 }
 
 .data-table-card .table tbody td {
-  border-bottom: 1px solid #f5f5f5;
-  color: #1a1a1a;
+  border-bottom: 1px solid #f0ebe4;
+  color: #1c1917;
 }
 
 .data-table-card .table tbody tr:hover {
-  background-color: #fafafa;
+  background-color: #f7f6f4;
 }
 
 /* Chart Placeholder */
 .chart-placeholder {
-  background-color: #f5f5f5;
-  border: 2px dashed #e5e5e5;
+  background-color: #f7f6f4;
+  border: 2px dashed #e7e2db;
   border-radius: 0.625rem;
   padding: 3rem;
   text-align: center;
@@ -264,42 +366,41 @@
   justify-content: center;
 }
 
-/* React Day Picker — admin brand theme (rounded, monochrome) */
-/* Applied to admin-dashboard and date picker popover (portaled outside layout) */
+/* React Day Picker — pearl / champagne brand theme */
 .admin-date-picker-popover {
-  background: #ffffff !important;
-  color: #1a1a1a !important;
+  background: #fffcfa !important;
+  color: #1c1917 !important;
 }
 .admin-date-picker-popover,
 .admin-date-picker-popover * {
-  --rdp-accent-color: #374151;
-  --rdp-accent-background-color: #e5e7eb;
+  --rdp-accent-color: #1c1917;
+  --rdp-accent-background-color: #f0ebe4;
 }
 .admin-date-picker-popover .rdp-root {
-  background: #ffffff !important;
-  color: #1a1a1a !important;
+  background: #fffcfa !important;
+  color: #1c1917 !important;
 }
 .admin-dashboard .rdp-root,
 .admin-date-picker-popover .rdp-root {
-  --rdp-accent-color: #374151;
-  --rdp-accent-background-color: #e5e7eb;
-  --rdp-day_button-border-radius: 16px;
+  --rdp-accent-color: #1c1917;
+  --rdp-accent-background-color: #f0ebe4;
+  --rdp-day_button-border-radius: 0;
   --rdp-day_button-height: 40px;
   --rdp-day_button-width: 40px;
-  --rdp-range_start-background: #e5e7eb;
-  --rdp-range_end-background: #e5e7eb;
-  --rdp-range_start-color: #374151;
-  --rdp-range_end-color: #374151;
-  --rdp-range_start-date-background-color: #e5e7eb;
-  --rdp-range_end-date-background-color: #e5e7eb;
-  --rdp-range_middle-background-color: #f5f5f5;
-  --rdp-range_middle-color: #1a1a1a;
-  --rdp-today-color: #1a1a1a;
+  --rdp-range_start-background: #f0ebe4;
+  --rdp-range_end-background: #f0ebe4;
+  --rdp-range_start-color: #1c1917;
+  --rdp-range_end-color: #1c1917;
+  --rdp-range_start-date-background-color: #c4b5a0;
+  --rdp-range_end-date-background-color: #c4b5a0;
+  --rdp-range_middle-background-color: #f7f6f4;
+  --rdp-range_middle-color: #1c1917;
+  --rdp-today-color: #1c1917;
 }
 
 .admin-dashboard .rdp-day_button,
 .admin-date-picker-popover .rdp-day_button {
-  border-radius: 16px !important;
+  border-radius: 0 !important;
 }
 
 .admin-dashboard .rdp-selected,
@@ -308,39 +409,36 @@
 .admin-date-picker-popover .rdp-range_start,
 .admin-dashboard .rdp-range_end,
 .admin-date-picker-popover .rdp-range_end {
-  background-color: #e5e7eb !important;
-  color: #374151 !important;
-  border-radius: 16px !important;
+  background-color: #c4b5a0 !important;
+  color: #1c1917 !important;
+  border-radius: 0 !important;
 }
 
-/* Ensure selected/range day buttons have dark text on light gray */
 .admin-dashboard .rdp-selected .rdp-day_button,
 .admin-date-picker-popover .rdp-selected .rdp-day_button,
 .admin-dashboard .rdp-range_start .rdp-day_button,
 .admin-date-picker-popover .rdp-range_start .rdp-day_button,
 .admin-dashboard .rdp-range_end .rdp-day_button,
 .admin-date-picker-popover .rdp-range_end .rdp-day_button {
-  color: #374151 !important;
+  color: #1c1917 !important;
 }
 
-/* Selected date number - dark text on light gray background */
 .admin-date-picker-popover .rdp-selected,
 .admin-date-picker-popover .rdp-selected .rdp-day_button,
 .admin-dashboard .rdp-selected,
 .admin-dashboard .rdp-selected .rdp-day_button {
-  color: #374151 !important;
+  color: #1c1917 !important;
 }
 
-/* Ensure date picker caption (month/year), weekday headers, and day numbers are visible */
 .admin-date-picker-popover .rdp-caption_label,
 .admin-date-picker-popover .rdp-weekday,
 .admin-date-picker-popover .rdp-day_button:not(.rdp-selected):not(.rdp-range_start):not(.rdp-range_end) {
-  color: #1a1a1a !important;
+  color: #1c1917 !important;
 }
 .admin-date-picker-popover .rdp-button_previous,
 .admin-date-picker-popover .rdp-button_next,
 .admin-date-picker-popover .rdp-chevron {
-  color: #1a1a1a !important;
+  color: #1c1917 !important;
 }
 
 /* Calendar Grid */
@@ -354,10 +452,10 @@
 
 .calendar-day {
   aspect-ratio: 1;
-  border-radius: 1.25rem;
-  border: 1px solid #e5e5e5;
-  background-color: #ffffff;
-  color: #1a1a1a;
+  border-radius: 0;
+  border: 1px solid #e7e2db;
+  background-color: #fffcfa;
+  color: #1c1917;
   min-height: 60px;
   min-width: 0;
   display: flex;
@@ -370,8 +468,19 @@
 }
 
 .calendar-day:hover:not(:disabled) {
-  background-color: #f5f5f5;
-  border-color: #1a1a1a;
+  background-color: #f0ebe4;
+  border-color: #c4b5a0;
+}
+
+.calendar-day.calendar-day-today {
+  border-color: #1c1917 !important;
+  border-width: 1.5px !important;
+}
+
+.calendar-day.calendar-day-selected {
+  background-color: #f0ebe4 !important;
+  border-color: #c4b5a0 !important;
+  color: #1c1917 !important;
 }
 
 .calendar-day:disabled {
@@ -501,57 +610,90 @@
   }
 }
 
-/* Bootstrap overrides — monochrome theme */
+.admin-dashboard .btn,
+.admin-dashboard button.btn {
+  font-family: var(--font-jost), 'Jost', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 0 !important;
+}
 .admin-dashboard .btn-dark,
-.admin-dashboard .btn-primary {
-  background-color: #1a1a1a !important;
-  border-color: #1a1a1a !important;
-  color: #ffffff !important;
+.admin-dashboard .btn-primary,
+.admin-dashboard .btn-success {
+  background-color: #1c1917 !important;
+  border-color: #1c1917 !important;
+  color: #fffcfa !important;
 }
 
 .admin-dashboard .btn-dark:hover,
-.admin-dashboard .btn-primary:hover {
-  background-color: #2d2d2d !important;
-  border-color: #2d2d2d !important;
-  color: #ffffff !important;
+.admin-dashboard .btn-primary:hover,
+.admin-dashboard .btn-success:hover {
+  background-color: #2a2522 !important;
+  border-color: #2a2522 !important;
+  color: #fffcfa !important;
 }
 
 .admin-dashboard .btn-outline-secondary,
-.admin-dashboard .btn-outline-dark {
-  border-color: #e5e5e5 !important;
-  color: #1a1a1a !important;
+.admin-dashboard .btn-outline-dark,
+.admin-dashboard .btn-outline-primary {
+  border-color: #c4b5a0 !important;
+  color: #1c1917 !important;
+  background-color: #fffcfa !important;
 }
 
 .admin-dashboard .btn-outline-secondary:hover,
-.admin-dashboard .btn-outline-dark:hover {
-  background-color: #f5f5f5 !important;
-  border-color: #e5e5e5 !important;
-  color: #1a1a1a !important;
+.admin-dashboard .btn-outline-dark:hover,
+.admin-dashboard .btn-outline-primary:hover {
+  background-color: #1c1917 !important;
+  border-color: #1c1917 !important;
+  color: #fffcfa !important;
+}
+
+.admin-dashboard .btn-danger,
+.admin-dashboard .btn-outline-danger {
+  background-color: #5a3830 !important;
+  border-color: #5a3830 !important;
+  color: #fffcfa !important;
+}
+
+.admin-dashboard .btn-danger:hover,
+.admin-dashboard .btn-outline-danger:hover {
+  background-color: #3d342c !important;
+  border-color: #3d342c !important;
+  color: #fffcfa !important;
+}
+
+/* Native / ad-hoc action buttons stay on brand */
+.admin-dashboard button:not([class*="rdp-"]):not(.calendar-day):not([role="switch"]),
+[data-radix-dialog-content] button:not([role="switch"]) {
+  border-radius: 0;
 }
 
 .admin-dashboard .form-control,
 .admin-dashboard .form-select {
-  background-color: #f9f9f9 !important;
-  border-color: #e5e5e5 !important;
-  color: #1a1a1a !important;
+  background-color: #fffcfa !important;
+  border-color: #e7e2db !important;
+  color: #1c1917 !important;
 }
 
 .admin-dashboard .form-control:focus,
 .admin-dashboard .form-select:focus {
-  border-color: #1a1a1a !important;
-  box-shadow: 0 0 0 2px rgba(26, 26, 26, 0.15) !important;
+  border-color: #c4b5a0 !important;
+  box-shadow: 0 0 0 2px rgba(196, 181, 160, 0.35) !important;
 }
 
 .admin-dashboard .card {
-  background-color: #ffffff !important;
-  border-color: #e5e5e5 !important;
+  background-color: #fffcfa !important;
+  border-color: #e7e2db !important;
 }
 
 .admin-dashboard .card.slot-card-confirmed {
-  background-color: #9ca3af !important;
+  background-color: #ddd4c8 !important;
 }
 
 .admin-dashboard .card.slot-card-pending {
-  background-color: #3b82f6 !important;
-  color: #fff !important;
+  background-color: #d6e6f0 !important;
+  color: #1c1917 !important;
 }

@@ -7,9 +7,9 @@ import { getSlotServiceDisplay } from '@/lib/serviceLabels';
 import { isManiPediExpressDualFromParts } from '@/lib/utils/bookingInvoice';
 
 const SERVICE_BADGE_STYLE: React.CSSProperties = {
-  backgroundColor: '#f3f4f6',
-  color: '#374151',
-  border: '1px solid #d1d5db',
+  backgroundColor: '#f0ebe4',
+  color: '#3d342c',
+  border: '1px solid #c4b5a0',
 };
 
 /** Short labels for slot badges (Mani, Pedi, Mani + Pedi) */
@@ -107,20 +107,20 @@ export default function SlotItem({
       onKeyDown={isClickable ? (e) => e.key === 'Enter' && handleClick() : undefined}
       className={`card mb-2 ${isHidden ? 'border-warning' : ''} ${isClickable ? 'cursor-pointer' : ''} ${['confirmed', 'CONFIRMED'].includes(status) ? 'slot-card-confirmed' : ''} ${['pending', 'PENDING_PAYMENT'].includes(status) ? 'slot-card-pending' : ''}`}
       style={{
-        borderRadius: '20px',
-        border: isHidden ? '2px solid #ffc107' : '1px solid #ced4da',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04)',
-        transition: 'all 0.3s ease',
+        borderRadius: 0,
+        border: isHidden ? '2px solid #c4b5a0' : '1px solid #e7e2db',
+        boxShadow: 'none',
+        transition: 'all 0.2s ease',
         position: 'relative',
         overflow: 'visible',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06)';
+        e.currentTarget.style.borderColor = '#c4b5a0';
+        e.currentTarget.style.backgroundColor = '#fffcfa';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04)';
+        e.currentTarget.style.borderColor = isHidden ? '#c4b5a0' : '#e7e2db';
+        e.currentTarget.style.backgroundColor = '';
       }}
     >
       {slotType === 'with_squeeze_fee' && (
@@ -137,12 +137,12 @@ export default function SlotItem({
             justifyContent: 'center',
             fontSize: '0.55rem',
             fontWeight: 700,
-            color: '#5b21b6',
-            backgroundColor: '#ede9fe',
-            border: '1px solid #c4b5fd',
+            color: '#5c4a32',
+            backgroundColor: '#efe6d8',
+            border: '1px solid #c4b5a0',
             borderTop: 'none',
             borderRight: 'none',
-            borderRadius: '0 0 0 8px',
+            borderRadius: 0,
             zIndex: 1,
           }}
         >
@@ -152,12 +152,13 @@ export default function SlotItem({
       {['confirmed', 'CONFIRMED', 'completed', 'COMPLETED'].includes(status) && serviceLocation && (
         <span
           title={serviceLocation === 'home_service' ? 'Home Service' : 'Studio'}
-          className="absolute bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[0.45rem] sm:text-[0.55rem] font-bold z-[1] border-b-0 border-r-0 rounded-tl-lg"
+          className="absolute bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[0.45rem] sm:text-[0.55rem] font-bold z-[1] border-b-0 border-r-0"
           style={{
-            backgroundColor: serviceLocation === 'home_service' ? '#fef3c7' : '#dbeafe',
-            color: serviceLocation === 'home_service' ? '#92400e' : '#1e40af',
+            backgroundColor: serviceLocation === 'home_service' ? '#efe6d8' : '#e7e2db',
+            color: serviceLocation === 'home_service' ? '#5c4a32' : '#3d342c',
             borderWidth: '1px',
-            borderColor: serviceLocation === 'home_service' ? '#fcd34d' : '#93c5fd',
+            borderColor: serviceLocation === 'home_service' ? '#c4b5a0' : '#a8a29e',
+            borderRadius: 0,
           }}
         >
           {serviceLocation === 'home_service' ? 'HS' : 'ST'}
@@ -166,7 +167,7 @@ export default function SlotItem({
       <div 
         className="card-body py-2"
         style={{
-          borderRadius: '20px',
+          borderRadius: 0,
           paddingTop: '0.75rem',
           paddingBottom: ['confirmed', 'CONFIRMED', 'completed', 'COMPLETED'].includes(status) && serviceLocation ? '1.5rem' : '0.75rem',
           paddingLeft: '1rem',
@@ -183,7 +184,7 @@ export default function SlotItem({
                 <StatusBadge status={status} className="!text-[10px] !px-2 !py-0.5 sm:!text-xs sm:!px-2.5 sm:!py-0.5" />
                 {serviceBadge && (
                   <span
-                    className="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium min-h-[20px] sm:min-h-[24px] box-border sm:px-2.5"
+                    className="inline-flex items-center justify-center rounded-none px-2 py-0.5 text-[10px] sm:text-xs font-medium min-h-[20px] sm:min-h-[24px] box-border sm:px-2.5"
                     style={{ ...serviceBadge.style }}
                   >
                     {serviceBadge.label}
@@ -191,8 +192,8 @@ export default function SlotItem({
                 )}
                 {isHidden && (
                   <span
-                    className="inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium min-h-[24px] box-border border border-transparent text-white"
-                    style={{ backgroundColor: '#6c757d' }}
+                    className="inline-flex items-center justify-center gap-1 rounded-none px-2.5 py-0.5 text-xs font-medium min-h-[24px] box-border border border-[#e7e2db]"
+                    style={{ backgroundColor: '#e7e2db', color: '#78716c' }}
                   >
                     <EyeOff style={{ width: '12px', height: '12px', flexShrink: 0 }} />Hidden from Clients
                   </span>
@@ -201,7 +202,7 @@ export default function SlotItem({
                   <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
                 )}
                 {isSimultaneous && nailTechName && nailTechId && (
-                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: '#374151' }}>
+                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: '#3d342c' }}>
                     <NailTechBadge name={`${nailTechName}${expressTechSuffix}`} nailTechId={nailTechId} />
                   </span>
                 )}

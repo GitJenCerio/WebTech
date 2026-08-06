@@ -80,7 +80,7 @@ function AdminLoginForm() {
                 priority
               />
             </div>
-            <CardTitle className="text-xl font-bold text-[#1a1a1a]">Admin Login</CardTitle>
+            <CardTitle className="text-xl font-bold text-[#1c1917]">Admin Login</CardTitle>
             <CardDescription>
               Enter your credentials to access the dashboard
             </CardDescription>
@@ -97,7 +97,7 @@ function AdminLoginForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="bg-[#f9f9f9] border-[#e5e5e5]"
+                  className="bg-[#f7f6f4] border-[#e7e2db]"
                 />
               </div>
 
@@ -120,7 +120,7 @@ function AdminLoginForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     disabled={loading}
-                    className="bg-[#f9f9f9] border-[#e5e5e5] pr-10"
+                    className="bg-[#f7f6f4] border-[#e7e2db] pr-10"
                   />
                   <button
                     type="button"
@@ -146,7 +146,7 @@ function AdminLoginForm() {
 
               <Button
                 type="submit"
-                className="w-full bg-[#1a1a1a] text-white hover:bg-[#2d2d2d]"
+                className="w-full bg-[#1c1917] text-white hover:bg-[#2a2522]"
                 disabled={loading}
               >
                 {loading ? (

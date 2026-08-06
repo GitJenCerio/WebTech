@@ -120,25 +120,18 @@ export function formatNailTechName(name: string): string {
  * @returns Tailwind CSS classes for background, text, and border colors
  */
 export function getNailTechColorClasses(techId: string | null | undefined, allTechIds?: string[]): string {
-  if (!techId) return 'bg-slate-100 text-slate-700 border-slate-300';
+  if (!techId) return 'bg-[#f7f6f4] text-[#78716c] border-[#e7e2db]';
   
-  // Extended color palette with highly vibrant, saturated colors for maximum visibility
+  // Brand-warm but distinct hues (champagne, clay, sage, mauve, olive, slate, caramel, cocoa)
   const colors = [
-    'bg-blue-500 text-white border-blue-700 shadow-lg shadow-blue-500/50',
-    'bg-purple-500 text-white border-purple-700 shadow-lg shadow-purple-500/50',
-    'bg-pink-500 text-white border-pink-700 shadow-lg shadow-pink-500/50',
-    'bg-indigo-500 text-white border-indigo-700 shadow-lg shadow-indigo-500/50',
-    'bg-teal-500 text-white border-teal-700 shadow-lg shadow-teal-500/50',
-    'bg-amber-500 text-white border-amber-700 shadow-lg shadow-amber-500/50',
-    'bg-rose-500 text-white border-rose-700 shadow-lg shadow-rose-500/50',
-    'bg-cyan-500 text-white border-cyan-700 shadow-lg shadow-cyan-500/50',
-    'bg-emerald-500 text-white border-emerald-700 shadow-lg shadow-emerald-500/50',
-    'bg-violet-500 text-white border-violet-700 shadow-lg shadow-violet-500/50',
-    'bg-fuchsia-500 text-white border-fuchsia-700 shadow-lg shadow-fuchsia-500/50',
-    'bg-orange-500 text-white border-orange-700 shadow-lg shadow-orange-500/50',
-    'bg-lime-500 text-slate-900 border-lime-700 shadow-lg shadow-lime-500/50',
-    'bg-sky-500 text-white border-sky-700 shadow-lg shadow-sky-500/50',
-    'bg-yellow-500 text-slate-900 border-yellow-700 shadow-lg shadow-yellow-500/50',
+    'bg-[#efe6d8] text-[#5c4a32] border-[#c4b5a0]',
+    'bg-[#f0e0dc] text-[#7a3f38] border-[#d4a89e]',
+    'bg-[#e4ebe3] text-[#3d5340] border-[#a8b89e]',
+    'bg-[#ebe3ef] text-[#5c3d5a] border-[#c4a8c0]',
+    'bg-[#ebe6d2] text-[#6b5a2e] border-[#c4b878]',
+    'bg-[#e3e8ec] text-[#3d4a54] border-[#9aadb8]',
+    'bg-[#f0e4d4] text-[#6b4528] border-[#d4b090]',
+    'bg-[#e8ddd8] text-[#5a3830] border-[#c4a090]',
   ];
   
   // If we have the sorted list of all tech IDs, use position-based assignment for stability

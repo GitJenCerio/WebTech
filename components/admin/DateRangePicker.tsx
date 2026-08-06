@@ -67,8 +67,8 @@ export function DateRangePicker({
         <button
           type="button"
           className={cn(
-            'flex items-center gap-2 w-full min-w-[120px] rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] transition-all',
-            'hover:border-[#1a1a1a]/30 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]',
+            'flex items-center gap-2 w-full min-w-[120px] rounded-xl border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] transition-all',
+            'hover:border-[#1c1917]/30 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917]',
             compact ? 'h-8 px-2 text-xs' : 'h-9 px-3 text-sm',
             className
           )}
@@ -79,7 +79,7 @@ export function DateRangePicker({
       </PopoverTrigger>
       <PopoverContent
         align={align}
-        className="admin-date-picker-popover w-auto p-0 rounded-2xl border-[#e5e5e5] shadow-lg bg-white"
+        className="admin-date-picker-popover w-auto p-0 rounded-2xl border-[#e7e2db] shadow-lg bg-white"
       >
         <Calendar
           mode="range"

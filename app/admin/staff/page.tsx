@@ -147,13 +147,13 @@ export default function StaffPage() {
           <button
             onClick={fetchUsers}
             disabled={loading}
-            className="min-h-[44px] px-4 text-sm font-medium rounded-lg border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+            className="min-h-[44px] px-4 text-sm font-medium rounded-lg border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
           >
             Refresh
           </button>
           <button
             onClick={() => setShowAddUserModal(true)}
-            className="flex-1 sm:flex-initial min-h-[44px] px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2 shadow-sm"
+            className="flex-1 sm:flex-initial min-h-[44px] px-4 text-sm font-medium rounded-lg bg-[#1c1917] text-white hover:bg-[#2a2522] transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             Add User
           </button>
@@ -167,7 +167,7 @@ export default function StaffPage() {
       )}
 
       {/* Filter Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
             <div className="relative flex-1 w-full sm:min-w-[200px]">
@@ -177,13 +177,13 @@ export default function StaffPage() {
                 placeholder="Search by name or email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917] focus:bg-white transition-all"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all cursor-pointer"
+              className="h-9 px-3 text-sm rounded-lg border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917] focus:bg-white transition-all cursor-pointer"
             >
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
@@ -192,7 +192,7 @@ export default function StaffPage() {
             {(searchQuery || statusFilter !== 'all') && (
               <button
                 onClick={() => { setSearchQuery(''); setStatusFilter('all'); }}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:text-[#1a1a1a] hover:border-[#1a1a1a] transition-all flex items-center gap-1.5"
+                className="h-9 px-3 text-sm rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:text-[#1c1917] hover:border-[#1c1917] transition-all flex items-center gap-1.5"
               >
                 <X className="h-3.5 w-3.5" />
                 Clear
@@ -203,13 +203,13 @@ export default function StaffPage() {
       </Card>
 
       {/* Table Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-0">
           {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                <tr className="border-b border-[#f0ebe4]" style={{ background: 'linear-gradient(to right, #fffcfa, #f7f6f4)' }}>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Name</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Role</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Auth</th>
@@ -217,14 +217,14 @@ export default function StaffPage() {
                   <th className="px-5 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f5f5f5]">
+              <tbody className="divide-y divide-[#f7f6f4]">
                 {loading ? (
                   <>
                     {Array.from({ length: 6 }).map((_, i) => (
                       <tr key={i}>
                         {Array.from({ length: 5 }).map((_, j) => (
                           <td key={j} className="px-5 py-3.5">
-                            <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-[#e7e2db]" />
                           </td>
                         ))}
                       </tr>
@@ -234,7 +234,7 @@ export default function StaffPage() {
                   <tr>
                     <td colSpan={5} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center gap-2 text-gray-400">
-                        <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                           <Search className="h-5 w-5" />
                         </div>
                         <span className="text-sm font-medium">No results found</span>
@@ -244,10 +244,10 @@ export default function StaffPage() {
                   </tr>
                 ) : (
                   paginatedStaff.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100 group">
+                    <tr key={item.id} className="hover:bg-[#fffcfa] transition-colors duration-100 group">
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col">
-                          <span className="font-medium text-[#1a1a1a]">{item.name}</span>
+                          <span className="font-medium text-[#1c1917]">{item.name}</span>
                           <span className="text-xs text-gray-400 mt-0.5">{item.email}</span>
                         </div>
                       </td>
@@ -272,7 +272,7 @@ export default function StaffPage() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleEdit(item)}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                           >
                             Edit
                           </button>
@@ -281,7 +281,7 @@ export default function StaffPage() {
                               setSelectedUser(item);
                               setShowResetPasswordDialog(true);
                             }}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                           >
                             Reset Password
                           </button>
@@ -299,24 +299,24 @@ export default function StaffPage() {
             {loading ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3">
+                  <div key={i} className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3">
                     <div className="flex justify-between">
                       <div className="space-y-1">
-                        <div className="h-5 w-32 animate-pulse rounded bg-[#e5e5e5]" />
-                        <div className="h-4 w-48 animate-pulse rounded bg-[#e5e5e5]" />
+                        <div className="h-5 w-32 animate-pulse rounded bg-[#e7e2db]" />
+                        <div className="h-4 w-48 animate-pulse rounded bg-[#e7e2db]" />
                       </div>
-                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e7e2db]" />
                     </div>
                     <div className="flex gap-2">
-                      <div className="h-6 w-14 animate-pulse rounded-full bg-[#e5e5e5]" />
-                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                      <div className="h-6 w-14 animate-pulse rounded-full bg-[#e7e2db]" />
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e7e2db]" />
                     </div>
                   </div>
                 ))}
               </>
             ) : paginatedStaff.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
-                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                   <Search className="h-5 w-5" />
                 </div>
                 <span className="text-sm font-medium">No results found</span>
@@ -326,11 +326,11 @@ export default function StaffPage() {
               paginatedStaff.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                  className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-medium text-[#1a1a1a]">{item.name}</p>
+                      <p className="font-medium text-[#1c1917]">{item.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{item.email}</p>
                     </div>
                     {getStatusBadge(item.status)}
@@ -346,7 +346,7 @@ export default function StaffPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(item)}
-                      className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
+                      className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-[#1c1917] hover:border-[#1c1917] hover:bg-[#fffcfa] transition-all"
                     >
                       Edit
                     </button>
@@ -355,7 +355,7 @@ export default function StaffPage() {
                         setSelectedUser(item);
                         setShowResetPasswordDialog(true);
                       }}
-                      className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                      className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                     >
                       Reset Password
                     </button>
@@ -376,18 +376,18 @@ export default function StaffPage() {
           <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
             <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
             <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
               <div className="hidden sm:flex items-center gap-1">
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                   const page = i + 1;
                   return (
                     <button key={page} onClick={() => setCurrentPage(page)}
-                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1c1917] border-[#1c1917] text-white shadow-sm' : 'border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917]'}`}
                     >{page}</button>
                   );
                 })}
               </div>
-              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
             </div>
           </div>
         </div>

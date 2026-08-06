@@ -212,7 +212,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
                   <SelectItem value="password">Email & Password</SelectItem>
                 </SelectContent>
               </Select>
-              <small className="text-gray-500 text-xs block">
+              <small className="text-muted-foreground text-xs block">
                 {authMethod === 'google'
                   ? 'User will receive an email invitation to sign in with Google'
                   : 'User will sign in with email and password'}
@@ -236,7 +236,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
 
             <div className="space-y-2">
               <Label htmlFor="name">
-                Name <span className="text-gray-500 text-xs">(Optional)</span>
+                Name <span className="text-muted-foreground text-xs">(Optional)</span>
               </Label>
               <Input
                 type="text"
@@ -278,7 +278,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
                   Assigned Nail Tech <span className="text-red-500">*</span>
                 </Label>
                 {loadingNailTechs ? (
-                  <p className="text-sm text-gray-500">Loading nail techs...</p>
+                  <p className="text-sm text-muted-foreground">Loading nail techs...</p>
                 ) : (
                   <Select
                     value={assignedNailTechId || '__none__'}
@@ -298,7 +298,7 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
                     </SelectContent>
                   </Select>
                 )}
-                <small className="text-gray-500 text-xs block">
+                <small className="text-muted-foreground text-xs block">
                   Staff can only see data for their assigned nail tech
                 </small>
               </div>

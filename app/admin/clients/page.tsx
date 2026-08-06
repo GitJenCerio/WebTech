@@ -227,7 +227,7 @@ export default function ClientsPage() {
       )}
 
       {/* Filter Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
             <div className="relative flex-1 w-full sm:min-w-[200px]">
@@ -237,13 +237,13 @@ export default function ClientsPage() {
                 placeholder="Search by name, email, or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917] focus:bg-white transition-all"
               />
             </div>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:text-[#1a1a1a] hover:border-[#1a1a1a] transition-all flex items-center gap-1.5"
+                className="h-9 px-3 text-sm rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:text-[#1c1917] hover:border-[#1c1917] transition-all flex items-center gap-1.5"
               >
                 <X className="h-3.5 w-3.5" />
                 Clear
@@ -251,7 +251,7 @@ export default function ClientsPage() {
             )}
             <button
               onClick={() => setShowAddClientModal(true)}
-              className="h-9 px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2 ml-auto"
+              className="h-9 px-4 text-sm font-medium rounded-lg bg-[#1c1917] text-white hover:bg-[#2a2522] transition-colors flex items-center justify-center gap-2 ml-auto"
             >
               <Plus className="h-4 w-4" />
               Add Client
@@ -261,13 +261,13 @@ export default function ClientsPage() {
       </Card>
 
       {/* Table Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-0">
           {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                <tr className="border-b border-[#f0ebe4]" style={{ background: 'linear-gradient(to right, #fffcfa, #f7f6f4)' }}>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Client Name</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Contact</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Total Visits</th>
@@ -276,14 +276,14 @@ export default function ClientsPage() {
                   <th className="px-5 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f5f5f5]">
+              <tbody className="divide-y divide-[#f7f6f4]">
                 {loading ? (
                   <>
                     {Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
                         {Array.from({ length: 6 }).map((_, j) => (
                           <td key={j} className="px-5 py-3.5">
-                            <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-[#e7e2db]" />
                           </td>
                         ))}
                       </tr>
@@ -293,7 +293,7 @@ export default function ClientsPage() {
                   <tr>
                     <td colSpan={6} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                        <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                           <Search className="h-6 w-6 text-gray-300" />
                         </div>
                         <p className="text-sm font-medium text-gray-500">
@@ -307,17 +307,17 @@ export default function ClientsPage() {
                   </tr>
                 ) : (
                   paginatedClients.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100 group">
+                    <tr key={item.id} className="hover:bg-[#fffcfa] transition-colors duration-100 group">
                       <td className="px-5 py-3.5">
-                        <span className="font-medium text-[#1a1a1a]">{item.name}</span>
+                        <span className="font-medium text-[#1c1917]">{item.name}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col">
-                          <span className="text-[#1a1a1a]">{item.email || '—'}</span>
+                          <span className="text-[#1c1917]">{item.email || '—'}</span>
                           <span className="text-xs text-gray-400 mt-0.5">{item.phone || '—'}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">{item.totalVisits}</td>
+                      <td className="px-5 py-3.5 font-medium text-[#1c1917] tabular-nums">{item.totalVisits}</td>
                       <td className="px-5 py-3.5">
                         <div className="flex flex-wrap items-center gap-1">
                           {item.isVIP ? (
@@ -329,7 +329,7 @@ export default function ClientsPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         {item.hasNotes ? (
-                          <div className="h-6 w-6 rounded-full bg-[#f5f5f5] flex items-center justify-center" title="Has notes">
+                          <div className="h-6 w-6 rounded-full bg-[#f7f6f4] flex items-center justify-center" title="Has notes">
                             <FileText className="h-3.5 w-3.5 text-gray-400" />
                           </div>
                         ) : (
@@ -340,19 +340,19 @@ export default function ClientsPage() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleViewClient(item.id, 'view')}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                           >
                             View
                           </button>
                           <button
                             onClick={() => handleViewClient(item.id, 'edit')}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => router.push(`/admin/bookings?customerId=${item.id}`)}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                           >
                             Bookings
                           </button>
@@ -370,25 +370,25 @@ export default function ClientsPage() {
             {loading ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3">
+                  <div key={i} className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3">
                     <div className="flex justify-between">
-                      <div className="h-5 w-32 animate-pulse rounded bg-[#e5e5e5]" />
-                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                      <div className="h-5 w-32 animate-pulse rounded bg-[#e7e2db]" />
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e7e2db]" />
                     </div>
                     <div className="space-y-1">
-                      <div className="h-4 w-48 animate-pulse rounded bg-[#e5e5e5]" />
-                      <div className="h-4 w-36 animate-pulse rounded bg-[#e5e5e5]" />
+                      <div className="h-4 w-48 animate-pulse rounded bg-[#e7e2db]" />
+                      <div className="h-4 w-36 animate-pulse rounded bg-[#e7e2db]" />
                     </div>
                     <div className="flex gap-2">
-                      <button className="h-7 w-14 animate-pulse rounded bg-[#e5e5e5]" />
-                      <button className="h-7 w-14 animate-pulse rounded bg-[#e5e5e5]" />
+                      <button className="h-7 w-14 animate-pulse rounded bg-[#e7e2db]" />
+                      <button className="h-7 w-14 animate-pulse rounded bg-[#e7e2db]" />
                     </div>
                   </div>
                 ))}
               </>
             ) : paginatedClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-                <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                   <Search className="h-6 w-6 text-gray-300" />
                 </div>
                 <p className="text-sm font-medium text-gray-500">
@@ -402,10 +402,10 @@ export default function ClientsPage() {
               paginatedClients.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                  className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium text-[#1a1a1a]">{item.name}</p>
+                    <p className="font-medium text-[#1c1917]">{item.name}</p>
                     {item.isVIP ? (
                       <Badge variant="vip">VIP</Badge>
                     ) : (
@@ -423,20 +423,20 @@ export default function ClientsPage() {
                   <div className="flex flex-col gap-2 pt-1">
                     <button
                       onClick={() => handleViewClient(item.id, 'view')}
-                      className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
+                      className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-[#1c1917] hover:border-[#1c1917] hover:bg-[#fffcfa] transition-all"
                     >
                       View
                     </button>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleViewClient(item.id, 'edit')}
-                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => router.push(`/admin/bookings?customerId=${item.id}`)}
-                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                       >
                         Bookings
                       </button>
@@ -461,7 +461,7 @@ export default function ClientsPage() {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -473,7 +473,7 @@ export default function ClientsPage() {
                       key={page}
                       onClick={() => setCurrentPage(page)}
                       className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
-                        currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'
+                        currentPage === page ? 'bg-[#1c1917] border-[#1c1917] text-white shadow-sm' : 'border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917]'
                       }`}
                     >
                       {page}
@@ -484,7 +484,7 @@ export default function ClientsPage() {
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -512,7 +512,7 @@ export default function ClientsPage() {
                   <Card>
                     <CardContent className="p-4 space-y-3">
                       <div>
-                        <label className="text-xs font-medium text-gray-500 block mb-1">Name</label>
+                        <label>Name</label>
                         <Input
                           value={editDraft.name}
                           onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
@@ -521,7 +521,7 @@ export default function ClientsPage() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-gray-500 block mb-1">Email</label>
+                        <label>Email</label>
                         <Input
                           type="email"
                           value={editDraft.email}
@@ -531,7 +531,7 @@ export default function ClientsPage() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-gray-500 block mb-1">Phone</label>
+                        <label>Phone</label>
                         <Input
                           value={editDraft.phone}
                           onChange={(e) => setEditDraft((d) => ({ ...d, phone: e.target.value }))}
@@ -540,7 +540,7 @@ export default function ClientsPage() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-gray-500 block mb-1">Social Media</label>
+                        <label>Social Media</label>
                         <Input
                           value={editDraft.socialMediaName}
                           onChange={(e) => setEditDraft((d) => ({ ...d, socialMediaName: e.target.value }))}
@@ -549,11 +549,11 @@ export default function ClientsPage() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-gray-500 block mb-1">Notes</label>
+                        <label>Notes</label>
                         <textarea
                           value={editDraft.notes}
                           onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
-                          className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-[#e5e5e5] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]"
+                          className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-[#e7e2db] bg-white focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917]"
                           placeholder="Notes"
                         />
                       </div>
@@ -563,7 +563,7 @@ export default function ClientsPage() {
                           checked={editDraft.isVIP}
                           onCheckedChange={(checked) => setEditDraft((d) => ({ ...d, isVIP: !!checked }))}
                         />
-                        <label htmlFor="edit-vip" className="text-sm font-medium text-[#1a1a1a] cursor-pointer">
+                        <label htmlFor="edit-vip" className="label-inline">
                           VIP Client
                         </label>
                       </div>
@@ -689,7 +689,7 @@ export default function ClientsPage() {
           </DialogHeader>
           <div className="py-4 space-y-3">
             <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Name <span className="text-red-500">*</span></label>
+              <label>Name <span className="text-red-500">*</span></label>
               <Input
                 value={addClientDraft.name}
                 onChange={(e) => setAddClientDraft((d) => ({ ...d, name: e.target.value }))}
@@ -698,7 +698,7 @@ export default function ClientsPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Email</label>
+              <label>Email</label>
               <Input
                 type="email"
                 value={addClientDraft.email}
@@ -708,7 +708,7 @@ export default function ClientsPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Phone</label>
+              <label>Phone</label>
               <Input
                 value={addClientDraft.phone}
                 onChange={(e) => setAddClientDraft((d) => ({ ...d, phone: e.target.value }))}
@@ -717,7 +717,7 @@ export default function ClientsPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Social Media</label>
+              <label>Social Media</label>
               <Input
                 value={addClientDraft.socialMediaName}
                 onChange={(e) => setAddClientDraft((d) => ({ ...d, socialMediaName: e.target.value }))}
@@ -726,11 +726,11 @@ export default function ClientsPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Notes</label>
+              <label>Notes</label>
               <textarea
                 value={addClientDraft.notes}
                 onChange={(e) => setAddClientDraft((d) => ({ ...d, notes: e.target.value }))}
-                className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-[#e5e5e5] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]"
+                className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-[#e7e2db] bg-white focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917]"
                 placeholder="Notes"
               />
             </div>
@@ -740,7 +740,7 @@ export default function ClientsPage() {
                 checked={addClientDraft.isVIP}
                 onCheckedChange={(checked) => setAddClientDraft((d) => ({ ...d, isVIP: !!checked }))}
               />
-              <label htmlFor="add-vip" className="text-sm font-medium text-[#1a1a1a] cursor-pointer">
+              <label htmlFor="add-vip" className="label-inline">
                 VIP Client
               </label>
             </div>

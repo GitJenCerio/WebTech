@@ -335,7 +335,7 @@ export default function NailTechsPage() {
         {userRole.canManageAllTechs && (
           <button
             onClick={handleOpenAdd}
-            className="w-full sm:w-auto min-h-[44px] px-4 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2 shadow-sm"
+            className="w-full sm:w-auto min-h-[44px] px-4 text-sm font-medium rounded-lg bg-[#1c1917] text-white hover:bg-[#2a2522] transition-colors flex items-center justify-center gap-2 shadow-sm"
           >
             <Plus className="h-4 w-4" />
             Add Nail Tech
@@ -350,7 +350,7 @@ export default function NailTechsPage() {
       )}
 
       {/* Filter Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
             <div className="relative flex-1 w-full sm:min-w-[200px]">
@@ -360,7 +360,7 @@ export default function NailTechsPage() {
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917] focus:bg-white transition-all"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -379,7 +379,7 @@ export default function NailTechsPage() {
                   setSearchQuery('');
                   setStatusFilter('all');
                 }}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:text-[#1a1a1a] hover:border-[#1a1a1a] transition-all flex items-center gap-1.5"
+                className="h-9 px-3 text-sm rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:text-[#1c1917] hover:border-[#1c1917] transition-all flex items-center gap-1.5"
               >
                 <X className="h-3.5 w-3.5" />
                 Clear
@@ -390,13 +390,13 @@ export default function NailTechsPage() {
       </Card>
 
       {/* Table Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-0">
           {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                <tr className="border-b border-[#f0ebe4]" style={{ background: 'linear-gradient(to right, #fffcfa, #f7f6f4)' }}>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Name</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Role</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Discount</th>
@@ -407,14 +407,14 @@ export default function NailTechsPage() {
                   <th className="px-5 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f5f5f5]">
+              <tbody className="divide-y divide-[#f7f6f4]">
                 {loading ? (
                   <>
                     {Array.from({ length: 6 }).map((_, i) => (
                       <tr key={i}>
                         {Array.from({ length: 8 }).map((_, j) => (
                           <td key={j} className="px-5 py-3.5">
-                            <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-[#e7e2db]" />
                           </td>
                         ))}
                       </tr>
@@ -424,7 +424,7 @@ export default function NailTechsPage() {
                   <tr>
                     <td colSpan={8} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center gap-2 text-gray-400">
-                        <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                        <div className="h-10 w-10 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                           <Search className="h-5 w-5" />
                         </div>
                         <span className="text-sm font-medium">No results found</span>
@@ -434,18 +434,18 @@ export default function NailTechsPage() {
                   </tr>
                 ) : (
                   paginatedTechs.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100 group">
+                    <tr key={item.id} className="hover:bg-[#fffcfa] transition-colors duration-100 group">
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col">
-                          <span className="font-medium text-[#1a1a1a]">Ms. {item.name}</span>
+                          <span className="font-medium text-[#1c1917]">Ms. {item.name}</span>
                           <span className="text-xs text-gray-400 mt-0.5">{item.role}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
                         <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">{item.role}</span>
                       </td>
-                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">{item.discount != null ? `${item.discount}%` : '—'}</td>
-                      <td className="px-5 py-3.5 text-[#1a1a1a] tabular-nums">
+                      <td className="px-5 py-3.5 font-medium text-[#1c1917] tabular-nums">{item.discount != null ? `${item.discount}%` : '—'}</td>
+                      <td className="px-5 py-3.5 text-[#1c1917] tabular-nums">
                         {item.commissionTiers?.length
                           ? <div className="flex flex-col gap-0.5">
                               {[...item.commissionTiers].sort((a, b) => a.threshold - b.threshold).map((tier, i) => (
@@ -457,26 +457,26 @@ export default function NailTechsPage() {
                             : <span className="text-gray-400">—</span>
                         }
                       </td>
-                      <td className="px-5 py-3.5 font-medium text-[#1a1a1a] tabular-nums">{item.adminCommissionRate != null ? `${Math.round(item.adminCommissionRate * 100)}%` : '—'}</td>
+                      <td className="px-5 py-3.5 font-medium text-[#1c1917] tabular-nums">{item.adminCommissionRate != null ? `${Math.round(item.adminCommissionRate * 100)}%` : '—'}</td>
                       <td className="px-5 py-3.5 text-gray-500">{item.serviceAvailability}</td>
                       <td className="px-5 py-3.5">{getStatusBadge(item.status)}</td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleOpenView(item)}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                           >
                             View
                           </button>
                           <button
                             onClick={() => handleOpenEdit(item)}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleViewSlots(item)}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                           >
                             Slots
                           </button>
@@ -500,19 +500,19 @@ export default function NailTechsPage() {
             {loading ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3">
+                  <div key={i} className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3">
                     <div className="flex justify-between">
                       <div className="space-y-1">
-                        <div className="h-5 w-28 animate-pulse rounded bg-[#e5e5e5]" />
-                        <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                        <div className="h-5 w-28 animate-pulse rounded bg-[#e7e2db]" />
+                        <div className="h-4 w-20 animate-pulse rounded bg-[#e7e2db]" />
                       </div>
-                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e7e2db]" />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {[1, 2, 3, 4].map((j) => (
                         <div key={j} className="space-y-1">
-                          <div className="h-3 w-12 animate-pulse rounded bg-[#e5e5e5]" />
-                          <div className="h-4 w-16 animate-pulse rounded bg-[#e5e5e5]" />
+                          <div className="h-3 w-12 animate-pulse rounded bg-[#e7e2db]" />
+                          <div className="h-4 w-16 animate-pulse rounded bg-[#e7e2db]" />
                         </div>
                       ))}
                     </div>
@@ -521,7 +521,7 @@ export default function NailTechsPage() {
               </>
             ) : paginatedTechs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
-                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                   <Search className="h-5 w-5" />
                 </div>
                 <span className="text-sm font-medium">No results found</span>
@@ -531,11 +531,11 @@ export default function NailTechsPage() {
               paginatedTechs.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                  className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-medium text-[#1a1a1a]">Ms. {item.name}</p>
+                      <p className="font-medium text-[#1c1917]">Ms. {item.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{item.role}</p>
                     </div>
                     {getStatusBadge(item.status)}
@@ -543,47 +543,47 @@ export default function NailTechsPage() {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-gray-400 text-xs">Discount</span>
-                      <p className="text-[#1a1a1a]">{item.discount != null ? `${item.discount}%` : '—'}</p>
+                      <p className="text-[#1c1917]">{item.discount != null ? `${item.discount}%` : '—'}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Commission</span>
                       {item.commissionTiers?.length
                         ? <div className="flex flex-col gap-0.5 mt-0.5">
                             {[...item.commissionTiers].sort((a, b) => a.threshold - b.threshold).map((tier, i) => (
-                              <p key={i} className="text-[#1a1a1a] text-xs">₱{tier.threshold.toLocaleString()} → {tier.rate}%</p>
+                              <p key={i} className="text-[#1c1917] text-xs">₱{tier.threshold.toLocaleString()} → {tier.rate}%</p>
                             ))}
                           </div>
                         : item.commissionRate != null
-                          ? <p className="text-[#1a1a1a] text-xs">{Math.round(item.commissionRate * 100)}% (flat)</p>
+                          ? <p className="text-[#1c1917] text-xs">{Math.round(item.commissionRate * 100)}% (flat)</p>
                           : <p className="text-gray-400">—</p>
                       }
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Admin Commission</span>
-                      <p className="text-[#1a1a1a]">{item.adminCommissionRate != null ? `${Math.round(item.adminCommissionRate * 100)}%` : '—'}</p>
+                      <p className="text-[#1c1917]">{item.adminCommissionRate != null ? `${Math.round(item.adminCommissionRate * 100)}%` : '—'}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Service</span>
-                      <p className="text-[#1a1a1a]">{item.serviceAvailability}</p>
+                      <p className="text-[#1c1917]">{item.serviceAvailability}</p>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2 pt-1">
                     <button
                       onClick={() => handleOpenView(item)}
-                      className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
+                      className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-[#1c1917] hover:border-[#1c1917] hover:bg-[#fffcfa] transition-all"
                     >
                       View
                     </button>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleOpenEdit(item)}
-                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleViewSlots(item)}
-                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                       >
                         Slots
                       </button>
@@ -611,34 +611,34 @@ export default function NailTechsPage() {
           <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
             <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
             <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
               <div className="hidden sm:flex items-center gap-1">
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                   const page = i + 1;
                   return (
                     <button key={page} onClick={() => setCurrentPage(page)}
-                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1c1917] border-[#1c1917] text-white shadow-sm' : 'border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917]'}`}
                     >{page}</button>
                   );
                 })}
               </div>
-              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
             </div>
           </div>
         </div>
       )}
 
       <Dialog open={showAddModal} onOpenChange={(open) => !saving && setShowAddModal(open)}>
-        <DialogContent className="sm:max-w-lg md:max-w-md max-h-[90vh] overflow-y-auto border-[#e5e5e5] bg-white">
+        <DialogContent className="sm:max-w-lg md:max-w-md max-h-[90vh] overflow-y-auto border-[#e7e2db] bg-white">
           <DialogHeader>
-            <DialogTitle className="text-[#1a1a1a]">
+            <DialogTitle className="text-[#1c1917]">
               {modalMode === 'add' ? 'Add Nail Technician' : modalMode === 'edit' ? 'Edit Nail Technician' : 'View Nail Technician'}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Name <span className="text-red-500">*</span></label>
+                <label>Name <span className="text-red-500">*</span></label>
                 <Input
                   type="text"
                   value={form.name}
@@ -646,17 +646,17 @@ export default function NailTechsPage() {
                   required
                   placeholder="e.g. Jhen"
                   disabled={saving || modalMode === 'view'}
-                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                  className="h-9 rounded-xl border-[#e7e2db] bg-[#f7f6f4]"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Role <span className="text-red-500">*</span></label>
+                <label>Role <span className="text-red-500">*</span></label>
                 <Select
                   value={form.role}
                   onValueChange={(v) => handleChange('role', v as NailTechType['role'])}
                   disabled={saving || modalMode === 'view'}
                 >
-                  <SelectTrigger className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]">
+                  <SelectTrigger className="h-9 rounded-xl border-[#e7e2db] bg-[#f7f6f4]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -669,13 +669,13 @@ export default function NailTechsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Service Availability <span className="text-red-500">*</span></label>
+              <label>Service Availability <span className="text-red-500">*</span></label>
               <Select
                 value={form.serviceAvailability}
                 onValueChange={(v) => handleChange('serviceAvailability', v as ServiceAvailability)}
                 disabled={saving || modalMode === 'view'}
               >
-                <SelectTrigger className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]">
+                <SelectTrigger className="h-9 rounded-xl border-[#e7e2db] bg-[#f7f6f4]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -687,7 +687,7 @@ export default function NailTechsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Working Days <span className="text-red-500">*</span></label>
+              <label>Working Days <span className="text-red-500">*</span></label>
               <div className="flex flex-wrap gap-2">
                 {allDays.map((day) => (
                   <Button
@@ -708,7 +708,7 @@ export default function NailTechsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Discount (%)</label>
+                <label>Discount (%)</label>
                 <Input
                   type="number"
                   min={0}
@@ -717,12 +717,12 @@ export default function NailTechsPage() {
                   onChange={(e) => handleChange('discount', e.target.value)}
                   placeholder="e.g. 15"
                   disabled={saving || modalMode === 'view'}
-                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                  className="h-9 rounded-xl border-[#e7e2db] bg-[#f7f6f4]"
                 />
                 <small className="text-gray-500 text-xs block mt-1">Optional: Discount percentage for all services</small>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Admin Commission (%)</label>
+                <label>Admin Commission (%)</label>
                 <Input
                   type="number"
                   min={0}
@@ -731,12 +731,12 @@ export default function NailTechsPage() {
                   onChange={(e) => handleChange('adminCommissionRate', e.target.value)}
                   placeholder="e.g. 10"
                   disabled={saving || modalMode === 'view'}
-                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                  className="h-9 rounded-xl border-[#e7e2db] bg-[#f7f6f4]"
                 />
                 <small className="text-gray-500 text-xs block mt-1">Optional: Admin commission rate (0-100)</small>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Salary (PHP)</label>
+                <label>Salary (PHP)</label>
                 <Input
                   type="number"
                   min={0}
@@ -744,20 +744,20 @@ export default function NailTechsPage() {
                   onChange={(e) => handleChange('salary', e.target.value)}
                   placeholder="e.g. 5000"
                   disabled={saving || modalMode === 'view'}
-                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                  className="h-9 rounded-xl border-[#e7e2db] bg-[#f7f6f4]"
                 />
                 <small className="text-gray-500 text-xs block mt-1">Fixed salary shown in finance export</small>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Commission Type</label>
+              <label>Commission Type</label>
               <Select
                 value={form.commissionType}
                 onValueChange={(v) => handleChange('commissionType', v as 'with_quota' | 'without_quota')}
                 disabled={saving || modalMode === 'view'}
               >
-                <SelectTrigger className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]">
+                <SelectTrigger className="h-9 rounded-xl border-[#e7e2db] bg-[#f7f6f4]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -769,7 +769,7 @@ export default function NailTechsPage() {
 
             {form.commissionType === 'with_quota' ? (
               <div>
-                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Commission Tiers (Weekly Sales Quota)</label>
+                <label>Commission Tiers (Weekly Sales Quota)</label>
                 <div className="space-y-2">
                   {form.commissionTiers.map((tier, idx) => (
                     <div key={idx} className="flex items-center gap-2">
@@ -787,7 +787,7 @@ export default function NailTechsPage() {
                           }}
                           placeholder="e.g. 15000"
                           disabled={saving || modalMode === 'view'}
-                          className="h-8 rounded-lg border-[#e5e5e5] bg-[#f9f9f9] text-xs"
+                          className="h-8 rounded-lg border-[#e7e2db] bg-[#f7f6f4] text-xs"
                         />
                         <span className="text-xs text-gray-400 shrink-0">→</span>
                         <Input
@@ -802,7 +802,7 @@ export default function NailTechsPage() {
                           }}
                           placeholder="e.g. 10"
                           disabled={saving || modalMode === 'view'}
-                          className="h-8 rounded-lg border-[#e5e5e5] bg-[#f9f9f9] text-xs w-20"
+                          className="h-8 rounded-lg border-[#e7e2db] bg-[#f7f6f4] text-xs w-20"
                         />
                         <span className="text-xs text-gray-400 shrink-0">%</span>
                       </div>
@@ -813,7 +813,7 @@ export default function NailTechsPage() {
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Commission Rate (%)</label>
+                <label>Commission Rate (%)</label>
                 <Input
                   type="number"
                   min={0}
@@ -822,20 +822,20 @@ export default function NailTechsPage() {
                   onChange={(e) => handleChange('commissionRate', e.target.value)}
                   placeholder="e.g. 10"
                   disabled={saving || modalMode === 'view'}
-                  className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]"
+                  className="h-9 rounded-xl border-[#e7e2db] bg-[#f7f6f4]"
                 />
                 <small className="text-gray-500 text-xs block mt-1">Fixed commission percentage applied to all sales</small>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Status <span className="text-red-500">*</span></label>
+              <label>Status <span className="text-red-500">*</span></label>
               <Select
                 value={form.status}
                 onValueChange={(v) => handleChange('status', v as NailTechType['status'])}
                 disabled={saving || modalMode === 'view'}
               >
-                <SelectTrigger className="h-9 rounded-xl border-[#e5e5e5] bg-[#f9f9f9]">
+                <SelectTrigger className="h-9 rounded-xl border-[#e7e2db] bg-[#f7f6f4]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -859,7 +859,7 @@ export default function NailTechsPage() {
                 <Button
                   type="submit"
                   disabled={saving || !form.name.trim()}
-                  className="rounded-xl bg-[#1a1a1a] hover:bg-[#2d2d2d] text-white"
+                  className="rounded-xl bg-[#1c1917] hover:bg-[#2a2522] text-white"
                 >
                   {saving ? (
                     <>

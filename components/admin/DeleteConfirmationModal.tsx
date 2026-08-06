@@ -49,17 +49,17 @@ export default function DeleteConfirmationModal({
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-[#212529]" />
-            <DialogTitle className="text-lg font-semibold text-[#212529]">{title}</DialogTitle>
+            <AlertCircle className="w-5 h-5 text-ink" />
+            <DialogTitle>{title}</DialogTitle>
           </div>
         </DialogHeader>
         <div className="py-4">
-          <DialogDescription className="mb-3 text-gray-600 text-sm">
+          <DialogDescription className="mb-3 text-muted-foreground text-sm">
             {message}
           </DialogDescription>
           {slotDate && slotTime && (
-            <div className="bg-gray-100 p-3 rounded-2xl border-l-4 border-[#212529] mt-4">
-              <p className="text-sm font-medium text-[#212529] flex items-center gap-2 whitespace-nowrap">
+            <div className="bg-ash p-3 rounded-none border-l-4 border-champagne mt-4">
+              <p className="text-sm font-medium text-ink flex items-center gap-2 whitespace-nowrap">
                 <Calendar className="w-4 h-4 flex-shrink-0" />
                 {slotDetails}
               </p>

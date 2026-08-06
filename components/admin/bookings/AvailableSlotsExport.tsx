@@ -315,21 +315,21 @@ export default function AvailableSlotsExport() {
   };
 
   return (
-    <Card className="w-full max-w-full mt-6 border border-[#e5e5e5] rounded-2xl bg-white shadow-sm overflow-hidden">
+    <Card className="w-full max-w-full mt-6 border border-[#e7e2db] rounded-2xl bg-white shadow-sm overflow-hidden">
       <CardContent className="p-4">
         {/* Controls */}
         <div className="flex flex-col gap-3 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h3 className="text-sm font-semibold text-[#1a1a1a]" style={{ fontFamily: "'Lato', sans-serif" }}>
+            <h3 className="font-heading text-base text-ink">
               Shareable Available Slots
             </h3>
             <div className="flex items-center gap-2">
-              <div className="flex items-center rounded-lg border border-[#e5e5e5] bg-white p-0.5">
+              <div className="flex items-center rounded-lg border border-[#e7e2db] bg-white p-0.5">
                 <button
                   type="button"
                   onClick={() => setPeriod('month')}
                   className={`h-8 px-3 text-xs rounded-md transition-all ${
-                    period === 'month' ? 'bg-[#1a1a1a] text-white' : 'text-gray-500 hover:text-[#1a1a1a]'
+                    period === 'month' ? 'bg-[#1c1917] text-white' : 'text-gray-500 hover:text-[#1c1917]'
                   }`}
                 >
                   Month
@@ -338,7 +338,7 @@ export default function AvailableSlotsExport() {
                   type="button"
                   onClick={() => setPeriod('week')}
                   className={`h-8 px-3 text-xs rounded-md transition-all ${
-                    period === 'week' ? 'bg-[#1a1a1a] text-white' : 'text-gray-500 hover:text-[#1a1a1a]'
+                    period === 'week' ? 'bg-[#1c1917] text-white' : 'text-gray-500 hover:text-[#1c1917]'
                   }`}
                 >
                   Week
@@ -349,18 +349,18 @@ export default function AvailableSlotsExport() {
                 onClick={() =>
                   setAnchor((d) => (period === 'week' ? subWeeks(d, 1) : subMonths(d, 1)))
                 }
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                 aria-label={period === 'week' ? 'Previous week' : 'Previous month'}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-sm font-medium text-[#1a1a1a] min-w-[150px] text-center">{periodLabel}</span>
+              <span className="text-sm font-medium text-[#1c1917] min-w-[150px] text-center">{periodLabel}</span>
               <button
                 type="button"
                 onClick={() =>
                   setAnchor((d) => (period === 'week' ? addWeeks(d, 1) : addMonths(d, 1)))
                 }
-                className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                className="h-9 w-9 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                 aria-label={period === 'week' ? 'Next week' : 'Next month'}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -371,7 +371,7 @@ export default function AvailableSlotsExport() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
             <div className="flex flex-col sm:flex-row gap-2">
               <Select value={viewMode} onValueChange={(v) => setViewMode(v as 'all' | 'express')}>
-                <SelectTrigger className="h-9 w-full sm:w-[200px] shrink-0 text-xs px-3 rounded-xl border border-[#e5e5e5]">
+                <SelectTrigger className="h-9 w-full sm:w-[200px] shrink-0 text-xs px-3 rounded-xl border border-[#e7e2db]">
                   <SelectValue placeholder="View" />
                 </SelectTrigger>
                 <SelectContent className="text-xs">
@@ -382,7 +382,7 @@ export default function AvailableSlotsExport() {
 
               {showTechFilter && nailTechs.length > 0 && viewMode !== 'express' && (
                 <Select value={techFilter} onValueChange={setTechFilter}>
-                  <SelectTrigger className="h-9 w-full sm:w-[180px] shrink-0 text-xs px-3 rounded-xl border border-[#e5e5e5]">
+                  <SelectTrigger className="h-9 w-full sm:w-[180px] shrink-0 text-xs px-3 rounded-xl border border-[#e7e2db]">
                     <SelectValue placeholder="All Nail Techs" />
                   </SelectTrigger>
                   <SelectContent className="text-xs">
@@ -402,7 +402,7 @@ export default function AvailableSlotsExport() {
                 type="button"
                 onClick={fetchSlots}
                 disabled={loading}
-                className="h-9 px-3 text-xs rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-1.5 disabled:opacity-60"
+                className="h-9 px-3 text-xs rounded-lg border border-[#e7e2db] bg-white text-[#1c1917] hover:border-[#1c1917] hover:bg-[#fffcfa] transition-all flex items-center gap-1.5 disabled:opacity-60"
                 title="Refresh"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -412,7 +412,7 @@ export default function AvailableSlotsExport() {
                 type="button"
                 onClick={handleSaveAsImage}
                 disabled={downloading || loading || !hasContent}
-                className="h-9 px-3 text-xs rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-all flex items-center gap-1.5 disabled:opacity-50"
+                className="h-9 px-3 text-xs rounded-lg bg-[#1c1917] text-white hover:bg-[#2a2522] transition-all flex items-center gap-1.5 disabled:opacity-50"
                 title="Save as JPEG (use Share → Save Image on phone)"
               >
                 <Download className={`h-3.5 w-3.5 ${downloading ? 'animate-pulse' : ''}`} />
@@ -425,7 +425,7 @@ export default function AvailableSlotsExport() {
         {/* Preview / export surface */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1a1a1a] border-t-transparent" role="status" aria-label="Loading" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1c1917] border-t-transparent" role="status" aria-label="Loading" />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -437,14 +437,14 @@ export default function AvailableSlotsExport() {
                 margin: '0 auto',
                 backgroundColor: '#ffffff',
                 padding: 28,
-                fontFamily: "'Lato', Arial, sans-serif",
-                color: '#1a1a1a',
+                fontFamily: "var(--font-jost), Jost, Arial, sans-serif",
+                color: '#1c1917',
                 border: '1px solid #ececec',
                 borderRadius: 12,
               }}
             >
               {/* Header */}
-              <div style={{ textAlign: 'center', borderBottom: '2px solid #1a1a1a', paddingBottom: 14, marginBottom: 18 }}>
+              <div style={{ textAlign: 'center', borderBottom: '2px solid #1c1917', paddingBottom: 14, marginBottom: 18 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/logo.png"
@@ -452,10 +452,10 @@ export default function AvailableSlotsExport() {
                   style={{ height: 56, width: 'auto', objectFit: 'contain', display: 'inline-block' }}
                   crossOrigin="anonymous"
                 />
-                <div style={{ fontSize: 14, color: '#8a6d3b', fontWeight: 600, marginTop: 8 }}>
+                <div style={{ fontSize: 18, color: '#1c1917', fontWeight: 500, marginTop: 8, fontFamily: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif", letterSpacing: '-0.01em' }}>
                   {viewMode === 'express' ? 'Mani + Pedi Express — Available Slots' : 'Available Slots'}
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2 }}>{periodLabel}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#78716c' }}>{periodLabel}</div>
               </div>
 
               {/* Legend */}
@@ -526,11 +526,11 @@ export default function AvailableSlotsExport() {
                           display: 'flex',
                           gap: 10,
                           padding: '7px 8px',
-                          borderBottom: '1px solid #f0f0f0',
+                          borderBottom: '1px solid #f0ebe4',
                           alignItems: 'flex-start',
                         }}
                       >
-                        <div style={{ minWidth: 96, fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>
+                        <div style={{ minWidth: 96, fontSize: 13, fontWeight: 700, color: '#1c1917' }}>
                           {d.label}
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -572,7 +572,7 @@ export default function AvailableSlotsExport() {
                         fontSize: 15,
                         fontWeight: 700,
                         backgroundColor: '#f6f1ea',
-                        color: '#1a1a1a',
+                        color: '#1c1917',
                         padding: '6px 12px',
                         borderRadius: 8,
                         marginBottom: 8,
@@ -596,11 +596,11 @@ export default function AvailableSlotsExport() {
                               display: 'flex',
                               gap: 10,
                               padding: '6px 8px',
-                              borderBottom: '1px solid #f0f0f0',
+                              borderBottom: '1px solid #f0ebe4',
                               alignItems: 'flex-start',
                             }}
                           >
-                            <div style={{ minWidth: 96, fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>
+                            <div style={{ minWidth: 96, fontSize: 13, fontWeight: 700, color: '#1c1917' }}>
                               {d.label}
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -633,7 +633,7 @@ export default function AvailableSlotsExport() {
 
               {/* Footer */}
               <div style={{ borderTop: '1px solid #ececec', marginTop: 12, paddingTop: 12, textAlign: 'center' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>Book online: {SITE_BOOKING_URL}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1c1917' }}>Book online: {SITE_BOOKING_URL}</div>
                 <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
                   Slots are subject to change. Reserved slots are removed once booked.
                 </div>

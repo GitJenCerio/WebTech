@@ -209,7 +209,7 @@ export default function AddSlotModal({
             {/* Step 1: Select Nail Tech First */}
             {nailTechs.length > 0 && (
               <div className="space-y-1.5">
-                <Label htmlFor="nailTech" className="text-xs">
+                <Label htmlFor="nailTech">
                   Nail Technician <span className="text-red-500">*</span>
                 </Label>
                 <Select
@@ -231,7 +231,7 @@ export default function AddSlotModal({
                     ))}
                   </SelectContent>
                 </Select>
-                <small className="text-gray-500 text-xs block">
+                <small className="text-muted-foreground text-xs block">
                   Select the nail tech first to see available time slots
                 </small>
               </div>
@@ -240,7 +240,7 @@ export default function AddSlotModal({
             {/* Step 2: Toggle Add Mode */}
             {selectedNailTechId && (
               <div className="space-y-1.5 mt-2">
-                <Label className="text-sm">Add Mode</Label>
+                <Label>Add Mode</Label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -273,7 +273,7 @@ export default function AddSlotModal({
               <>
                 {addMode === 'single' ? (
                   <div className="space-y-1.5">
-                    <Label htmlFor="singleDate" className="text-sm">
+                    <Label htmlFor="singleDate">
                       Date <span className="text-red-500">*</span>
                     </Label>
                     <Input
@@ -288,14 +288,14 @@ export default function AddSlotModal({
                       required
                       className="h-9"
                     />
-                    <small className="text-gray-500 text-xs block">
+                    <small className="text-muted-foreground text-xs block">
                       <strong>{addedTimesForDate.size}</strong> slots already added on this day
                     </small>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor="startDate" className="text-sm">
+                      <Label htmlFor="startDate">
                         Start Date <span className="text-red-500">*</span>
                       </Label>
                       <Input
@@ -311,7 +311,7 @@ export default function AddSlotModal({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="endDate" className="text-sm">
+                      <Label htmlFor="endDate">
                         End Date <span className="text-red-500">*</span>
                       </Label>
                       <Input
@@ -336,7 +336,7 @@ export default function AddSlotModal({
             {selectedNailTechId && (
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <Label className="text-sm">
+                  <Label>
                     Select Time Slots <span className="text-red-500">*</span>
                   </Label>
                   {availableTimeOptions.length > 0 && (
@@ -354,7 +354,7 @@ export default function AddSlotModal({
                   )}
                 </div>
                 {availableTimeOptions.length > 0 ? (
-                  <div className="border border-gray-200 rounded-2xl p-2 bg-gray-50">
+                  <div className="border border-border rounded-none p-2 bg-ash-soft">
                     <div className="grid grid-cols-3 gap-1.5">
                       {availableTimeOptions.map((time) => (
                         <Button
@@ -379,7 +379,7 @@ export default function AddSlotModal({
                   </Alert>
                 )}
                 {selectedTimes.length > 0 && (
-                  <small className="text-gray-500 text-xs block">
+                  <small className="text-muted-foreground text-xs block">
                     {selectedTimes.length} time{selectedTimes.length !== 1 ? 's' : ''} selected
                   </small>
                 )}
@@ -391,7 +391,7 @@ export default function AddSlotModal({
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="slotStatus" className="text-sm">Status</Label>
+                    <Label htmlFor="slotStatus">Status</Label>
                     <Select
                       value={status}
                       onValueChange={(value) => setStatus(value as BookingStatus)}
@@ -407,7 +407,7 @@ export default function AddSlotModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="slotType" className="text-sm">Slot Type</Label>
+                    <Label htmlFor="slotType">Slot Type</Label>
                     <Select
                       value={slotType}
                       onValueChange={(value) => setSlotType(value as SlotType)}
@@ -424,27 +424,26 @@ export default function AddSlotModal({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-sm">Total Slots to Create</Label>
-                  <div className="px-3 py-1.5 bg-gray-100 rounded-2xl font-semibold text-sm">
+                  <Label>Total Slots to Create</Label>
+                  <div className="px-3 py-1.5 bg-ash rounded-none font-semibold text-sm">
                     {totalSlots} slot{totalSlots !== 1 ? 's' : ''}
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="slotNotes" className="text-sm">Notes (Optional)</Label>
+                  <Label htmlFor="slotNotes">Notes (Optional)</Label>
                   <Textarea
                     id="slotNotes"
                     rows={2}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add any notes about these slots..."
-                    className="text-sm"
                   />
                 </div>
               </>
             )}
           </div>
-          <DialogFooter className="pt-3 pb-2 shrink-0 border-t border-gray-100 mt-2">
+          <DialogFooter className="pt-3 pb-2 shrink-0 border-t border-border mt-2">
             <Button type="button" variant="secondary" onClick={onHide} className="h-9 text-sm">
               Cancel
             </Button>

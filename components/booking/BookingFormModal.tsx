@@ -930,7 +930,6 @@ export default function BookingFormModal({
 
                 <div className="space-y-1.5 sm:space-y-2">
                   <p><strong>📍 Location:</strong> 1046 San Diego St. Sampaloc Manila</p>
-                  <p className="text-[10px] sm:text-xs">(Pin: Granma Laundry Shoppe)</p>
                 </div>
 
                 <div className="space-y-1.5 sm:space-y-2">

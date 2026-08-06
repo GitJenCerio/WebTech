@@ -186,9 +186,9 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
                 type="email"
                 value={user.email}
                 disabled
-                className="bg-gray-100"
+                className="bg-ash"
               />
-              <small className="text-gray-500 text-xs block">
+              <small className="text-muted-foreground text-xs block">
                 <i className="bi bi-lock mr-1"></i>Email cannot be changed
               </small>
             </div>
@@ -233,9 +233,9 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
               <div className="space-y-2">
                 <Label htmlFor="editAssignedNailTech">Assigned Nail Tech</Label>
                 {loadingNailTechs ? (
-                  <div className="px-4 py-2 bg-gray-100 rounded-2xl flex items-center">
+                  <div className="px-4 py-2 bg-ash rounded-none flex items-center">
                     <span className="spinner-border spinner-border-sm mr-2"></span>
-                    <span className="text-gray-600 text-sm">Loading nail techs...</span>
+                    <span className="text-muted-foreground text-sm">Loading nail techs...</span>
                   </div>
                 ) : (
                   <Select
@@ -256,7 +256,7 @@ export default function EditUserModal({ show, onHide, onUserUpdated, user }: Edi
                     </SelectContent>
                   </Select>
                 )}
-                <small className="text-gray-500 text-xs block">
+                <small className="text-muted-foreground text-xs block">
                   Select a nail tech to assign to this staff member
                 </small>
               </div>

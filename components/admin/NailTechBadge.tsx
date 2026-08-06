@@ -1,15 +1,18 @@
 import React from 'react';
 
-/** Distinct badge colors per nail tech - same tech always gets same color */
+/**
+ * Brand-warm badge colors — still champagne / stone / earth family,
+ * but distinct hues so each nail tech is easy to tell apart.
+ */
 const NAIL_TECH_COLORS: Array<{ bg: string; text: string; border: string }> = [
-  { bg: '#dbeafe', text: '#1e40af', border: '#93c5fd' },   // blue
-  { bg: '#d1fae5', text: '#065f46', border: '#6ee7b7' },   // emerald
-  { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },   // violet
-  { bg: '#fce7f3', text: '#9d174d', border: '#f9a8d4' },   // pink
-  { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },   // amber
-  { bg: '#e0e7ff', text: '#3730a3', border: '#a5b4fc' },   // indigo
-  { bg: '#ccfbf1', text: '#0f766e', border: '#5eead4' },   // teal
-  { bg: '#f3e8ff', text: '#6b21a8', border: '#d8b4fe' },  // purple
+  { bg: '#efe6d8', text: '#5c4a32', border: '#c4b5a0' }, // champagne gold
+  { bg: '#f0e0dc', text: '#7a3f38', border: '#d4a89e' }, // soft clay rose
+  { bg: '#e4ebe3', text: '#3d5340', border: '#a8b89e' }, // soft sage
+  { bg: '#ebe3ef', text: '#5c3d5a', border: '#c4a8c0' }, // dusty mauve
+  { bg: '#ebe6d2', text: '#6b5a2e', border: '#c4b878' }, // warm olive
+  { bg: '#e3e8ec', text: '#3d4a54', border: '#9aadb8' }, // soft slate
+  { bg: '#f0e4d4', text: '#6b4528', border: '#d4b090' }, // caramel
+  { bg: '#e8ddd8', text: '#5a3830', border: '#c4a090' }, // warm cocoa
 ];
 
 function hashToIndex(str: string): number {
@@ -37,12 +40,12 @@ export default function NailTechBadge({ name, role, nailTechId, className = '' }
   return (
     <div className={`d-flex align-items-center gap-2 ${className}`}>
       <span
-        className="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium min-h-[20px] sm:min-h-[24px] box-border border sm:px-2.5"
+        className="inline-flex items-center justify-center rounded-none px-2 py-0.5 text-[10px] sm:text-xs font-semibold tracking-[0.06em] min-h-[20px] sm:min-h-[24px] box-border border sm:px-2.5"
         style={{ backgroundColor: bg, color: text, borderColor: border }}
       >
         {name}
       </span>
-      {showRole && <small className="text-muted">({role})</small>}
+      {showRole && <small className="text-muted-foreground">({role})</small>}
     </div>
   );
 }

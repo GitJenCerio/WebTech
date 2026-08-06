@@ -229,12 +229,12 @@ export default function InvoiceModal({
         <DialogHeader className="shrink-0">
           <DialogTitle>{currentQuotationId ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
           {invoiceSubtitle ? (
-            <p className="text-sm text-gray-600 font-normal pt-0.5">{invoiceSubtitle}</p>
+            <p className="text-sm text-muted-foreground font-normal pt-0.5">{invoiceSubtitle}</p>
           ) : null}
         </DialogHeader>
 
         <div className="overflow-y-auto flex-1 space-y-3 pr-1" style={{ fontSize: '0.92rem' }}>
-          <div className="p-4 border border-gray-200 rounded-2xl bg-gray-50">
+          <div className="p-4 border border-border rounded-none bg-ash-soft">
             <div className="flex flex-col gap-2">
               {booking.bookingCode && (
                 <div><strong>Booking Code:</strong> {booking.bookingCode}</div>
@@ -251,7 +251,7 @@ export default function InvoiceModal({
           )}
 
           <div className="space-y-4">
-            <Label className="text-base font-semibold">Invoice Items</Label>
+            <Label className="admin-section-label">Invoice Items</Label>
             <div className="space-y-2">
 <div className="relative flex gap-2">
                 <div className="relative w-full">
@@ -275,19 +275,19 @@ export default function InvoiceModal({
                     disabled={pricingLoading || pricingError !== null}
                     className="pr-9"
                   />
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   {serviceDropdownOpen && (
                     <div
-                      className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg z-50 py-1"
+                      className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-auto rounded-xl border border-border bg-pearl shadow-lg z-50 py-1"
                     >
                       {filteredServices().length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-gray-500">No matching services</div>
+                        <div className="px-3 py-2 text-sm text-muted-foreground">No matching services</div>
                       ) : (
                         filteredServices().map((name, idx) => (
                           <button
                             key={idx}
                             type="button"
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-ash focus:bg-ash focus:outline-none"
                             onMouseDown={(e) => {
                               e.preventDefault();
                               handleSelectService(name);
@@ -301,13 +301,13 @@ export default function InvoiceModal({
                   )}
                 </div>
               </div>
-              {pricingLoading && <div className="text-gray-500 text-sm">Loading pricing...</div>}
+              {pricingLoading && <div className="text-muted-foreground text-sm">Loading pricing...</div>}
               {pricingError && <div className="text-red-600 text-sm">{pricingError}</div>}
             </div>
 
             <div className="space-y-3">
               {invoiceItems.length === 0 && (
-                <p className="text-sm text-gray-500 py-2">No items yet. Select a service from the pricing list above or add items manually below.</p>
+                <p className="text-sm text-muted-foreground py-2">No items yet. Select a service from the pricing list above or add items manually below.</p>
               )}
               {invoiceItems.map((item, idx) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-center text-xs">
@@ -383,15 +383,15 @@ export default function InvoiceModal({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-base font-semibold">Notes (optional)</Label>
+            <Label className="admin-section-label">Notes (optional)</Label>
             <Input
               value={invoiceNotes}
               onChange={(e) => onInvoiceNotesChange(e.target.value)}
             />
           </div>
 
-          <div className="space-y-3 p-3 border border-gray-200 rounded-xl bg-gray-50">
-            <Label className="text-base font-semibold">Discount</Label>
+          <div className="space-y-3 p-3 border border-border rounded-xl bg-ash-soft">
+            <Label className="admin-section-label">Discount</Label>
             <div className="flex items-center gap-3">
               <Checkbox
                 id="remove-discount"
@@ -400,13 +400,13 @@ export default function InvoiceModal({
                   onInvoiceDiscountAmountChange(checked ? 0 : suggestedDiscountAmount);
                 }}
               />
-              <label htmlFor="remove-discount" className="text-sm font-medium cursor-pointer">
+              <label htmlFor="remove-discount" className="label-inline">
                 Remove discount
               </label>
             </div>
             {invoiceDiscountAmount === 0 ? (
               <div className="flex items-center gap-2">
-                <Label className="text-sm">Add discount (%)</Label>
+                <Label>Add discount (%)</Label>
                 <Input
                   type="number"
                   min={0}
@@ -423,7 +423,7 @@ export default function InvoiceModal({
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Label className="text-sm">Discount (%)</Label>
+                <Label>Discount (%)</Label>
                 <Input
                   type="number"
                   min={0}
@@ -436,15 +436,15 @@ export default function InvoiceModal({
                   }}
                   className="w-24"
                 />
-                <span className="text-xs text-gray-500">= PHP {invoiceDiscountAmount.toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground">= PHP {invoiceDiscountAmount.toLocaleString()}</span>
               </div>
             )}
           </div>
 
           <div className="mt-4">
-            <div ref={quotationRef} className="px-6 pt-1 pb-6 bg-white min-w-0 w-full" style={{ width: '100%', maxWidth: '960px', margin: '0 auto' }}>
-              <div className="text-center mb-2 pb-3 border-b-2 border-[#212529]">
-                <h5 className="mb-0 font-bold tracking-wider">INVOICE</h5>
+            <div ref={quotationRef} className="px-6 pt-1 pb-6 bg-pearl min-w-0 w-full" style={{ width: '100%', maxWidth: '960px', margin: '0 auto' }}>
+              <div className="text-center mb-2 pb-3 border-b-2 border-[#1c1917]">
+                <h5 className="mb-0 font-heading text-2xl tracking-[-0.01em] text-ink">INVOICE</h5>
               </div>
               <div className="mb-3 space-y-1">
                 <div><strong>Client:</strong> {booking.clientName}</div>
@@ -461,7 +461,7 @@ export default function InvoiceModal({
                   <div key={idx} className="flex justify-between gap-8 items-start py-1">
                     <div className="min-w-0 flex-1">
                       <div className="break-words font-medium text-xs">{item.description}</div>
-                      <div className="text-xs md:text-sm text-gray-600 mt-1">
+                      <div className="text-xs md:text-sm text-muted-foreground mt-1">
                         PHP {(item.unitPrice || 0).toLocaleString()} x Qty. {item.quantity}
                       </div>
                     </div>
@@ -469,7 +469,7 @@ export default function InvoiceModal({
                   </div>
                 ))}
               </div>
-              <div className="space-y-2 pt-1 border-t-2 border-[#212529] text-xs md:text-base">
+              <div className="space-y-2 pt-1 border-t-2 border-[#1c1917] text-xs md:text-base">
                 <div className="flex justify-between gap-8 font-semibold py-0.5">
                   <span className="min-w-0">Subtotal</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {subtotal.toLocaleString()}</span>
@@ -482,7 +482,7 @@ export default function InvoiceModal({
                   <span className="min-w-0">Squeeze-in Fee</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {squeeze.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between gap-8 font-semibold pt-2 border-t border-[#212529]">
+                <div className="flex justify-between gap-8 font-semibold pt-2 border-t border-[#1c1917]">
                   <span className="min-w-0">Total</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {total.toLocaleString()}</span>
                 </div>
@@ -494,7 +494,7 @@ export default function InvoiceModal({
                       : 'PHP 0'}
                   </span>
                 </div>
-                <div className="flex justify-between gap-8 font-bold pt-2 border-t border-[#212529] text-base md:text-lg">
+                <div className="flex justify-between gap-8 font-bold pt-2 border-t border-[#1c1917] text-base md:text-lg">
                   <span className="min-w-0">Balance Due</span>
                   <span className="flex-shrink-0 text-right tabular-nums whitespace-nowrap">PHP {balance.toLocaleString()}</span>
                 </div>
@@ -503,15 +503,15 @@ export default function InvoiceModal({
           </div>
         </div>
 
-        <div className="flex flex-row items-center gap-2 shrink-0 border-t border-gray-100 pt-3 mt-2 pb-8" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
-          <Button type="button" variant="secondary" size="sm" className="shrink-0 px-2 bg-red-100 hover:bg-red-200 text-red-600 border-red-200" onClick={onClose} title="Close">
+        <div className="flex flex-row items-center gap-2 shrink-0 border-t border-border pt-3 mt-2 pb-8" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
+          <Button type="button" variant="ghost" size="sm" className="shrink-0 px-2" onClick={onClose} title="Close">
             <X className="h-4 w-4 text-red-600" />
           </Button>
-          <Button type="button" variant="outline" size="sm" className="shrink-0 bg-blue-100 hover:bg-blue-200 text-blue-600 border-blue-200 px-2.5" onClick={handleDownload} title="Save as Image">
+          <Button type="button" variant="outline" size="sm" className="shrink-0 px-2.5" onClick={handleDownload} title="Save as Image">
             <Download className="h-4 w-4 text-blue-600" />
             <span className="hidden sm:inline ml-1.5">Save as Image</span>
           </Button>
-          <Button type="button" variant="outline" size="sm" className="shrink-0 bg-violet-100 hover:bg-violet-200 text-violet-600 border-violet-200 px-2.5" onClick={handleCopy} title="Copy Image">
+          <Button type="button" variant="outline" size="sm" className="shrink-0 px-2.5" onClick={handleCopy} title="Copy Image">
             {copied ? <Check className="h-4 w-4 text-violet-600" /> : <Copy className="h-4 w-4 text-violet-600" />}
             <span className="hidden sm:inline ml-1.5">{copied ? 'Copied!' : 'Copy Image'}</span>
           </Button>

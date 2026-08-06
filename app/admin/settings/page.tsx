@@ -122,11 +122,11 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="border border-[#e5e5e5] rounded-xl p-6 animate-pulse">
-          <div className="h-6 w-48 rounded bg-[#e5e5e5] mb-4" />
+        <div className="border border-[#e7e2db] rounded-xl p-6 animate-pulse">
+          <div className="h-6 w-48 rounded bg-[#e7e2db] mb-4" />
           <div className="space-y-4">
-            <div className="h-10 w-full rounded bg-[#e5e5e5]" />
-            <div className="h-10 w-32 rounded bg-[#e5e5e5]" />
+            <div className="h-10 w-full rounded bg-[#e7e2db]" />
+            <div className="h-10 w-32 rounded bg-[#e7e2db]" />
           </div>
         </div>
       </div>
@@ -136,12 +136,12 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-[#1a1a1a]">Settings</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Configure your business and preferences</p>
+        <h1 className="admin-page-title font-heading text-2xl sm:text-3xl text-ink">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-0.5 tracking-wide">Configure your business and preferences</p>
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="bg-[#f5f5f5]">
+        <TabsList className="bg-[#f7f6f4]">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -150,7 +150,7 @@ export default function SettingsPage() {
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
-          <Card className="border border-[#e5e5e5] shadow-sm">
+          <Card className="border border-[#e7e2db] shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">General</CardTitle>
               <CardDescription>Business name and reservation fee</CardDescription>
@@ -202,7 +202,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="services" className="space-y-4">
-          <Card className="border border-[#e5e5e5] shadow-sm">
+          <Card className="border border-[#e7e2db] shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Services</CardTitle>
               <CardDescription>Manage service types and pricing</CardDescription>
@@ -210,7 +210,7 @@ export default function SettingsPage() {
             <CardContent>
               <p className="text-sm text-gray-500">
                 Service pricing is managed via the pricing spreadsheet. For quotation and booking services, visit the{' '}
-                <Link href="/admin/quotation" className="text-[#1a1a1a] underline">
+                <Link href="/admin/quotation" className="text-[#1c1917] underline">
                   Quotation
                 </Link>{' '}
                 page.
@@ -220,7 +220,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-4">
-          <Card className="border border-[#e5e5e5] shadow-sm">
+          <Card className="border border-[#e7e2db] shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Notifications</CardTitle>
               <CardDescription>Email and reminder preferences</CardDescription>
@@ -266,7 +266,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="team" className="space-y-4">
-          <Card className="border border-[#e5e5e5] shadow-sm">
+          <Card className="border border-[#e7e2db] shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Team</CardTitle>
               <CardDescription>Manage staff and nail techs</CardDescription>
@@ -291,7 +291,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="integrations" className="space-y-4">
-          <Card className="border border-[#e5e5e5] shadow-sm">
+          <Card className="border border-[#e7e2db] shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Google Sheets Backup</CardTitle>
               <CardDescription>Sync bookings and finance data to a Google Sheet in real time</CardDescription>

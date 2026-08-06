@@ -306,24 +306,24 @@ export default function QuotationPage() {
     return (
       <div className="px-2 sm:px-4 py-6 space-y-6">
         <div className="flex justify-end">
-          <div className="h-9 w-32 animate-pulse rounded-xl bg-[#e5e5e5]" />
+          <div className="h-9 w-32 animate-pulse rounded-xl bg-[#e7e2db]" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="border border-[#e5e5e5] rounded-xl p-6 space-y-4">
-            <div className="h-6 w-40 animate-pulse rounded bg-[#e5e5e5]" />
+          <div className="border border-[#e7e2db] rounded-xl p-6 space-y-4">
+            <div className="h-6 w-40 animate-pulse rounded bg-[#e7e2db]" />
             <div className="space-y-3">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex gap-4">
-                  <div className="h-10 flex-1 animate-pulse rounded bg-[#e5e5e5]" />
-                  <div className="h-10 w-24 animate-pulse rounded bg-[#e5e5e5]" />
+                  <div className="h-10 flex-1 animate-pulse rounded bg-[#e7e2db]" />
+                  <div className="h-10 w-24 animate-pulse rounded bg-[#e7e2db]" />
                 </div>
               ))}
             </div>
-            <div className="h-12 w-full animate-pulse rounded bg-[#e5e5e5] mt-4" />
+            <div className="h-12 w-full animate-pulse rounded bg-[#e7e2db] mt-4" />
           </div>
-          <div className="border border-[#e5e5e5] rounded-xl p-6 space-y-4">
-            <div className="h-6 w-32 animate-pulse rounded bg-[#e5e5e5]" />
-            <div className="h-64 w-full animate-pulse rounded bg-[#e5e5e5]" />
+          <div className="border border-[#e7e2db] rounded-xl p-6 space-y-4">
+            <div className="h-6 w-32 animate-pulse rounded bg-[#e7e2db]" />
+            <div className="h-64 w-full animate-pulse rounded bg-[#e7e2db]" />
           </div>
         </div>
       </div>
@@ -333,10 +333,10 @@ export default function QuotationPage() {
   return (
     <div className="px-2 sm:px-4 py-4 sm:py-6 space-y-6 pb-24 sm:pb-6">
       {/* Action buttons — sticky on mobile, normal on desktop */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-[#e5e5e5] px-4 py-3 flex flex-wrap gap-2 justify-end sm:static sm:bg-transparent sm:border-0 sm:p-0 sm:z-auto">
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-[#e7e2db] px-4 py-3 flex flex-wrap gap-2 justify-end sm:static sm:bg-transparent sm:border-0 sm:p-0 sm:z-auto">
         <div className="flex flex-wrap gap-2">
           <button
-            className="h-9 px-4 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] hover:border-[#1a1a1a]/30 hover:bg-white transition-all flex items-center gap-2"
+            className="h-9 px-4 text-sm rounded-xl border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] hover:border-[#1c1917]/30 hover:bg-white transition-all flex items-center gap-2"
             onClick={() => setShowSavedQuotations(!showSavedQuotations)}
           >
             <i className={`bi bi-${showSavedQuotations ? 'calculator' : 'folder'}`}></i>
@@ -345,7 +345,7 @@ export default function QuotationPage() {
           {!showSavedQuotations && lineItems.length > 0 && (
             <>
               <button
-                className="h-9 px-4 text-sm rounded-xl bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 px-4 text-sm rounded-xl bg-[#1c1917] text-white hover:bg-[#2a2522] transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleSaveQuotation}
                 disabled={savingQuotation || !clientName.trim()}
               >
@@ -363,14 +363,14 @@ export default function QuotationPage() {
               </button>
               <div className="flex gap-2">
                 <button
-                  className="h-9 px-4 text-sm rounded-xl bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-9 px-4 text-sm rounded-xl bg-[#1c1917] text-white hover:bg-[#2a2522] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => handleDownloadQuotation('png')}
                   disabled={isGenerating}
                 >
                   {isGenerating ? 'Generating...' : 'Download PNG'}
                 </button>
                 <button
-                  className="h-9 px-4 text-sm rounded-xl border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#f9f9f9] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-9 px-4 text-sm rounded-xl border border-[#e7e2db] bg-white text-[#1c1917] hover:border-[#1c1917] hover:bg-[#f7f6f4] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => handleDownloadQuotation('jpeg')}
                   disabled={isGenerating}
                 >
@@ -383,29 +383,29 @@ export default function QuotationPage() {
       </div>
 
       {showSavedQuotations ? (
-        <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+        <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
           <CardContent className="p-6">
             {quotationsLoading ? (
               <div className="overflow-hidden">
                 <div className="hidden sm:block">
                   <div className="animate-pulse">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="flex gap-4 py-4 border-b border-[#f0f0f0]">
-                        <div className="h-4 w-24 rounded bg-[#e5e5e5]" />
-                        <div className="h-4 w-32 rounded bg-[#e5e5e5]" />
-                        <div className="h-4 w-20 rounded bg-[#e5e5e5]" />
-                        <div className="h-4 w-16 rounded bg-[#e5e5e5]" />
-                        <div className="h-4 w-20 rounded bg-[#e5e5e5]" />
+                      <div key={i} className="flex gap-4 py-4 border-b border-[#f0ebe4]">
+                        <div className="h-4 w-24 rounded bg-[#e7e2db]" />
+                        <div className="h-4 w-32 rounded bg-[#e7e2db]" />
+                        <div className="h-4 w-20 rounded bg-[#e7e2db]" />
+                        <div className="h-4 w-16 rounded bg-[#e7e2db]" />
+                        <div className="h-4 w-20 rounded bg-[#e7e2db]" />
                       </div>
                     ))}
                   </div>
                 </div>
                 <div className="sm:hidden space-y-3">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="rounded-xl border border-[#e5e5e5] p-4 space-y-2">
-                      <div className="h-5 w-32 animate-pulse rounded bg-[#e5e5e5]" />
-                      <div className="h-4 w-full animate-pulse rounded bg-[#e5e5e5]" />
-                      <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                    <div key={i} className="rounded-xl border border-[#e7e2db] p-4 space-y-2">
+                      <div className="h-5 w-32 animate-pulse rounded bg-[#e7e2db]" />
+                      <div className="h-4 w-full animate-pulse rounded bg-[#e7e2db]" />
+                      <div className="h-4 w-20 animate-pulse rounded bg-[#e7e2db]" />
                     </div>
                   ))}
                 </div>
@@ -415,7 +415,7 @@ export default function QuotationPage() {
                 <i className="bi bi-folder-x text-5xl text-gray-400"></i>
                 <p className="mt-3 text-sm text-gray-500">No saved quotations found.</p>
                 <button
-                  className="mt-3 h-9 px-4 text-sm rounded-xl bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-all flex items-center gap-2"
+                  className="mt-3 h-9 px-4 text-sm rounded-xl bg-[#1c1917] text-white hover:bg-[#2a2522] transition-all flex items-center gap-2"
                   onClick={handleNewQuotation}
                 >
                   <i className="bi bi-plus-circle"></i>
@@ -427,7 +427,7 @@ export default function QuotationPage() {
               <div className="overflow-x-auto hidden sm:block">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[#e5e5e5]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                    <tr className="border-b border-[#e7e2db]" style={{ background: 'linear-gradient(to right, #fffcfa, #f7f6f4)' }}>
                       <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Quotation #</th>
                       <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Customer Name</th>
                       <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Items</th>
@@ -492,18 +492,18 @@ export default function QuotationPage() {
                 {savedQuotations.map((quotation) => (
                   <div
                     key={quotation._id || quotation.id}
-                    className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                    className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <code className="text-sm font-medium text-[#1a1a1a]">{quotation.quotationNumber}</code>
-                        <p className="font-medium text-[#1a1a1a] mt-1">{quotation.customerName}</p>
+                        <code className="text-sm font-medium text-[#1c1917]">{quotation.quotationNumber}</code>
+                        <p className="font-medium text-[#1c1917] mt-1">{quotation.customerName}</p>
                       </div>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium ${
                         quotation.status === 'accepted' ? 'bg-green-100 text-green-800' :
                         quotation.status === 'sent' ? 'bg-blue-100 text-blue-800' :
                         quotation.status === 'expired' ? 'bg-red-100 text-red-800' :
-                        'bg-[#f5f5f5] text-[#1a1a1a]'
+                        'bg-[#f7f6f4] text-[#1c1917]'
                       }`}>
                         {quotation.status || 'draft'}
                       </span>
@@ -511,20 +511,20 @@ export default function QuotationPage() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
                         <span className="text-gray-400 text-xs">Items</span>
-                        <p className="text-[#1a1a1a]">{quotation.items?.length || 0} item(s)</p>
+                        <p className="text-[#1c1917]">{quotation.items?.length || 0} item(s)</p>
                       </div>
                       <div>
                         <span className="text-gray-400 text-xs">Total</span>
-                        <p className="text-[#1a1a1a] font-medium">₱{(quotation.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
+                        <p className="text-[#1c1917] font-medium">₱{(quotation.totalAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</p>
                       </div>
                       <div>
                         <span className="text-gray-400 text-xs">Created</span>
-                        <p className="text-[#1a1a1a]">{new Date(quotation.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                        <p className="text-[#1c1917]">{new Date(quotation.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                       </div>
                     </div>
                     <div className="flex gap-2 pt-2">
                       <button
-                        className="flex-1 h-10 flex items-center justify-center rounded-xl border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#f9f9f9] transition-all"
+                        className="flex-1 h-10 flex items-center justify-center rounded-xl border border-[#e7e2db] bg-white text-sm font-medium text-[#1c1917] hover:border-[#1c1917] hover:bg-[#f7f6f4] transition-all"
                         onClick={() => handleLoadQuotation(quotation)}
                       >
                         Load
@@ -545,7 +545,7 @@ export default function QuotationPage() {
         </Card>
       ) : (
         <>
-          <div className="rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] px-4 py-3 text-sm text-[#1a1a1a]" role="alert">
+          <div className="rounded-xl border border-[#e7e2db] bg-[#f7f6f4] px-4 py-3 text-sm text-[#1c1917]" role="alert">
             <strong>Disclaimer:</strong> This quotation is for estimation only and is not a confirmed booking or invoice.
           </div>
 
@@ -561,18 +561,18 @@ export default function QuotationPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
           {/* Left Column - Add Services */}
           <div className="lg:col-span-5 xl:col-span-4">
-            <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl h-full">
+            <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl h-full">
               <CardHeader className="p-5 pb-0">
-                <h5 className="text-base font-semibold text-[#1a1a1a]">Add Services</h5>
+                <h5 className="text-base font-semibold text-[#1c1917]">Add Services</h5>
               </CardHeader>
               <CardContent className="p-5 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">
+                  <label>
                     Client Name (Optional)
                   </label>
                   <input
                     type="text"
-                    className="w-full h-9 px-3 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+                    className="w-full h-9 px-3 text-sm rounded-xl border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917] focus:bg-white transition-all"
                     placeholder="Enter client name..."
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
@@ -581,7 +581,7 @@ export default function QuotationPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">
+                  <label>
                     Service
                   </label>
                   <Select value={selectedService || '_placeholder'} onValueChange={(v) => setSelectedService(v === '_placeholder' ? '' : v)}>
@@ -600,12 +600,12 @@ export default function QuotationPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">
+                  <label>
                     Quantity
                   </label>
                   <input
                     type="number"
-                    className="w-full h-9 px-3 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+                    className="w-full h-9 px-3 text-sm rounded-xl border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917] focus:bg-white transition-all"
                     min="1"
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
@@ -613,7 +613,7 @@ export default function QuotationPage() {
                 </div>
 
                 <button
-                  className="w-full h-10 text-sm font-medium rounded-xl bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-10 text-sm font-medium rounded-xl bg-[#1c1917] text-white hover:bg-[#2a2522] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleAddService}
                   disabled={!selectedService}
                 >
@@ -625,7 +625,7 @@ export default function QuotationPage() {
 
           {/* Right Column - Quotation Preview */}
           <div className="lg:col-span-7 xl:col-span-8">
-            <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+            <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
               <div className="p-0">
                 {lineItems.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16">
@@ -645,12 +645,12 @@ export default function QuotationPage() {
                     }}
                   >
                     {/* Quotation Header */}
-                    <div className="text-center mb-4 pb-3 border-b-[3px] border-[#1a1a1a]">
-                      <h1 className="mb-0 text-[#1a1a1a]" style={{ 
-                        fontFamily: 'Playfair Display, serif',
-                        fontWeight: 700,
+                    <div className="text-center mb-4 pb-3 border-b-[3px] border-[#1c1917]">
+                      <h1 className="mb-0 text-ink font-heading" style={{ 
+                        fontFamily: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
+                        fontWeight: 500,
                         fontSize: 'clamp(1.75rem, 5vw, 3rem)',
-                        letterSpacing: '0.1em'
+                        letterSpacing: '-0.01em'
                       }}>
                         QUOTATION
                       </h1>
@@ -661,7 +661,7 @@ export default function QuotationPage() {
                       {clientName && (
                         <div className="mb-2">
                           <p className="mb-1" style={{ fontSize: 'clamp(0.875rem, 2vw, 1rem)', color: '#212529' }}>
-                            <strong className="text-[#1a1a1a]">Client:</strong> {clientName}
+                            <strong className="text-[#1c1917]">Client:</strong> {clientName}
                           </p>
                         </div>
                       )}
@@ -676,11 +676,11 @@ export default function QuotationPage() {
 
                     {/* Services List */}
                     <div className="mb-4">
-                      <div className="mb-3 pb-2 border-b-2 border-[#1a1a1a]">
+                      <div className="mb-3 pb-2 border-b-2 border-[#1c1917]">
                         <h5 className="mb-0" style={{ 
                           fontSize: 'clamp(0.875rem, 2vw, 1rem)',
                           fontWeight: 700,
-                          color: '#1a1a1a',
+                          color: '#1c1917',
                           letterSpacing: '0.05em',
                           textTransform: 'uppercase'
                         }}>
@@ -691,7 +691,7 @@ export default function QuotationPage() {
                       {lineItems.map((item, index) => (
                         <div
                           key={index}
-                          className={`mb-3 pb-3 ${index < lineItems.length - 1 ? 'border-b border-[#e5e5e5]' : ''}`}
+                          className={`mb-3 pb-3 ${index < lineItems.length - 1 ? 'border-b border-[#e7e2db]' : ''}`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <h6 className="mb-1 flex-1" style={{ 
@@ -705,7 +705,7 @@ export default function QuotationPage() {
                             <p className="mb-0 ml-2 shrink-0" style={{ 
                               fontSize: 'clamp(0.875rem, 2vw, 1.125rem)',
                               fontWeight: 700,
-                              color: '#1a1a1a',
+                              color: '#1c1917',
                               whiteSpace: 'nowrap'
                             }}>
                               ₱{item.total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
@@ -720,7 +720,7 @@ export default function QuotationPage() {
                     </div>
 
                     {/* Total Section */}
-                    <div className="pt-3 border-t-[3px] border-[#1a1a1a]">
+                    <div className="pt-3 border-t-[3px] border-[#1c1917]">
                       <div className="flex justify-between items-center mb-2">
                         <p className="mb-0" style={{ 
                           fontSize: 'clamp(0.875rem, 2vw, 1rem)',
@@ -741,7 +741,7 @@ export default function QuotationPage() {
                         <p className="mb-0" style={{ 
                           fontSize: 'clamp(1.125rem, 3vw, 1.5rem)',
                           fontWeight: 700,
-                          color: '#1a1a1a',
+                          color: '#1c1917',
                           letterSpacing: '0.05em'
                         }}>
                           ESTIMATED TOTAL:
@@ -757,13 +757,13 @@ export default function QuotationPage() {
                     </div>
 
                     {/* Footer Notes */}
-                    <div className="mt-4 pt-4 border-t border-[#e5e5e5]">
+                    <div className="mt-4 pt-4 border-t border-[#e7e2db]">
                       <p className="mb-2" style={{ 
                         fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
                         color: '#495057',
                         lineHeight: 1.6
                       }}>
-                        <strong className="text-[#1a1a1a]">Terms & Conditions:</strong>
+                        <strong className="text-[#1c1917]">Terms & Conditions:</strong>
                       </p>
                       <ul className="mb-0 ps-3" style={{ 
                         fontSize: 'clamp(0.7rem, 2vw, 0.8rem)',
@@ -792,18 +792,18 @@ export default function QuotationPage() {
 
               {/* Edit Controls - Only show in browser, not in download */}
               {lineItems.length > 0 && (
-                <CardFooter className="flex-col items-stretch gap-3 p-5 pt-0 border-t border-[#e5e5e5] bg-[#fafafa]">
-                  <h6 className="text-sm font-semibold text-[#1a1a1a]">
+                <CardFooter className="flex-col items-stretch gap-3 p-5 pt-0 border-t border-[#e7e2db] bg-[#fffcfa]">
+                  <h6 className="text-sm font-semibold text-[#1c1917]">
                     Edit Services
                   </h6>
                   <div className="space-y-2">
                     {lineItems.map((item, index) => (
                       <div
                         key={index}
-                        className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl border border-[#e5e5e5] bg-white"
+                        className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl border border-[#e7e2db] bg-white"
                       >
                         <div className="flex-1 min-w-0">
-                          <span className="block text-sm font-medium text-[#1a1a1a]">
+                          <span className="block text-sm font-medium text-[#1c1917]">
                             {item.serviceName}
                           </span>
                           <small className="text-gray-500 text-xs">
@@ -812,13 +812,13 @@ export default function QuotationPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1.5">
-                            <label htmlFor={`qty-${index}`} className="text-xs text-gray-500 whitespace-nowrap">
+                            <label htmlFor={`qty-${index}`} className="whitespace-nowrap">
                               Qty:
                             </label>
                             <input
                               id={`qty-${index}`}
                               type="number"
-                              className="h-8 w-[70px] text-center text-sm rounded-lg border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]"
+                              className="h-8 w-[70px] text-center text-sm rounded-lg border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917]"
                               min="1"
                               value={item.quantity}
                               onChange={(e) => handleUpdateQuantity(index, parseInt(e.target.value) || 1)}

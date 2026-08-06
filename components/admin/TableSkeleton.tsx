@@ -15,7 +15,7 @@ export function TableSkeleton({ rows = 5, cols = 5, showHeader = true }: TableSk
       <table className="w-full text-sm">
         {showHeader && (
           <thead>
-            <tr className="border-b border-[#f0f0f0]">
+            <tr className="border-b border-[#f0ebe4]">
               {Array.from({ length: cols }).map((_, i) => (
                 <th key={i} className="px-5 py-3 text-left">
                   <Skeleton className="h-3 w-20" />
@@ -24,7 +24,7 @@ export function TableSkeleton({ rows = 5, cols = 5, showHeader = true }: TableSk
             </tr>
           </thead>
         )}
-        <tbody className="divide-y divide-[#f5f5f5]">
+        <tbody className="divide-y divide-[#f7f6f4]">
           {Array.from({ length: rows }).map((_, rowIdx) => (
             <tr key={rowIdx}>
               {Array.from({ length: cols }).map((_, colIdx) => (

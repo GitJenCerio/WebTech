@@ -203,7 +203,7 @@ export default function MediaManager() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#1a1a1a]">Website Media</h1>
+        <h1 className="admin-page-title font-heading text-2xl sm:text-3xl text-ink">Website Media</h1>
         <p className="mt-1 text-sm text-gray-600">
           Upload and manage photos for the gallery, services, and other site sections.
         </p>
@@ -278,7 +278,7 @@ export default function MediaManager() {
 
                 <div
                   className={`rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-                    dragOver ? 'border-[#1a1a1a] bg-[#fafafa]' : 'border-[#e5e5e5] bg-white'
+                    dragOver ? 'border-[#1c1917] bg-[#fffcfa]' : 'border-[#e7e2db] bg-white'
                   }`}
                   onDragOver={(e) => {
                     e.preventDefault();
@@ -288,7 +288,7 @@ export default function MediaManager() {
                   onDrop={onDrop}
                 >
                   <ImagePlus className="mx-auto mb-3 h-10 w-10 text-gray-400" />
-                  <p className="mb-1 text-sm font-medium text-[#1a1a1a]">
+                  <p className="mb-1 text-sm font-medium text-[#1c1917]">
                     Drag & drop images here, or choose files
                   </p>
                   <p className="mb-4 text-xs text-gray-500">JPEG, PNG, WebP, GIF · max 8MB each</p>
@@ -332,7 +332,7 @@ export default function MediaManager() {
 
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-[#1a1a1a]">
+          <h2 className="text-lg font-medium text-[#1c1917]">
             {categoryMeta.label} photos ({media.length})
           </h2>
           <Button variant="outline" size="sm" onClick={() => loadMedia(category)} disabled={loading}>
@@ -356,7 +356,7 @@ export default function MediaManager() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {media.map((item, index) => (
               <Card key={item.id} className={!item.isActive ? 'opacity-60' : undefined}>
-                <div className="relative aspect-[4/5] overflow-hidden rounded-t-lg bg-[#f0f0f0]">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-t-lg bg-[#f0ebe4]">
                   <Image
                     src={item.url}
                     alt={item.alt || 'Media'}
@@ -373,12 +373,12 @@ export default function MediaManager() {
                 </div>
                 <CardContent className="space-y-3 p-3">
                   <div className="space-y-1">
-                    <p className="truncate text-sm font-medium text-[#1a1a1a]">
+                    <p className="truncate text-sm font-medium text-[#1c1917]">
                       {item.title || item.alt || 'Untitled'}
                     </p>
                     {category === 'service' && (
                       <select
-                        className="w-full rounded-md border border-[#e5e5e5] bg-white px-2 py-1.5 text-xs"
+                        className="w-full rounded-md border border-[#e7e2db] bg-white px-2 py-1.5 text-xs"
                         value={item.refKey || ''}
                         onChange={(e) => handleRefKeyChange(item, e.target.value)}
                       >

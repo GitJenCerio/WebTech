@@ -1221,11 +1221,11 @@ export default function BookingsPage() {
     <tr
       key={item.id}
       onClick={() => openBookingDetails(item)}
-      className="hover:bg-[#fafafa] transition-colors duration-100 cursor-pointer border-b border-[#f5f5f5] last:border-0"
+      className="hover:bg-[#fffcfa] transition-colors duration-100 cursor-pointer border-b border-[#f7f6f4] last:border-0"
     >
       <td className="px-3 py-1.5 text-gray-500 text-xs whitespace-nowrap">{formatMiniDate(item.date)}</td>
       <td className="px-3 py-1.5 text-gray-500 text-xs whitespace-nowrap">{formatSlotTimes(item.slotTimes, item.time)}</td>
-      <td className="px-3 py-1.5 font-medium text-[#1a1a1a] text-xs">{item.clientName}</td>
+      <td className="px-3 py-1.5 font-medium text-[#1c1917] text-xs">{item.clientName}</td>
       <td className="px-3 py-1.5 text-gray-600 text-xs">{getSlotServiceDisplay(item.service)}</td>
       <td className="px-3 py-1.5 text-gray-600 text-xs">{item.nailTechId ? (nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—') : '—'}</td>
       <td className="px-3 py-1.5">{getStatusBadge(item.status)}</td>
@@ -1237,7 +1237,7 @@ export default function BookingsPage() {
       key={item.id}
       type="button"
       onClick={() => openBookingDetails(item)}
-      className="w-full text-left px-3 py-2 border-b border-[#f5f5f5] last:border-0 hover:bg-[#fafafa] transition-colors active:bg-[#f5f5f5]"
+      className="w-full text-left px-3 py-2 border-b border-[#f7f6f4] last:border-0 hover:bg-[#fffcfa] transition-colors active:bg-[#f7f6f4]"
     >
       <div className="grid grid-cols-[5rem_1fr_auto] items-start gap-x-3 gap-y-0">
         <div className="text-[11px] text-gray-400 font-medium tabular-nums">
@@ -1246,7 +1246,7 @@ export default function BookingsPage() {
           ))}
         </div>
         <div className="min-w-0">
-          <span className="text-xs font-medium text-[#1a1a1a] truncate block leading-5">{item.clientName}</span>
+          <span className="text-xs font-medium text-[#1c1917] truncate block leading-5">{item.clientName}</span>
           <span className="text-[11px] text-gray-400 truncate block leading-5">
             {getSlotServiceDisplay(item.service)}{item.nailTechId ? ` · ${nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—'}` : ''}
           </span>
@@ -1260,14 +1260,14 @@ export default function BookingsPage() {
     <div className="space-y-4">
       <button
         onClick={() => setShowAddBookingModal(true)}
-        className="w-fit px-6 h-10 mt-2 text-sm font-medium rounded-lg bg-[#1a1a1a] text-white hover:bg-[#2d2d2d] transition-colors flex items-center justify-center gap-2"
+        className="w-fit px-6 h-10 mt-2 text-sm font-medium rounded-lg bg-[#1c1917] text-white hover:bg-[#2a2522] transition-colors flex items-center justify-center gap-2"
       >
         <Plus className="h-4 w-4" />
         Add Booking
       </button>
 
       {/* Filter Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl">
         <CardContent className="p-4">
           <div className="flex flex-col gap-3">
             <div className="relative">
@@ -1277,7 +1277,7 @@ export default function BookingsPage() {
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 text-sm rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+                className="w-full pl-9 pr-4 h-9 text-sm rounded-xl border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917] focus:bg-white transition-all"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -1309,7 +1309,7 @@ export default function BookingsPage() {
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-400 whitespace-nowrap shrink-0">Date range</label>
+              <label className="whitespace-nowrap shrink-0">Date range</label>
               <DateRangePicker
                 dateFrom={dateFrom}
                 dateTo={dateTo}
@@ -1330,7 +1330,7 @@ export default function BookingsPage() {
                     setDateFrom('');
                     setDateTo('');
                   }}
-                  className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:text-[#1a1a1a] hover:border-[#1a1a1a] transition-all flex items-center gap-1.5"
+                  className="h-9 px-3 text-sm rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:text-[#1c1917] hover:border-[#1c1917] transition-all flex items-center gap-1.5"
                 >
                   <X className="h-3.5 w-3.5" />
                   Clear
@@ -1345,7 +1345,7 @@ export default function BookingsPage() {
                 type="button"
                 onClick={() => fetchBookings()}
                 disabled={bookingsLoading}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center gap-2 disabled:opacity-60 ml-auto"
+                className="h-9 px-3 text-sm rounded-lg border border-[#e7e2db] bg-white text-[#1c1917] hover:border-[#1c1917] hover:bg-[#fffcfa] transition-all flex items-center gap-2 disabled:opacity-60 ml-auto"
                 title="Refresh"
               >
                 <RefreshCw className={`h-4 w-4 ${bookingsLoading ? 'animate-spin' : ''}`} />
@@ -1364,10 +1364,10 @@ export default function BookingsPage() {
 
       {/* Today & Upcoming */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+        <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
           <CardContent className="p-0">
-            <div className="px-3 py-2 border-b border-[#f0f0f0] flex items-center gap-2">
-              <h3 className="text-xs font-semibold text-[#1a1a1a]">Today&apos;s Bookings ({format(new Date(), 'MMM d')})</h3>
+            <div className="px-3 py-2 border-b border-[#f0ebe4] flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-[#1c1917]">Today&apos;s Bookings ({format(new Date(), 'MMM d')})</h3>
               <span className="text-[11px] text-gray-400">{todayBookings.length} appt{todayBookings.length !== 1 ? 's' : ''}</span>
             </div>
             <div className="overflow-x-auto">
@@ -1381,7 +1381,7 @@ export default function BookingsPage() {
               </div>
               {/* Desktop: table */}
               <table className="w-full text-sm hidden sm:table">
-                <thead className="sticky top-0 bg-[#fafafa]">
+                <thead className="sticky top-0 bg-[#fffcfa]">
                   <tr>
                     <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Date</th>
                     <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Time</th>
@@ -1402,10 +1402,10 @@ export default function BookingsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+        <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
           <CardContent className="p-0">
-            <div className="px-3 py-2 border-b border-[#f0f0f0] flex items-center gap-2">
-              <h3 className="text-xs font-semibold text-[#1a1a1a]">Upcoming Bookings</h3>
+            <div className="px-3 py-2 border-b border-[#f0ebe4] flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-[#1c1917]">Upcoming Bookings</h3>
               <span className="text-[11px] text-gray-400">{weekBookings.length} appt{weekBookings.length !== 1 ? 's' : ''}</span>
             </div>
             <div className="overflow-x-auto">
@@ -1419,7 +1419,7 @@ export default function BookingsPage() {
               </div>
               {/* Desktop: table */}
               <table className="w-full text-sm hidden sm:table">
-                <thead className="sticky top-0 bg-[#fafafa]">
+                <thead className="sticky top-0 bg-[#fffcfa]">
                   <tr>
                     <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Date</th>
                     <th className="px-4 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Time</th>
@@ -1443,13 +1443,13 @@ export default function BookingsPage() {
       </div>
 
       {/* Table Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-0">
           {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                <tr className="border-b border-[#f0ebe4]" style={{ background: 'linear-gradient(to right, #fffcfa, #f7f6f4)' }}>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Time</th>
                   <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Client</th>
@@ -1461,14 +1461,14 @@ export default function BookingsPage() {
                   <th className="px-5 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f5f5f5]">
+              <tbody className="divide-y divide-[#f7f6f4]">
                 {bookingsLoading ? (
                   <>
                     {Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
                         {Array.from({ length: 9 }).map((_, j) => (
                           <td key={j} className="px-5 py-3.5">
-                            <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-[#e7e2db]" />
                           </td>
                         ))}
                       </tr>
@@ -1478,7 +1478,7 @@ export default function BookingsPage() {
                   <tr>
                     <td colSpan={9} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                        <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                           <Search className="h-6 w-6 text-gray-300" />
                         </div>
                         <p className="text-sm font-medium text-gray-500">
@@ -1492,7 +1492,7 @@ export default function BookingsPage() {
                   </tr>
                 ) : (
                   paginatedBookings.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100 group">
+                    <tr key={item.id} className="hover:bg-[#fffcfa] transition-colors duration-100 group">
                       <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap tabular-nums">
                         {item.date ? (() => {
                           const d = new Date(item.date);
@@ -1501,10 +1501,10 @@ export default function BookingsPage() {
                       </td>
                       <td className="px-5 py-3.5 text-gray-500 text-xs whitespace-nowrap">{formatSlotTimes(item.slotTimes, item.time)}</td>
                       <td className="px-5 py-3.5">
-                        <span className="font-medium text-[#1a1a1a]">{item.clientName}</span>
+                        <span className="font-medium text-[#1c1917]">{item.clientName}</span>
                       </td>
                       <td className="px-5 py-3.5 text-gray-500">{item.socialName || '—'}</td>
-                      <td className="px-5 py-3.5 text-[#1a1a1a]">{getSlotServiceDisplay(item.service)}</td>
+                      <td className="px-5 py-3.5 text-[#1c1917]">{getSlotServiceDisplay(item.service)}</td>
                       <td className="px-5 py-3.5">{locationBadge(item.serviceLocation)}</td>
                       <td className="px-5 py-3.5 text-gray-600 text-sm">
                         {item.nailTechId ? (nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—') : '—'}
@@ -1516,7 +1516,7 @@ export default function BookingsPage() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => openBookingDetails(item)}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e5e5e5] bg-white text-gray-500 hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-all"
+                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
                           >
                             View
                           </button>
@@ -1534,17 +1534,17 @@ export default function BookingsPage() {
             {bookingsLoading ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3">
+                  <div key={i} className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3">
                     <div className="flex justify-between">
-                      <div className="h-5 w-32 animate-pulse rounded bg-[#e5e5e5]" />
-                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                      <div className="h-5 w-32 animate-pulse rounded bg-[#e7e2db]" />
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e7e2db]" />
                     </div>
-                    <div className="h-4 w-24 animate-pulse rounded bg-[#e5e5e5]" />
+                    <div className="h-4 w-24 animate-pulse rounded bg-[#e7e2db]" />
                     <div className="grid grid-cols-2 gap-2">
                       {[1, 2, 3, 4].map((j) => (
                         <div key={j} className="space-y-1">
-                          <div className="h-3 w-12 animate-pulse rounded bg-[#e5e5e5]" />
-                          <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                          <div className="h-3 w-12 animate-pulse rounded bg-[#e7e2db]" />
+                          <div className="h-4 w-20 animate-pulse rounded bg-[#e7e2db]" />
                         </div>
                       ))}
                     </div>
@@ -1553,7 +1553,7 @@ export default function BookingsPage() {
               </>
             ) : paginatedBookings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-                <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                   <Search className="h-6 w-6 text-gray-300" />
                 </div>
                 <p className="text-sm font-medium text-gray-500">
@@ -1567,11 +1567,11 @@ export default function BookingsPage() {
               paginatedBookings.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                  className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-medium text-[#1a1a1a]">{item.clientName}</p>
+                      <p className="font-medium text-[#1c1917]">{item.clientName}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
                         {item.date ? (() => {
                           const d = new Date(item.date);
@@ -1587,7 +1587,7 @@ export default function BookingsPage() {
                   <div className="text-sm space-y-1">
                     <div>
                       <span className="text-gray-400 text-xs">Service</span>
-                      <p className="text-[#1a1a1a]">{getSlotServiceDisplay(item.service)}</p>
+                      <p className="text-[#1c1917]">{getSlotServiceDisplay(item.service)}</p>
                     </div>
                     {item.socialName && (
                       <p className="text-xs text-gray-500 truncate">{item.socialName}</p>
@@ -1603,7 +1603,7 @@ export default function BookingsPage() {
                   </div>
                   <button
                     onClick={() => openBookingDetails(item)}
-                    className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-sm font-medium text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all"
+                    className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-[#1c1917] hover:border-[#1c1917] hover:bg-[#fffcfa] transition-all"
                   >
                     View Details
                   </button>
@@ -1627,7 +1627,7 @@ export default function BookingsPage() {
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
                 aria-label="Previous page"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -1643,7 +1643,7 @@ export default function BookingsPage() {
                       key={page}
                       type="button"
                       onClick={() => setCurrentPage(page)}
-                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1c1917] border-[#1c1917] text-white shadow-sm' : 'border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917]'}`}
                       aria-label={`Page ${page}`}
                       aria-current={currentPage === page ? 'page' : undefined}
                     >
@@ -1656,7 +1656,7 @@ export default function BookingsPage() {
                 type="button"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
                 aria-label="Next page"
               >
                 <ChevronRight className="h-4 w-4" />

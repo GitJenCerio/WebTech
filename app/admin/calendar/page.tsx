@@ -1455,9 +1455,9 @@ export default function CalendarPage() {
         <div className="w-full lg:flex-1 flex min-w-0 order-1 lg:order-2">
           <div className="w-full" style={{ minHeight: 0 }}>
           {slotsLoading ? (
-            <div className="rounded-2xl border border-[#e5e5e5] bg-white flex items-center justify-center min-h-[400px]">
+            <div className="rounded-2xl border border-[#e7e2db] bg-white flex items-center justify-center min-h-[400px]">
               <div className="text-center py-5">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1a1a1a] border-t-transparent mx-auto" role="status" aria-label="Loading" />
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1c1917] border-t-transparent mx-auto" role="status" aria-label="Loading" />
                 <p className="mt-2 text-sm text-gray-500">Loading slots...</p>
               </div>
             </div>

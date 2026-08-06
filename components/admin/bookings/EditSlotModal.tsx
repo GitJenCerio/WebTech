@@ -118,10 +118,10 @@ export default function EditSlotModal({
             {/* Nail Tech Info */}
             <div className="space-y-1.5">
               <Label>Nail Technician</Label>
-              <div className="px-4 py-2 bg-gray-100 rounded-2xl text-sm">
+              <div className="px-4 py-2 bg-ash rounded-none text-sm">
                 {slot.nailTechName || 'Unknown'}
               </div>
-              <small className="text-gray-500 text-xs block">
+              <small className="text-muted-foreground text-xs block">
                 Cannot be changed for existing slots
               </small>
             </div>
@@ -166,10 +166,10 @@ export default function EditSlotModal({
                 disabled={isLoading}
               />
               <div className="space-y-1 leading-none">
-                <Label htmlFor="isHidden" className="cursor-pointer">
+                <Label htmlFor="isHidden" className="label-inline">
                   Hide from clients during booking
                 </Label>
-                <small className="text-gray-500 text-xs block">
+                <small className="text-muted-foreground text-xs block">
                   Hidden slots won't appear in the public booking calendar
                 </small>
               </div>
@@ -183,7 +183,7 @@ export default function EditSlotModal({
               </Alert>
             )}
           </div>
-          <DialogFooter className="flex-wrap gap-2 shrink-0 border-t border-gray-100 pt-3 mt-2">
+          <DialogFooter className="flex-wrap gap-2 shrink-0 border-t border-border pt-3 mt-2">
             <Button
               type="button"
               variant="outline"

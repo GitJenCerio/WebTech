@@ -69,7 +69,7 @@ function formatTime(isoOrTime: string): string {
   return `${String(hour12).padStart(2, '0')}:${mins} ${ampm}`;
 }
 
-const PIE_COLORS = ['#1a1a1a', '#e5e5e5', '#a3a3a3'];
+const PIE_COLORS = ['#1c1917', '#e7e2db', '#a3a3a3'];
 
 /**
  * Admin Overview/Dashboard Page
@@ -211,29 +211,29 @@ export default function OverviewPage() {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
-            <div className="border border-[#e5e5e5] rounded-xl overflow-hidden h-[360px] flex flex-col">
-              <div className="p-4 border-b border-[#f0f0f0]">
-                <div className="h-5 w-40 bg-[#e5e5e5] animate-pulse rounded" />
+            <div className="border border-[#e7e2db] rounded-xl overflow-hidden h-[360px] flex flex-col">
+              <div className="p-4 border-b border-[#f0ebe4]">
+                <div className="h-5 w-40 bg-[#e7e2db] animate-pulse rounded" />
               </div>
               <div className="flex-1 p-4 flex items-center justify-center">
-                <div className="h-[280px] w-full max-w-md bg-[#e5e5e5] animate-pulse rounded" />
+                <div className="h-[280px] w-full max-w-md bg-[#e7e2db] animate-pulse rounded" />
               </div>
             </div>
           </div>
           <div>
-            <div className="border border-[#e5e5e5] rounded-xl overflow-hidden h-[360px] flex flex-col">
-              <div className="p-4 border-b border-[#f0f0f0]">
-                <div className="h-5 w-32 bg-[#e5e5e5] animate-pulse rounded" />
+            <div className="border border-[#e7e2db] rounded-xl overflow-hidden h-[360px] flex flex-col">
+              <div className="p-4 border-b border-[#f0ebe4]">
+                <div className="h-5 w-32 bg-[#e7e2db] animate-pulse rounded" />
               </div>
               <div className="flex-1 p-4 flex items-center justify-center">
-                <div className="h-[200px] w-[200px] rounded-full bg-[#e5e5e5] animate-pulse" />
+                <div className="h-[200px] w-[200px] rounded-full bg-[#e7e2db] animate-pulse" />
               </div>
             </div>
           </div>
         </div>
-        <div className="border border-[#e5e5e5] rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-[#f0f0f0]">
-            <div className="h-5 w-44 bg-[#e5e5e5] animate-pulse rounded" />
+        <div className="border border-[#e7e2db] rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-[#f0ebe4]">
+            <div className="h-5 w-44 bg-[#e7e2db] animate-pulse rounded" />
           </div>
           <TableSkeleton rows={5} cols={5} />
         </div>
@@ -280,30 +280,30 @@ export default function OverviewPage() {
         />
       </div>
 
-      <Card className="border border-[#e5e5e5] shadow-card bg-white overflow-hidden transition-shadow hover:shadow-hover">
-        <CardHeader className="flex-shrink-0 pb-2 border-b border-[#f0f0f0]">
-          <h5 className="text-lg font-semibold text-[#1a1a1a]">Weekly Appointments</h5>
+      <Card className="border border-[#e7e2db] shadow-card bg-white overflow-hidden transition-shadow hover:shadow-hover">
+        <CardHeader className="flex-shrink-0 pb-2 border-b border-[#f0ebe4]">
+          <h5 className="font-heading text-xl text-ink">Weekly Appointments</h5>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 flex flex-col" style={{ minHeight: 280 }}>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={weeklyChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0ebe4" />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#888" />
               <YAxis tick={{ fontSize: 12 }} stroke="#888" />
               <Tooltip
-                contentStyle={{ borderRadius: 8, border: '1px solid #e5e5e5' }}
+                contentStyle={{ borderRadius: 8, border: '1px solid #e7e2db' }}
                 formatter={(value: number) => [value, 'Appointments']}
               />
-              <Bar dataKey="count" fill="#1a1a1a" radius={[4, 4, 0, 0]} name="Appointments" />
+              <Bar dataKey="count" fill="#1c1917" radius={[4, 4, 0, 0]} name="Appointments" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      <Card className="border border-[#e5e5e5] shadow-card bg-white">
-        <CardHeader className="border-b border-[#f0f0f0]">
+      <Card className="border border-[#e7e2db] shadow-card bg-white">
+        <CardHeader className="border-b border-[#f0ebe4]">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h5 className="text-lg font-semibold text-[#1a1a1a]">Today&apos;s Appointments</h5>
+            <h5 className="font-heading text-xl text-ink">Today&apos;s Appointments</h5>
             <Button asChild variant="outline" size="sm">
               <Link href="/admin/bookings">View All</Link>
             </Button>
@@ -313,20 +313,20 @@ export default function OverviewPage() {
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                <tr className="border-b border-[#f0ebe4]" style={{ background: 'linear-gradient(to right, #fffcfa, #f7f6f4)' }}>
                   {columns.map((col) => (
                     <th key={col.key} className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">{col.header}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f5f5f5]">
+              <tbody className="divide-y divide-[#f7f6f4]">
                 {todayBookings.length === 0 ? (
                   <tr>
                     <td colSpan={columns.length} className="px-5 py-12 text-center text-gray-400 text-sm">No appointments today</td>
                   </tr>
                 ) : (
                   todayBookings.slice(0, 5).map((item) => (
-                    <tr key={item.id} className="hover:bg-[#fafafa] transition-colors">
+                    <tr key={item.id} className="hover:bg-[#fffcfa] transition-colors">
                       {columns.map((col) => (
                         <td key={col.key} className="px-5 py-3.5">
                           {col.render ? col.render(item) : (item as any)[col.key]}
@@ -343,13 +343,13 @@ export default function OverviewPage() {
               <p className="text-center py-8 text-gray-400 text-sm">No appointments today</p>
             ) : (
               todayBookings.slice(0, 5).map((item) => (
-                <div key={item.id} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-2">
+                <div key={item.id} className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium text-[#1a1a1a]">{item.clientName}</p>
+                    <p className="font-medium text-[#1c1917]">{item.clientName}</p>
                     <StatusBadge status={item.status} />
                   </div>
                   <p className="text-sm text-gray-500">{item.time}</p>
-                  <p className="text-sm text-[#1a1a1a]">{getSlotServiceDisplay(item.service)}</p>
+                  <p className="text-sm text-[#1c1917]">{getSlotServiceDisplay(item.service)}</p>
                   {item.nailTechId && (
                     <p className="text-xs text-gray-500">
                       {nailTechs.find((t) => t.id === item.nailTechId)?.name ?? '—'}

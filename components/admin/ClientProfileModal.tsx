@@ -83,15 +83,15 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
 
         <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-8 pb-3 space-y-3">
           {loading ? (
-            <p className="text-sm text-gray-500 py-4 text-center">Loading...</p>
+            <p className="text-sm text-muted-foreground py-4 text-center">Loading...</p>
           ) : !customer ? (
-            <p className="text-sm text-gray-500 py-4 text-center">No client data available.</p>
+            <p className="text-sm text-muted-foreground py-4 text-center">No client data available.</p>
           ) : (
             <>
               {/* Identity */}
-              <div className="p-3 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm">
+              <div className="p-3 rounded-none bg-pearl border border-[#e7e2db] shadow-sm">
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <h3 className="text-base font-semibold text-[#1a1a1a]">{customer.name}</h3>
+                  <h3 className="font-heading text-xl text-ink">{customer.name}</h3>
                   {customer.isVIP && (
                     <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-300">
                       <Star size={10} className="fill-amber-500 text-amber-500" />VIP
@@ -107,20 +107,20 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
                 </div>
                 <div className="flex flex-col gap-1">
                   {customer.phone && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Phone size={13} className="text-gray-400 shrink-0" />
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone size={13} className="text-muted-foreground shrink-0" />
                       {customer.phone}
                     </div>
                   )}
                   {customer.email && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Mail size={13} className="text-gray-400 shrink-0" />
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail size={13} className="text-muted-foreground shrink-0" />
                       {customer.email}
                     </div>
                   )}
                   {customer.socialMediaName && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <AtSign size={13} className="text-gray-400 shrink-0" />
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <AtSign size={13} className="text-muted-foreground shrink-0" />
                       {customer.socialMediaName}
                     </div>
                   )}
@@ -134,39 +134,39 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
                   { label: 'Completed', value: customer.completedBookings ?? 0 },
                   { label: 'Total Spent', value: `₱${(customer.totalSpent ?? 0).toLocaleString()}` },
                 ].map(({ label, value }) => (
-                  <div key={label} className="rounded-xl border border-[#e5e5e5] bg-white px-2 py-2 text-center shadow-sm">
-                    <p className="text-xs text-gray-400">{label}</p>
-                    <p className="text-sm font-semibold text-[#1a1a1a] mt-0.5">{value}</p>
+                  <div key={label} className="rounded-xl border border-[#e7e2db] bg-pearl px-2 py-2 text-center shadow-sm">
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <p className="text-sm font-semibold text-[#1c1917] mt-0.5">{value}</p>
                   </div>
                 ))}
               </div>
               {customer.lastVisit && (
-                <p className="text-xs text-gray-400 -mt-1">
+                <p className="text-xs text-muted-foreground -mt-1">
                   Last visit: {new Date(customer.lastVisit).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
               )}
 
               {/* Nail history + health */}
               {(nailHistoryItems.length > 0 || customer.healthInfo?.allergies || customer.healthInfo?.nailConcerns || customer.healthInfo?.nailDamageHistory) && (
-                <div className="px-3 py-2.5 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400 mb-1.5">Nail & Health</p>
+                <div className="px-3 py-2.5 rounded-none bg-pearl border border-[#e7e2db] shadow-sm">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Nail & Health</p>
                   <div className="flex flex-col gap-1.5">
                     {nailHistoryItems.length > 0 && (
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-xs text-gray-400 shrink-0">History:</span>
+                        <span className="text-xs text-muted-foreground shrink-0">History:</span>
                         {nailHistoryItems.map((item) => (
                           <span key={item} className="inline-flex items-center rounded-full px-2 py-0.5 text-xs bg-purple-50 text-purple-700 border border-purple-200">{item}</span>
                         ))}
                       </div>
                     )}
                     {customer.healthInfo?.allergies && (
-                      <div className="text-sm"><span className="text-gray-400">Allergies: </span>{customer.healthInfo.allergies}</div>
+                      <div className="text-sm"><span className="text-muted-foreground">Allergies: </span>{customer.healthInfo.allergies}</div>
                     )}
                     {customer.healthInfo?.nailConcerns && (
-                      <div className="text-sm"><span className="text-gray-400">Concerns: </span>{customer.healthInfo.nailConcerns}</div>
+                      <div className="text-sm"><span className="text-muted-foreground">Concerns: </span>{customer.healthInfo.nailConcerns}</div>
                     )}
                     {customer.healthInfo?.nailDamageHistory && (
-                      <div className="text-sm"><span className="text-gray-400">Nail damage: </span>{customer.healthInfo.nailDamageHistory}</div>
+                      <div className="text-sm"><span className="text-muted-foreground">Nail damage: </span>{customer.healthInfo.nailDamageHistory}</div>
                     )}
                   </div>
                 </div>
@@ -174,16 +174,16 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
 
               {/* Inspo */}
               {customer.inspoDescription && (
-                <div className="px-3 py-2.5 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400 mb-1">Inspo Notes</p>
+                <div className="px-3 py-2.5 rounded-none bg-pearl border border-[#e7e2db] shadow-sm">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Inspo Notes</p>
                   <p className="text-sm text-gray-700">{customer.inspoDescription}</p>
                 </div>
               )}
 
               {/* Admin notes */}
               {customer.notes && (
-                <div className="px-3 py-2.5 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400 mb-1">Notes</p>
+                <div className="px-3 py-2.5 rounded-none bg-pearl border border-[#e7e2db] shadow-sm">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Notes</p>
                   <p className="text-sm text-gray-700">{customer.notes}</p>
                 </div>
               )}
@@ -191,7 +191,7 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
           )}
         </div>
 
-        <div className="flex-none px-4 py-3 border-t border-[#e5e5e5] bg-[#f7f7f7] rounded-b-[24px]">
+        <div className="flex-none px-4 py-3 border-t border-[#e7e2db] bg-[#f7f6f4] rounded-none">
           <Button variant="outline" size="sm" className="w-full" onClick={() => onOpenChange(false)}>
             Close
           </Button>

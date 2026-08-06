@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { formatTime12Hour, sortSlotsWithPairedBookings } from '@/lib/utils';
+import { CALENDAR_STATUS, getCalendarSlotColors } from '@/lib/calendarStatusColors';
 import { Plus, Calendar as CalendarIcon, CalendarDays, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Button } from '@/components/ui/Button';
@@ -342,7 +343,7 @@ export default function CalendarPanel({
                 borderRadius: '12px',
                 padding: '0.375rem 0.75rem',
                 fontWeight: 500,
-                border: view === 'month' ? 'none' : '1px solid #ced4da',
+                border: view === 'month' ? 'none' : '1px solid #e7e2db',
                 background: view === 'month' 
                   ? 'linear-gradient(135deg, #495057 0%, #212529 100%)' 
                   : 'transparent',
@@ -377,7 +378,7 @@ export default function CalendarPanel({
                 borderRadius: '12px',
                 padding: '0.375rem 0.75rem',
                 fontWeight: 500,
-                border: view === 'week' ? 'none' : '1px solid #ced4da',
+                border: view === 'week' ? 'none' : '1px solid #e7e2db',
                 background: view === 'week' 
                   ? 'linear-gradient(135deg, #495057 0%, #212529 100%)' 
                   : 'transparent',
@@ -412,7 +413,7 @@ export default function CalendarPanel({
                 borderRadius: '12px',
                 padding: '0.375rem 0.75rem',
                 fontWeight: 500,
-                border: view === 'day' ? 'none' : '1px solid #ced4da',
+                border: view === 'day' ? 'none' : '1px solid #e7e2db',
                 background: view === 'day' 
                   ? 'linear-gradient(135deg, #495057 0%, #212529 100%)' 
                   : 'transparent',
@@ -484,35 +485,74 @@ export default function CalendarPanel({
               return (
                 <div className="space-y-3">
                   <div className="d-flex flex-wrap gap-2">
-                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#dc2626', color: '#ffffff', fontSize: '0.8rem' }}>
+                    <span className="badge d-inline-flex align-items-center gap-1 rounded-none" style={{ backgroundColor: CALENDAR_STATUS.available.bg, color: CALENDAR_STATUS.available.fg, fontSize: '0.8rem' }}>
                       {counts.available} available
                     </span>
-                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#212529', color: '#fff', fontSize: '0.8rem' }}>
+                    <span className="badge d-inline-flex align-items-center gap-1 rounded-none" style={{ backgroundColor: CALENDAR_STATUS.confirmed.bg, color: CALENDAR_STATUS.confirmed.fg, fontSize: '0.8rem' }}>
                       {counts.booked} booked
                     </span>
-                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#16a34a', color: '#fff', fontSize: '0.8rem' }}>
+                    <span className="badge d-inline-flex align-items-center gap-1 rounded-none" style={{ backgroundColor: CALENDAR_STATUS.completed.bg, color: CALENDAR_STATUS.completed.fg, fontSize: '0.8rem' }}>
                       {counts.completed} completed
                     </span>
-                    <span className="badge d-inline-flex align-items-center gap-1" style={{ backgroundColor: '#007bff', color: '#fff', fontSize: '0.8rem' }}>
+                    <span className="badge d-inline-flex align-items-center gap-1 rounded-none" style={{ backgroundColor: CALENDAR_STATUS.pending.bg, color: CALENDAR_STATUS.pending.fg, fontSize: '0.8rem' }}>
                       {counts.pending} pending
                     </span>
                   </div>
                   {counts.bookedNames.length > 0 && (
-                    <div className="text-muted small mb-1">
-                      <span className="fw-semibold">Booked:</span>
-                      {counts.bookedNames.map((name, i) => <div key={i} className="ms-1">{name}</div>)}
+                    <div className="d-flex flex-wrap gap-1.5 mb-2">
+                      <span className="small fw-semibold text-muted me-1 align-self-center">Booked:</span>
+                      {counts.bookedNames.map((name, i) => (
+                        <span
+                          key={i}
+                          className="badge rounded-none"
+                          style={{
+                            backgroundColor: CALENDAR_STATUS.confirmed.bg,
+                            color: CALENDAR_STATUS.confirmed.fg,
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {name}
+                        </span>
+                      ))}
                     </div>
                   )}
                   {counts.completedNames.length > 0 && (
-                    <div className="text-muted small mb-1">
-                      <span className="fw-semibold">Completed:</span>
-                      {counts.completedNames.map((name, i) => <div key={i} className="ms-1">{name}</div>)}
+                    <div className="d-flex flex-wrap gap-1.5 mb-2">
+                      <span className="small fw-semibold text-muted me-1 align-self-center">Completed:</span>
+                      {counts.completedNames.map((name, i) => (
+                        <span
+                          key={i}
+                          className="badge rounded-none"
+                          style={{
+                            backgroundColor: CALENDAR_STATUS.completed.bg,
+                            color: CALENDAR_STATUS.completed.fg,
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {name}
+                        </span>
+                      ))}
                     </div>
                   )}
                   {counts.pendingNames.length > 0 && (
-                    <div className="text-muted small mb-1">
-                      <span className="fw-semibold">Pending:</span>
-                      {counts.pendingNames.map((name, i) => <div key={i} className="ms-1">{name}</div>)}
+                    <div className="d-flex flex-wrap gap-1.5 mb-2">
+                      <span className="small fw-semibold text-muted me-1 align-self-center">Pending:</span>
+                      {counts.pendingNames.map((name, i) => (
+                        <span
+                          key={i}
+                          className="badge rounded-none"
+                          style={{
+                            backgroundColor: CALENDAR_STATUS.pending.bg,
+                            color: CALENDAR_STATUS.pending.fg,
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {name}
+                        </span>
+                      ))}
                     </div>
                   )}
                   <div className="mt-3">
@@ -522,16 +562,12 @@ export default function CalendarPanel({
                         <div className="text-muted small py-2">No slots</div>
                       ) : (
                         sortedSlots.map((slot) => {
-                            const isConfirmed = slot.status === 'confirmed' || slot.status === 'CONFIRMED';
-                            const isPending = slot.status === 'pending' || slot.status === 'PENDING_PAYMENT';
-                            const isBooked = slot.status === 'booked';
-                            const bg = (slot as Slot).isHidden ? '#e9ecef' : slot.status === 'available' ? '#dc2626' : isConfirmed ? '#9ca3af' : isPending ? '#3b82f6' : isBooked ? '#212529' : slot.status === 'completed' || slot.status === 'COMPLETED' ? '#16a34a' : '#cce5ff';
-                            const fg = (slot as Slot).isHidden ? '#6c757d' : slot.status === 'available' ? '#ffffff' : isConfirmed ? '#1a1a1a' : isBooked || slot.status === 'completed' || slot.status === 'COMPLETED' || slot.status === 'pending' || slot.status === 'PENDING_PAYMENT' ? '#fff' : '#1a1a1a';
+                            const { bg, fg } = getCalendarSlotColors(slot.status, (slot as Slot).isHidden);
                             return (
                           <button
                             key={slot.id}
                             type="button"
-                            className="d-flex flex-column align-items-start gap-0 px-3 py-2 rounded-2 border-0 w-100 text-start"
+                            className="d-flex flex-column align-items-start gap-0 px-3 py-2 border-0 w-100 text-start rounded-none"
                             style={{
                               background: bg,
                               color: fg,
@@ -572,8 +608,8 @@ export default function CalendarPanel({
                 key={index}
                 className={`btn btn-sm calendar-day ${
                   !isCurrentMonth ? 'text-muted' : ''
-                } ${dateToday ? 'border border-dark' : ''} ${
-                  dateSelected ? 'text-dark' : ''
+                } ${dateToday ? 'calendar-day-today' : ''} ${
+                  dateSelected ? 'calendar-day-selected' : ''
                 }`}
                 onClick={() => isCurrentMonth && onDateSelect(date)}
                 disabled={!isCurrentMonth}
@@ -586,7 +622,6 @@ export default function CalendarPanel({
                   minHeight: 'clamp(44px, 11vw, 68px)',
                   lineHeight: '1.2',
                   gap: '2px',
-                  ...(dateSelected ? { backgroundColor: '#e5e7eb', color: '#374151' } : {}),
                 }}
               >
                 <span
@@ -618,8 +653,8 @@ export default function CalendarPanel({
                       <span 
                         className="slot-count-badge slot-count-available"
                         style={{ 
-                          color: '#ffffff',
-                          backgroundColor: '#dc2626',
+                          color: CALENDAR_STATUS.available.fg,
+                          backgroundColor: CALENDAR_STATUS.available.bg,
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,
@@ -628,7 +663,7 @@ export default function CalendarPanel({
                           alignItems: 'center',
                           justifyContent: 'center',
                           width: '100%',
-                          borderRadius: '6px',
+                          borderRadius: 0,
                           minHeight: '14px',
                         }}
                       >
@@ -639,14 +674,14 @@ export default function CalendarPanel({
                       <span 
                         className="slot-count-badge slot-count-completed d-flex flex-column align-items-stretch"
                         style={{ 
-                          color: '#fff',
-                          backgroundColor: '#16a34a',
+                          color: CALENDAR_STATUS.completed.fg,
+                          backgroundColor: CALENDAR_STATUS.completed.bg,
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,
                           lineHeight: 1.2,
                           width: '100%',
-                          borderRadius: '6px',
+                          borderRadius: 0,
                           minHeight: '14px',
                           overflow: 'hidden',
                         }}
@@ -663,14 +698,14 @@ export default function CalendarPanel({
                       <span 
                         className="slot-count-badge slot-count-booked d-flex flex-column align-items-stretch"
                         style={{ 
-                          color: '#fff',
-                          backgroundColor: '#212529',
+                          color: CALENDAR_STATUS.confirmed.fg,
+                          backgroundColor: CALENDAR_STATUS.confirmed.bg,
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,
                           lineHeight: 1.2,
                           width: '100%',
-                          borderRadius: '6px',
+                          borderRadius: 0,
                           minHeight: '14px',
                           overflow: 'hidden',
                         }}
@@ -687,14 +722,14 @@ export default function CalendarPanel({
                       <span 
                         className="slot-count-badge slot-count-pending d-flex flex-column align-items-stretch"
                         style={{ 
-                          color: '#fff',
-                          backgroundColor: '#007bff',
+                          color: CALENDAR_STATUS.pending.fg,
+                          backgroundColor: CALENDAR_STATUS.pending.bg,
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,
                           lineHeight: 1.2,
                           width: '100%',
-                          borderRadius: '6px',
+                          borderRadius: 0,
                           minHeight: '14px',
                           overflow: 'hidden',
                         }}
@@ -711,8 +746,8 @@ export default function CalendarPanel({
                       <span
                         className="slot-count-badge slot-count-hidden"
                         style={{
-                          color: '#6c757d',
-                          backgroundColor: '#e9ecef',
+                          color: CALENDAR_STATUS.hidden.fg,
+                          backgroundColor: CALENDAR_STATUS.hidden.bg,
                           padding: '2px 4px',
                           fontSize: '0.65rem',
                           fontWeight: 400,
@@ -721,7 +756,7 @@ export default function CalendarPanel({
                           alignItems: 'center',
                           justifyContent: 'center',
                           width: '100%',
-                          borderRadius: '6px',
+                          borderRadius: 0,
                           minHeight: '14px',
                         }}
                         title="Hidden from clients"
@@ -746,19 +781,12 @@ export default function CalendarPanel({
             marginTop: '0.5rem', 
             padding: '0.5rem', 
             fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
-            borderRadius: '16px',
-            borderColor: '#ced4da',
-            background: 'linear-gradient(to bottom, #ffffff, #f8f9fa)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-            transition: 'all 0.3s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.05)';
+            borderRadius: 0,
+            borderColor: '#c4b5a0',
+            background: '#fffcfa',
+            color: '#1c1917',
+            boxShadow: 'none',
+            transition: 'all 0.2s ease',
           }}
         >
           Go to Today
@@ -773,7 +801,7 @@ export default function CalendarPanel({
           .slot-count-badge {
             width: 100% !important;
             min-height: 14px !important;
-            border-radius: 6px !important;
+            border-radius: 0 !important;
             font-size: 0.5rem !important;
             padding: 2px 4px !important;
           }

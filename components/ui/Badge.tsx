@@ -4,22 +4,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "./Utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-none border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ink/20 focus:ring-offset-2",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-[#1a1a1a] text-white",
-        secondary: "border-transparent bg-[#f0f0f0] text-[#4b5563]",
-        outline: "border-[#e5e5e5] text-[#4b5563] bg-transparent",
-        success: "border-transparent bg-emerald-50 text-emerald-700",
-        warning: "border-transparent bg-amber-50 text-amber-700",
-        completed: "border-transparent bg-green-600 text-white",
-        destructive: "border-transparent bg-red-50 text-red-600",
-        info: "border-transparent bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-        vip: "border-transparent bg-[#1a1a1a] text-white",
-        regular: "border-transparent bg-[#f0f0f0] text-[#4b5563]",
-        available: "border-transparent bg-emerald-50 text-emerald-700",
-        disabled: "border-transparent bg-[#f5f5f5] text-[#9ca3af]",
+        default: "border-transparent bg-ink text-pearl",
+        secondary: "border-transparent bg-ash text-[#57534e]",
+        outline: "border-border text-[#57534e] bg-transparent",
+        success: "border-transparent bg-[#e4ebe3] text-[#3d5340]",
+        warning: "border-transparent bg-[#efe6d8] text-[#5c4a32]",
+        completed: "border-transparent bg-[#3d5340] text-pearl",
+        destructive: "border-transparent bg-[#f5ebe8] text-[#5a3830]",
+        info: "border-transparent bg-[#d6e6f0] text-[#3d6a8a]",
+        vip: "border-transparent bg-ink text-pearl",
+        regular: "border-transparent bg-ash text-[#57534e]",
+        available: "border-transparent bg-[#a34436] text-pearl",
+        confirmed: "border-transparent bg-[#8a7864] text-pearl",
+        disabled: "border-transparent bg-ash-soft text-muted-foreground",
       },
     },
     defaultVariants: {

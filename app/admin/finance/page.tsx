@@ -693,7 +693,7 @@ export default function FinancePage() {
   return (
     <div className="space-y-5 md:space-y-6">
       {/* Filter Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl">
         <CardContent className="p-3">
           <div className="grid grid-cols-2 gap-2">
             <div className="relative">
@@ -703,7 +703,7 @@ export default function FinancePage() {
                 placeholder="Search client or service..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 text-xs rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all"
+                className="w-full pl-9 pr-4 h-9 text-xs rounded-xl border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917] focus:bg-white transition-all"
               />
             </div>
             <Select value={quickSelect} onValueChange={handleQuickSelectChange}>
@@ -757,7 +757,7 @@ export default function FinancePage() {
             <button
               onClick={exportToPdf}
               disabled={filteredTransactions.length === 0}
-              className="h-9 px-2 text-xs font-medium rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center justify-center gap-1.5 min-w-0 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-9 px-2 text-xs font-medium rounded-lg border border-[#e7e2db] bg-white text-[#1c1917] hover:border-[#1c1917] hover:bg-[#fffcfa] transition-all flex items-center justify-center gap-1.5 min-w-0 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FileDown className="h-4 w-4 shrink-0" />
               <span className="truncate">Export PDF</span>
@@ -765,7 +765,7 @@ export default function FinancePage() {
             <button
               onClick={exportToCsv}
               disabled={filteredTransactions.length === 0}
-              className="h-9 px-2 text-xs font-medium rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a] hover:bg-[#fafafa] transition-all flex items-center justify-center gap-1.5 min-w-0 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-9 px-2 text-xs font-medium rounded-lg border border-[#e7e2db] bg-white text-[#1c1917] hover:border-[#1c1917] hover:bg-[#fffcfa] transition-all flex items-center justify-center gap-1.5 min-w-0 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="h-4 w-4 shrink-0" />
               <span className="truncate">{exportButtonLabel}</span>
@@ -820,12 +820,12 @@ export default function FinancePage() {
       {/* Revenue Trend + Revenue by Nail Tech */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-stretch">
         {chartData.length > 0 && (
-          <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+          <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
             <CardContent className="p-3 md:p-4">
-              <h3 className="text-sm font-semibold text-[#1a1a1a] mb-3">Revenue Trend</h3>
+              <h3 className="text-sm font-semibold text-[#1c1917] mb-3">Revenue Trend</h3>
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={chartData.map((d) => ({ ...d, dateLabel: d.date ? new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '' }))} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e7e2db" />
                   <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fill: '#737373' }} />
                   <YAxis tick={{ fontSize: 11, fill: '#737373' }} tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000) + 'k' : v}`} />
                   <Tooltip
@@ -833,8 +833,8 @@ export default function FinancePage() {
                       if (!active || !payload?.length) return null;
                       const p = payload[0].payload as { date: string; total: number; paid: number; tip: number };
                       return (
-                        <div className="rounded-lg border border-[#e5e5e5] bg-white px-3 py-2 shadow-sm text-sm">
-                          <p className="font-medium text-[#1a1a1a] mb-1">{p.date ? new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</p>
+                        <div className="rounded-lg border border-[#e7e2db] bg-white px-3 py-2 shadow-sm text-sm">
+                          <p className="font-medium text-[#1c1917] mb-1">{p.date ? new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</p>
                           <p className="text-gray-600">Total: ₱{Number(p.total).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                           <p className="text-gray-600">Paid: ₱{Number(p.paid).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                           <p className="text-gray-600">Tip: ₱{Number(p.tip).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
@@ -842,7 +842,7 @@ export default function FinancePage() {
                       );
                     }}
                   />
-                  <Line type="monotone" dataKey="total" name="Total Invoice" stroke="#1a1a1a" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="total" name="Total Invoice" stroke="#1c1917" strokeWidth={2} dot={{ r: 3 }} />
                   <Line type="monotone" dataKey="paid" name="Paid Amount" stroke="#a3a3a3" strokeWidth={2} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -850,15 +850,15 @@ export default function FinancePage() {
           </Card>
         )}
         {revenueByNailTech.length > 0 && (
-          <div className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+          <div className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
             <div className="px-4 pt-3">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Revenue by Nail Tech</p>
             </div>
             <div className="grid grid-cols-2 gap-3 p-3">
               {revenueByNailTech.map(({ id, name, total, count }) => (
-                <div key={id} className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 flex flex-col">
-                  <p className="text-xs font-medium text-[#1a1a1a] truncate">{name}</p>
-                  <p className="text-base font-semibold text-[#1a1a1a] mt-1">₱{total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                <div key={id} className="rounded-lg border border-[#e7e2db] bg-[#fffcfa] p-3 flex flex-col">
+                  <p className="text-xs font-medium text-[#1c1917] truncate">{name}</p>
+                  <p className="text-base font-semibold text-[#1c1917] mt-1">₱{total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                   <p className="text-[11px] text-gray-400 mt-0.5">{count} appt{count !== 1 ? 's' : ''}</p>
                 </div>
               ))}
@@ -869,16 +869,16 @@ export default function FinancePage() {
 
       {/* Commission by Nail Tech */}
       {commissionByNailTech.length > 0 && (
-        <div className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+        <div className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
           <div className="px-4 pt-3 pb-1">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Commission by Nail Tech</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-3">
             {commissionByNailTech.map(({ id, name, adminCommission, nailTechCommission, count, adminCommissionRate, nailTechCommissionRate }) => (
-              <div key={id} className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-3 flex flex-col">
-                <p className="text-xs font-medium text-[#1a1a1a] truncate">{name}</p>
-                <p className="text-sm font-semibold text-[#1a1a1a] mt-1">Admin: ₱{adminCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                <p className="text-sm font-semibold text-[#1a1a1a]">Tech: ₱{nailTechCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <div key={id} className="rounded-lg border border-[#e7e2db] bg-[#fffcfa] p-3 flex flex-col">
+                <p className="text-xs font-medium text-[#1c1917] truncate">{name}</p>
+                <p className="text-sm font-semibold text-[#1c1917] mt-1">Admin: ₱{adminCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                <p className="text-sm font-semibold text-[#1c1917]">Tech: ₱{nailTechCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                 <p className="text-[11px] text-gray-400 mt-0.5">Admin {adminCommissionRate}% · Tech {nailTechCommissionRate}% · {count} appt{count !== 1 ? 's' : ''}</p>
               </div>
             ))}
@@ -894,13 +894,13 @@ export default function FinancePage() {
 
 
       {/* Table Card */}
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl overflow-hidden">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
         <CardContent className="p-0">
           {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                <tr className="border-b border-[#f0ebe4]" style={{ background: 'linear-gradient(to right, #fffcfa, #f7f6f4)' }}>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Date</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Time</th>
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Social Media Name</th>
@@ -913,14 +913,14 @@ export default function FinancePage() {
                   <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f5f5f5]">
+              <tbody className="divide-y divide-[#f7f6f4]">
                 {loading ? (
                   <>
                     {Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
                         {Array.from({ length: 10 }).map((_, j) => (
                           <td key={j} className="px-4 py-3">
-                            <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                            <div className="h-4 w-20 animate-pulse rounded bg-[#e7e2db]" />
                           </td>
                         ))}
                       </tr>
@@ -930,7 +930,7 @@ export default function FinancePage() {
                   <tr>
                     <td colSpan={10} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                        <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                           <Search className="h-6 w-6 text-gray-300" />
                         </div>
                         <p className="text-sm font-medium text-gray-500">
@@ -950,21 +950,21 @@ export default function FinancePage() {
                   paginatedTransactions.map((item) => {
                     const commission = getTableCommission(item);
                     return (
-                    <tr key={item.id} className="hover:bg-[#fafafa] transition-colors duration-100">
+                    <tr key={item.id} className="hover:bg-[#fffcfa] transition-colors duration-100">
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                         {item.appointmentDate ? new Date(item.appointmentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
                         {formatSlotTimes(item.appointmentTimes, item.appointmentTime)}
                       </td>
-                      <td className="px-4 py-3 text-[#1a1a1a]">{item.customerSocialMediaName || '—'}</td>
-                      <td className="px-4 py-3 text-[#1a1a1a]">
+                      <td className="px-4 py-3 text-[#1c1917]">{item.customerSocialMediaName || '—'}</td>
+                      <td className="px-4 py-3 text-[#1c1917]">
                         <span className="inline-flex items-center gap-1.5">
                           {getSlotServiceDisplay(item.service)}
                           {serviceLocationBadge(item.serviceLocation)}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-medium text-[#1a1a1a] tabular-nums">₱{item.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                      <td className="px-4 py-3 font-medium text-[#1c1917] tabular-nums">₱{item.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                       <td className="px-4 py-3 text-gray-500 tabular-nums">₱{item.paid.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                       <td className="px-4 py-3 tabular-nums">
                         <span className={item.balance > 0 ? 'text-amber-600 font-medium' : 'text-gray-500'}>
@@ -987,17 +987,17 @@ export default function FinancePage() {
             {loading ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3">
+                  <div key={i} className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3">
                     <div className="flex justify-between">
-                      <div className="h-5 w-32 animate-pulse rounded bg-[#e5e5e5]" />
-                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e5e5e5]" />
+                      <div className="h-5 w-32 animate-pulse rounded bg-[#e7e2db]" />
+                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e7e2db]" />
                     </div>
-                    <div className="h-4 w-24 animate-pulse rounded bg-[#e5e5e5]" />
+                    <div className="h-4 w-24 animate-pulse rounded bg-[#e7e2db]" />
                     <div className="grid grid-cols-2 gap-2">
                       {[1, 2, 3, 4].map((j) => (
                         <div key={j} className="space-y-1">
-                          <div className="h-3 w-12 animate-pulse rounded bg-[#e5e5e5]" />
-                          <div className="h-4 w-20 animate-pulse rounded bg-[#e5e5e5]" />
+                          <div className="h-3 w-12 animate-pulse rounded bg-[#e7e2db]" />
+                          <div className="h-4 w-20 animate-pulse rounded bg-[#e7e2db]" />
                         </div>
                       ))}
                     </div>
@@ -1006,7 +1006,7 @@ export default function FinancePage() {
               </>
             ) : paginatedTransactions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-                <div className="h-12 w-12 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                <div className="h-12 w-12 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                   <Search className="h-6 w-6 text-gray-300" />
                 </div>
                 <p className="text-sm font-medium text-gray-500">
@@ -1024,10 +1024,10 @@ export default function FinancePage() {
               paginatedTransactions.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-3"
+                  className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium text-[#1a1a1a]">{item.clientName}</p>
+                    <p className="font-medium text-[#1c1917]">{item.clientName}</p>
                     {getPaymentStatusBadge(item.paymentStatus)}
                   </div>
                   <p className="text-xs text-gray-500">
@@ -1040,36 +1040,36 @@ export default function FinancePage() {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-gray-400 text-xs">Social Media Name</span>
-                      <p className="text-[#1a1a1a]">{item.customerSocialMediaName || '—'}</p>
+                      <p className="text-[#1c1917]">{item.customerSocialMediaName || '—'}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Service</span>
-                      <p className="text-[#1a1a1a] flex items-center gap-1.5">
+                      <p className="text-[#1c1917] flex items-center gap-1.5">
                         {getSlotServiceDisplay(item.service)}
                         {serviceLocationBadge(item.serviceLocation)}
                       </p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Invoice</span>
-                      <p className="text-[#1a1a1a] font-medium">₱{item.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      <p className="text-[#1c1917] font-medium">₱{item.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Paid Amount</span>
-                      <p className="text-[#1a1a1a]">₱{item.paid.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      <p className="text-[#1c1917]">₱{item.paid.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Balance</span>
-                      <p className={item.balance > 0 ? 'text-amber-600 font-medium' : 'text-[#1a1a1a]'}>
+                      <p className={item.balance > 0 ? 'text-amber-600 font-medium' : 'text-[#1c1917]'}>
                         ₱{item.balance.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Tip</span>
-                      <p className="text-[#1a1a1a]">₱{item.tip.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      <p className="text-[#1c1917]">₱{item.tip.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                     <div>
                       <span className="text-gray-400 text-xs">Commission</span>
-                      <p className="text-[#1a1a1a]">₱{Math.round(getTableCommission(item)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      <p className="text-[#1c1917]">₱{Math.round(getTableCommission(item)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                   </div>
                 </div>
@@ -1088,7 +1088,7 @@ export default function FinancePage() {
           <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
             <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
             <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
+              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronLeft className="h-4 w-4" /></button>
               <div className="hidden sm:flex items-center gap-1">
                 {(() => {
                   const maxVisible = 7;
@@ -1099,13 +1099,13 @@ export default function FinancePage() {
                     const page = start + i;
                     return (
                       <button key={page} onClick={() => setCurrentPage(page)}
-                        className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                        className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1c1917] border-[#1c1917] text-white shadow-sm' : 'border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917]'}`}
                       >{page}</button>
                     );
                   });
                 })()}
               </div>
-              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
+              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"><ChevronRight className="h-4 w-4" /></button>
             </div>
           </div>
         </div>

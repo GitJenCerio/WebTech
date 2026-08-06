@@ -156,7 +156,7 @@ export default function FeedbackAnalytics() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-[#1a1a1a]">Feedback Analytics</h1>
+        <h1 className="admin-page-title font-heading text-2xl sm:text-3xl text-ink">Feedback Analytics</h1>
         <p className="mt-0.5 text-sm text-gray-500">View client survey responses, ratings, and testimonial-ready feedback.</p>
       </div>
 
@@ -166,26 +166,26 @@ export default function FeedbackAnalytics() {
         </div>
       )}
 
-      <Card className="border border-[#e5e5e5] shadow-sm">
+      <Card className="border border-[#e7e2db] shadow-sm">
         <CardContent className="space-y-4 p-4 md:p-5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div className="grid gap-3 sm:grid-cols-2 lg:max-w-2xl lg:flex-1">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-[#4b3f39]">From</label>
+                <label>From</label>
                 <input
                   type="date"
                   value={dateFrom}
                   onChange={(event) => setDateFrom(event.target.value)}
-                  className="h-10 w-full rounded-lg border border-[#e5e5e5] bg-white px-3 text-sm text-[#1a1a1a] focus:border-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10"
+                  className="h-10 w-full rounded-lg border border-[#e7e2db] bg-white px-3 text-sm text-[#1c1917] focus:border-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-[#4b3f39]">To</label>
+                <label>To</label>
                 <input
                   type="date"
                   value={dateTo}
                   onChange={(event) => setDateTo(event.target.value)}
-                  className="h-10 w-full rounded-lg border border-[#e5e5e5] bg-white px-3 text-sm text-[#1a1a1a] focus:border-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10"
+                  className="h-10 w-full rounded-lg border border-[#e7e2db] bg-white px-3 text-sm text-[#1c1917] focus:border-[#1c1917] focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10"
                 />
               </div>
             </div>
@@ -202,42 +202,42 @@ export default function FeedbackAnalytics() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <Card className="border border-[#e5e5e5] shadow-sm">
+        <Card className="border border-[#e7e2db] shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Responses</p>
-            <p className="mt-2 text-2xl font-semibold text-[#1a1a1a]">{stats?.totalResponses ?? 0}</p>
+            <p className="mt-2 text-2xl font-heading font-medium text-ink">{stats?.totalResponses ?? 0}</p>
           </CardContent>
         </Card>
-        <Card className="border border-[#e5e5e5] shadow-sm">
+        <Card className="border border-[#e7e2db] shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Overall satisfaction</p>
-            <p className="mt-2 text-2xl font-semibold text-[#1a1a1a]">{(stats?.overallSatisfactionScore ?? 0).toFixed(2)}</p>
+            <p className="mt-2 text-2xl font-heading font-medium text-ink">{(stats?.overallSatisfactionScore ?? 0).toFixed(2)}</p>
             <p className="mt-1 text-xs text-gray-500">{scoreLabel(stats?.overallSatisfactionScore ?? 0)}</p>
           </CardContent>
         </Card>
-        <Card className="border border-[#e5e5e5] shadow-sm">
+        <Card className="border border-[#e7e2db] shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Composite score</p>
-            <p className="mt-2 text-2xl font-semibold text-[#1a1a1a]">{(stats?.compositeScore ?? 0).toFixed(2)}</p>
+            <p className="mt-2 text-2xl font-heading font-medium text-ink">{(stats?.compositeScore ?? 0).toFixed(2)}</p>
           </CardContent>
         </Card>
-        <Card className="border border-[#e5e5e5] shadow-sm">
+        <Card className="border border-[#e7e2db] shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Testimonials</p>
-            <p className="mt-2 text-2xl font-semibold text-[#1a1a1a]">{stats?.testimonialCount ?? 0}</p>
+            <p className="mt-2 text-2xl font-heading font-medium text-ink">{stats?.testimonialCount ?? 0}</p>
           </CardContent>
         </Card>
-        <Card className="border border-[#e5e5e5] shadow-sm">
+        <Card className="border border-[#e7e2db] shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Flagged</p>
-            <p className="mt-2 text-2xl font-semibold text-[#1a1a1a]">{stats?.flaggedCount ?? 0}</p>
+            <p className="mt-2 text-2xl font-heading font-medium text-ink">{stats?.flaggedCount ?? 0}</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-        <Card className="border border-[#e5e5e5] shadow-sm">
-          <CardHeader className="border-b border-[#f0f0f0] pb-4">
+        <Card className="border border-[#e7e2db] shadow-sm">
+          <CardHeader className="border-b border-[#f0ebe4] pb-4">
             <CardTitle className="text-base">Average Ratings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 p-4 md:p-5">
@@ -249,8 +249,8 @@ export default function FeedbackAnalytics() {
           </CardContent>
         </Card>
 
-        <Card className="border border-[#e5e5e5] shadow-sm">
-          <CardHeader className="border-b border-[#f0f0f0] pb-4">
+        <Card className="border border-[#e7e2db] shadow-sm">
+          <CardHeader className="border-b border-[#f0ebe4] pb-4">
             <CardTitle className="text-base">Quick Insights</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 p-4 md:p-5">
@@ -271,7 +271,7 @@ export default function FeedbackAnalytics() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="space-y-4">
-        <TabsList className="w-full justify-start bg-[#f5f5f5] p-1">
+        <TabsList className="w-full justify-start bg-[#f7f6f4] p-1">
           <TabsTrigger value="all" className="flex-1 sm:flex-none">All Responses</TabsTrigger>
           <TabsTrigger value="testimonials" className="flex-1 sm:flex-none">Testimonials</TabsTrigger>
           <TabsTrigger value="follow-up" className="flex-1 sm:flex-none">Follow-up</TabsTrigger>
@@ -279,20 +279,20 @@ export default function FeedbackAnalytics() {
 
         <TabsContent value={activeTab} className="space-y-4">
           {loading ? (
-            <Card className="border border-[#e5e5e5] shadow-sm">
+            <Card className="border border-[#e7e2db] shadow-sm">
               <CardContent className="p-6 text-sm text-gray-500">Loading feedback...</CardContent>
             </Card>
           ) : visibleResponses.length === 0 ? (
-            <Card className="border border-[#e5e5e5] shadow-sm">
+            <Card className="border border-[#e7e2db] shadow-sm">
               <CardContent className="p-6 text-sm text-gray-500">No responses found for the selected filter.</CardContent>
             </Card>
           ) : (
             visibleResponses.map((response) => (
-              <Card key={response.responseId} className="border border-[#e5e5e5] shadow-sm">
+              <Card key={response.responseId} className="border border-[#e7e2db] shadow-sm">
                 <CardContent className="space-y-4 p-4 md:p-5">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <p className="text-sm font-medium text-[#1a1a1a]">{response.responseId}</p>
+                      <p className="text-sm font-medium text-[#1c1917]">{response.responseId}</p>
                       <p className="text-xs text-gray-500">{format(new Date(response.createdAt), 'PPP p')}</p>
                       {response.nailTechName ? (
                         <p className="mt-1 text-xs font-medium text-[#8a776d]">Nail tech: Ms. {response.nailTechName}</p>

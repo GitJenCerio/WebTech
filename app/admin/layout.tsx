@@ -28,12 +28,12 @@ export default function AdminLayoutWrapper({
   }, [status, router, isPublicAdminPage]);
 
   if (isPublicAdminPage) {
-    return <div className="admin-dashboard min-h-screen bg-[#f5f5f5]">{children}</div>;
+    return <div className="admin-dashboard min-h-screen bg-background">{children}</div>;
   }
 
   if (status === 'loading') {
     return (
-      <div className="admin-dashboard flex min-h-screen items-center justify-center bg-[#f5f5f5]">
+      <div className="admin-dashboard flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
           <div
             className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"

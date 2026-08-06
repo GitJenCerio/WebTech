@@ -26,7 +26,7 @@ export default function NailTechFilter({
 }: NailTechFilterProps) {
   return (
     <div className={className}>
-      <label htmlFor="nailTechFilter" className="form-label fw-semibold">
+      <label htmlFor="nailTechFilter">
         Filter by Nail Tech
       </label>
       <Select value={selectedTechId} onValueChange={onTechChange}>

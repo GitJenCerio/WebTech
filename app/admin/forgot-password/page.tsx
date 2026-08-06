@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
             <div className="flex justify-center mb-4">
               <Image src="/logo.png" alt="Admin" width={180} height={60} className="mx-auto" priority />
             </div>
-            <CardTitle className="text-xl font-bold text-[#1a1a1a]">Forgot password</CardTitle>
+            <CardTitle className="text-xl font-bold text-[#1c1917]">Forgot password</CardTitle>
             <CardDescription>
               Enter your email and we&apos;ll send you a link to reset your password.
             </CardDescription>
@@ -80,7 +80,7 @@ export default function ForgotPasswordPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     disabled={loading}
-                    className="bg-[#f9f9f9] border-[#e5e5e5]"
+                    className="bg-[#f7f6f4] border-[#e7e2db]"
                   />
                 </div>
 
@@ -92,7 +92,7 @@ export default function ForgotPasswordPage() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-[#1a1a1a] text-white hover:bg-[#2d2d2d]"
+                  className="w-full bg-[#1c1917] text-white hover:bg-[#2a2522]"
                   disabled={loading}
                 >
                   {loading ? (

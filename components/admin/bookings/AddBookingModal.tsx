@@ -383,7 +383,7 @@ export default function AddBookingModal({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-xl md:max-w-lg max-h-[90vh] flex flex-col overflow-hidden p-0">
-        <DialogHeader className="shrink-0 border-b border-[#e5e5e5] bg-[#f7f7f7] px-6 py-4">
+        <DialogHeader className="shrink-0 border-b border-[#e7e2db] bg-[#f7f6f4] px-6 py-4">
           <DialogTitle>Add Booking</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -404,17 +404,17 @@ export default function AddBookingModal({
                   if (e.target.checked) setCustomerId('');
                   else setNewCustomer({ name: '', email: '', phone: '', socialMediaName: '' });
                 }}
-                className="rounded border-gray-300"
+                className="rounded border-border"
               />
-              <Label htmlFor="create-new-client" className="text-sm cursor-pointer">
+              <Label htmlFor="create-new-client" className="label-inline">
                 Create new client
               </Label>
             </div>
 
             {createNewCustomer ? (
-              <div className="space-y-3 p-3 rounded-lg border border-[#e5e5e5] bg-[#f9f9f9]">
+              <div className="space-y-3 p-3 rounded-lg border border-[#e7e2db] bg-[#f7f6f4]">
                 <div>
-                  <Label className="text-xs text-gray-500">Name *</Label>
+                  <Label>Name *</Label>
                   <Input
                     value={newCustomer.name}
                     onChange={(e) =>
@@ -425,7 +425,7 @@ export default function AddBookingModal({
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-500">Email</Label>
+                  <Label>Email</Label>
                   <Input
                     type="email"
                     value={newCustomer.email}
@@ -437,7 +437,7 @@ export default function AddBookingModal({
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-500">Phone</Label>
+                  <Label>Phone</Label>
                   <Input
                     value={newCustomer.phone}
                     onChange={(e) =>
@@ -450,7 +450,7 @@ export default function AddBookingModal({
               </div>
             ) : (
               <div className="relative">
-                <Label className="text-xs text-gray-500">Client *</Label>
+                <Label>Client *</Label>
                 <input
                   type="text"
                   value={clientSearch}
@@ -463,10 +463,10 @@ export default function AddBookingModal({
                   onBlur={() => setTimeout(() => setClientDropdownOpen(false), 150)}
                   placeholder={loadingCustomers ? 'Loading...' : 'Search client...'}
                   disabled={loadingCustomers}
-                  className="w-full mt-1 h-9 px-3 text-base rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a] focus:bg-white transition-all disabled:opacity-50"
+                  className="w-full mt-1 h-9 px-3 text-base rounded-xl border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917] focus:bg-pearl transition-all disabled:opacity-50"
                 />
                 {clientDropdownOpen && clientSearch.length > 0 && (
-                  <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#e5e5e5] bg-white shadow-lg">
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#e7e2db] bg-pearl shadow-lg">
                     {customers
                       .filter((c) =>
                         `${c.name} ${c.phone ?? ''} ${c.email ?? ''}`.toLowerCase().includes(clientSearch.toLowerCase())
@@ -481,16 +481,16 @@ export default function AddBookingModal({
                             setClientSearch(`${c.name}${c.phone ? ` (${c.phone})` : ''}`);
                             setClientDropdownOpen(false);
                           }}
-                          className="w-full text-left px-3 py-2 text-sm text-[#1a1a1a] hover:bg-[#f5f5f5] transition-colors"
+                          className="w-full text-left px-3 py-2 text-sm text-[#1c1917] hover:bg-[#f7f6f4] transition-colors"
                         >
                           {c.name}
-                          {c.phone && <span className="text-gray-400 ml-1">{c.phone}</span>}
+                          {c.phone && <span className="text-muted-foreground ml-1">{c.phone}</span>}
                         </button>
                       ))}
                     {customers.filter((c) =>
                       `${c.name} ${c.phone ?? ''} ${c.email ?? ''}`.toLowerCase().includes(clientSearch.toLowerCase())
                     ).length === 0 && (
-                      <p className="px-3 py-2 text-sm text-gray-400">No clients found</p>
+                      <p className="px-3 py-2 text-sm text-muted-foreground">No clients found</p>
                     )}
                   </div>
                 )}
@@ -498,7 +498,7 @@ export default function AddBookingModal({
             )}
 
             <div>
-              <Label className="text-xs text-gray-500">Service Type *</Label>
+              <Label>Service Type *</Label>
               <Select
                 value={serviceType}
                 onValueChange={(v) => {
@@ -523,7 +523,7 @@ export default function AddBookingModal({
             </div>
 
             <div>
-              <Label className="text-xs text-gray-500">Specific / Add-ons</Label>
+              <Label>Specific / Add-ons</Label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {CHOSEN_SERVICE_OPTIONS.map(({ value, label }) => (
                   <button
@@ -536,8 +536,8 @@ export default function AddBookingModal({
                     }
                     className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
                       chosenServices.includes(value)
-                        ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
-                        : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                        ? 'bg-[#1c1917] border-[#1c1917] text-white'
+                        : 'border-[#e7e2db] bg-pearl text-[#1c1917] hover:border-[#1c1917]'
                     }`}
                   >
                     {label}
@@ -547,7 +547,7 @@ export default function AddBookingModal({
             </div>
 
             <div>
-              <Label className="text-xs text-gray-500">Location</Label>
+              <Label>Location</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {([['homebased_studio', 'Studio'], ['home_service', 'Home Service']] as const).map(([val, label]) => (
                   <button
@@ -559,8 +559,8 @@ export default function AddBookingModal({
                     }}
                     className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
                       location === val
-                        ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
-                        : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                        ? 'bg-[#1c1917] border-[#1c1917] text-white'
+                        : 'border-[#e7e2db] bg-pearl text-[#1c1917] hover:border-[#1c1917]'
                     }`}
                   >
                     {label}
@@ -577,7 +577,7 @@ export default function AddBookingModal({
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs text-gray-500">Manicure tech *</Label>
+                      <Label>Manicure tech *</Label>
                       <Select
                         value={manicureTechId}
                         onValueChange={(v) => {
@@ -600,7 +600,7 @@ export default function AddBookingModal({
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-xs text-gray-500">Pedicure tech *</Label>
+                      <Label>Pedicure tech *</Label>
                       <Select
                         value={pedicureTechId}
                         onValueChange={(v) => {
@@ -626,9 +626,9 @@ export default function AddBookingModal({
                 </>
               ) : (
                 <>
-                  <Label className="text-xs text-gray-500">Nail Tech *</Label>
+                  <Label>Nail Tech *</Label>
                   {nailTechsLoading ? (
-                    <p className="text-sm text-gray-400 mt-1">Loading...</p>
+                    <p className="text-sm text-muted-foreground mt-1">Loading...</p>
                   ) : (
                     <div className="grid grid-cols-2 gap-2 mt-2">
                       {nailTechs.map((t) => (
@@ -641,8 +641,8 @@ export default function AddBookingModal({
                           }}
                           className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all truncate ${
                             nailTechId === t.id
-                              ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
-                              : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                              ? 'bg-[#1c1917] border-[#1c1917] text-white'
+                              : 'border-[#e7e2db] bg-pearl text-[#1c1917] hover:border-[#1c1917]'
                           }`}
                         >
                           {t.name}
@@ -655,23 +655,23 @@ export default function AddBookingModal({
             </div>
 
             <div>
-              <Label className="text-xs text-gray-500">Date *</Label>
+              <Label>Date *</Label>
               <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
                     className={cn(
-                      'flex items-center gap-2 w-full mt-1 min-w-[120px] rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] transition-all h-9 px-3 text-sm',
-                      'hover:border-[#1a1a1a]/30 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]'
+                      'flex items-center gap-2 w-full mt-1 min-w-[120px] rounded-xl border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] transition-all h-9 px-3 text-sm',
+                      'hover:border-[#1c1917]/30 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917]'
                     )}
                   >
-                    <CalendarIcon className="h-4 w-4 text-gray-500 shrink-0" />
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="truncate">{date ? format(new Date(date), 'MMM d, yyyy') : 'Pick date'}</span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
                   align="start"
-                  className="admin-date-picker-popover w-auto p-0 rounded-2xl border-[#e5e5e5] shadow-lg bg-white"
+                  className="admin-date-picker-popover w-auto p-0 rounded-none border-[#e7e2db] shadow-lg bg-pearl"
                 >
                   <Calendar
                     mode="single"
@@ -694,13 +694,13 @@ export default function AddBookingModal({
 
             {date && (isExpress ? manicureTechId && pedicureTechId : nailTechId) && (
               <div>
-                <Label className="text-xs text-gray-500">{isExpress ? 'Available time *' : 'Available Slot *'}</Label>
+                <Label>{isExpress ? 'Available time *' : 'Available Slot *'}</Label>
                 {!isExpress && requiredSlots > 1 && (
-                  <p className="text-xs text-gray-500 mt-0.5">Select the first slot — {requiredSlots} consecutive slots (no slots booked in between) will be reserved.</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Select the first slot — {requiredSlots} consecutive slots (no slots booked in between) will be reserved.</p>
                 )}
                 {isExpress ? (
                   loadingDualSlots ? (
-                    <p className="text-sm text-gray-500 mt-1">Loading slots...</p>
+                    <p className="text-sm text-muted-foreground mt-1">Loading slots...</p>
                   ) : commonTimes.length === 0 ? (
                     <p className="text-sm text-amber-600 mt-1">No common available time slots for both techs on this date.</p>
                   ) : (
@@ -712,8 +712,8 @@ export default function AddBookingModal({
                           onClick={() => setSelectedTime(selectedTime === time ? '' : time)}
                           className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
                             selectedTime === time
-                              ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
-                              : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                              ? 'bg-[#1c1917] border-[#1c1917] text-white'
+                              : 'border-[#e7e2db] bg-pearl text-[#1c1917] hover:border-[#1c1917]'
                           }`}
                         >
                           <span className="whitespace-nowrap">{formatTime12Hour(time)}</span>
@@ -722,7 +722,7 @@ export default function AddBookingModal({
                     </div>
                   )
                 ) : loadingSlots ? (
-                  <p className="text-sm text-gray-500 mt-1">Loading slots...</p>
+                  <p className="text-sm text-muted-foreground mt-1">Loading slots...</p>
                 ) : compatibleSlots.length === 0 ? (
                   <div className="mt-1 space-y-2">
                     <p className="text-sm text-amber-600">
@@ -733,7 +733,7 @@ export default function AddBookingModal({
                         : 'No available slots for this date'}
                     </p>
                     {requiredSlots > 1 && availableSlots.length > 0 && (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Available: {[...availableSlots]
                           .sort((a, b) => normalizeSlotTime(a.time).localeCompare(normalizeSlotTime(b.time)))
                           .map((s) => formatTime12Hour(s.time))
@@ -756,8 +756,8 @@ export default function AddBookingModal({
                         }
                         className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
                           selectedSlotIds.includes(slotId)
-                            ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
-                            : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                            ? 'bg-[#1c1917] border-[#1c1917] text-white'
+                            : 'border-[#e7e2db] bg-pearl text-[#1c1917] hover:border-[#1c1917]'
                         }`}
                       >
                         <span className="whitespace-nowrap">{formatTime12Hour(slot.time)}</span>
@@ -769,25 +769,25 @@ export default function AddBookingModal({
             )}
 
             <div>
-              <Label className="text-xs text-gray-500">Client Notes</Label>
+              <Label>Client Notes</Label>
               <textarea
                 value={clientNotes}
                 onChange={(e) => setClientNotes(e.target.value)}
-                className="w-full mt-1 min-h-[60px] px-3 py-2 text-sm rounded-lg border border-[#e5e5e5] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10"
+                className="w-full mt-1 min-h-[60px] px-3 py-2 text-sm rounded-lg border border-[#e7e2db] focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10"
                 placeholder="Optional"
               />
             </div>
             <div>
-              <Label className="text-xs text-gray-500">Admin Notes</Label>
+              <Label>Admin Notes</Label>
               <textarea
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
-                className="w-full mt-1 min-h-[60px] px-3 py-2 text-sm rounded-lg border border-[#e5e5e5] focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10"
+                className="w-full mt-1 min-h-[60px] px-3 py-2 text-sm rounded-lg border border-[#e7e2db] focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10"
                 placeholder="Optional"
               />
             </div>
           </div>
-          <DialogFooter className="shrink-0 border-t border-[#e5e5e5] bg-[#f7f7f7] px-6 py-4">
+          <DialogFooter className="shrink-0 border-t border-[#e7e2db] bg-[#f7f6f4] px-6 py-4">
             <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
               Cancel
             </Button>

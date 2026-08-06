@@ -351,7 +351,7 @@ export default function RescheduleSlotModal({
 
         <div className="overflow-y-auto flex-1 space-y-4 py-4 pr-1">
           <div>
-            <Label className="text-xs text-gray-500">Service type *</Label>
+            <Label>Service type *</Label>
             <Select
               value={selectedServiceType}
               onValueChange={setSelectedServiceType}
@@ -387,7 +387,7 @@ export default function RescheduleSlotModal({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-gray-500">Manicure tech *</Label>
+                  <Label>Manicure tech *</Label>
                   <Select
                     value={manicureTechId}
                     onValueChange={(v) => {
@@ -414,7 +414,7 @@ export default function RescheduleSlotModal({
                 </div>
 
                 <div>
-                  <Label className="text-xs text-gray-500">Pedicure tech *</Label>
+                  <Label>Pedicure tech *</Label>
                   <Select
                     value={pedicureTechId}
                     onValueChange={(v) => {
@@ -444,7 +444,7 @@ export default function RescheduleSlotModal({
           ) : (
             /* ── SINGLE TECH ── */
             <div>
-              <Label className="text-xs text-gray-500">Nail tech</Label>
+              <Label>Nail tech</Label>
               <Select value={nailTechId} onValueChange={setNailTechId} disabled={nailTechsLoading}>
                 <SelectTrigger className="h-9 mt-1">
                   <SelectValue placeholder="Select nail tech" />
@@ -458,7 +458,7 @@ export default function RescheduleSlotModal({
                 </SelectContent>
               </Select>
               {requiredSlots > 1 && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Select the first slot — {requiredSlots} consecutive slots will be reserved.
                 </p>
               )}
@@ -467,17 +467,17 @@ export default function RescheduleSlotModal({
 
           {/* Date picker */}
           <div>
-            <Label className="text-xs text-gray-500">Date *</Label>
+            <Label>Date *</Label>
             <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
                   className={cn(
-                    'flex items-center gap-2 w-full mt-1 min-w-[120px] rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] text-[#1a1a1a] transition-all h-9 px-3 text-sm',
-                    'hover:border-[#1a1a1a]/30 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]'
+                    'flex items-center gap-2 w-full mt-1 min-w-[120px] rounded-xl border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] transition-all h-9 px-3 text-sm',
+                    'hover:border-[#1c1917]/30 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917]'
                   )}
                 >
-                  <CalendarIcon className="h-4 w-4 text-gray-500 shrink-0" />
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="truncate">
                     {date ? format(new Date(date), 'MMM d, yyyy') : 'Pick date'}
                   </span>
@@ -485,7 +485,7 @@ export default function RescheduleSlotModal({
               </PopoverTrigger>
               <PopoverContent
                 align="start"
-                className="admin-date-picker-popover w-auto p-0 rounded-2xl border-[#e5e5e5] shadow-lg bg-white"
+                className="admin-date-picker-popover w-auto p-0 rounded-none border-[#e7e2db] shadow-lg bg-pearl"
               >
                 <Calendar
                   mode="single"
@@ -507,22 +507,22 @@ export default function RescheduleSlotModal({
 
           {/* Reason */}
           <div>
-            <Label className="text-xs text-gray-500">Reason (optional)</Label>
+            <Label>Reason (optional)</Label>
             <input
               type="text"
               value={reasonText}
               onChange={(e) => setReasonText(e.target.value)}
               placeholder="e.g. Client requested different date"
-              className="flex h-9 w-full mt-1 rounded-xl border border-[#e5e5e5] bg-[#f9f9f9] px-3 text-sm text-[#1a1a1a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a1a1a]/10 focus:border-[#1a1a1a]"
+              className="flex h-9 w-full mt-1 rounded-xl border border-[#e7e2db] bg-[#f7f6f4] px-3 text-sm text-[#1c1917] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917]"
             />
           </div>
 
           {/* ── SIMULTANEOUS: common time slots ── */}
           {isSimultaneous && manicureTechId && pedicureTechId && date && (
             <div>
-              <Label className="text-xs text-gray-500">Available time *</Label>
+              <Label>Available time *</Label>
               {loadingDualSlots ? (
-                <p className="text-sm text-gray-500 mt-1">Loading slots...</p>
+                <p className="text-sm text-muted-foreground mt-1">Loading slots...</p>
               ) : commonTimes.length === 0 ? (
                 <p className="text-sm text-amber-600 mt-1">
                   No common available time slots for both techs on this date.
@@ -536,8 +536,8 @@ export default function RescheduleSlotModal({
                       onClick={() => setSelectedTime(selectedTime === time ? '' : time)}
                       className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
                         selectedTime === time
-                          ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
-                          : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                          ? 'bg-[#1c1917] border-[#1c1917] text-white'
+                          : 'border-[#e7e2db] bg-pearl text-[#1c1917] hover:border-[#1c1917]'
                       }`}
                     >
                       <span className="whitespace-nowrap">{formatTime12Hour(time)}</span>
@@ -551,14 +551,14 @@ export default function RescheduleSlotModal({
           {/* ── SINGLE TECH: slot buttons ── */}
           {!isSimultaneous && date && nailTechId && (
             <div>
-              <Label className="text-xs text-gray-500">Available time *</Label>
+              <Label>Available time *</Label>
               {requiredSlots > 1 && (
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Select the first slot — {requiredSlots} consecutive slots will be reserved.
                 </p>
               )}
               {loadingSlots ? (
-                <p className="text-sm text-gray-500 mt-1">Loading slots...</p>
+                <p className="text-sm text-muted-foreground mt-1">Loading slots...</p>
               ) : compatibleSlots.length === 0 ? (
                 <p className="text-sm text-amber-600 mt-1">
                   {requiredSlots > 1
@@ -579,8 +579,8 @@ export default function RescheduleSlotModal({
                           onClick={() => setSelectedSlotId(isFirstOfSelection ? '' : slotId)}
                           className={`h-9 px-3 rounded-lg border text-sm font-medium transition-all ${
                             isSelected
-                              ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white'
-                              : 'border-[#e5e5e5] bg-white text-[#1a1a1a] hover:border-[#1a1a1a]'
+                              ? 'bg-[#1c1917] border-[#1c1917] text-white'
+                              : 'border-[#e7e2db] bg-pearl text-[#1c1917] hover:border-[#1c1917]'
                           }`}
                         >
                           <span className="whitespace-nowrap">{formatTime12Hour(slot.time)}</span>
@@ -607,7 +607,7 @@ export default function RescheduleSlotModal({
           )}
         </div>
 
-        <DialogFooter className="shrink-0 border-t border-gray-100 pt-3">
+        <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button
             type="button"
             variant="secondary"

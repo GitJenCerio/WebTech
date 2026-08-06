@@ -163,11 +163,11 @@ export default function AuditLogPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-[#1a1a1a]">Audit Log</h1>
+        <h1 className="admin-page-title font-heading text-2xl sm:text-3xl text-ink">Audit Log</h1>
         <p className="text-sm text-gray-500 mt-0.5">Who did what and when</p>
       </div>
 
-      <Card className="bg-white border border-[#e5e5e5] shadow-sm rounded-xl">
+      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setCurrentPage(1); }}>
@@ -200,17 +200,17 @@ export default function AuditLogPage() {
             {loading ? (
               <div className="space-y-2 py-8">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                  <div key={i} className="flex gap-4 py-3 border-b border-[#f0f0f0] animate-pulse">
-                    <div className="h-4 w-24 rounded bg-[#e5e5e5]" />
-                    <div className="h-4 w-20 rounded bg-[#e5e5e5]" />
-                    <div className="h-4 w-32 rounded bg-[#e5e5e5]" />
-                    <div className="h-4 flex-1 rounded bg-[#e5e5e5]" />
+                  <div key={i} className="flex gap-4 py-3 border-b border-[#f0ebe4] animate-pulse">
+                    <div className="h-4 w-24 rounded bg-[#e7e2db]" />
+                    <div className="h-4 w-20 rounded bg-[#e7e2db]" />
+                    <div className="h-4 w-32 rounded bg-[#e7e2db]" />
+                    <div className="h-4 flex-1 rounded bg-[#e7e2db]" />
                   </div>
                 ))}
               </div>
             ) : items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-400">
-                <div className="h-10 w-10 rounded-full bg-[#f5f5f5] flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-[#f7f6f4] flex items-center justify-center">
                   <Search className="h-5 w-5" />
                 </div>
                 <span className="text-sm font-medium">No audit entries found</span>
@@ -220,16 +220,16 @@ export default function AuditLogPage() {
               <div className="hidden sm:block">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[#f0f0f0]" style={{ background: 'linear-gradient(to right, #fafafa, #f5f5f5)' }}>
+                    <tr className="border-b border-[#f0ebe4]" style={{ background: 'linear-gradient(to right, #fffcfa, #f7f6f4)' }}>
                       <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Time</th>
                       <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">User</th>
                       <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Activity</th>
                       <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Details</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#f5f5f5]">
+                  <tbody className="divide-y divide-[#f7f6f4]">
                     {items.map((entry) => (
-                      <tr key={entry.id} className="hover:bg-[#fafafa]">
+                      <tr key={entry.id} className="hover:bg-[#fffcfa]">
                         <td className="px-5 py-3 text-gray-500 whitespace-nowrap">
                           {entry.createdAt
                             ? new Date(entry.createdAt).toLocaleString('en-US', {
@@ -242,12 +242,12 @@ export default function AuditLogPage() {
                             : '—'}
                         </td>
                         <td className="px-5 py-3">
-                          <span className="font-medium text-[#1a1a1a]">{entry.userName || entry.userEmail || '—'}</span>
+                          <span className="font-medium text-[#1c1917]">{entry.userName || entry.userEmail || '—'}</span>
                           {entry.userEmail && entry.userName && (
                             <p className="text-xs text-gray-400">{entry.userEmail}</p>
                           )}
                         </td>
-                        <td className="px-5 py-3 text-[#1a1a1a]">
+                        <td className="px-5 py-3 text-[#1c1917]">
                           {getActivityDescription(entry)}
                         </td>
                         <td className="px-5 py-3 text-gray-600 text-sm max-w-[280px]">
@@ -266,15 +266,15 @@ export default function AuditLogPage() {
                 items.map((entry) => (
                   <div
                     key={entry.id}
-                    className="rounded-xl border border-[#e5e5e5] bg-white p-4 shadow-sm space-y-2"
+                    className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-2"
                   >
                     <div className="flex justify-between items-start gap-2">
-                      <span className="font-medium text-[#1a1a1a]">{entry.userName || entry.userEmail || '—'}</span>
+                      <span className="font-medium text-[#1c1917]">{entry.userName || entry.userEmail || '—'}</span>
                       <span className="text-xs text-gray-500 shrink-0">
                         {entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '—'}
                       </span>
                     </div>
-                    <p className="text-sm text-[#1a1a1a]">{getActivityDescription(entry)}</p>
+                    <p className="text-sm text-[#1c1917]">{getActivityDescription(entry)}</p>
                     {entry.details && Object.keys(entry.details).length > 0 && (
                       <p className="text-xs text-gray-600">{formatDetailsForDisplay(entry.details)}</p>
                     )}
@@ -284,7 +284,7 @@ export default function AuditLogPage() {
           </div>
 
           {!loading && total > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#f0f0f0] mt-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#f0ebe4] mt-4">
               <p className="text-xs text-gray-400 order-2 sm:order-1">
                 Showing {startItem}–{endItem} of {total}
               </p>
@@ -294,7 +294,7 @@ export default function AuditLogPage() {
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                    className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
@@ -305,7 +305,7 @@ export default function AuditLogPage() {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1a1a1a] border-[#1a1a1a] text-white shadow-sm' : 'border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a]'}`}
+                          className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${currentPage === page ? 'bg-[#1c1917] border-[#1c1917] text-white shadow-sm' : 'border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917]'}`}
                         >
                           {page}
                         </button>
@@ -315,7 +315,7 @@ export default function AuditLogPage() {
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e5e5e5] bg-white text-gray-400 hover:border-[#1a1a1a] hover:text-[#1a1a1a] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                    className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>

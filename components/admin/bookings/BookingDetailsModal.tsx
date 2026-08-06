@@ -204,7 +204,7 @@ export default function BookingDetailsModal({
                 — {expressBrandedLineDescription(expressSeg.primary)}
               </span>
             </span>
-            <span className="mt-1 block text-xs font-normal text-gray-400">
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">
               {manicureDisplayName ? `Ms. ${manicureDisplayName}` : 'Primary tech'}
             </span>
           </span>
@@ -224,7 +224,7 @@ export default function BookingDetailsModal({
                 — {expressBrandedLineDescription(expressSeg.secondary)}
               </span>
             </span>
-            <span className="mt-1 block text-xs font-normal text-gray-400">
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">
               {pedicureDisplayName ? `Ms. ${pedicureDisplayName}` : 'Secondary tech'}
             </span>
           </span>
@@ -329,7 +329,7 @@ export default function BookingDetailsModal({
       );
     }
     return (
-      <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-gray-700 bg-gray-100`}>
+      <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-gray-700 bg-ash`}>
         <span className={BADGE_LABEL_NUDGE_CLASS}>{label}</span>
       </span>
     );
@@ -343,15 +343,15 @@ export default function BookingDetailsModal({
           <DialogTitle>Booking Details</DialogTitle>
         </VisuallyHidden.Root>
         <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-10 pr-12 pb-3 space-y-3">
-          <div ref={bookingCardRef} className="p-3 rounded-2xl bg-white border border-[#e5e5e5] shadow-sm relative sm:p-3">
+          <div ref={bookingCardRef} className="p-3 rounded-none bg-pearl border border-[#e7e2db] shadow-sm relative sm:p-3">
             <div className="flex justify-between items-start gap-3 mb-2">
-              <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-gray-500">BOOKING</span>
+              <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">BOOKING</span>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {booking.slotType === 'with_squeeze_fee' && (
                   <span data-copy-badge="true" className={`${UNIFORM_PILL_BADGE_CLASS} ${
                     booking.serviceLocation === 'home_service'
                       ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                      : 'bg-blue-100 text-blue-800 border border-blue-300'
+                      : 'bg-ash text-ink border border-champagne'
                   }`}>
                     <span className={BADGE_LABEL_NUDGE_CLASS}>SQ</span>
                   </span>
@@ -360,7 +360,7 @@ export default function BookingDetailsModal({
                   <span data-copy-badge="true" className={`${UNIFORM_PILL_BADGE_CLASS} ${
                     booking.serviceClientType === 'new'
                       ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
-                      : 'bg-blue-100 text-blue-700 border border-blue-300'
+                      : 'bg-ash text-[#57534e] border border-border'
                   }`}>
                     <span className={BADGE_LABEL_NUDGE_CLASS}>{booking.serviceClientType === 'new' ? 'New' : 'Repeat'}</span>
                   </span>
@@ -369,18 +369,18 @@ export default function BookingDetailsModal({
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="inline-flex items-center justify-center rounded-lg p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="inline-flex items-center justify-center rounded-lg p-1 text-muted-foreground hover:text-muted-foreground hover:bg-ash transition-colors"
                   title="Copy booking details as image"
                 >
                   {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                 </button>
               </div>
             </div>
-            <h3 className="text-sm sm:text-base font-semibold text-[#1a1a1a]">{booking.clientName}</h3>
+            <h3 className="font-heading text-lg sm:text-xl text-ink">{booking.clientName}</h3>
             {(booking.bookingCode || onViewClient) && (
               <div className="flex items-center gap-1.5 mt-0.5">
                 {booking.bookingCode && (
-                  <span className="text-[11px] sm:text-xs text-gray-500">{booking.bookingCode}</span>
+                  <span className="text-[11px] sm:text-xs text-muted-foreground">{booking.bookingCode}</span>
                 )}
                 {onViewClient && (
                   <button
@@ -394,62 +394,62 @@ export default function BookingDetailsModal({
                 )}
               </div>
             )}
-            <div className="flex flex-col gap-1.5 mt-3 text-xs sm:text-sm text-[#1a1a1a]">
+            <div className="flex flex-col gap-1.5 mt-3 text-xs sm:text-sm text-[#1c1917]">
               <div className="flex items-start gap-2">
-                <Calendar size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                <Calendar size={iconSize} className="text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
                 <span>{formattedDate} · <span className="whitespace-nowrap">{timeStr}</span></span>
               </div>
               {(isManiPediExpressDual && (manicureDisplayName || pedicureDisplayName)) ? (
                 <div className="flex flex-col gap-2">
                   {manicureDisplayName && (
                     <div className="flex items-start gap-2">
-                      <User size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                      <User size={iconSize} className="text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
                       <span>
                         Ms. {manicureDisplayName}
-                        <span className="text-gray-400 text-[11px] ml-1">(Manicure)</span>
+                        <span className="text-muted-foreground text-[11px] ml-1">(Manicure)</span>
                       </span>
                     </div>
                   )}
                   {pedicureDisplayName && (
                     <div className="flex items-start gap-2">
-                      <User size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                      <User size={iconSize} className="text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
                       <span>
                         Ms. {pedicureDisplayName}
-                        <span className="text-gray-400 text-[11px] ml-1">(Pedicure)</span>
+                        <span className="text-muted-foreground text-[11px] ml-1">(Pedicure)</span>
                       </span>
                     </div>
                   )}
                 </div>
               ) : booking.nailTechName ? (
                 <div className="flex items-start gap-2">
-                  <User size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                  <User size={iconSize} className="text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
                   <span>Ms. {booking.nailTechName}</span>
                 </div>
               ) : null}
               <div className="flex items-start gap-2">
-                <Phone size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                <Phone size={iconSize} className="text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
                 <span>{contactValue}</span>
               </div>
               {booking.clientSocialMediaName && (
                 <div className="flex items-start gap-2">
-                  <AtSign size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                  <AtSign size={iconSize} className="text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
                   <span>{booking.clientSocialMediaName}</span>
                 </div>
               )}
               <div className="flex items-start gap-2">
-                <Sparkles size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                <Sparkles size={iconSize} className="text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
                 <span>
                   {[getBookingDetailsServiceDisplay(booking.service, booking.secondaryNailTechName), getChosenServicesDisplay(booking.chosenServices)].filter(Boolean).join(' · ')}
                 </span>
               </div>
               {locationLabel && (
                 <div className="flex items-start gap-2">
-                  <MapPin size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                  <MapPin size={iconSize} className="text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
                   <span>{locationLabel}{booking.serviceAddress ? ` · ${booking.serviceAddress}` : ''}</span>
                 </div>
               )}
               <div className="flex items-start gap-2">
-                <CreditCard size={iconSize} className="text-gray-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                <CreditCard size={iconSize} className="text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
                 <span
                     data-copy-badge="true"
                     className={`inline-flex min-h-5 items-center justify-center rounded-md px-2 py-0.5 text-[10px] font-medium leading-tight whitespace-nowrap ${
@@ -457,7 +457,7 @@ export default function BookingDetailsModal({
                       ? 'bg-emerald-600 text-white'
                       : paymentStatusLabel === 'Partial'
                         ? 'bg-amber-50 text-amber-700'
-                        : 'bg-gray-100 text-gray-600'
+                        : 'bg-ash text-muted-foreground'
                   }`}
                 >
                   <span className={BADGE_LABEL_NUDGE_CLASS}>{paymentStatusLabel}</span>
@@ -468,19 +468,19 @@ export default function BookingDetailsModal({
 
           {booking.paymentProofUrl && (
             <div>
-              <label className="text-sm font-semibold mb-2 block">Payment Proof</label>
+              <label>Payment Proof</label>
               <div className="mb-2">
                 <img
                   src={booking.paymentProofUrl}
                   alt="Payment proof"
-                  className="w-full rounded-2xl border border-gray-200"
+                  className="w-full rounded-none border border-border"
                   style={{ maxHeight: '220px', objectFit: 'contain', background: '#f8f9fa' }}
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setImagePreviewUrl(booking.paymentProofUrl!)}
-                className="text-sm text-gray-600 hover:text-[#212529] bg-transparent border-none cursor-pointer p-0 underline hover:no-underline"
+                className="text-sm text-muted-foreground hover:text-[#1c1917] bg-transparent border-none cursor-pointer p-0 underline hover:no-underline"
               >
                 Open full image
               </button>
@@ -488,7 +488,7 @@ export default function BookingDetailsModal({
           )}
 
           <div>
-            <label className="text-sm font-semibold mb-2 block">Client Photos</label>
+            <label>Client Photos</label>
             {booking.id && (
               <div className="mb-3">
                 {(() => {
@@ -499,8 +499,8 @@ export default function BookingDetailsModal({
                   );
                   if (hasValidLink) {
                     return (
-                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                        <p className="text-xs text-gray-600 mb-2">Client upload link (valid until {format(new Date(booking.clientPhotoUploadExpiresAt!), 'MMM d, yyyy')})</p>
+                      <div className="rounded-lg border border-border bg-ash-soft p-3">
+                        <p className="text-xs text-muted-foreground mb-2">Client upload link (valid until {format(new Date(booking.clientPhotoUploadExpiresAt!), 'MMM d, yyyy')})</p>
                         <div className="flex gap-2">
                           <Input
                             readOnly
@@ -551,7 +551,7 @@ export default function BookingDetailsModal({
                         <Link2 size={14} className="mr-2" />
                         {generatingLink ? 'Generating...' : 'Generate upload link for client'}
                       </Button>
-                      <p className="text-xs text-gray-500 mt-1">Link valid 14 days. Client can upload inspo & current nails. Once generated, it stays here for resending.</p>
+                      <p className="text-xs text-muted-foreground mt-1">Link valid 14 days. Client can upload inspo & current nails. Once generated, it stays here for resending.</p>
                     </>
                   );
                 })()}
@@ -561,14 +561,14 @@ export default function BookingDetailsModal({
               <div className="space-y-3">
                 {(booking.clientPhotos?.currentState?.length ?? 0) > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-1.5">Current nails</p>
+                    <p className="text-xs text-muted-foreground mb-1.5">Current nails</p>
                     <div className="flex flex-wrap gap-2">
                       {(booking.clientPhotos?.currentState ?? []).filter(p => p.url).map((p, i) => (
                         <button
                           key={i}
                           type="button"
                           onClick={() => setImagePreviewUrl(p.url!)}
-                          className="inline-block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-400 transition-colors bg-transparent cursor-pointer p-0"
+                          className="inline-block rounded-lg border border-border overflow-hidden hover:border-gray-400 transition-colors bg-transparent cursor-pointer p-0"
                         >
                           <img src={p.url!} alt={`Current nails ${i + 1}`} className="h-20 w-20 object-cover" />
                         </button>
@@ -578,14 +578,14 @@ export default function BookingDetailsModal({
                 )}
                 {(booking.clientPhotos?.inspiration?.length ?? 0) > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-1.5">Nail inspo</p>
+                    <p className="text-xs text-muted-foreground mb-1.5">Nail inspo</p>
                     <div className="flex flex-wrap gap-2">
                       {(booking.clientPhotos?.inspiration ?? []).filter(p => p.url).map((p, i) => (
                         <button
                           key={i}
                           type="button"
                           onClick={() => setImagePreviewUrl(p.url!)}
-                          className="inline-block rounded-lg border border-gray-200 overflow-hidden hover:border-gray-400 transition-colors bg-transparent cursor-pointer p-0"
+                          className="inline-block rounded-lg border border-border overflow-hidden hover:border-gray-400 transition-colors bg-transparent cursor-pointer p-0"
                         >
                           <img src={p.url!} alt={`Nail inspo ${i + 1}`} className="h-20 w-20 object-cover" />
                         </button>
@@ -599,13 +599,13 @@ export default function BookingDetailsModal({
 
           {booking.notes && (
             <div>
-              <label className="text-sm font-semibold mb-2 block">Client Notes</label>
-              <div className="text-gray-600">{booking.notes}</div>
+              <label>Client Notes</label>
+              <div className="text-muted-foreground">{booking.notes}</div>
             </div>
           )}
 
           <div>
-            <label className="text-sm font-semibold mb-2 block">Admin Notes</label>
+            <label>Admin Notes</label>
             <Textarea
               rows={3}
               value={adminNotesDraft}
@@ -613,7 +613,7 @@ export default function BookingDetailsModal({
               placeholder="Add internal notes..."
               className="mb-2"
             />
-            <small className="text-gray-500 text-xs">Visible to admins only.</small>
+            <small className="text-muted-foreground text-xs">Visible to admins only.</small>
             <div className="mt-2">
               <Button
                 variant="outline"
@@ -627,7 +627,7 @@ export default function BookingDetailsModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-none shrink-0 flex flex-col gap-3 w-full max-w-full px-4 pb-12 pt-2 border-t border-[#e5e5e5] bg-[#f7f7f7] rounded-b-[24px] sm:flex-row sm:flex-wrap sm:items-start" style={{ paddingBottom: 'max(3rem, env(safe-area-inset-bottom, 3rem))' }}>
+        <DialogFooter className="flex-none shrink-0 flex flex-col gap-3 w-full max-w-full px-4 pb-12 pt-3 border-t border-border bg-ash-soft rounded-none sm:flex-row sm:flex-wrap sm:items-start" style={{ paddingBottom: 'max(3rem, env(safe-area-inset-bottom, 3rem))' }}>
           {isPendingPayment ? (
             <div className="flex flex-col gap-2 w-full">
               <div className="grid grid-cols-2 gap-2 w-full">
@@ -698,7 +698,7 @@ export default function BookingDetailsModal({
                 <button
                   type="button"
                   onClick={() => setShowMoreActions((v) => !v)}
-                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground bg-ash hover:bg-ash transition-colors"
                 >
                   {showMoreActions ? <><i className="bi bi-chevron-up text-[11px]"></i>Hide options</> : <><i className="bi bi-chevron-down text-[11px]"></i>More options</>}
                 </button>
@@ -733,7 +733,7 @@ export default function BookingDetailsModal({
                   <>
                     {invoiceFooterActions}
                     <div className="grid grid-cols-2 gap-2 w-full">
-                      <Button variant="default" className="shrink-0 bg-green-600 hover:bg-green-700" onClick={onMarkComplete} disabled={!onMarkComplete}>
+                      <Button variant="default" className="shrink-0" onClick={onMarkComplete} disabled={!onMarkComplete}>
                         <i className="bi bi-check-circle mr-2"></i>Complete
                       </Button>
                       <Button variant="destructive" className="shrink-0" onClick={onCancel} disabled={!onCancel}>
@@ -748,7 +748,7 @@ export default function BookingDetailsModal({
                         <i className="bi bi-receipt mr-1.5" />Invoice
                       </Button>
                     )}
-                    <Button variant="default" className="bg-green-600 hover:bg-green-700 w-full" onClick={onMarkComplete} disabled={!onMarkComplete}>
+                    <Button variant="default" className="w-full" onClick={onMarkComplete} disabled={!onMarkComplete}>
                       <i className="bi bi-check-circle mr-1.5"></i>Complete
                     </Button>
                     <Button variant="destructive" className="w-full" onClick={onCancel} disabled={!onCancel}>
@@ -775,7 +775,7 @@ export default function BookingDetailsModal({
         <DialogHeader>
           <DialogTitle>Confirm Manually</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Confirm this booking without payment proof. Set how much the client paid (PHP). You can set 0 if you don’t require payment.
         </p>
         <div className="space-y-2">
@@ -814,7 +814,7 @@ export default function BookingDetailsModal({
         <DialogHeader>
           <DialogTitle>Update Payment</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Update the amount paid and tip for this booking.
         </p>
         <div className="space-y-4 py-4">
