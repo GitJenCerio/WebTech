@@ -325,17 +325,38 @@ export default function InvoiceModal({
                   </div>
                   <div className="col-span-3 md:col-span-2">
                     <Input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={item.quantity === 0 ? '' : String(item.quantity)}
                       placeholder="Qty"
-                      className="text-xs h-8 border-gray-400" style={{ backgroundColor: '#e5e7eb', backgroundImage: 'none' }}
+                      className="text-xs h-8 border-gray-400"
+                      style={{ backgroundColor: '#e5e7eb', backgroundImage: 'none' }}
                       onChange={(e) => {
-                        const qty = Math.max(1, Number(e.target.value) || 1);
+                        const raw = e.target.value.replace(/[^\d]/g, '');
                         const next = [...invoiceItems];
-                        next[idx].quantity = qty;
-                        next[idx].total = qty * next[idx].unitPrice;
+                        if (raw === '') {
+                          next[idx] = { ...next[idx], quantity: 0, total: 0 };
+                        } else {
+                          const qty = parseInt(raw, 10) || 0;
+                          next[idx] = {
+                            ...next[idx],
+                            quantity: qty,
+                            total: qty * next[idx].unitPrice,
+                          };
+                        }
                         onInvoiceItemsChange(next);
+                      }}
+                      onBlur={() => {
+                        if (item.quantity < 1) {
+                          const next = [...invoiceItems];
+                          next[idx] = {
+                            ...next[idx],
+                            quantity: 1,
+                            total: 1 * next[idx].unitPrice,
+                          };
+                          onInvoiceItemsChange(next);
+                        }
                       }}
                     />
                   </div>
