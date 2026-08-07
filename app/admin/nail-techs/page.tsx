@@ -629,13 +629,14 @@ export default function NailTechsPage() {
       )}
 
       <Dialog open={showAddModal} onOpenChange={(open) => !saving && setShowAddModal(open)}>
-        <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl max-h-[94vh] overflow-y-auto border-[#e7e2db] bg-pearl">
+        <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl flex flex-col overflow-hidden border-[#e7e2db] bg-pearl">
           <DialogHeader>
             <DialogTitle className="text-[#1c1917]">
               {modalMode === 'add' ? 'Add Nail Technician' : modalMode === 'edit' ? 'Edit Nail Technician' : 'View Nail Technician'}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-4 overscroll-contain py-1">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label>Name <span className="text-red-500">*</span></label>
@@ -845,7 +846,8 @@ export default function NailTechsPage() {
               </Select>
             </div>
 
-            <DialogFooter className="gap-2 pt-4">
+            </div>
+            <DialogFooter className="gap-2 pt-2 shrink-0">
               <Button
                 type="button"
                 variant="secondary"

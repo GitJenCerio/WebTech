@@ -199,8 +199,7 @@ export default function AddSlotModal({
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
       <DialogContent
-        className="max-w-[min(100%,36rem)] sm:max-w-xl flex flex-col max-h-[94vh] gap-2 p-3 sm:p-3.5"
-        viewportClassName="px-2 sm:px-3 pt-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom,0px))]"
+        className="max-w-[min(100%,36rem)] sm:max-w-xl flex flex-col gap-2 p-3 sm:p-3.5"
       >
         <DialogHeader className="shrink-0 pb-1 mb-0 pr-7">
           <DialogTitle className="text-base sm:text-lg">
@@ -446,7 +445,7 @@ export default function AddSlotModal({
               </>
             )}
           </div>
-          <DialogFooter className="pt-2 pb-0 shrink-0 border-t border-border mt-2 gap-2">
+          <DialogFooter className="pt-2 shrink-0 border-t border-border mt-2 gap-2">
             <Button type="button" variant="secondary" onClick={onHide} className="h-9 text-sm">
               Cancel
             </Button>

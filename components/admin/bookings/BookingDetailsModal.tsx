@@ -338,7 +338,7 @@ export default function BookingDetailsModal({
   return (
     <>
     <Dialog open={show} onOpenChange={(open) => { if (!open) { setShowMoreActions(false); onHide(); } }}>
-      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl max-h-[94vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl flex flex-col overflow-hidden p-0">
         <VisuallyHidden.Root>
           <DialogTitle>Booking Details</DialogTitle>
         </VisuallyHidden.Root>
@@ -627,7 +627,7 @@ export default function BookingDetailsModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-none shrink-0 flex flex-col gap-2 w-full max-w-full px-3 pb-8 pt-2 border-t border-border bg-ash-soft rounded-none sm:flex-row sm:flex-wrap sm:items-start" style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom, 2rem))' }}>
+        <DialogFooter className="flex-none shrink-0 flex flex-col gap-2 w-full max-w-full px-3 pt-2 border-t border-border bg-ash-soft rounded-none sm:flex-row sm:flex-wrap sm:items-start" style={{ paddingBottom: 'max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))' }}>
           {isPendingPayment ? (
             <div className="flex flex-col gap-2 w-full">
               <div className="grid grid-cols-2 gap-2 w-full">

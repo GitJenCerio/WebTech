@@ -225,7 +225,7 @@ export default function InvoiceModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl flex flex-col max-h-[94vh]">
+      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl flex flex-col">
         <DialogHeader className="shrink-0 pb-1 mb-0 pr-7">
           <DialogTitle>{currentQuotationId ? 'Edit Invoice' : 'Create Invoice'}</DialogTitle>
           {invoiceSubtitle ? (
@@ -524,7 +524,7 @@ export default function InvoiceModal({
           </div>
         </div>
 
-        <div className="flex flex-row items-center gap-2 shrink-0 border-t border-border pt-2 mt-2 pb-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}>
+        <div className="flex flex-row items-center gap-2 shrink-0 border-t border-border pt-2 mt-2 bg-pearl" style={{ paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))' }}>
           <Button type="button" variant="ghost" size="sm" className="shrink-0 px-2" onClick={onClose} title="Close">
             <X className="h-4 w-4 text-red-600" />
           </Button>

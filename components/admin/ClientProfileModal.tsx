@@ -76,7 +76,7 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl max-h-[94vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl flex flex-col overflow-hidden p-0">
         <VisuallyHidden.Root>
           <DialogTitle>Client Profile</DialogTitle>
         </VisuallyHidden.Root>
@@ -191,8 +191,8 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
           )}
         </div>
 
-        <div className="flex-none px-4 py-3 border-t border-[#e7e2db] bg-[#f7f6f4] rounded-none">
-          <Button variant="outline" size="sm" className="w-full" onClick={() => onOpenChange(false)}>
+        <div className="flex-none px-3 py-2.5 border-t border-[#e7e2db] bg-[#f7f6f4] rounded-none" style={{ paddingBottom: 'max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))' }}>
+          <Button variant="outline" size="sm" className="w-full min-h-10" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </div>

@@ -77,11 +77,11 @@ export default function ResetPasswordDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl max-h-[94vh] overflow-y-auto">
+      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Reset Password</DialogTitle>
         </DialogHeader>
-        <div className="py-4 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto py-2 space-y-4 overscroll-contain">
           <p className="text-sm text-gray-600">
             Reset password for <strong>{user.name || user.email}</strong>. A temporary password will be generated.
             Share it securely with the user.

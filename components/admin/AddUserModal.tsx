@@ -172,12 +172,12 @@ export default function AddUserModal({ show, onHide, onUserAdded }: AddUserModal
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl max-h-[94vh] overflow-y-auto">
+      <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Add New User</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="py-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto py-2 space-y-4 overscroll-contain">
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>

@@ -54,7 +54,7 @@ function AlertDialogContent({
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          "bg-pearl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-1rem)] translate-x-[-50%] translate-y-[-50%] gap-2 rounded-none border border-border p-3 sm:p-3.5 shadow-[0_16px_48px_rgba(28,25,23,0.12)] duration-200 sm:max-w-xl max-h-[94vh] overflow-y-auto",
+          "bg-pearl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-auto bottom-[max(1rem,env(safe-area-inset-bottom,0px))] sm:top-[50%] sm:bottom-auto left-[50%] z-50 grid w-full max-w-[calc(100%-1rem)] translate-x-[-50%] sm:translate-y-[-50%] gap-2 rounded-none border border-border p-3 sm:p-3.5 shadow-[0_16px_48px_rgba(28,25,23,0.12)] duration-200 sm:max-w-xl max-h-[min(88dvh,calc(100svh-1.5rem))] overflow-y-auto pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]",
           className,
         )}
         {...props}

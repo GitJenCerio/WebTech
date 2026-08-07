@@ -494,12 +494,12 @@ export default function ClientsPage() {
       )}
 
       <Dialog open={showClientModal} onOpenChange={(open) => { if (!open) { setShowClientModal(false); setClientModalMode('view'); } }}>
-        <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl max-h-[94vh] overflow-y-auto">
+        <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>{clientModalMode === 'edit' ? 'Edit Client' : 'Client Details'}</DialogTitle>
           </DialogHeader>
 
-          <div className="py-4 space-y-4" style={{ fontSize: '0.92rem' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto py-2 space-y-4 overscroll-contain" style={{ fontSize: '0.92rem' }}>
             {clientDetailsLoading ? (
               <div className="text-gray-600">Loading client details...</div>
             ) : clientDetailsError ? (
@@ -683,11 +683,11 @@ export default function ClientsPage() {
 
       {/* Add Client Dialog */}
       <Dialog open={showAddClientModal} onOpenChange={(open) => !open && setShowAddClientModal(false)}>
-        <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl max-h-[94vh] overflow-y-auto">
+        <DialogContent className="max-w-[min(100%,36rem)] sm:max-w-xl flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>Add Client</DialogTitle>
           </DialogHeader>
-          <div className="py-4 space-y-3">
+          <div className="flex-1 min-h-0 overflow-y-auto py-2 space-y-3 overscroll-contain">
             <div>
               <label>Name <span className="text-red-500">*</span></label>
               <Input

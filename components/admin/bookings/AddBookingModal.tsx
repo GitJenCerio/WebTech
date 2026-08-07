@@ -382,7 +382,7 @@ export default function AddBookingModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl max-h-[94vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl flex flex-col overflow-hidden p-0">
         <DialogHeader className="shrink-0 border-b border-[#e7e2db] bg-[#f7f6f4] px-3 sm:px-4 py-2.5 pr-10">
           <DialogTitle>Add Booking</DialogTitle>
         </DialogHeader>
@@ -787,7 +787,7 @@ export default function AddBookingModal({
               />
             </div>
           </div>
-          <DialogFooter className="shrink-0 border-t border-[#e7e2db] bg-[#f7f6f4] px-3 sm:px-4 py-2.5">
+          <DialogFooter className="shrink-0 border-t border-[#e7e2db] bg-[#f7f6f4] px-3 sm:px-4 py-2.5" style={{ paddingBottom: 'max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))' }}>
             <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
               Cancel
             </Button>
