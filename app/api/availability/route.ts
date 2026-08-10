@@ -63,16 +63,13 @@ export async function GET(request: Request) {
       );
     }
     
-    // Fetch next 3 months of slots
+    // All future dates (no max horizon) so admin-added next-year slots appear for clients
     const today = new Date();
-    const threeMonthsLater = new Date();
-    threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
     const startDate = today.toISOString().slice(0, 10); // YYYY-MM-DD
-    const endDate = threeMonthsLater.toISOString().slice(0, 10);
     
     console.log('[API Availability] Fetching slots:', {
       nailTechId: targetNailTechId,
-      dateRange: `${startDate} to ${endDate}`
+      dateRange: `from ${startDate} (no end cap)`
     });
     
     // Return available slots for booking, plus occupied/blocked slots so the client
@@ -81,7 +78,7 @@ export async function GET(request: Request) {
     // so they correctly break a consecutive chain.
     let slots = await Slot.find({
       nailTechId: targetNailTechId,
-      date: { $gte: startDate, $lte: endDate },
+      date: { $gte: startDate },
       $or: [
         { status: 'available', isHidden: { $ne: true } },
         { status: { $in: ['pending', 'confirmed', 'booked', 'blocked'] } },
