@@ -84,8 +84,14 @@ interface Booking {
   adminNotes?: string;
   socialName?: string;
   amountPaid?: number;
-  clientPhotos?: { inspiration: ClientPhoto[]; currentState: ClientPhoto[] };
+  clientPhotos?: {
+    inspiration: ClientPhoto[];
+    currentState: ClientPhoto[];
+    afterService?: ClientPhoto[];
+  };
   paymentProofUrl?: string;
+  completionMethod?: 'PNB' | 'CASH' | 'GCASH';
+  completionReceiptUrl?: string;
   slotTimes?: string[];
   invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
   secondaryInvoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
@@ -140,7 +146,13 @@ export default function BookingsPage() {
     paidAmount?: number;
     depositRequired?: number;
     paymentProofUrl?: string;
-    clientPhotos?: { inspiration: { url?: string }[]; currentState: { url?: string }[] };
+    completionMethod?: 'PNB' | 'CASH' | 'GCASH';
+    completionReceiptUrl?: string;
+    clientPhotos?: {
+      inspiration: { url?: string }[];
+      currentState: { url?: string }[];
+      afterService?: { url?: string }[];
+    };
     slotTimes?: string[];
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
     secondaryInvoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
@@ -228,6 +240,8 @@ export default function BookingsPage() {
       adminNotes: booking.adminNotes || '',
       clientPhotos: booking.clientPhotos || { inspiration: [], currentState: [] },
       paymentProofUrl: booking.payment?.paymentProofUrl,
+      completionMethod: booking.payment?.completionMethod,
+      completionReceiptUrl: booking.payment?.completionReceiptUrl,
       slotTimes: booking.appointmentTimes || (apptTime ? [apptTime] : []),
       invoice: booking.invoice || null,
       secondaryInvoice: booking.secondaryInvoice || null,
@@ -442,6 +456,10 @@ export default function BookingsPage() {
           adminNotes: freshAdminNotes,
           completedAt: b.completedAt ?? prev.completedAt,
           chosenServices: b.service?.chosenServices ?? prev.chosenServices,
+          clientPhotos: b.clientPhotos ?? prev.clientPhotos,
+          paymentProofUrl: b.payment?.paymentProofUrl ?? prev.paymentProofUrl,
+          completionMethod: b.payment?.completionMethod ?? prev.completionMethod,
+          completionReceiptUrl: b.payment?.completionReceiptUrl ?? prev.completionReceiptUrl,
           clientPhotoUploadUrl: b.clientPhotoUploadUrl ?? prev.clientPhotoUploadUrl,
           clientPhotoUploadExpiresAt: b.clientPhotoUploadExpiresAt ?? prev.clientPhotoUploadExpiresAt,
         } : null);
@@ -570,7 +588,13 @@ export default function BookingsPage() {
 
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
-  const handleMarkCompleted = async (amountReceived: number, tipFromExcess: number) => {
+  const handleMarkCompleted = async (payload: {
+    amountPaid: number;
+    tipAmount: number;
+    paymentMethod: 'PNB' | 'CASH' | 'GCASH';
+    receiptFile: File | null;
+    nailFiles: File[];
+  }) => {
     if (!selectedBooking?.id) return;
     const bookingInv = {
       service: {
@@ -585,20 +609,24 @@ export default function BookingsPage() {
     const total = hasInv ? getCombinedInvoiceTotal(bookingInv) : 0;
     const currentPaid = selectedBooking.paidAmount ?? 0;
     const remaining = Math.max(0, total - currentPaid);
-    const appliedToBalance = Math.min(amountReceived, remaining);
+    const appliedToBalance = Math.min(payload.amountPaid, remaining);
     const finalPaidAmount = currentPaid + appliedToBalance;
     const currentTip = (selectedBooking as { tipAmount?: number }).tipAmount ?? 0;
-    const finalTipAmount = currentTip + tipFromExcess;
+    const finalTipAmount = currentTip + payload.tipAmount;
     try {
       setIsMarkingComplete(true);
-      const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mark_completed',
-          paidAmount: finalPaidAmount,
-          tipAmount: finalTipAmount,
-        }),
+      const formData = new FormData();
+      formData.append('paymentMethod', payload.paymentMethod);
+      formData.append('paidAmount', String(finalPaidAmount));
+      formData.append('tipAmount', String(finalTipAmount));
+      if (payload.receiptFile) {
+        formData.append('receipt', payload.receiptFile);
+      }
+      payload.nailFiles.forEach((file) => formData.append('nails', file));
+
+      const response = await fetch(`/api/bookings/${selectedBooking.id}/complete`, {
+        method: 'POST',
+        body: formData,
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to mark completed' }));
@@ -1199,6 +1227,8 @@ export default function BookingsPage() {
       adminNotes: item.adminNotes,
       clientPhotos: item.clientPhotos,
       paymentProofUrl: item.paymentProofUrl,
+      completionMethod: item.completionMethod,
+      completionReceiptUrl: item.completionReceiptUrl,
       slotTimes: item.slotTimes,
       invoice: item.invoice,
       secondaryInvoice: item.secondaryInvoice,

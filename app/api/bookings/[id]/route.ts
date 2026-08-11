@@ -7,7 +7,6 @@ import {
   confirmBooking, 
   cancelBooking,
   updateBookingPayment,
-  markBookingAsCompleted,
   markBookingAsNoShow,
   markBookingAsRescheduled,
   rescheduleBookingToSlots,
@@ -300,39 +299,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     if (action === 'mark_completed') {
-      // Mark booking as completed (admin-only)
-      // Optionally accept paidAmount and tipAmount (final totals) to update payment before completing
-      const paidAmount = typeof body.paidAmount === 'number' ? body.paidAmount : undefined;
-      const tipAmount = typeof body.tipAmount === 'number' ? body.tipAmount : undefined;
-      if (paidAmount !== undefined || tipAmount !== undefined) {
-        const bookingForUpdate = await getBookingById(id);
-        if (bookingForUpdate) {
-          const newPaid = paidAmount ?? (bookingForUpdate.pricing?.paidAmount ?? 0);
-          const newTip = tipAmount ?? (bookingForUpdate.pricing?.tipAmount ?? 0);
-          await updateBookingPayment(id, newPaid, newTip, body.method, { allowCompletedBooking: true });
-        }
-      }
-      const booking = await markBookingAsCompleted(id);
-      if (booking.confirmedAt) {
-        backupBooking(booking, 'update').catch(err =>
-          console.error('Failed to backup booking update to Google Sheets:', err)
-        );
-      }
-      fireSheetsSync(id);
-      sendPushToAll({
-        title: '🎉 Booking Completed',
-        body: `${booking.bookingCode} has been marked as completed.`,
-        tag: 'booking-completed',
-        data: { url: '/admin/bookings' },
-      }).catch(err => console.error('[Push] completed:', err));
-      return NextResponse.json({
-        booking: {
-          id: booking._id.toString(),
-          bookingCode: booking.bookingCode,
-          status: booking.status,
-          completedAt: booking.completedAt?.toISOString() || null,
-        }
-      });
+      return NextResponse.json(
+        {
+          error:
+            'Use POST /api/bookings/[id]/complete with payment method, receipt (PNB/GCash), and nail photos',
+        },
+        { status: 400 }
+      );
     }
 
     if (action === 'reschedule') {

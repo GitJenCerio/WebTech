@@ -88,7 +88,11 @@ interface Slot {
     status: string;
     paymentStatus?: string;
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number };
-    payment?: { paymentProofUrl?: string };
+    payment?: {
+      paymentProofUrl?: string;
+      completionMethod?: 'PNB' | 'CASH' | 'GCASH';
+      completionReceiptUrl?: string;
+    };
     clientNotes?: string;
     adminNotes?: string;
     clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
@@ -168,8 +172,14 @@ export default function CalendarPage() {
     amountPaid?: number;
     depositRequired?: number;
     paymentProofUrl?: string;
+    completionMethod?: 'PNB' | 'CASH' | 'GCASH';
+    completionReceiptUrl?: string;
     pricing?: { total?: number; depositRequired?: number; paidAmount?: number; tipAmount?: number };
-    clientPhotos?: { inspiration?: Array<{ url?: string }>; currentState?: Array<{ url?: string }> };
+    clientPhotos?: {
+      inspiration?: Array<{ url?: string }>;
+      currentState?: Array<{ url?: string }>;
+      afterService?: Array<{ url?: string }>;
+    };
     slotTimes?: string[];
     /** Manicure invoice (canonical for Express dual UI) */
     invoice?: { quotationId?: string; total?: number; createdAt?: string } | null;
@@ -661,6 +671,8 @@ export default function CalendarPage() {
         depositRequired: slot.booking.pricing?.depositRequired,
         pricing: slot.booking.pricing,
         paymentProofUrl: slot.booking.payment?.paymentProofUrl,
+        completionMethod: slot.booking.payment?.completionMethod,
+        completionReceiptUrl: slot.booking.payment?.completionReceiptUrl,
         adminNotes: slot.booking?.adminNotes || '',
         clientPhotos: slot.booking?.clientPhotos,
         clientPhotoUploadUrl: slot.booking?.clientPhotoUploadUrl ?? null,
@@ -722,7 +734,13 @@ export default function CalendarPage() {
     }
   };
 
-  const handleMarkCompleted = async (amountReceived: number, tipFromExcess: number) => {
+  const handleMarkCompleted = async (payload: {
+    amountPaid: number;
+    tipAmount: number;
+    paymentMethod: 'PNB' | 'CASH' | 'GCASH';
+    receiptFile: File | null;
+    nailFiles: File[];
+  }) => {
     if (!selectedBooking?.id) return;
     const bookingInv = {
       service: {
@@ -737,20 +755,24 @@ export default function CalendarPage() {
     const total = hasInv ? getCombinedInvoiceTotal(bookingInv) : 0;
     const currentPaid = selectedBooking.paidAmount ?? 0;
     const remaining = Math.max(0, total - currentPaid);
-    const appliedToBalance = Math.min(amountReceived, remaining);
+    const appliedToBalance = Math.min(payload.amountPaid, remaining);
     const finalPaidAmount = currentPaid + appliedToBalance;
     const currentTip = (selectedBooking as { tipAmount?: number }).tipAmount ?? 0;
-    const finalTipAmount = currentTip + tipFromExcess;
+    const finalTipAmount = currentTip + payload.tipAmount;
     try {
       setIsMarkingComplete(true);
-      const response = await fetch(`/api/bookings/${selectedBooking.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'mark_completed',
-          paidAmount: finalPaidAmount,
-          tipAmount: finalTipAmount,
-        }),
+      const formData = new FormData();
+      formData.append('paymentMethod', payload.paymentMethod);
+      formData.append('paidAmount', String(finalPaidAmount));
+      formData.append('tipAmount', String(finalTipAmount));
+      if (payload.receiptFile) {
+        formData.append('receipt', payload.receiptFile);
+      }
+      payload.nailFiles.forEach((file) => formData.append('nails', file));
+
+      const response = await fetch(`/api/bookings/${selectedBooking.id}/complete`, {
+        method: 'POST',
+        body: formData,
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to mark completed' }));

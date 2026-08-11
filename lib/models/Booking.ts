@@ -44,6 +44,11 @@ export interface IBooking extends Document {
     fullyPaidAt?: Date; // When full payment was completed
     paymentProofUrl?: string; // Cloudinary URL for payment proof
     paymentProofPublicId?: string; // Cloudinary public ID for deletion
+    /** Settlement method when marking the appointment complete */
+    completionMethod?: 'PNB' | 'CASH' | 'GCASH';
+    /** Receipt for PNB/GCash collected at completion (separate from deposit proof) */
+    completionReceiptUrl?: string;
+    completionReceiptPublicId?: string;
   };
   clientNotes?: string;
   adminNotes?: string;
@@ -54,6 +59,12 @@ export interface IBooking extends Document {
       uploadedAt: Date;
     }>;
     currentState: Array<{
+      url: string;
+      publicId: string;
+      uploadedAt: Date;
+    }>;
+    /** Finished nails taken when marking complete */
+    afterService?: Array<{
       url: string;
       publicId: string;
       uploadedAt: Date;
@@ -154,6 +165,9 @@ const BookingSchema = new Schema<IBooking>(
       fullyPaidAt: { type: Date },
       paymentProofUrl: { type: String },
       paymentProofPublicId: { type: String },
+      completionMethod: { type: String, enum: ['PNB', 'CASH', 'GCASH'] },
+      completionReceiptUrl: { type: String },
+      completionReceiptPublicId: { type: String },
     },
     clientNotes: { type: String, default: '' },
     adminNotes: { type: String, default: '' },
@@ -164,6 +178,11 @@ const BookingSchema = new Schema<IBooking>(
         uploadedAt: { type: Date, default: Date.now },
       }],
       currentState: [{
+        url: { type: String },
+        publicId: { type: String },
+        uploadedAt: { type: Date, default: Date.now },
+      }],
+      afterService: [{
         url: { type: String },
         publicId: { type: String },
         uploadedAt: { type: Date, default: Date.now },

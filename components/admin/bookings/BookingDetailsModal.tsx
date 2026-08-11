@@ -86,12 +86,15 @@ interface BookingDetailsModalProps {
     reservationAmount?: number;
     depositRequired?: number;
     paymentProofUrl?: string;
+    completionMethod?: 'PNB' | 'CASH' | 'GCASH';
+    completionReceiptUrl?: string;
     amountPaid?: number;
     pricing?: { paidAmount?: number; tipAmount?: number; total?: number };
     completedAt?: string | null;
     clientPhotos?: {
       inspiration?: Array<{ url?: string }>;
       currentState?: Array<{ url?: string }>;
+      afterService?: Array<{ url?: string }>;
     };
     clientPhotoUploadUrl?: string | null;
     clientPhotoUploadExpiresAt?: string | null;
@@ -468,7 +471,7 @@ export default function BookingDetailsModal({
 
           {booking.paymentProofUrl && (
             <div>
-              <label>Payment Proof</label>
+              <label>Deposit Payment Proof</label>
               <div className="mb-2">
                 <img
                   src={booking.paymentProofUrl}
@@ -484,6 +487,36 @@ export default function BookingDetailsModal({
               >
                 Open full image
               </button>
+            </div>
+          )}
+
+          {(booking.completionMethod || booking.completionReceiptUrl) && (
+            <div>
+              <label>Completion Payment</label>
+              {booking.completionMethod && (
+                <div className="text-sm text-muted-foreground mb-2">
+                  Method: {booking.completionMethod === 'GCASH' ? 'GCash' : booking.completionMethod}
+                </div>
+              )}
+              {booking.completionReceiptUrl && (
+                <>
+                  <div className="mb-2">
+                    <img
+                      src={booking.completionReceiptUrl}
+                      alt="Completion receipt"
+                      className="w-full rounded-none border border-border"
+                      style={{ maxHeight: '220px', objectFit: 'contain', background: '#f8f9fa' }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setImagePreviewUrl(booking.completionReceiptUrl!)}
+                    className="text-sm text-muted-foreground hover:text-[#1c1917] bg-transparent border-none cursor-pointer p-0 underline hover:no-underline"
+                  >
+                    Open full image
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -557,7 +590,9 @@ export default function BookingDetailsModal({
                 })()}
               </div>
             )}
-          {((booking.clientPhotos?.currentState?.length ?? 0) > 0 || (booking.clientPhotos?.inspiration?.length ?? 0) > 0) && (
+          {((booking.clientPhotos?.currentState?.length ?? 0) > 0 ||
+            (booking.clientPhotos?.inspiration?.length ?? 0) > 0 ||
+            (booking.clientPhotos?.afterService?.length ?? 0) > 0) && (
               <div className="space-y-3">
                 {(booking.clientPhotos?.currentState?.length ?? 0) > 0 && (
                   <div>
@@ -588,6 +623,23 @@ export default function BookingDetailsModal({
                           className="inline-block rounded-lg border border-border overflow-hidden hover:border-gray-400 transition-colors bg-transparent cursor-pointer p-0"
                         >
                           <img src={p.url!} alt={`Nail inspo ${i + 1}`} className="h-20 w-20 object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(booking.clientPhotos?.afterService?.length ?? 0) > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1.5">Finished nails</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(booking.clientPhotos?.afterService ?? []).filter(p => p.url).map((p, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setImagePreviewUrl(p.url!)}
+                          className="inline-block rounded-lg border border-border overflow-hidden hover:border-gray-400 transition-colors bg-transparent cursor-pointer p-0"
+                        >
+                          <img src={p.url!} alt={`Finished nails ${i + 1}`} className="h-20 w-20 object-cover" />
                         </button>
                       ))}
                     </div>
