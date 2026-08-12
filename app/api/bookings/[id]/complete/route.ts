@@ -19,6 +19,9 @@ import { syncBookingToSheet, syncFinanceToSheet } from '@/lib/services/googleShe
 import { sendPushToAll } from '@/lib/services/pushNotificationService';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+/** Allow multi-photo uploads (Vercel hobby still caps ~4.5MB total request). */
+export const maxDuration = 60;
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -31,23 +34,54 @@ function isPaymentMethod(value: unknown): value is PaymentMethod {
   return typeof value === 'string' && (PAYMENT_METHODS as readonly string[]).includes(value);
 }
 
-async function assertFile(file: File, label: string) {
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+function isUploadFile(value: FormDataEntryValue | null): value is File {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as File).arrayBuffer === 'function' &&
+    typeof (value as File).size === 'number' &&
+    (value as File).size > 0
+  );
+}
+
+function guessMimeFromName(name: string | undefined): string | null {
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.heic')) return 'image/heic';
+  if (lower.endsWith('.heif')) return 'image/heif';
+  return null;
+}
+
+function assertImageFile(file: File, label: string) {
+  const mime =
+    (file.type && file.type !== 'application/octet-stream' ? file.type : null) ||
+    guessMimeFromName(file.name) ||
+    '';
+  if (mime && !ALLOWED_MIME_TYPES.includes(mime)) {
     throw new Error(`${label} must be JPEG, PNG, WebP, or HEIC`);
+  }
+  if (!mime) {
+    console.warn(`[complete] ${label} missing MIME type; proceeding with upload`);
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
     throw new Error(`${label} must be 10MB or smaller`);
   }
 }
 
+function paymentToPlain(payment: unknown): Record<string, unknown> {
+  if (!payment) return {};
+  if (typeof (payment as { toObject?: () => Record<string, unknown> }).toObject === 'function') {
+    return (payment as { toObject: () => Record<string, unknown> }).toObject();
+  }
+  return { ...(payment as Record<string, unknown>) };
+}
+
 /**
  * POST /api/bookings/[id]/complete
  * Mark a confirmed booking complete with payment method, optional receipt, and nail photos.
- * Body: multipart FormData
- *  - paidAmount, tipAmount (numbers as strings)
- *  - paymentMethod: PNB | CASH | GCASH
- *  - receipt: image file (required for PNB/GCASH)
- *  - nails: one or more image files (1–5)
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -68,10 +102,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
     if (existing.status !== 'confirmed') {
-      return NextResponse.json({ error: 'Can only complete confirmed bookings' }, { status: 400 });
+      return NextResponse.json(
+        { error: `Can only complete confirmed bookings (current status: ${existing.status})` },
+        { status: 400 }
+      );
     }
 
-    const formData = await request.formData();
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch (err) {
+      console.error('[complete] formData parse failed:', err);
+      return NextResponse.json(
+        { error: 'Could not read upload. Try smaller images (under 4MB total) or fewer photos.' },
+        { status: 400 }
+      );
+    }
+
     const paymentMethodRaw = formData.get('paymentMethod');
     if (!isPaymentMethod(paymentMethodRaw)) {
       return NextResponse.json(
@@ -91,7 +138,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const receiptEntry = formData.get('receipt');
-    const receiptFile = receiptEntry instanceof File && receiptEntry.size > 0 ? receiptEntry : null;
+    const receiptFile = isUploadFile(receiptEntry) ? receiptEntry : null;
     if (paymentMethod !== 'CASH') {
       if (!receiptFile) {
         return NextResponse.json(
@@ -99,13 +146,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           { status: 400 }
         );
       }
-      await assertFile(receiptFile, 'Receipt');
+      assertImageFile(receiptFile, 'Receipt');
     }
 
     const nailEntries = formData.getAll('nails');
-    const nailFiles = nailEntries.filter(
-      (entry): entry is File => entry instanceof File && entry.size > 0
-    );
+    const nailFiles = nailEntries.filter(isUploadFile);
     if (nailFiles.length < 1) {
       return NextResponse.json(
         { error: 'At least one finished nail photo is required' },
@@ -119,7 +164,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       );
     }
     for (let i = 0; i < nailFiles.length; i++) {
-      await assertFile(nailFiles[i], `Nail photo ${i + 1}`);
+      assertImageFile(nailFiles[i], `Nail photo ${i + 1}`);
     }
 
     const bookingId = existing._id.toString();
@@ -127,14 +172,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     let completionReceiptUrl: string | undefined;
     let completionReceiptPublicId: string | undefined;
     if (receiptFile) {
-      const buffer = Buffer.from(await receiptFile.arrayBuffer());
-      const uploaded = (await uploadImage(
-        buffer,
-        `completion_receipts/${bookingId}`,
-        `receipt_${Date.now()}`
-      )) as { secure_url?: string; public_id?: string };
-      completionReceiptUrl = uploaded.secure_url;
-      completionReceiptPublicId = uploaded.public_id;
+      try {
+        const buffer = Buffer.from(await receiptFile.arrayBuffer());
+        const uploaded = (await uploadImage(
+          buffer,
+          `completion_receipts/${bookingId}`,
+          `receipt_${Date.now()}`
+        )) as { secure_url?: string; public_id?: string };
+        completionReceiptUrl = uploaded.secure_url;
+        completionReceiptPublicId = uploaded.public_id;
+      } catch (err) {
+        console.error('[complete] receipt upload failed:', err);
+        const msg = err instanceof Error ? err.message : 'Upload failed';
+        return NextResponse.json({ error: `Receipt upload failed: ${msg}` }, { status: 500 });
+      }
       if (!completionReceiptUrl) {
         return NextResponse.json({ error: 'Failed to upload receipt' }, { status: 500 });
       }
@@ -142,20 +193,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const afterServicePhotos: Array<{ url: string; publicId: string; uploadedAt: Date }> = [];
     for (let i = 0; i < nailFiles.length; i++) {
-      const buffer = Buffer.from(await nailFiles[i].arrayBuffer());
-      const uploaded = (await uploadImage(
-        buffer,
-        `nail_completed/${bookingId}`,
-        `after_${Date.now()}_${i}`
-      )) as { secure_url?: string; public_id?: string };
-      if (!uploaded.secure_url || !uploaded.public_id) {
-        return NextResponse.json({ error: 'Failed to upload nail photo' }, { status: 500 });
+      try {
+        const buffer = Buffer.from(await nailFiles[i].arrayBuffer());
+        const uploaded = (await uploadImage(
+          buffer,
+          `nail_completed/${bookingId}`,
+          `after_${Date.now()}_${i}`
+        )) as { secure_url?: string; public_id?: string };
+        if (!uploaded.secure_url || !uploaded.public_id) {
+          return NextResponse.json({ error: 'Failed to upload nail photo' }, { status: 500 });
+        }
+        afterServicePhotos.push({
+          url: uploaded.secure_url,
+          publicId: uploaded.public_id,
+          uploadedAt: new Date(),
+        });
+      } catch (err) {
+        console.error('[complete] nail upload failed:', err);
+        const msg = err instanceof Error ? err.message : 'Upload failed';
+        return NextResponse.json({ error: `Nail photo upload failed: ${msg}` }, { status: 500 });
       }
-      afterServicePhotos.push({
-        url: uploaded.secure_url,
-        publicId: uploaded.public_id,
-        uploadedAt: new Date(),
-      });
     }
 
     await updateBookingPayment(bookingId, paidAmount, tipAmount, paymentMethod, {
@@ -167,8 +224,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    bookingDoc.payment = {
-      ...(bookingDoc.payment || {}),
+    const nextPayment = {
+      ...paymentToPlain(bookingDoc.payment),
       method: paymentMethod,
       completionMethod: paymentMethod,
       ...(completionReceiptUrl
@@ -178,14 +235,36 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           }
         : {}),
     };
+    bookingDoc.set('payment', nextPayment);
+
     if (!bookingDoc.clientPhotos) {
-      bookingDoc.clientPhotos = { inspiration: [], currentState: [], afterService: [] };
+      bookingDoc.set('clientPhotos', { inspiration: [], currentState: [], afterService: [] });
     }
-    bookingDoc.clientPhotos.afterService = [
-      ...(bookingDoc.clientPhotos.afterService || []),
-      ...afterServicePhotos,
-    ];
+    const existingAfter = bookingDoc.clientPhotos?.afterService || [];
+    bookingDoc.set('clientPhotos.afterService', [...existingAfter, ...afterServicePhotos]);
+    bookingDoc.markModified('clientPhotos');
+    bookingDoc.markModified('payment');
     await bookingDoc.save();
+
+    // Keep express pair payment/photos in sync when completing one side
+    if (bookingDoc.expressGroupId) {
+      await Booking.updateMany(
+        { expressGroupId: bookingDoc.expressGroupId, _id: { $ne: bookingDoc._id } },
+        {
+          $set: {
+            'payment.method': paymentMethod,
+            'payment.completionMethod': paymentMethod,
+            ...(completionReceiptUrl
+              ? {
+                  'payment.completionReceiptUrl': completionReceiptUrl,
+                  'payment.completionReceiptPublicId': completionReceiptPublicId,
+                }
+              : {}),
+            'clientPhotos.afterService': [...existingAfter, ...afterServicePhotos],
+          },
+        }
+      );
+    }
 
     const booking = await markBookingAsCompleted(bookingId);
 
@@ -254,7 +333,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to complete booking';
     console.error('Error completing booking:', error);
-    const status = /only complete confirmed|already completed/i.test(message) ? 400 : 500;
+    const status = /only complete confirmed|already completed|required|invalid/i.test(message)
+      ? 400
+      : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }

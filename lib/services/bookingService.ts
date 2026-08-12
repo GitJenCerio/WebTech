@@ -726,18 +726,26 @@ export async function markBookingAsCompleted(bookingId: string): Promise<IBookin
     ? await Booking.find({ expressGroupId: anchor.expressGroupId })
     : [anchor];
 
-  for (const booking of members) {
-    if (booking.status !== 'confirmed') {
-      throw new Error('Can only complete confirmed bookings');
+  // Skip cancelled / no-show siblings in express pairs; still require confirmed for active ones
+  const activeMembers = members.filter(
+    (b) => b.status !== 'cancelled' && b.status !== 'no_show'
+  );
+
+  for (const booking of activeMembers) {
+    if (booking.status !== 'confirmed' && booking.status !== 'completed') {
+      throw new Error(
+        `Can only complete confirmed bookings (found ${booking.bookingCode} with status "${booking.status}")`
+      );
     }
-    if (booking.completedAt !== null) {
+    if (booking.status === 'confirmed' && booking.completedAt !== null) {
       throw new Error('Booking is already completed');
     }
   }
 
   const now = new Date();
   const customerId = members[0].customerId;
-  for (const booking of members) {
+  for (const booking of activeMembers) {
+    if (booking.status === 'completed' && booking.completedAt) continue;
     booking.completedAt = now;
     booking.status = 'completed';
     await booking.save();

@@ -761,22 +761,37 @@ export default function CalendarPage() {
     const finalTipAmount = currentTip + payload.tipAmount;
     try {
       setIsMarkingComplete(true);
+      const { compressImageForUpload } = await import('@/lib/utils/compressImageForUpload');
+      const receiptFile = payload.receiptFile
+        ? await compressImageForUpload(payload.receiptFile)
+        : null;
+      const nailFiles = await Promise.all(
+        payload.nailFiles.map((f) => compressImageForUpload(f))
+      );
+
       const formData = new FormData();
       formData.append('paymentMethod', payload.paymentMethod);
       formData.append('paidAmount', String(finalPaidAmount));
       formData.append('tipAmount', String(finalTipAmount));
-      if (payload.receiptFile) {
-        formData.append('receipt', payload.receiptFile);
+      if (receiptFile) {
+        formData.append('receipt', receiptFile);
       }
-      payload.nailFiles.forEach((file) => formData.append('nails', file));
+      nailFiles.forEach((file) => formData.append('nails', file));
 
       const response = await fetch(`/api/bookings/${selectedBooking.id}/complete`, {
         method: 'POST',
         body: formData,
       });
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to mark completed' }));
-        throw new Error(errorData.error || 'Failed to mark completed');
+        const raw = await response.text();
+        let message = `Failed to mark completed (${response.status})`;
+        try {
+          const errorData = JSON.parse(raw) as { error?: string };
+          if (errorData?.error) message = errorData.error;
+        } catch {
+          if (raw?.trim()) message = raw.slice(0, 200);
+        }
+        throw new Error(message);
       }
       setShowMarkCompleteModal(false);
       setShowModal(false);
