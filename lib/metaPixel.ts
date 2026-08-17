@@ -1,5 +1,7 @@
 const CONSENT_KEY = 'gnbj_cookie_consent';
-const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+/** Live Meta Pixel ID. Override with NEXT_PUBLIC_META_PIXEL_ID if needed. */
+const DEFAULT_PIXEL_ID = '1078667591326635';
+const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() || DEFAULT_PIXEL_ID;
 
 export type CookieConsentValue = 'accepted' | 'rejected';
 
