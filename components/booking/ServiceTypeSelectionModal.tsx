@@ -5,6 +5,7 @@ import { IoClose } from 'react-icons/io5';
 import { OverlayModal } from '@/components/ui/OverlayModal';
 import { OptionCard, OptionCardTitle, OptionCardDescription, OptionCardBadge } from '@/components/ui/OptionCard';
 import { Button } from '@/components/ui/Button';
+import { MANI_PEDI_EXPRESS_FEE, formatPeso } from '@/lib/constants/policy';
 
 type ServiceLocation = 'homebased_studio' | 'home_service';
 type BookingServiceType =
@@ -22,18 +23,22 @@ interface ServiceOption {
   slots: number;
 }
 
+const EXPRESS_DESCRIPTION = `Manicure and pedicure with 2 nail techs at the same time (+${formatPeso(
+  MANI_PEDI_EXPRESS_FEE
+)} additional fee)`;
+
 const servicesByLocation: Record<ServiceLocation, ServiceOption[]> = {
   homebased_studio: [
     { value: 'manicure', label: 'Manicure', description: 'Professional manicure at our studio', slots: 1 },
     { value: 'pedicure', label: 'Pedicure', description: 'Professional pedicure at our studio', slots: 1 },
     { value: 'mani_pedi', label: 'Mani + Pedi Combo', description: 'Manicure and pedicure combo', slots: 2 },
-    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express', description: 'Manicure and pedicure with 2 nail techs at the same time (+₱300 additional fee)', slots: 1 },
+    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express', description: EXPRESS_DESCRIPTION, slots: 1 },
   ],
   home_service: [
     { value: 'manicure', label: 'Manicure', description: 'Professional manicure at your home', slots: 1 },
     { value: 'pedicure', label: 'Pedicure', description: 'Professional pedicure at your home', slots: 1 },
     { value: 'mani_pedi', label: 'Mani + Pedi Combo', description: 'Manicure and pedicure combo', slots: 2 },
-    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express', description: 'Manicure and pedicure with 2 nail techs at the same time (+₱300 additional fee)', slots: 1 },
+    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express', description: EXPRESS_DESCRIPTION, slots: 1 },
   ],
 };
 
@@ -83,27 +88,32 @@ export default function ServiceTypeSelectionModal({
       closeButton={
         <button
           onClick={onBack}
-          className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
+          className="brand-icon-btn"
           aria-label="Back"
           type="button"
         >
-          <IoClose className="w-6 h-6 text-gray-700" />
+          <IoClose className="w-5 h-5" />
         </button>
       }
     >
-      <div className="p-6 sm:p-8 max-h-[85vh] flex flex-col">
-        <h3 className="text-2xl font-semibold mb-2 text-gray-900 flex-shrink-0">What Service?</h3>
-        <p className="text-sm text-gray-600 mb-4 flex-shrink-0">
-          Select the service you'd like to book. We'll show only available dates for your selection.
-          Booking for more than one client? Please submit a separate booking for each person.
+      <div className="brand-modal-scroll brand-modal-body">
+        <p className="brand-eyebrow mb-1 pr-9">Step 2 of 3</p>
+        <h3 className="font-heading text-xl sm:text-2xl mb-2 text-[#1c1917] pr-9">What Service?</h3>
+        <div className="brand-rule w-16 mb-3" aria-hidden />
+        <p className="text-sm text-[#78716c] mb-4 leading-relaxed">
+          Select the service you&apos;d like to book — we&apos;ll show only the dates available for it. Booking for more
+          than one client? Please submit a separate booking for each person.
         </p>
 
-        <div className="flex-1 overflow-y-auto -mr-6 pr-0">
+        <div>
           {serviceLocation === 'home_service' && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-6 text-sm text-amber-900">
-              <p className="font-medium">Home Service fee</p>
-              <p className="text-amber-800 mt-0.5">
-                Within Manila City: ₱1,500 · Within Metro Manila: ₱2,000 · Outside Metro Manila or Group Bookings: starts at ₱3,000 with a minimum of 3 clients. DM us for more info for special arrangements. Fee is on top of the service. Grab transport fee applies. Manila &amp; Metro Manila cover 1 client (+₱500 per additional client).
+            <div className="brand-note mb-4">
+              <p className="brand-eyebrow mb-1.5">Home service fee</p>
+              <p className="text-xs sm:text-sm leading-relaxed">
+                Within Manila City: ₱1,500 · Within Metro Manila: ₱2,000 · Outside Metro Manila or group bookings:
+                starts at ₱3,000 with a minimum of 3 clients. Message us for special arrangements. The fee is on top of
+                the service, and a Grab transport fee applies. Manila &amp; Metro Manila cover 1 client (+₱500 per
+                additional client).
               </p>
             </div>
           )}
@@ -135,15 +145,15 @@ export default function ServiceTypeSelectionModal({
             })}
           </div>
         </div>
+      </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-300 flex gap-3 flex-shrink-0 bg-white">
-          <Button variant="secondary" className="flex-1" onClick={onBack}>
-            Back
-          </Button>
-          <Button variant="default" className="flex-1" onClick={handleContinue} disabled={!localSelectedService}>
-            Continue
-          </Button>
-        </div>
+      <div className="brand-modal-footer flex gap-3">
+        <Button variant="secondary" className="flex-1" onClick={onBack}>
+          Back
+        </Button>
+        <Button variant="default" className="flex-1" onClick={handleContinue} disabled={!localSelectedService}>
+          Continue
+        </Button>
       </div>
     </OverlayModal>
   );

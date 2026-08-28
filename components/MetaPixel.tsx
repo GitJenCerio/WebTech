@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Script from 'next/script';
 import { usePathname } from 'next/navigation';
 import {
@@ -15,7 +15,6 @@ export default function MetaPixel() {
   const pixelId = getMetaPixelId();
   const [consent, setConsent] = useState<CookieConsentValue | null>(null);
   const [scriptReady, setScriptReady] = useState(false);
-  const skipNextPageView = useRef(true);
 
   const isAdmin = pathname?.startsWith('/admin');
 
@@ -24,7 +23,6 @@ export default function MetaPixel() {
     const onConsent = (e: Event) => {
       const detail = (e as CustomEvent<CookieConsentValue>).detail;
       setConsent(detail);
-      if (detail === 'accepted') skipNextPageView.current = true;
     };
     window.addEventListener('gnbj-cookie-consent', onConsent);
     return () => window.removeEventListener('gnbj-cookie-consent', onConsent);
@@ -34,10 +32,6 @@ export default function MetaPixel() {
 
   useEffect(() => {
     if (!enabled || !scriptReady) return;
-    if (skipNextPageView.current) {
-      skipNextPageView.current = false;
-      return;
-    }
     trackMetaPageView();
   }, [enabled, scriptReady, pathname]);
 
@@ -60,7 +54,6 @@ export default function MetaPixel() {
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
             fbq('init', '${pixelId}');
-            fbq('track', 'PageView');
           `,
         }}
       />

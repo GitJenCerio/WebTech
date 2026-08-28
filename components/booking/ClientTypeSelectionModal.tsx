@@ -159,20 +159,22 @@ export default function ClientTypeSelectionModal({
         <button
           type="button"
           onClick={handleClose}
-          className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
+          className="brand-icon-btn"
           aria-label="Close and return to homepage"
         >
-          <X className="w-6 h-6 text-gray-700" />
+          <X className="w-5 h-5" />
         </button>
       }
     >
-      <div className="p-6 sm:p-8">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-2 text-gray-900">Book Your Appointment</h3>
+      <div className="brand-modal-scroll brand-modal-body">
+        <p className="brand-eyebrow mb-1 pr-9">glammednailsbyjhen</p>
+        <h3 className="font-heading text-xl sm:text-2xl mb-2 text-[#1c1917] pr-9">Book Your Appointment</h3>
+        <div className="brand-rule w-16 mb-4" aria-hidden />
 
         {/* Step 1: Client Type Selection */}
         {step === 'type' && (
           <div>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-[#78716c] mb-4">
               Are you a new client or a returning client?
             </p>
 
@@ -199,20 +201,20 @@ export default function ClientTypeSelectionModal({
           <div>
             <button
               onClick={handleReset}
-              className="text-sm text-gray-600 hover:text-gray-900 underline mb-6 flex items-center gap-1"
+              className="brand-eyebrow mb-4 flex items-center gap-1.5 transition-colors hover:text-[#1c1917]"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
               Back
             </button>
 
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-[#78716c] mb-4">
               Enter your contact number so we can find your account.
             </p>
 
             <div className="space-y-4">
               <div>
                 <Label className="mb-2 flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-600" />
+                  <Phone className="w-3.5 h-3.5 text-[#c4b5a0]" />
                   Contact Number
                 </Label>
                 <div className="flex gap-2">
@@ -241,9 +243,9 @@ export default function ClientTypeSelectionModal({
                     className="px-4 py-3"
                   >
                     {lookupLoading ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#fffcfa]" />
                     ) : (
-                      <Search className="w-5 h-5" />
+                      <Search className="w-4 h-4" />
                     )}
                   </Button>
                 </div>
@@ -251,20 +253,20 @@ export default function ClientTypeSelectionModal({
 
               {/* Lookup Error */}
               {lookupError && (
-                <div className="border border-[#e4e4e7] bg-[#fafafa] px-4 py-3 flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-gray-700 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-gray-800 font-medium">{lookupError}</p>
+                <div className="brand-note-error flex items-start gap-2.5" role="alert">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm font-medium">{lookupError}</p>
                 </div>
               )}
 
               {/* Lookup Result - Found */}
               {lookupResult?.found && lookupResult.customer && (
-                <div className="rounded-xl border-2 border-green-300 bg-green-50 p-4 space-y-2">
-                  <p className="text-sm font-semibold text-green-800">
-                    Welcome back, {lookupResult.customer.name}!
+                <div className="brand-note space-y-2">
+                  <p className="font-heading text-lg text-[#1c1917]">
+                    Welcome back, {lookupResult.customer.name}.
                   </p>
-                  <p className="text-xs text-green-700">
-                    We found your account. Click continue to proceed with your booking.
+                  <p className="text-xs">
+                    We found your account. Continue to proceed with your booking.
                   </p>
                   <Button variant="default" className="w-full mt-3" onClick={() => setStep('location')}>
                     Continue
@@ -274,11 +276,9 @@ export default function ClientTypeSelectionModal({
 
               {/* Lookup Result - Not Found */}
               {lookupResult && !lookupResult.found && (
-                <div className="rounded-xl border-2 border-yellow-300 bg-yellow-50 p-4 space-y-2">
-                  <p className="text-sm font-semibold text-yellow-800">
-                    Account not found
-                  </p>
-                  <p className="text-xs text-yellow-700">
+                <div className="brand-note-strong space-y-2">
+                  <p className="font-heading text-lg text-[#1c1917]">Account not found</p>
+                  <p className="text-xs">
                     We couldn&apos;t find an account with that number. You&apos;ll be booked as a new client.
                   </p>
                   <Button variant="default" className="w-full mt-3" onClick={() => setStep('location')}>
@@ -304,13 +304,13 @@ export default function ClientTypeSelectionModal({
                   handleReset();
                 }
               }}
-              className="text-sm text-gray-600 hover:text-gray-900 underline mb-6 flex items-center gap-1"
+              className="brand-eyebrow mb-4 flex items-center gap-1.5 transition-colors hover:text-[#1c1917]"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
               Back
             </button>
 
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-[#78716c] mb-4">
               Where would you like the service?
             </p>
 
@@ -324,7 +324,8 @@ export default function ClientTypeSelectionModal({
 
               <div className="w-full grid place-items-center">
                 <OptionCard className="w-[300px] max-w-full" selected={false} onClick={() => handleLocationSelect('home_service')}>
-                  <OptionCardTitle>Home Service <span className="text-green-700 font-semibold">₱1,500–₱3,000+ fee</span></OptionCardTitle>
+                  <OptionCardTitle>Home Service</OptionCardTitle>
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-[#3d342c] mt-1">₱1,500–₱3,000+ fee</p>
                   <OptionCardDescription>
                     Service at your home. Fee depends on location (Manila ₱1,500 · Metro Manila ₱2,000 · Outside Metro Manila or Group Bookings starts at ₱3,000, min. 3 clients). You&apos;ll review the full areas &amp; fees before continuing.
                   </OptionCardDescription>
@@ -333,8 +334,8 @@ export default function ClientTypeSelectionModal({
             </div>
 
             {error && (
-              <div className="border border-[#e4e4e7] bg-[#fafafa] px-4 py-3 mt-4">
-                <p className="text-sm text-gray-800 font-medium">{error}</p>
+              <div className="brand-note-error mt-4" role="alert">
+                <p className="text-sm font-medium">{error}</p>
               </div>
             )}
           </div>
@@ -345,27 +346,27 @@ export default function ClientTypeSelectionModal({
           <div>
             <button
               onClick={() => setStep('location')}
-              className="text-sm text-gray-600 hover:text-gray-900 underline mb-4 flex items-center gap-1"
+              className="brand-eyebrow mb-4 flex items-center gap-1.5 transition-colors hover:text-[#1c1917]"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
               Back
             </button>
 
-            <h4 className="text-lg font-semibold text-gray-900 mb-1">Home Service Areas &amp; Fees</h4>
-            <p className="text-sm text-gray-600 mb-4">
+            <h4 className="font-heading text-xl sm:text-2xl text-[#1c1917] mb-2">Home Service Areas &amp; Fees</h4>
+            <p className="text-sm text-[#78716c] mb-4 leading-relaxed">
               Home service requires extra preparation, travel time, and transporting full equipment outside the studio.
               It also blocks several studio slots due to travel. Because of this, the rates were reviewed carefully and
               adjusted accordingly.
             </p>
 
-            <div className="space-y-3 max-h-[45vh] overflow-y-auto pr-1">
+            <div className="space-y-3">
               {/* Within Manila City */}
-              <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4">
-                <div className="flex items-baseline justify-between gap-2 mb-2">
-                  <p className="text-sm font-semibold text-gray-900">Within Manila City</p>
-                  <span className="text-sm font-bold text-green-700 whitespace-nowrap">₱1,500 Fee</span>
+              <div className="brand-panel-soft p-3">
+                <div className="flex items-baseline justify-between gap-3 mb-2">
+                  <p className="font-heading text-lg text-[#1c1917]">Within Manila City</p>
+                  <span className="text-sm text-[#1c1917] tabular-nums whitespace-nowrap">₱1,500</span>
                 </div>
-                <ul className="text-xs text-gray-700 space-y-1 list-disc pl-4">
+                <ul className="text-xs text-[#78716c] space-y-1 list-disc pl-4">
                   <li>Covers 1 client (single-client bookings)</li>
                   <li>+₱500 per additional client</li>
                   <li>Grab transport fee applies</li>
@@ -373,16 +374,16 @@ export default function ClientTypeSelectionModal({
               </div>
 
               {/* Within Metro Manila */}
-              <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4">
-                <div className="flex items-baseline justify-between gap-2 mb-1">
-                  <p className="text-sm font-semibold text-gray-900">Within Metro Manila</p>
-                  <span className="text-sm font-bold text-green-700 whitespace-nowrap">₱2,000 Fee</span>
+              <div className="brand-panel-soft p-3">
+                <div className="flex items-baseline justify-between gap-3 mb-1">
+                  <p className="font-heading text-lg text-[#1c1917]">Within Metro Manila</p>
+                  <span className="text-sm text-[#1c1917] tabular-nums whitespace-nowrap">₱2,000</span>
                 </div>
-                <p className="text-[11px] text-gray-500 mb-2">
+                <p className="text-[11px] text-[#a8a29e] mb-2 leading-relaxed">
                   Makati, Taguig, Pasig, Mandaluyong, Quezon City, San Juan, Marikina, Pasay, Parañaque, Las Piñas,
                   Muntinlupa, Caloocan, Valenzuela, Malabon, Navotas, Pateros
                 </p>
-                <ul className="text-xs text-gray-700 space-y-1 list-disc pl-4">
+                <ul className="text-xs text-[#78716c] space-y-1 list-disc pl-4">
                   <li>Covers 1 client (single-client bookings)</li>
                   <li>+₱500 per additional client</li>
                   <li>Grab transport fee applies</li>
@@ -390,38 +391,42 @@ export default function ClientTypeSelectionModal({
               </div>
 
               {/* Outside Metro Manila or Group Bookings */}
-              <div className="rounded-xl border-2 border-green-200 bg-green-50 p-4">
-                <div className="flex items-baseline justify-between gap-2 mb-1">
-                  <p className="text-sm font-semibold text-gray-900">Outside Metro Manila or Group Bookings</p>
-                  <span className="text-sm font-bold text-green-700 whitespace-nowrap">Starts at ₱3,000</span>
+              <div className="brand-panel-soft p-3">
+                <div className="flex items-baseline justify-between gap-3 mb-1">
+                  <p className="font-heading text-lg text-[#1c1917]">Outside Metro Manila or Group Bookings</p>
+                  <span className="text-sm text-[#1c1917] tabular-nums whitespace-nowrap">From ₱3,000</span>
                 </div>
-                <p className="text-[11px] text-gray-500 mb-2">
+                <p className="text-[11px] text-[#a8a29e] mb-2 leading-relaxed">
                   Luzon only — e.g. Bulacan, Rizal, Cavite, Laguna, Pampanga, Batangas · or group bookings (3+ clients)
                 </p>
-                <ul className="text-xs text-gray-700 space-y-1 list-disc pl-4">
+                <ul className="text-xs text-[#78716c] space-y-1 list-disc pl-4">
                   <li>Minimum of 3 clients required</li>
                   <li>Home service fee starts at ₱3,000</li>
                   <li>Grab transport fee applies</li>
-                  <li>DM us for more info for special arrangements</li>
+                  <li>Message us for special arrangements</li>
                 </ul>
               </div>
 
               {/* Setup requirement */}
-              <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-4">
-                <p className="text-sm font-semibold text-amber-900 mb-1">Service Setup Requirement</p>
-                <p className="text-xs text-amber-800">
+              <div className="brand-note-strong">
+                <p className="brand-eyebrow mb-1.5">Service setup requirement</p>
+                <p className="text-xs leading-relaxed">
                   Please ensure a table and chair are available at the location to allow proper service setup and
                   quality results.
                 </p>
               </div>
             </div>
-
-            <Button variant="default" className="w-full mt-5" onClick={() => proceedWithLocation('home_service')}>
-              I Agree &amp; Continue
-            </Button>
           </div>
         )}
       </div>
+
+      {step === 'home_terms' && (
+        <div className="brand-modal-footer">
+          <Button variant="default" className="w-full" onClick={() => proceedWithLocation('home_service')}>
+            I Agree &amp; Continue
+          </Button>
+        </div>
+      )}
     </OverlayModal>
   );
 }

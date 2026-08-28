@@ -213,6 +213,120 @@ h6.font-heading {
     height: 1px;
     background: linear-gradient(90deg, transparent, #c4b5a0, transparent);
   }
+
+  .brand-cta-ghost {
+    @apply inline-flex items-center justify-center px-5 py-3 text-xs font-medium tracking-[0.14em] uppercase
+      bg-[#f0ebe4] text-[#1c1917] border border-[#e7e2db]
+      hover:bg-[#e7e2db] hover:border-[#c4b5a0]
+      transition-all duration-300 whitespace-nowrap;
+  }
+
+  .brand-modal {
+    @apply relative bg-[#fffcfa] border border-[#e7e2db];
+    box-shadow: 0 24px 64px rgba(28, 25, 23, 0.18), 0 2px 8px rgba(28, 25, 23, 0.06);
+  }
+
+  /* Single source for booking modal inset — keep every dialog on this so the
+     flow stays uniform and the spacing can be retuned in one place. */
+  .brand-modal-body {
+    @apply p-4 sm:p-5;
+  }
+
+  /* Backdrop inset — tight on mobile so panels get the full viewport width.
+     Sized in dvh because a fixed vh box extends underneath the collapsing
+     mobile browser toolbars, which would push the modal footer out of reach. */
+  .brand-modal-backdrop {
+    @apply fixed inset-0 flex items-center justify-center overflow-hidden p-2 sm:p-4 bg-[#1c1917]/70;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* Column shell capped to the padded backdrop. Only the middle region scrolls,
+     so the close button and the action row can never drift off-screen. */
+  .brand-modal-panel {
+    @apply w-full max-h-full flex flex-col overflow-hidden;
+  }
+
+  /* min-h-0 is required — without it the flex item refuses to shrink below its
+     content height and the footer gets pushed past the viewport. */
+  .brand-modal-scroll {
+    @apply flex-1 min-h-0 overflow-y-auto overscroll-contain;
+  }
+
+  /* Action row. Never scrolls, and clears on-screen home bars via safe-area. */
+  .brand-modal-footer {
+    @apply flex-shrink-0 px-4 sm:px-5 pt-3 bg-[#fffcfa] border-t border-[#e7e2db];
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .brand-icon-btn {
+    @apply inline-flex items-center justify-center p-2 border border-transparent text-[#57534e]
+      transition-colors duration-200 touch-manipulation
+      hover:border-[#e7e2db] hover:bg-[#f0ebe4] hover:text-[#1c1917]
+      disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .brand-panel {
+    @apply border border-[#e7e2db] bg-[#fffcfa];
+  }
+
+  .brand-panel-soft {
+    @apply border border-[#e7e2db] bg-[#f7f6f4];
+  }
+
+  .brand-eyebrow {
+    @apply text-[10px] sm:text-xs uppercase tracking-[0.22em] text-[#b5a99a];
+  }
+
+  /* Times, amounts and codes. Cormorant's figures are shorter than its capitals,
+     so digits read as undersized beside letters like AM/PM — use Jost with even
+     figure widths instead. */
+  .brand-numeric {
+    @apply font-sans font-medium tabular-nums tracking-[0.03em];
+  }
+
+  .brand-label {
+    @apply block text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-[#78716c] mb-2;
+  }
+
+  /* text-base is load-bearing: iOS Safari zooms the page when a focused field
+     computes under 16px and never restores the scale afterwards. Do not drop
+     this to text-sm on mobile. */
+  .brand-field {
+    @apply w-full rounded-none border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 text-base text-[#1c1917]
+      transition-colors duration-200 touch-manipulation
+      placeholder:text-[#a8a29e] placeholder:tracking-normal
+      hover:border-[#c4b5a0] focus:outline-none focus:border-[#c4b5a0] focus:ring-1 focus:ring-[#c4b5a0]
+      disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  .brand-field-file {
+    @apply w-full rounded-none border border-[#e7e2db] bg-[#fffcfa] px-3 py-2 text-xs sm:text-sm text-[#57534e]
+      transition-colors duration-200 touch-manipulation
+      hover:border-[#c4b5a0] focus:outline-none focus:border-[#c4b5a0]
+      file:mr-3 file:rounded-none file:border-0 file:bg-[#1c1917] file:px-3 file:py-2
+      file:text-[10px] file:font-medium file:uppercase file:tracking-[0.14em] file:text-[#fffcfa] file:cursor-pointer
+      disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  /* Keeps native checkbox/radio shapes; only the accent and focus ring are brand-tinted. */
+  .brand-check {
+    @apply h-4 w-4 flex-shrink-0 cursor-pointer
+      focus:outline-none focus-visible:ring-1 focus-visible:ring-[#c4b5a0] focus-visible:ring-offset-1;
+    accent-color: #1c1917;
+  }
+
+  .brand-note {
+    @apply border border-[#e7e2db] border-l-2 border-l-[#c4b5a0] bg-[#f7f6f4] px-4 py-3 text-[#57534e];
+  }
+
+  .brand-note-strong {
+    @apply border border-[#e7e2db] border-l-2 border-l-[#1c1917] bg-[#f0ebe4] px-4 py-3 text-[#3d342c];
+  }
+
+  .brand-note-error {
+    @apply border border-[#d8c5bd] border-l-2 border-l-[#5a3830] bg-[#fbf6f4] px-4 py-3 text-[#5a3830];
+  }
 }
 
 @layer utilities {

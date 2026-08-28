@@ -3,8 +3,35 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getChosenServicesDisplay } from '@/lib/serviceLabels';
-import { X, Phone, Mail, User, AlertCircle, ArrowLeft, Upload, Info, MapPin } from 'lucide-react';
+import {
+  X,
+  Phone,
+  Mail,
+  User,
+  AlertCircle,
+  AlertTriangle,
+  ArrowLeft,
+  Upload,
+  Info,
+  MapPin,
+  Clock,
+  CreditCard,
+  Wallet,
+  CalendarCheck,
+} from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import {
+  DEPOSIT_PER_SLOT,
+  LATE_ARRIVAL_CANCEL_MINUTES,
+  LATE_ARRIVAL_FEE,
+  LATE_ARRIVAL_GRACE_MINUTES,
+  MANI_PEDI_EXPRESS_FEE,
+  PROOF_OF_PAYMENT_WINDOW_HOURS,
+  RESCHEDULE_FEE,
+  RESCHEDULE_NOTICE_DAYS,
+  STUDIO_ADDRESS,
+  formatPeso,
+} from '@/lib/constants/policy';
 
 type ClientType = 'new' | 'repeat';
 
@@ -42,9 +69,6 @@ interface BookingFormModalProps {
   }) => Promise<void>;
   isSubmitting?: boolean;
 }
-
-const DEPOSIT_PER_SLOT = 500;
-const MANI_PEDI_EXPRESS_NOTICE_FEE = 300;
 
 export default function BookingFormModal({
   isOpen,
@@ -308,11 +332,12 @@ export default function BookingFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="brand-modal-backdrop z-50">
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white border border-[#e4e4e7] max-w-2xl w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[95vh] overflow-y-auto relative"
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="brand-modal brand-modal-panel max-w-2xl"
       >
         <button
           onClick={(e) => {
@@ -320,63 +345,70 @@ export default function BookingFormModal({
             e.stopPropagation();
             onClose();
           }}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation z-10"
+          className="brand-icon-btn absolute top-3 right-3 z-30"
           aria-label="Close"
           type="button"
           disabled={isSubmitting}
         >
-          <X className="w-6 h-6 text-gray-700" />
+          <X className="w-5 h-5" />
         </button>
 
-        {/* Progress Indicator */}
-        <div className="mb-4 sm:mb-6 pr-8 sm:pr-10">
-          <h3 className="text-lg sm:text-2xl font-semibold mb-1 sm:mb-2 text-gray-900">
-            Complete Your Booking
-          </h3>
-          <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-            Step {currentStep} of {totalSteps}
-          </p>
-          
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
-            <div
-              className="bg-black h-1.5 sm:h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-            />
-          </div>
-        </div>
+        {/* The form owns the column so the submit row can sit in a pinned
+            footer while staying inside the form. */}
+        <form onSubmit={handleSubmit} className="flex flex-1 min-h-0 flex-col">
+          <div className="brand-modal-scroll brand-modal-body">
+            {/* Progress Indicator */}
+            <div className="mb-4 pr-9">
+              <p className="brand-eyebrow mb-1">
+                Step {currentStep} of {totalSteps}
+              </p>
+              <h3 className="font-heading text-xl sm:text-2xl text-[#1c1917] mb-2.5">
+                Complete Your Booking
+              </h3>
 
-        {/* Repeat Client Welcome */}
-        {isRepeatFound && currentStep === 1 && (
-          <div className="rounded-lg border-2 border-green-300 bg-green-50 px-3 py-2 sm:px-4 sm:py-3 mb-3 sm:mb-4">
-            <p className="text-xs sm:text-sm text-green-800">
-              <strong>Welcome back, {clientName}!</strong>
-            </p>
-            <p className="text-[10px] sm:text-xs text-green-700 mt-1">
-              Your details have been pre-filled. You can update them if needed.
-            </p>
-          </div>
-        )}
-        {isManiPediExpress && (
-          <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-3 py-2 sm:px-4 sm:py-3 mb-3 sm:mb-4">
-            <p className="text-xs sm:text-sm text-amber-900">
-              <strong>💳 Mani + Pedi Express notice:</strong> There will be an additional fee of ₱{MANI_PEDI_EXPRESS_NOTICE_FEE} for Mani + Pedi Express.
-            </p>
-          </div>
-        )}
+              {/* Progress Bar */}
+              <div className="w-full bg-[#e7e2db] h-[3px]">
+                <div
+                  className="h-[3px] transition-all duration-500"
+                  style={{
+                    width: `${(currentStep / totalSteps) * 100}%`,
+                    background: 'linear-gradient(90deg, #c4b5a0 0%, #1c1917 100%)',
+                  }}
+                />
+              </div>
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+            {/* Repeat Client Welcome */}
+            {isRepeatFound && currentStep === 1 && (
+              <div className="brand-note mb-4">
+                <p className="font-heading text-lg text-[#1c1917]">Welcome back, {clientName}.</p>
+                <p className="text-xs sm:text-sm mt-1">
+                  Your details have been pre-filled. You can update them if needed.
+                </p>
+              </div>
+            )}
+            {isManiPediExpress && (
+              <div className="brand-note-strong mb-4 flex items-start gap-2.5">
+                <CreditCard className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <p className="text-xs sm:text-sm">
+                  <span className="font-medium">Mani + Pedi Express notice:</span> An additional fee of{' '}
+                  {formatPeso(MANI_PEDI_EXPRESS_FEE)} applies for Mani + Pedi Express.
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-3 sm:space-y-4">
           {/* STEP 1: Contact Information (both new and repeat) */}
           {currentStep === 1 && (
             <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">
+              <h4 className="font-heading text-xl sm:text-2xl text-[#1c1917] mb-2 sm:mb-3">
                 {isRepeatFound ? 'Confirm Your Details' : 'Contact Information'}
               </h4>
               
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
-                  <User className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
-                  Full Name <span className="text-red-500">*</span>
+                <label className="brand-label flex items-center gap-2">
+                  <User className="w-3.5 h-3.5 text-[#c4b5a0]" />
+                  Full Name <span className="text-[#5a3830]">*</span>
                 </label>
                 <input
                   type="text"
@@ -386,16 +418,16 @@ export default function BookingFormModal({
                     setError(null);
                   }}
                   placeholder="e.g., Maria Santos"
-                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
+                  className="brand-field"
                   disabled={isSubmitting}
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
-                  <Mail className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
-                  Email Address <span className="text-red-500">*</span>
+                <label className="brand-label flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 text-[#c4b5a0]" />
+                  Email Address <span className="text-[#5a3830]">*</span>
                 </label>
                 <input
                   type="email"
@@ -405,16 +437,16 @@ export default function BookingFormModal({
                     setError(null);
                   }}
                   placeholder="e.g., maria@example.com"
-                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
+                  className="brand-field"
                   disabled={isSubmitting}
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
-                  <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
-                  Contact Number <span className="text-red-500">*</span>
+                <label className="brand-label flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-[#c4b5a0]" />
+                  Contact Number <span className="text-[#5a3830]">*</span>
                 </label>
                 <input
                   type="tel"
@@ -424,15 +456,15 @@ export default function BookingFormModal({
                     setError(null);
                   }}
                   placeholder="e.g., 09123456789"
-                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
+                  className="brand-field"
                   disabled={isSubmitting}
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 block">
-                  Facebook or Instagram Name <span className="text-red-500">*</span>
+                <label className="brand-label">
+                  Facebook or Instagram Name <span className="text-[#5a3830]">*</span>
                 </label>
                 <input
                   type="text"
@@ -442,7 +474,7 @@ export default function BookingFormModal({
                     setError(null);
                   }}
                   placeholder="e.g., Maria Santos or @maria.nails"
-                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
+                  className="brand-field"
                   disabled={isSubmitting}
                   required
                 />
@@ -450,9 +482,9 @@ export default function BookingFormModal({
 
               {serviceLocation === 'home_service' && (
                 <div>
-                  <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
-                    <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
-                    Address for home service <span className="text-red-500">*</span>
+                  <label className="brand-label flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-[#c4b5a0]" />
+                    Address for home service <span className="text-[#5a3830]">*</span>
                   </label>
                   <textarea
                     value={address}
@@ -462,7 +494,7 @@ export default function BookingFormModal({
                     }}
                     placeholder="e.g., Street, Barangay, City"
                     rows={2}
-                    className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors resize-none"
+                    className="brand-field resize-none"
                     disabled={isSubmitting}
                     required
                   />
@@ -472,8 +504,8 @@ export default function BookingFormModal({
               {/* How did you find us - new clients only */}
               {!isRepeatFound && (
                 <div>
-                  <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 block">
-                    How did you find out about us? <span className="text-red-500">*</span>
+                  <label className="brand-label">
+                    How did you find out about us? <span className="text-[#5a3830]">*</span>
                   </label>
                   <Select
                     value={howDidYouFindUs || '_placeholder'}
@@ -484,7 +516,7 @@ export default function BookingFormModal({
                     required
                     disabled={isSubmitting}
                   >
-                    <SelectTrigger className="w-full h-9 sm:h-10 text-sm sm:text-base">
+                    <SelectTrigger className="w-full text-sm sm:text-base px-3">
                       <SelectValue placeholder="Select an option" />
                     </SelectTrigger>
                     <SelectContent>
@@ -503,7 +535,7 @@ export default function BookingFormModal({
                       value={howDidYouFindUsOther}
                       onChange={(e) => setHowDidYouFindUsOther(e.target.value)}
                       placeholder="Please specify"
-                      className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors mt-2"
+                      className="brand-field mt-2"
                       disabled={isSubmitting}
                       required
                     />
@@ -516,122 +548,122 @@ export default function BookingFormModal({
           {/* STEP 2: Nail History & Health (new clients only) */}
           {!isRepeatFound && currentStep === 2 && (
             <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">Nail History & Health</h4>
+              <h4 className="font-heading text-xl sm:text-2xl text-[#1c1917] mb-2 sm:mb-3">Nail History & Health</h4>
               
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1.5 sm:mb-2 block">
-                  Have you ever had a Russian Technique Dry Manicure? <span className="text-red-500">*</span>
+                <label className="brand-label">
+                  Have you ever had a Russian Technique Dry Manicure? <span className="text-[#5a3830]">*</span>
                 </label>
                 <div className="flex gap-3 sm:gap-4">
-                  <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer">
+                  <label className="flex flex-1 items-center gap-2 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-4 py-2.5 transition-colors hover:border-[#c4b5a0] touch-manipulation">
                     <input
                       type="radio"
                       name="russianManicure"
                       value="yes"
                       checked={hasRussianManicure === 'yes'}
                       onChange={(e) => setHasRussianManicure(e.target.value)}
-                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                      className="brand-check"
                       disabled={isSubmitting}
                     />
-                    <span className="text-xs sm:text-sm text-gray-700">Yes</span>
+                    <span className="text-sm text-[#57534e]">Yes</span>
                   </label>
-                  <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer">
+                  <label className="flex flex-1 items-center gap-2 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-4 py-2.5 transition-colors hover:border-[#c4b5a0] touch-manipulation">
                     <input
                       type="radio"
                       name="russianManicure"
                       value="no"
                       checked={hasRussianManicure === 'no'}
                       onChange={(e) => setHasRussianManicure(e.target.value)}
-                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                      className="brand-check"
                       disabled={isSubmitting}
                     />
-                    <span className="text-xs sm:text-sm text-gray-700">No</span>
+                    <span className="text-sm text-[#57534e]">No</span>
                   </label>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1.5 sm:mb-2 block">
-                  Have you ever had Gel/Biab/Hardgel Overlay? <span className="text-red-500">*</span>
+                <label className="brand-label">
+                  Have you ever had Gel/Biab/Hardgel Overlay? <span className="text-[#5a3830]">*</span>
                 </label>
-                <div className="p-2 sm:p-3 bg-blue-50 border-2 border-blue-200 rounded-lg mb-2">
-                  <p className="text-[10px] sm:text-xs text-blue-800 flex items-start gap-1.5 sm:gap-2">
-                    <Info className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
+                <div className="brand-note mb-3">
+                  <p className="text-xs flex items-start gap-2">
+                    <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                     <span>
                       Gel/Biab/Hardgel Overlay is a thin layer of gel applied directly onto natural nails to add strength and protection.
                     </span>
                   </p>
                 </div>
                 <div className="flex gap-3 sm:gap-4">
-                  <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer">
+                  <label className="flex flex-1 items-center gap-2 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-4 py-2.5 transition-colors hover:border-[#c4b5a0] touch-manipulation">
                     <input
                       type="radio"
                       name="gelOverlay"
                       value="yes"
                       checked={hasGelOverlay === 'yes'}
                       onChange={(e) => setHasGelOverlay(e.target.value)}
-                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                      className="brand-check"
                       disabled={isSubmitting}
                     />
-                    <span className="text-xs sm:text-sm text-gray-700">Yes</span>
+                    <span className="text-sm text-[#57534e]">Yes</span>
                   </label>
-                  <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer">
+                  <label className="flex flex-1 items-center gap-2 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-4 py-2.5 transition-colors hover:border-[#c4b5a0] touch-manipulation">
                     <input
                       type="radio"
                       name="gelOverlay"
                       value="no"
                       checked={hasGelOverlay === 'no'}
                       onChange={(e) => setHasGelOverlay(e.target.value)}
-                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                      className="brand-check"
                       disabled={isSubmitting}
                     />
-                    <span className="text-xs sm:text-sm text-gray-700">No</span>
+                    <span className="text-sm text-[#57534e]">No</span>
                   </label>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1.5 sm:mb-2 block">
-                  Have you ever had Softgel Nail Extensions? <span className="text-red-500">*</span>
+                <label className="brand-label">
+                  Have you ever had Softgel Nail Extensions? <span className="text-[#5a3830]">*</span>
                 </label>
-                <div className="p-2 sm:p-3 bg-blue-50 border-2 border-blue-200 rounded-lg mb-2">
-                  <p className="text-[10px] sm:text-xs text-blue-800 flex items-start gap-1.5 sm:gap-2">
-                    <Info className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
+                <div className="brand-note mb-3">
+                  <p className="text-xs flex items-start gap-2">
+                    <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                     <span>
                       Softgel extensions (Gel-X) are pre-formed gel tips adhered to natural nails for longer and more durable nails.
                     </span>
                   </p>
                 </div>
                 <div className="flex gap-3 sm:gap-4">
-                  <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer">
+                  <label className="flex flex-1 items-center gap-2 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-4 py-2.5 transition-colors hover:border-[#c4b5a0] touch-manipulation">
                     <input
                       type="radio"
                       name="softgelExtensions"
                       value="yes"
                       checked={hasSoftgelExtensions === 'yes'}
                       onChange={(e) => setHasSoftgelExtensions(e.target.value)}
-                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                      className="brand-check"
                       disabled={isSubmitting}
                     />
-                    <span className="text-xs sm:text-sm text-gray-700">Yes</span>
+                    <span className="text-sm text-[#57534e]">Yes</span>
                   </label>
-                  <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer">
+                  <label className="flex flex-1 items-center gap-2 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-4 py-2.5 transition-colors hover:border-[#c4b5a0] touch-manipulation">
                     <input
                       type="radio"
                       name="softgelExtensions"
                       value="no"
                       checked={hasSoftgelExtensions === 'no'}
                       onChange={(e) => setHasSoftgelExtensions(e.target.value)}
-                      className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                      className="brand-check"
                       disabled={isSubmitting}
                     />
-                    <span className="text-xs sm:text-sm text-gray-700">No</span>
+                    <span className="text-sm text-[#57534e]">No</span>
                   </label>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 block">
+                <label className="brand-label">
                   Do you have any allergies or sensitivities to nail products?
                 </label>
                 <textarea
@@ -639,14 +671,14 @@ export default function BookingFormModal({
                   onChange={(e) => setAllergies(e.target.value)}
                   placeholder="Please specify any allergies or sensitivities, or write 'None'"
                   rows={2}
-                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors resize-none"
+                  className="brand-field resize-none"
                   disabled={isSubmitting}
                 />
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 block">
-                  Are there any specific nail concerns you would like to address? <span className="text-red-500">*</span>
+                <label className="brand-label">
+                  Are there any specific nail concerns you would like to address? <span className="text-[#5a3830]">*</span>
                 </label>
                 <textarea
                   value={nailConcerns}
@@ -656,14 +688,14 @@ export default function BookingFormModal({
                   }}
                   placeholder="Describe any nail concerns, or write 'None'"
                   rows={2}
-                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors resize-none"
+                  className="brand-field resize-none"
                   disabled={isSubmitting}
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 block">
+                <label className="brand-label">
                   Have you experienced any nail damage or infections in the past?
                 </label>
                 <textarea
@@ -671,7 +703,7 @@ export default function BookingFormModal({
                   onChange={(e) => setNailDamageHistory(e.target.value)}
                   placeholder="Please describe any past nail damage or infections, or write 'None'"
                   rows={2}
-                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors resize-none"
+                  className="brand-field resize-none"
                   disabled={isSubmitting}
                 />
               </div>
@@ -681,11 +713,11 @@ export default function BookingFormModal({
           {/* STEP 3: Nail Pictures (new clients) / STEP 2: Nail Pictures (repeat) */}
           {currentStep === (isRepeatFound ? 2 : 3) && (
             <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">Nail Pictures</h4>
+              <h4 className="font-heading text-xl sm:text-2xl text-[#1c1917] mb-2 sm:mb-3">Nail Pictures</h4>
               
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
-                  <Upload className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+                <label className="brand-label flex items-center gap-2">
+                  <Upload className="w-3.5 h-3.5 text-[#c4b5a0]" />
                   Upload Current Nails (up to 3 images)
                 </label>
                 <input
@@ -693,19 +725,19 @@ export default function BookingFormModal({
                   accept="image/*"
                   multiple
                   onChange={handleCurrentNailUpload}
-                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
+                  className="brand-field-file"
                   disabled={isSubmitting}
                 />
                 {currentNailPictures.length > 0 && (
-                  <p className="text-[10px] sm:text-xs text-gray-600 mt-1">
+                  <p className="text-xs text-[#78716c] mt-1.5">
                     {currentNailPictures.length} file(s) selected
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 flex items-center gap-2">
-                  <Upload className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
+                <label className="brand-label flex items-center gap-2">
+                  <Upload className="w-3.5 h-3.5 text-[#c4b5a0]" />
                   Upload Nail Inspo (up to 3 images)
                 </label>
                 <input
@@ -713,29 +745,38 @@ export default function BookingFormModal({
                   accept="image/*"
                   multiple
                   onChange={handleInspoUpload}
-                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors"
+                  className="brand-field-file"
                   disabled={isSubmitting}
                 />
                 {inspoPictures.length > 0 && (
-                  <p className="text-[10px] sm:text-xs text-gray-600 mt-1">
+                  <p className="text-xs text-[#78716c] mt-1.5">
                     {inspoPictures.length} file(s) selected
                   </p>
                 )}
-                <div className="mt-2 p-2 sm:p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                  <p className="text-[10px] sm:text-xs text-blue-800">
-                    <strong>Note:</strong> Please upload your nail inspiration in advance.
+                <div className="brand-note mt-3 space-y-1.5">
+                  <p className="text-xs">
+                    <span className="font-medium text-[#1c1917]">Note:</span> Please upload your nail inspiration in advance.
                   </p>
-                  <p className="text-[10px] sm:text-xs text-blue-700 mt-1">
-                    Google Drive: <a href="https://drive.google.com/drive/folders/1-NylMKbBkoXiD18FxLrSgBVDzCfvOdJN" target="_blank" rel="noopener noreferrer" className="underline">View Inspo Gallery</a>
+                  <p className="text-xs">
+                    Google Drive:{' '}
+                    <a
+                      href="https://drive.google.com/drive/folders/1-NylMKbBkoXiD18FxLrSgBVDzCfvOdJN"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#1c1917] underline decoration-[#c4b5a0] underline-offset-2 hover:decoration-[#1c1917]"
+                    >
+                      View Inspo Gallery
+                    </a>
                   </p>
-                  <p className="text-[10px] sm:text-xs text-blue-700 mt-1">
-                    ⚠️ AVOID CHANGING YOUR NAIL INSPO ON THE DAY OF THE APPOINTMENT
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-[#3d342c] flex items-start gap-2 pt-0.5">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>Please avoid changing your nail inspo on the day of the appointment</span>
                   </p>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm text-gray-700 font-medium mb-1 sm:mb-2 block">
+                <label className="brand-label">
                   If you don&apos;t have nail inspo, describe how you want it to look
                 </label>
                 <textarea
@@ -743,7 +784,7 @@ export default function BookingFormModal({
                   onChange={(e) => setInspoDescription(e.target.value)}
                   placeholder="Describe your desired nail look..."
                   rows={3}
-                  className="w-full rounded-lg border border-[#e4e4e7] bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 text-sm sm:text-base touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#a1a1aa] hover:border-[#a1a1aa] transition-colors resize-none"
+                  className="brand-field resize-none"
                   disabled={isSubmitting}
                 />
               </div>
@@ -753,109 +794,124 @@ export default function BookingFormModal({
           {/* STEP 4: Services (new) / STEP 3: Services (repeat) */}
           {currentStep === (isRepeatFound ? 3 : 4) && (
             <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">
-                Services <span className="text-red-500">*</span>
+              <h4 className="font-heading text-xl sm:text-2xl text-[#1c1917] mb-2 sm:mb-3">
+                Services <span className="text-[#5a3830]">*</span>
               </h4>
               {services.length > 0 && (
-                <div className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg">
-                  <p className="text-xs text-gray-500">Selected:</p>
-                  <p className="text-sm font-medium text-gray-900">{getChosenServicesDisplay(services)}</p>
+                <div className="brand-panel-soft px-4 py-3">
+                  <p className="brand-eyebrow mb-1">Selected</p>
+                  <p className="text-sm text-[#1c1917]">{getChosenServicesDisplay(services)}</p>
                 </div>
               )}
-              <div className="p-2 sm:p-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
-                <p className="text-[10px] sm:text-xs text-yellow-900">
-                  <strong>⏱️ Important:</strong> Detailed nail designs require time and precision. The entire procedure can take 3-4 hours. Rushing compromises quality.
+              <div className="brand-note-strong flex items-start gap-2.5">
+                <Clock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <p className="text-xs sm:text-sm">
+                  <span className="font-medium">Please allow enough time.</span> Detailed nail designs require
+                  precision — the full procedure can take 3–4 hours. Rushing compromises quality.
                 </p>
               </div>
 
               <div className="space-y-1.5 sm:space-y-2">
-                <label className="flex items-start gap-2 sm:gap-3 cursor-pointer p-1.5 sm:p-2 hover:bg-gray-100 rounded">
+                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
                   <input
                     type="checkbox"
                     checked={services.includes('removal')}
                     onChange={() => handleServiceToggle('removal')}
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-1"
+                    className="brand-check mt-0.5 sm:mt-1"
                     disabled={isSubmitting}
                   />
-                  <span className="text-xs sm:text-sm text-gray-700">
+                  <span className="text-xs sm:text-sm text-[#57534e]">
                     <strong>REMOVAL</strong> (30mins - 1hr)
                   </span>
                 </label>
 
-                <label className="flex items-start gap-2 sm:gap-3 cursor-pointer p-1.5 sm:p-2 hover:bg-gray-100 rounded">
+                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
                   <input
                     type="checkbox"
                     checked={services.includes('cleaning')}
                     onChange={() => handleServiceToggle('cleaning')}
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-1"
+                    className="brand-check mt-0.5 sm:mt-1"
                     disabled={isSubmitting}
                   />
-                  <span className="text-xs sm:text-sm text-gray-700">
+                  <span className="text-xs sm:text-sm text-[#57534e]">
                     <strong>Cleaning Only</strong> (Russian Technique)
                   </span>
                 </label>
 
-                <label className="flex items-start gap-2 sm:gap-3 cursor-pointer p-1.5 sm:p-2 hover:bg-gray-100 rounded">
+                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
                   <input
                     type="checkbox"
                     checked={services.includes('without-extensions')}
                     onChange={() => handleServiceToggle('without-extensions')}
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-1"
+                    className="brand-check mt-0.5 sm:mt-1"
                     disabled={isSubmitting}
                   />
-                  <span className="text-xs sm:text-sm text-gray-700">
+                  <span className="text-xs sm:text-sm text-[#57534e]">
                     <strong>WITHOUT EXTENSIONS</strong> - BIAB/Gel Overlay w/ Russian Manicure (2 hours)
                   </span>
                 </label>
 
-                <label className="flex items-start gap-2 sm:gap-3 cursor-pointer p-1.5 sm:p-2 hover:bg-gray-100 rounded">
+                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
                   <input
                     type="checkbox"
                     checked={services.includes('with-extensions')}
                     onChange={() => handleServiceToggle('with-extensions')}
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-1"
+                    className="brand-check mt-0.5 sm:mt-1"
                     disabled={isSubmitting}
                   />
-                  <span className="text-xs sm:text-sm text-gray-700">
+                  <span className="text-xs sm:text-sm text-[#57534e]">
                     <strong>WITH EXTENSIONS</strong> - Softgel Nail Extensions w/ Russian Manicure (3 hours)
                   </span>
                 </label>
 
-                <label className="flex items-start gap-2 sm:gap-3 cursor-pointer p-1.5 sm:p-2 hover:bg-gray-100 rounded">
+                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
                   <input
                     type="checkbox"
                     checked={services.includes('russian-pedicure')}
                     onChange={() => handleServiceToggle('russian-pedicure')}
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-1"
+                    className="brand-check mt-0.5 sm:mt-1"
                     disabled={isSubmitting}
                   />
-                  <span className="text-xs sm:text-sm text-gray-700">
+                  <span className="text-xs sm:text-sm text-[#57534e]">
                     <strong>RUSSIAN PEDICURE GEL OVERLAY</strong> (1-2 hours)
                   </span>
                 </label>
 
-                <label className="flex items-start gap-2 sm:gap-3 cursor-pointer p-1.5 sm:p-2 hover:bg-gray-100 rounded">
+                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
+                  <input
+                    type="checkbox"
+                    checked={services.includes('nail-reconstruction')}
+                    onChange={() => handleServiceToggle('nail-reconstruction')}
+                    className="brand-check mt-0.5 sm:mt-1"
+                    disabled={isSubmitting}
+                  />
+                  <span className="text-xs sm:text-sm text-[#57534e]">
+                    <strong>NAIL RECONSTRUCTION</strong> (for bitten or damaged nails)
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
                   <input
                     type="checkbox"
                     checked={services.includes('minimal-design')}
                     onChange={() => handleServiceToggle('minimal-design')}
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-1"
+                    className="brand-check mt-0.5 sm:mt-1"
                     disabled={isSubmitting}
                   />
-                  <span className="text-xs sm:text-sm text-gray-700">
+                  <span className="text-xs sm:text-sm text-[#57534e]">
                     <strong>+ Minimal Design</strong> (Additional 30mins - 1hr)
                   </span>
                 </label>
 
-                <label className="flex items-start gap-2 sm:gap-3 cursor-pointer p-1.5 sm:p-2 hover:bg-gray-100 rounded">
+                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
                   <input
                     type="checkbox"
                     checked={services.includes('intricate-design')}
                     onChange={() => handleServiceToggle('intricate-design')}
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-1"
+                    className="brand-check mt-0.5 sm:mt-1"
                     disabled={isSubmitting}
                   />
-                  <span className="text-xs sm:text-sm text-gray-700">
+                  <span className="text-xs sm:text-sm text-[#57534e]">
                     <strong>+ Intricate Design</strong> (Additional 1hr)
                   </span>
                 </label>
@@ -866,26 +922,27 @@ export default function BookingFormModal({
           {/* STEP 5: Waiver (new) / STEP 4: Waiver (repeat) */}
           {currentStep === (isRepeatFound ? 4 : 5) && (
             <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">
-                Waiver for Clients <span className="text-red-500">*</span>
+              <h4 className="font-heading text-xl sm:text-2xl text-[#1c1917] mb-2 sm:mb-3">
+                Waiver for Clients <span className="text-[#5a3830]">*</span>
               </h4>
               
-              <div className="p-3 sm:p-4 bg-white border-2 border-gray-300 rounded-lg space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-800">
-                <p><strong>Dear Client,</strong></p>
+              <div className="brand-panel-soft p-4 sm:p-5 space-y-3 text-xs sm:text-sm text-[#57534e]">
+                <p className="font-heading text-lg text-[#1c1917]">Dear Client,</p>
                 <p>Before your appointment, please acknowledge the following:</p>
-                
-                <ol className="list-decimal list-inside space-y-1.5 sm:space-y-2 pl-1 sm:pl-2">
+
+                <ol className="list-decimal list-inside space-y-2 pl-1 sm:pl-2">
                   <li>If you have allergies to nail products, kindly inform me. I will not be liable for any allergic reactions.</li>
                   <li>For diabetic clients: Russian manicure may carry a small risk of injury. While I will handle with care, I cannot be held responsible if a wound occurs.</li>
                 </ol>
 
-                <p className="pt-1 sm:pt-2">By proceeding, you accept these risks and understand my responsibility is limited.</p>
-                <p className="font-medium">Thank you for your trust and understanding.</p>
-                <p className="italic">– Jhen Cerio, glammednailsbyjhen</p>
+                <p className="pt-1">By proceeding, you accept these risks and understand my responsibility is limited.</p>
+                <p className="text-[#1c1917]">Thank you for your trust and understanding.</p>
+                <div className="brand-rule w-16" aria-hidden />
+                <p className="font-heading text-base text-[#1c1917]">Jhen Cerio · glammednailsbyjhen</p>
               </div>
 
               <div className="flex gap-3 sm:gap-4">
-                <label className="flex items-start gap-1.5 sm:gap-2 cursor-pointer flex-1 p-2 border-2 border-gray-300 rounded-lg hover:border-gray-400">
+                <label className="flex flex-1 items-start gap-2 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-3 transition-colors hover:border-[#c4b5a0] touch-manipulation">
                   <input
                     type="radio"
                     name="waiver"
@@ -895,22 +952,22 @@ export default function BookingFormModal({
                       setWaiverAccepted(e.target.value);
                       setError(null);
                     }}
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5"
+                    className="brand-check mt-0.5"
                     disabled={isSubmitting}
                   />
-                  <span className="text-xs sm:text-sm text-gray-700">I acknowledge and accept the terms</span>
+                  <span className="text-xs sm:text-sm text-[#57534e]">I acknowledge and accept the terms</span>
                 </label>
-                <label className="flex items-start gap-1.5 sm:gap-2 cursor-pointer flex-1 p-2 border-2 border-gray-300 rounded-lg hover:border-gray-400">
+                <label className="flex flex-1 items-start gap-2 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-3 transition-colors hover:border-[#c4b5a0] touch-manipulation">
                   <input
                     type="radio"
                     name="waiver"
                     value="disagree"
                     checked={waiverAccepted === 'disagree'}
                     onChange={(e) => setWaiverAccepted(e.target.value)}
-                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5"
+                    className="brand-check mt-0.5"
                     disabled={isSubmitting}
                   />
-                  <span className="text-xs sm:text-sm text-gray-700">I don&apos;t agree</span>
+                  <span className="text-xs sm:text-sm text-[#57534e]">I don&apos;t agree</span>
                 </label>
               </div>
             </div>
@@ -919,42 +976,66 @@ export default function BookingFormModal({
           {/* STEP 6: Rules (new) / STEP 5: Rules (repeat) */}
           {currentStep === (isRepeatFound ? 5 : 6) && (
             <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-semibold text-base sm:text-lg text-gray-900 mb-2 sm:mb-3">
+              <h4 className="font-heading text-xl sm:text-2xl text-[#1c1917] mb-2 sm:mb-3">
                 Rules & Reservation Instructions
               </h4>
               
-              <div className="p-3 sm:p-4 bg-white border-2 border-gray-300 rounded-lg space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-800 max-h-[40vh] overflow-y-auto">
-                <p className="font-semibold text-sm sm:text-base">PLEASE READ CAREFULLY</p>
-                
-                <p>Thank you for choosing glammednailsbyjhen 💅</p>
-
-                <div className="space-y-1.5 sm:space-y-2">
-                  <p><strong>📍 Location:</strong> 1046 San Diego St. Sampaloc Manila</p>
+              <div className="brand-panel-soft p-3 sm:p-4 space-y-4 text-xs sm:text-sm text-[#57534e]">
+                <div>
+                  <p className="brand-eyebrow">Please read carefully</p>
+                  <p className="mt-1.5">Thank you for choosing glammednailsbyjhen.</p>
                 </div>
 
-                <div className="space-y-1.5 sm:space-y-2">
-                  <p><strong>⏰ Be on time</strong> — not too early, not late. Come exactly at your scheduled time.</p>
-                  <ul className="list-disc list-inside pl-2 sm:pl-4 text-[10px] sm:text-xs space-y-0.5">
-                    <li>15 mins late = ₱200 fee</li>
-                    <li>30 mins late = Appointment cancelled</li>
-                    <li>Reschedule allowed 2 days before only, with ₱100 fee</li>
-                  </ul>
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#c4b5a0]" />
+                  <p>
+                    <span className="font-medium text-[#1c1917]">Location:</span> {STUDIO_ADDRESS}
+                  </p>
                 </div>
 
-                <div className="space-y-1.5 sm:space-y-2">
-                  <p><strong>💵 Reservation deposit:</strong> ₱{DEPOSIT_PER_SLOT} per slot — Total: ₱{(DEPOSIT_PER_SLOT * slotCount).toLocaleString()} ({slotCount} slot{slotCount !== 1 ? 's' : ''})</p>
-
+                <div className="flex items-start gap-2.5">
+                  <Clock className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#c4b5a0]" />
+                  <div className="space-y-1.5">
+                    <p>
+                      <span className="font-medium text-[#1c1917]">Be on time</span> — not too early, not late. Come
+                      exactly at your scheduled time.
+                    </p>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      <li>{LATE_ARRIVAL_GRACE_MINUTES} mins late = {formatPeso(LATE_ARRIVAL_FEE)} fee</li>
+                      <li>{LATE_ARRIVAL_CANCEL_MINUTES} mins late = appointment cancelled</li>
+                      <li>
+                        Reschedule allowed at least {RESCHEDULE_NOTICE_DAYS} days before, with a{' '}
+                        {formatPeso(RESCHEDULE_FEE)} fee
+                      </li>
+                    </ul>
+                  </div>
                 </div>
 
-                <p><strong>📅 Your slot is confirmed only after the deposit is sent.</strong></p>
+                <div className="flex items-start gap-2.5">
+                  <Wallet className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#c4b5a0]" />
+                  <p>
+                    <span className="font-medium text-[#1c1917]">Reservation deposit:</span>{' '}
+                    {formatPeso(DEPOSIT_PER_SLOT)} per slot — total {formatPeso(DEPOSIT_PER_SLOT * slotCount)} for{' '}
+                    {slotCount} slot{slotCount !== 1 ? 's' : ''}
+                  </p>
+                </div>
 
-                <p><strong>💖 Balance will be settled after your appointment.</strong></p>
-                
-                <p className="pt-1 sm:pt-2">Looking forward to glamming your nails!</p>
-                <p className="italic">– Jhen</p>
+                <div className="flex items-start gap-2.5">
+                  <CalendarCheck className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#c4b5a0]" />
+                  <div className="space-y-1.5">
+                    <p className="font-medium text-[#1c1917]">Your slot is confirmed only after the deposit is sent.</p>
+                    <p>The remaining balance is settled after your appointment.</p>
+                  </div>
+                </div>
+
+                <div className="pt-1 space-y-2">
+                  <p>Looking forward to glamming your nails.</p>
+                  <div className="brand-rule w-16" aria-hidden />
+                  <p className="font-heading text-base text-[#1c1917]">Jhen</p>
+                </div>
               </div>
 
-              <label className="flex items-start gap-2 sm:gap-3 cursor-pointer p-2.5 sm:p-3 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50">
+              <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-3 transition-colors hover:border-[#c4b5a0] touch-manipulation">
                 <input
                   type="checkbox"
                   checked={rulesAccepted}
@@ -962,51 +1043,62 @@ export default function BookingFormModal({
                     setRulesAccepted(e.target.checked);
                     setError(null);
                   }}
-                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-1"
+                  className="brand-check mt-0.5 sm:mt-1"
                   disabled={isSubmitting}
                 />
-                <span className="text-xs sm:text-sm text-gray-700">
-                  <strong className="text-red-600">*</strong> I have read and accept all the rules, reservation instructions, and downpayment requirements above.
+                <span className="text-xs sm:text-sm text-[#57534e]">
+                  <span className="text-[#5a3830]">*</span> I have read and accept all the rules, reservation
+                  instructions, and downpayment requirements above.
                 </span>
               </label>
 
-              <div className="rounded-lg border-2 border-blue-300 bg-blue-50 px-3 py-2 sm:px-4 sm:py-3 space-y-1.5">
-                <p className="text-xs sm:text-sm text-blue-900">
-                  <strong>📝 After Submission:</strong> You will receive an email about your booking. Upload your proof of payment using the link provided in the email to confirm your slot.
+              <div className="brand-note space-y-2">
+                <p className="text-xs sm:text-sm flex items-start gap-2.5">
+                  <Mail className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <span className="font-medium text-[#1c1917]">After submission:</span> You will receive an email
+                    about your booking. Upload your proof of payment using the link in that email to confirm your slot.
+                  </span>
                 </p>
-                <p className="text-xs sm:text-sm text-blue-900">
-                  <strong>⚠️ Important:</strong> Your slot will automatically be cancelled within 48 hours if no proof of payment has been uploaded.
+                <p className="text-xs sm:text-sm flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <span className="font-medium text-[#1c1917]">Important:</span> Your slot is automatically cancelled
+                    after {PROOF_OF_PAYMENT_WINDOW_HOURS} hours if no proof of payment has been uploaded.
+                  </span>
                 </p>
               </div>
             </div>
           )}
 
-          {/* Error Message */}
-          {error && (
-            <div className="rounded-lg border-2 border-red-300 bg-red-50 px-3 py-2 sm:px-4 sm:py-3 flex items-start gap-2 sm:gap-3">
-              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-700 flex-shrink-0 mt-0.5" />
-              <p className="text-xs sm:text-sm text-red-800 font-medium">{error}</p>
+            {/* Error Message */}
+            {error && (
+              <div className="brand-note-error flex items-start gap-2.5" role="alert">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <p className="text-xs sm:text-sm font-medium">{error}</p>
+              </div>
+            )}
             </div>
-          )}
+          </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex gap-2 sm:gap-3 pt-2">
+          <div className="brand-modal-footer">
+          <div className="flex gap-2 sm:gap-3">
             {currentStep > 1 && (
               <button
                 type="button"
                 onClick={handlePrevious}
                 disabled={isSubmitting}
-                className="flex-1 px-3 py-2.5 sm:px-4 sm:py-3 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 active:scale-[0.98] transition-all disabled:opacity-60 touch-manipulation text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2"
+                className="brand-cta-ghost flex-1 gap-2 disabled:opacity-60 active:scale-[0.98]"
               >
-                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <ArrowLeft className="w-3.5 h-3.5" />
                 Back
               </button>
             )}
-            
+
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 brand-cta disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] touch-manipulation text-xs sm:text-sm"
+              className="brand-cta flex-1 text-xs disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] touch-manipulation"
             >
               {isSubmitting ? 'Submitting...' : currentStep === totalSteps ? 'Submit Booking' : 'Next'}
             </button>
@@ -1017,12 +1109,13 @@ export default function BookingFormModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="w-full px-3 py-2.5 sm:px-4 sm:py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 active:scale-[0.98] transition-all disabled:opacity-60 touch-manipulation text-xs sm:text-sm"
+              className="w-full text-center text-[11px] uppercase tracking-[0.18em] text-[#78716c] pt-2 transition-colors hover:text-[#1c1917] disabled:opacity-60 touch-manipulation"
             >
               Cancel
             </button>
           )}
-        </form>
+        </div>
+      </form>
       </motion.div>
     </div>
   );

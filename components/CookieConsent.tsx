@@ -38,7 +38,7 @@ export default function CookieConsent() {
     >
       <div className="pointer-events-auto mx-auto max-w-3xl border border-[#e7e2db] bg-[#fffcfa] shadow-[0_-8px_32px_rgba(28,25,23,0.08)] p-4 sm:p-5">
         <p className="text-sm text-[#1c1917] leading-relaxed mb-4">
-          We use cookies for essential site functions and, if you allow, Meta Pixel to measure
+          We use cookies for essential site functions and, if you allow, Meta Pixel and Conversions API to measure
           ads and bookings. See our{' '}
           <Link href="/privacy-policy" className="underline underline-offset-2 text-[#57534e] hover:text-[#1c1917]">
             Privacy Policy

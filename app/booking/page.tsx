@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
-import { IoClose } from 'react-icons/io5';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
@@ -28,6 +27,7 @@ import { normalizeSlotTime } from '@/lib/constants/slots';
 import { findConsecutiveAvailableSlots } from '@/lib/utils/consecutiveSlots';
 import { formatTime12Hour } from '@/lib/utils';
 import { trackBookingCompleted, trackBookNowClick } from '@/lib/utils/analytics';
+import { DEPOSIT_PER_SLOT, SQUEEZE_IN_FEE, formatPeso } from '@/lib/constants/policy';
 
 const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; label: string }[]> = {
   homebased_studio: [
@@ -122,6 +122,8 @@ export default function BookingPage() {
   const [showSlotConfirmModal, setShowSlotConfirmModal] = useState(false);
   const [showBookingSuccessModal, setShowBookingSuccessModal] = useState(false);
   const [latestBookingCode, setLatestBookingCode] = useState('');
+  const [latestDepositDue, setLatestDepositDue] = useState<number | null>(null);
+  const [latestUploadProofLink, setLatestUploadProofLink] = useState<string | null>(null);
   const [bookingSuccessNote, setBookingSuccessNote] = useState<string | null>(null);
   const serviceOptions = clientInfo ? SERVICE_OPTIONS[clientInfo.serviceLocation] : SERVICE_OPTIONS.homebased_studio;
   const isSimultaneous = selectedService === 'mani_pedi_simultaneous';
@@ -572,7 +574,7 @@ export default function BookingPage() {
       })();
       const slotCount = slotIds.length;
       const basePrice = 1500;
-      const depositRequired = 500 * slotCount; // ₱500 per slot
+      const depositRequired = DEPOSIT_PER_SLOT * slotCount;
       const total = basePrice + (clientInfo.serviceLocation === 'home_service' ? 1000 : 0);
 
       const payloadServiceType = (() => {
@@ -657,6 +659,8 @@ export default function BookingPage() {
           ? `${data.booking.bookingCode} + ${data.partnerBooking.bookingCode}`
           : data.booking.bookingCode || ''
       );
+      setLatestDepositDue(depositRequired);
+      setLatestUploadProofLink(data.uploadProofLink || null);
       setBookingSuccessNote(photoUploadWarning);
       setShowBookingSuccessModal(true);
       if (bookingId) {
@@ -681,14 +685,15 @@ export default function BookingPage() {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-7xl mx-auto"
         >
-          <h1 id="booking-heading" className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-heading text-center mb-3 sm:mb-4 px-2 sm:px-3 text-[#111] scroll-mt-28 sm:scroll-mt-32 lg:scroll-mt-36">
+          <h1 id="booking-heading" className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-heading text-center mb-3 sm:mb-4 px-2 sm:px-3 text-[#1c1917] scroll-mt-28 sm:scroll-mt-32 lg:scroll-mt-36">
             Book Your Appointment
           </h1>
+          <div className="brand-rule w-24 mx-auto mb-6 sm:mb-8" aria-hidden />
 
           {/* Nail Tech Selection - Now shown in modal */}
           {selectedNailTechId && (
             <div className="mb-6 sm:mb-8 max-w-4xl mx-auto px-2 sm:px-3">
-              <div className="border border-[#e4e4e7] px-5 py-4 bg-[#fafafa]">
+              <div className="brand-panel px-5 py-4">
                 {(() => {
                   const selectedTech = nailTechs.find(t => t.id === selectedNailTechId);
                   if (!selectedTech) return null;
@@ -696,19 +701,59 @@ export default function BookingPage() {
                   if (isSimultaneous) {
                     const secondaryTech = nailTechs.find(t => t.id === selectedSecondaryNailTechId);
                     return (
-                      <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-widest mb-1" style={{ color: '#71717a' }}>Mani+Pedi Express</p>
-                        <p className="text-sm" style={{ color: '#111' }}>
-                          <strong >Ms. {selectedTech.name}</strong>
-                          <span className="ml-1 text-xs" style={{ color: '#71717a' }}>(Manicure (Nail Tech))</span>
+                      <div>
+                        <p className="brand-eyebrow mb-1.5">Mani + Pedi Express</p>
+                        <p className="text-sm text-[#1c1917]">
+                          Ms. {selectedTech.name}
+                          <span className="ml-1.5 text-xs text-[#78716c]">Manicure</span>
                           {secondaryTech && (
                             <>
-                              <span className="mx-2" style={{ color: '#a1a1aa' }}>·</span>
-                              <strong >Ms. {secondaryTech.name}</strong>
-                              <span className="ml-1 text-xs" style={{ color: '#71717a' }}>(Pedicure (Nail Tech))</span>
+                              <span className="mx-2 text-[#c4b5a0]">·</span>
+                              Ms. {secondaryTech.name}
+                              <span className="ml-1.5 text-xs text-[#78716c]">Pedicure</span>
                             </>
                           )}
                         </p>
+                        <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">
+                          <button
+                            onClick={() => {
+                              setSelectedNailTechId(null);
+                              setSelectedSecondaryNailTechId(null);
+                              setSelectedSlot(null);
+                              setLinkedSlots([]);
+                              setServiceMessage(null);
+                              setShowNailTechModal(true);
+                            }}
+                            className="brand-eyebrow underline decoration-[#c4b5a0] underline-offset-4 transition-colors hover:text-[#1c1917]"
+                          >
+                            Change nail techs
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedService(null);
+                              setServiceChangeMode(true);
+                              setShowServiceTypeModal(true);
+                            }}
+                            className="brand-eyebrow underline decoration-[#c4b5a0] underline-offset-4 transition-colors hover:text-[#1c1917]"
+                          >
+                            Change service
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const hasDiscount = selectedTech.discount !== undefined && selectedTech.discount !== null && selectedTech.discount > 0;
+                  return (
+                    <div>
+                      <p className="brand-eyebrow mb-1.5">Viewing calendar for</p>
+                      <p className="font-heading text-lg sm:text-xl text-[#1c1917]">Ms. {selectedTech.name}</p>
+                      {hasDiscount && (
+                        <p className="mt-2 inline-flex items-center border border-[#c4b5a0] px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[#3d342c]">
+                          Special offer · {selectedTech.discount}% off all services
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">
                         <button
                           onClick={() => {
                             setSelectedNailTechId(null);
@@ -718,64 +763,23 @@ export default function BookingPage() {
                             setServiceMessage(null);
                             setShowNailTechModal(true);
                           }}
-                          className="text-sm hover:opacity-75 underline mt-2 transition-opacity"
-                          style={{ color: '#111' }}
+                          className="brand-eyebrow underline decoration-[#c4b5a0] underline-offset-4 transition-colors hover:text-[#1c1917]"
                         >
-                          Change nail techs
+                          Change nail tech
                         </button>
                         <button
                           onClick={() => {
                             setSelectedService(null);
+                            // Open service modal as a "change" modal.
+                            // If user presses Back/Close, we should return to calendar.
                             setServiceChangeMode(true);
                             setShowServiceTypeModal(true);
                           }}
-                          className="text-sm hover:opacity-75 underline mt-2 transition-opacity ml-4"
-                          style={{ color: '#111' }}
+                          className="brand-eyebrow underline decoration-[#c4b5a0] underline-offset-4 transition-colors hover:text-[#1c1917]"
                         >
                           Change service
                         </button>
                       </div>
-                    );
-                  }
-
-                  const hasDiscount = selectedTech.discount !== undefined && selectedTech.discount !== null && selectedTech.discount > 0;
-                  return (
-                    <div className="space-y-1">
-                      <p className="text-sm" style={{ color: '#111' }}>
-                        Viewing calendar for: <strong >Ms. {selectedTech.name}</strong>
-                      </p>
-                      {hasDiscount && (
-                        <p className="text-sm font-semibold text-green-600" >
-                          🎉 Special Offer: {selectedTech.discount}% discount on all services!
-                        </p>
-                      )}
-                      <button
-                        onClick={() => {
-                          setSelectedNailTechId(null);
-                          setSelectedSecondaryNailTechId(null);
-                          setSelectedSlot(null);
-                          setLinkedSlots([]);
-                          setServiceMessage(null);
-                          setShowNailTechModal(true);
-                        }}
-                        className="text-sm hover:opacity-75 underline mt-2 transition-opacity"
-                        style={{ color: '#111' }}
-                      >
-                        Change nail tech
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedService(null);
-                          // Open service modal as a "change" modal.
-                          // If user presses Back/Close, we should return to calendar.
-                          setServiceChangeMode(true);
-                          setShowServiceTypeModal(true);
-                        }}
-                        className="text-sm hover:opacity-75 underline mt-2 transition-opacity ml-4"
-                        style={{ color: '#111' }}
-                      >
-                        Change service
-                      </button>
                     </div>
                   );
                 })()}
@@ -786,8 +790,8 @@ export default function BookingPage() {
           {!selectedNailTechId ? null : loading ? (
             <div className="flex justify-center items-center h-96">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4" />
-                <p className="text-slate-600">Loading calendar...</p>
+                <div className="animate-spin rounded-full h-10 w-10 border-b border-[#c4b5a0] mx-auto mb-5" />
+                <p className="brand-eyebrow">Loading calendar</p>
               </div>
             </div>
           ) : (
@@ -819,31 +823,30 @@ export default function BookingPage() {
 
                   <section 
                     ref={slotsSectionRef}
-                    className="border border-[#e4e4e7] p-3 sm:p-4 lg:p-6 scroll-mt-24 order-1 lg:order-2 flex flex-col bg-white"
+                    className="brand-panel p-3 sm:p-4 lg:p-6 scroll-mt-24 order-1 lg:order-2 flex flex-col"
                   >
-                  <header className="mb-3 sm:mb-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em]" style={{ color: '#71717a' }}>Available slots</p>
+                  <header className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="brand-eyebrow">Available slots</p>
                       <button
                         type="button"
                         onClick={() => loadData(true)}
                         disabled={loading}
-                        className="text-[10px] sm:text-xs underline disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        style={{ color: '#52525b' }}
+                        className="brand-eyebrow underline decoration-[#c4b5a0] underline-offset-4 transition-colors hover:text-[#1c1917] disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Refresh slots"
                       >
-                        {loading ? 'Refreshing...' : 'Refresh'}
+                        {loading ? 'Refreshing' : 'Refresh'}
                       </button>
                     </div>
-                    <h2 className="text-base sm:text-lg lg:text-xl font-heading break-words text-[#111]">
+                    <h2 className="text-lg sm:text-xl lg:text-2xl font-heading break-words text-[#1c1917]">
                       {format(parseISO(selectedDate), 'EEEE, MMM d')}
                     </h2>
-                    <p className="text-xs sm:text-sm" style={{ color: '#52525b' }}>
+                    <p className="text-xs sm:text-sm text-[#78716c] mt-0.5">
                       Tap a time to reserve it.
                     </p>
                     {clientInfo && selectedService && getRequiredSlotCount(selectedService, clientInfo.serviceLocation) > 1 && (
-                      <p className="text-[10px] sm:text-xs mt-1 leading-relaxed" style={{ color: '#856404' }}>
-                        Select the <strong>first</strong> slot for {getRequiredSlotCount(selectedService, clientInfo.serviceLocation)}-slot services.
+                      <p className="brand-note mt-3 text-xs leading-relaxed">
+                        Select the <span className="text-[#1c1917]">first</span> slot for {getRequiredSlotCount(selectedService, clientInfo.serviceLocation)}-slot services.
                       </p>
                     )}
                   </header>
@@ -852,13 +855,11 @@ export default function BookingPage() {
                     {(() => {
                       const slotsToDisplay = requiredSlots === 1 ? availableSlotsForDate : compatibleSlotsForDate;
                       return slotsToDisplay.length === 0 ? (
-                        <div className="rounded-xl border-2 border-dashed p-3 sm:p-4 text-sm" style={{ borderColor: '#f5c6cb', backgroundColor: '#f8d7da' }}>
-                          <p className="font-semibold text-sm" style={{ color: '#721c24' }}>
-                            No available slots for this day.
-                          </p>
-                          <p className="mt-1 text-xs sm:text-sm" style={{ color: '#721c24' }}>
+                        <div className="brand-note-error">
+                          <p className="font-heading text-lg">No available slots</p>
+                          <p className="mt-1 text-xs sm:text-sm">
                             Please select a different date.
-                            {requiredSlots > 1 ? ' If this schedule is not complete, please contact our FB page for special requests.' : ''}
+                            {requiredSlots > 1 ? ' If this schedule is not complete, please message our Facebook page for special requests.' : ''}
                           </p>
                         </div>
                       ) : null;
@@ -872,17 +873,15 @@ export default function BookingPage() {
                           key={slot.id}
                           type="button"
                           onClick={() => handleSelectSlotAndOpenForm(slot)}
-                          className="w-full border border-[#d4d4d8] bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-left transition-all active:scale-[0.98] focus:outline-none focus:ring-1 focus:ring-[#111] touch-manipulation hover:border-[#111]"
+                          className="group w-full border border-[#e7e2db] bg-[#fffcfa] px-3 sm:px-4 py-3 text-left transition-all duration-300 active:scale-[0.98] focus:outline-none focus:border-[#c4b5a0] focus:ring-1 focus:ring-[#c4b5a0] touch-manipulation hover:border-[#1c1917] hover:bg-[#faf8f6]"
                         >
                           {slot.slotType === 'with_squeeze_fee' && (
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-1">
-                              <span className="inline-flex items-center px-2 py-0.5 text-[9px] sm:text-[10px] font-medium tracking-wide uppercase self-start sm:self-auto border border-[#d4d4d8] text-[#52525b] bg-[#f4f4f5]">
-                                ₱500 Squeeze-in Fee
-                              </span>
-                            </div>
+                            <span className="inline-flex items-center mb-1.5 px-2 py-0.5 text-[9px] sm:text-[10px] uppercase tracking-[0.16em] border border-[#c4b5a0] text-[#3d342c]">
+                              {formatPeso(SQUEEZE_IN_FEE)} squeeze-in fee
+                            </span>
                           )}
-                          <p className="text-base sm:text-lg font-medium text-[#111]">{formatTime12Hour(slot.time)}</p>
-                          {slot.notes && <p className="text-xs sm:text-sm mt-0.5 text-[#71717a]">{slot.notes}</p>}
+                          <p className="brand-numeric text-base sm:text-lg text-[#1c1917]">{formatTime12Hour(slot.time)}</p>
+                          {slot.notes && <p className="text-xs sm:text-sm mt-0.5 text-[#78716c]">{slot.notes}</p>}
                         </button>
                       ));
                     })()}
@@ -891,11 +890,11 @@ export default function BookingPage() {
                 </div>
               </div>
 
-              <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm px-2 sm:px-3" style={{ color: '#71717a' }}>
+              <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm px-2 sm:px-3">
                 {error ? (
-                  <p style={{ color: '#721c24' }}>{error}</p>
+                  <p className="text-[#5a3830]">{error}</p>
                 ) : (
-                  <p>Green cards are open slots. Available times will be shown after selecting a date.</p>
+                  <p className="text-[#78716c]">Highlighted dates have open slots. Available times appear once you select a date.</p>
                 )}
               </div>
             </>
@@ -1040,6 +1039,8 @@ export default function BookingPage() {
       <BookingSuccessModal
         isOpen={showBookingSuccessModal}
         bookingCode={latestBookingCode}
+        depositAmount={latestDepositDue}
+        uploadProofLink={latestUploadProofLink}
         uploadWarning={bookingSuccessNote}
         onClose={() => {
           setShowBookingSuccessModal(false);

@@ -35,14 +35,15 @@ export default function PrivacyPolicy() {
         <li>To provide and improve our services</li>
         <li>To comply with legal obligations</li>
         <li>To ensure our site functions correctly (using cookies/analytics)</li>
-        <li>To measure advertising performance with Meta Pixel when you accept marketing cookies</li>
+        <li>To measure advertising performance with Meta Pixel and Conversions API when you accept marketing cookies</li>
       </ul>
       <h2 className="text-xl font-heading text-[#111] mt-8 mb-2">Cookies and Meta Pixel</h2>
       <p className="mb-4">
         Essential cookies help our website work. If you accept analytics/marketing cookies, we load{' '}
-        <strong>Meta Pixel</strong> (Facebook) to understand visits, ad clicks, and completed bookings so we can
-        improve our ads. You can reject marketing cookies; the site will still work. Your choice is stored in your
-        browser (local storage) so we remember it on later visits.
+        <strong>Meta Pixel</strong> and send matching events through Meta’s <strong>Conversions API</strong> to
+        understand visits, ad clicks, and completed bookings so we can improve our ads. Email and phone used for
+        matching are hashed before they are sent. You can reject marketing cookies; the site will still work. Your
+        choice is stored in your browser (local storage) so we remember it on later visits.
       </p>
       <h2 className="text-xl font-heading text-[#111] mt-8 mb-2">Contact</h2>
       <p>If you have any questions about this policy, please email us at <a href="mailto:glammednailsbyjhen@gmail.com" className="underline">glammednailsbyjhen@gmail.com</a>.</p>

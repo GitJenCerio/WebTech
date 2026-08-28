@@ -39,18 +39,20 @@ export default function NailTechSelectionModal({
       closeButton={
         <button
           onClick={onBack}
-          className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
+          className="brand-icon-btn"
           aria-label="Back"
           type="button"
         >
-          <ArrowLeft className="w-6 h-6 text-gray-700" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
       }
     >
-      <div className="p-6 sm:p-8">
-        <h3 className="text-2xl font-semibold mb-2 text-gray-900">Choose Your Nail Technician</h3>
-        <p className="text-sm text-gray-600 mb-6">
-          Select a technician for {serviceLocation === 'homebased_studio' ? 'Home Studio' : 'Home Service'}
+      <div className="brand-modal-scroll brand-modal-body">
+        <p className="brand-eyebrow mb-1 pr-9">Step 3 of 3</p>
+        <h3 className="font-heading text-xl sm:text-2xl mb-2 text-[#1c1917] pr-9">Choose Your Nail Technician</h3>
+        <div className="brand-rule w-16 mb-3" aria-hidden />
+        <p className="text-sm text-[#78716c] mb-4">
+          Select a technician for {serviceLocation === 'homebased_studio' ? 'Home Studio' : 'Home Service'}.
         </p>
 
         {availableTechs.length > 0 ? (
@@ -62,22 +64,34 @@ export default function NailTechSelectionModal({
                 <OptionCard key={tech.id} selected={selected} onClick={() => onContinue(tech.id)}>
                   <OptionCardTitle>Ms. {tech.name}</OptionCardTitle>
                   <OptionCardDescription>{tech.role}</OptionCardDescription>
-                  {hasDiscount && <OptionCardExtra>🎉 {tech.discount}% discount</OptionCardExtra>}
+                  {hasDiscount && (
+                    <OptionCardExtra>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] border ${
+                          selected
+                            ? 'border-[#c4b5a0]/50 text-[#fffcfa]'
+                            : 'border-[#c4b5a0] text-[#3d342c]'
+                        }`}
+                      >
+                        {tech.discount}% off
+                      </span>
+                    </OptionCardExtra>
+                  )}
                 </OptionCard>
               );
             })}
           </div>
         ) : (
-          <div className="border border-[#e4e4e7] bg-[#fafafa] p-4 text-center">
-            <p className="text-sm text-gray-600">No technicians available for this service location.</p>
+          <div className="brand-panel-soft p-4 text-center">
+            <p className="text-sm text-[#78716c]">No technicians available for this service location.</p>
           </div>
         )}
+      </div>
 
-        <div className="mt-6 pt-6 border-t border-gray-300 flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={onBack}>
-            Back
-          </Button>
-        </div>
+      <div className="brand-modal-footer flex gap-3">
+        <Button variant="secondary" className="flex-1" onClick={onBack}>
+          Back
+        </Button>
       </div>
     </OverlayModal>
   );

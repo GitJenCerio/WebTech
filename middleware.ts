@@ -66,7 +66,10 @@ function isPublicApiRoute(pathname: string, method: string): boolean {
   if (pathname === '/api/client-feedback' && method === 'POST') return true;
 
   // Public website media (gallery, services, hero) — active images only
-  if (pathname === '/api/media' && method === 'GET') return true;
+  if (pathname.startsWith('/api/media') && method === 'GET') return true;
+
+  // Meta Conversions API — browser events; no PII, validated in route
+  if (pathname === '/api/meta/capi' && method === 'POST') return true;
 
   return false;
 }

@@ -1,8 +1,14 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Sparkles } from 'lucide-react';
 import { formatTime12Hour } from '@/lib/utils';
+import {
+  DEPOSIT_PER_SLOT,
+  MANI_PEDI_EXPRESS_FEE,
+  SQUEEZE_IN_FEE,
+  formatPeso,
+} from '@/lib/constants/policy';
 
 interface SlotConfirmationModalProps {
   isOpen: boolean;
@@ -15,9 +21,6 @@ interface SlotConfirmationModalProps {
   onConfirm: () => void;
   onBack: () => void;
 }
-
-const DEPOSIT_PER_SLOT = 500;
-const MANI_PEDI_EXPRESS_FEE = 300;
 
 export default function SlotConfirmationModal({
   isOpen,
@@ -62,85 +65,91 @@ export default function SlotConfirmationModal({
   })();
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="brand-modal-backdrop z-50">
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white border border-[#e4e4e7] max-w-md w-full p-6 sm:p-8 shadow-2xl my-4 max-h-[90vh] overflow-y-auto relative"
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="brand-modal brand-modal-panel max-w-md"
       >
         <button
           onClick={onBack}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation z-10"
+          className="brand-icon-btn absolute top-3 right-3 z-30"
           aria-label="Back"
           type="button"
         >
-          <ArrowLeft className="w-6 h-6 text-gray-700" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <h3 className="text-2xl font-semibold mb-2 pr-10 text-gray-900">Confirm Your Slot</h3>
-        <p className="text-sm text-gray-600 mb-6">
-          Please review your selected time slot before proceeding.
-        </p>
+        <div className="brand-modal-scroll brand-modal-body">
+          <p className="brand-eyebrow mb-1 pr-9">Review</p>
+          <h3 className="font-heading text-xl sm:text-2xl mb-2 pr-9 text-[#1c1917]">Confirm Your Slot</h3>
+          <div className="brand-rule w-16 mb-3" aria-hidden />
+          <p className="text-sm text-[#78716c] mb-4">
+            Please review your selected time slot before proceeding.
+          </p>
 
-        <div className="space-y-4">
-          {/* Date & Time */}
-          <div className="border border-[#e4e4e7] bg-[#fafafa] p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-gray-700 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Date</p>
-                <p className="text-base font-semibold text-gray-900">{formattedDate}</p>
+          <div className="space-y-3">
+            {/* Date & Time */}
+            <div className="brand-panel-soft p-3 space-y-2.5">
+              <div className="flex items-center gap-3">
+                <Calendar className="w-4 h-4 text-[#c4b5a0] flex-shrink-0" />
+                <div>
+                  <p className="brand-eyebrow">Date</p>
+                  <p className="brand-numeric text-sm sm:text-base text-[#1c1917]">{formattedDate}</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Clock className="w-5 h-5 text-gray-700 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Time</p>
-                <p className="text-base font-semibold text-gray-900 whitespace-nowrap">
-                  {timeDisplay}
-                </p>
+              <div className="flex items-center gap-3">
+                <Clock className="w-4 h-4 text-[#c4b5a0] flex-shrink-0" />
+                <div>
+                  <p className="brand-eyebrow">Time</p>
+                  <p className="brand-numeric text-sm sm:text-base text-[#1c1917] whitespace-nowrap">
+                    {timeDisplay}
+                  </p>
+                </div>
               </div>
+              {serviceName && (
+                <div className="pt-3 border-t border-[#e7e2db]">
+                  <p className="brand-eyebrow">Service</p>
+                  <p className="text-sm text-[#1c1917] mt-0.5">{serviceName}</p>
+                </div>
+              )}
             </div>
-            {serviceName && (
-              <div className="pt-2 border-t border-gray-200">
-                <p className="text-sm text-gray-700">
-                  <strong>Service:</strong> {serviceName}
+
+            {/* Squeeze Fee Notice */}
+            {hasSqueezeFee && (
+              <div className="brand-note">
+                <p className="text-sm">
+                  This is a squeeze-in slot with an additional {formatPeso(SQUEEZE_IN_FEE)} fee.
                 </p>
               </div>
             )}
-          </div>
+            {isManiPediExpress && (
+              <div className="brand-note-strong flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <p className="text-sm">
+                  This is a Mani + Pedi Express service. An additional {formatPeso(MANI_PEDI_EXPRESS_FEE)} fee is
+                  charged on top of your total.
+                </p>
+              </div>
+            )}
 
-          {/* Squeeze Fee Notice */}
-          {hasSqueezeFee && (
-            <div className="border border-[#e4e4e7] bg-[#fafafa] px-4 py-3">
-              <p className="text-sm text-[#52525b] font-medium">
-                This is a squeeze-in slot with an additional ₱500 fee.
+            {/* Deposit Info */}
+            <div className="brand-panel-soft p-3">
+              <p className="brand-eyebrow mb-1.5">Deposit</p>
+              <p className="brand-numeric text-2xl text-[#1c1917]">{formatPeso(totalDeposit)}</p>
+              <p className="text-xs text-[#78716c] mt-1">
+                {slotCount} slot{slotCount !== 1 ? 's' : ''} × {formatPeso(DEPOSIT_PER_SLOT)}, due upon booking
+              </p>
+              <p className="text-xs text-[#78716c] mt-2 pt-2 border-t border-[#e7e2db]">
+                Non-refundable, but fully deductible from your total.
               </p>
             </div>
-          )}
-          {isManiPediExpress && (
-            <div className="rounded-xl border-2 border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-sm text-amber-900 font-medium">
-                This is a Mani + Pedi Express service. An additional ₱{MANI_PEDI_EXPRESS_FEE} fee will be charged on top of your total.
-              </p>
-            </div>
-          )}
-
-          {/* Deposit Info */}
-          <div className="border border-[#e4e4e7] bg-[#fafafa] px-4 py-3 space-y-2 text-left">
-            <p className="text-sm text-gray-900 flex items-start gap-2 text-left">
-              <CheckCircle2 className="w-4 h-4 text-gray-700 flex-shrink-0 mt-0.5" />
-              <span><span className="font-medium">₱{totalDeposit.toLocaleString()} deposit</span> is required ({slotCount} slot{slotCount !== 1 ? 's' : ''} × ₱500) upon booking</span>
-            </p>
-            <p className="text-sm text-gray-900 flex items-start gap-2 text-left">
-              <CheckCircle2 className="w-4 h-4 text-gray-700 flex-shrink-0 mt-0.5" />
-              <span>Deposit is <span className="font-medium">non-refundable</span> but consumable</span>
-            </p>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-6 pt-6 border-t border-gray-300 space-y-3">
+        <div className="brand-modal-footer space-y-2.5">
           <button
             onClick={onConfirm}
             className="brand-cta w-full active:scale-[0.98] touch-manipulation"

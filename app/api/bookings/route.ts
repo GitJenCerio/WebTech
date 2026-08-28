@@ -16,6 +16,8 @@ import { syncBookingToSheet } from '@/lib/services/googleSheetsService';
 import { sendPushToAll } from '@/lib/services/pushNotificationService';
 import connectDB from '@/lib/mongodb';
 import Booking from '@/lib/models/Booking';
+import { getClientIp, sendMetaCapiEvent } from '@/lib/metaConversions';
+import { metaScheduleEventId } from '@/lib/metaPixel';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -261,6 +263,33 @@ export async function POST(request: Request) {
     })();
 
     const photoUploadToken = createPhotoUploadToken(booking._id.toString());
+
+    const bookingId = booking._id.toString();
+    const eventSourceUrl = baseUrl ? `${baseUrl.replace(/\/$/, '')}/booking` : undefined;
+    Customer.findById(resolvedCustomerId)
+      .select('email phone')
+      .lean()
+      .then((cust) => {
+        const customer = cust as { email?: string; phone?: string } | null;
+        return sendMetaCapiEvent({
+          eventName: 'Schedule',
+          eventId: metaScheduleEventId(bookingId),
+          eventSourceUrl,
+          userData: {
+            email: customer?.email || normalizedCustomerEmail,
+            phone: customer?.phone,
+            clientIpAddress: getClientIp(request),
+            clientUserAgent: request.headers.get('user-agent'),
+          },
+          customData: {
+            content_ids: [bookingId],
+            content_type: 'booking',
+            currency: 'PHP',
+            value: booking.pricing?.depositRequired ?? 0,
+          },
+        });
+      })
+      .catch((err) => console.error('[Meta CAPI] Schedule event failed:', err));
 
     return NextResponse.json({
       booking: {

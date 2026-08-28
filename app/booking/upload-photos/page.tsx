@@ -16,9 +16,10 @@ function Shell({ title, subtitle, children }: { title: string; subtitle?: string
     <main className="min-h-screen section-ash">
       <Header />
       <section className="pt-[90px] sm:pt-[105px] md:pt-[120px] lg:pt-[140px] px-2 sm:px-4 pb-10 sm:pb-14">
-        <div className="max-w-2xl mx-auto border border-[#e4e4e7] bg-white p-4 sm:p-6 lg:p-8">
-          <h1 className="text-2xl sm:text-3xl font-heading text-[#111] mb-2">{title}</h1>
-          {subtitle ? <p className="text-sm sm:text-base text-[#71717a] mb-6">{subtitle}</p> : null}
+        <div className="max-w-2xl mx-auto brand-panel p-5 sm:p-7 lg:p-9">
+          <h1 className="text-2xl sm:text-3xl font-heading text-[#1c1917] mb-3">{title}</h1>
+          <div className="brand-rule w-16 mb-4" aria-hidden />
+          {subtitle ? <p className="text-sm sm:text-base text-[#78716c] mb-6 leading-relaxed">{subtitle}</p> : null}
           {children}
         </div>
       </section>
@@ -103,10 +104,10 @@ function UploadSection({
 
   return (
     <div className="mb-8">
-      <h3 className="text-lg font-semibold text-[#111] mb-1">{label}</h3>
-      <p className="text-sm text-[#71717a] mb-3">{description}</p>
-      <p className="text-xs text-slate-500 mb-2">
-        {currentCount} / {maxCount} uploaded. {isFull ? 'Maximum reached.' : `You can add ${slotsLeft} more.`}
+      <h3 className="font-heading text-xl text-[#1c1917] mb-1">{label}</h3>
+      <p className="text-sm text-[#78716c] mb-2">{description}</p>
+      <p className="brand-eyebrow mb-2.5">
+        {currentCount} / {maxCount} uploaded · {isFull ? 'maximum reached' : `you can add ${slotsLeft} more`}
       </p>
       {!isFull && (
         <label className={`block ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
@@ -117,12 +118,16 @@ function UploadSection({
             multiple
             onChange={handleFileChange}
             disabled={uploading || disabled}
-            className="block w-full rounded-lg border-2 border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-slate-800 file:font-medium disabled:opacity-50"
+            className="brand-field-file"
           />
         </label>
       )}
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-      {uploading && <p className="mt-2 text-sm text-slate-500">Uploading...</p>}
+      {error && (
+        <p className="brand-note-error mt-3 text-sm" role="alert">
+          {error}
+        </p>
+      )}
+      {uploading && <p className="brand-eyebrow mt-3">Uploading</p>}
     </div>
   );
 }
@@ -187,7 +192,7 @@ function UploadPhotosContent() {
   if (loading) {
     return (
       <Shell title="Upload nail photos">
-        <div className="animate-pulse text-slate-500 text-center py-4">Loading...</div>
+        <p className="brand-eyebrow text-center py-4 animate-pulse">Loading</p>
       </Shell>
     );
   }
@@ -215,24 +220,23 @@ function UploadPhotosContent() {
       title="Upload nail photos"
       subtitle="Share your inspiration and current nail photos so we can prepare for your appointment."
     >
-      <div className="rounded-lg border-2 border-slate-300 bg-white px-4 py-3 mb-6">
-        <p className="text-sm sm:text-base text-slate-700">
-          Booking <strong>{booking.bookingCode}</strong>
-        </p>
+      <div className="brand-panel-soft px-4 py-4 mb-6">
+        <p className="brand-eyebrow">Booking</p>
+        <p className="brand-numeric text-lg text-[#1c1917] mt-1">{booking.bookingCode}</p>
       </div>
 
       <div className="mb-8">
-        <h3 className="text-lg font-semibold text-[#111] mb-1">
-          Specific services / Add-ons <span className="text-red-600">*</span>
+        <h3 className="font-heading text-xl text-[#1c1917] mb-1">
+          Specific services / Add-ons <span className="text-[#5a3830]">*</span>
         </h3>
-        <p className="text-sm text-[#71717a] mb-3">
-          Select at least one service you need for your appointment. (Required)
+        <p className="text-sm text-[#78716c] mb-3">
+          Select at least one service you need for your appointment.
         </p>
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-2 mb-4">
           {CHOSEN_SERVICE_OPTIONS.map(({ value, label }) => (
             <label
               key={value}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-slate-300 bg-white cursor-pointer hover:border-slate-500 transition-colors"
+              className="flex items-center gap-2.5 px-3 py-2.5 border border-[#e7e2db] bg-[#fffcfa] cursor-pointer transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation"
             >
               <input
                 type="checkbox"
@@ -244,9 +248,9 @@ function UploadPhotosContent() {
                   setServicesSaved(false);
                   setServicesError(null);
                 }}
-                className="rounded border-gray-300"
+                className="brand-check"
               />
-              <span className="text-sm text-slate-800">{label}</span>
+              <span className="text-sm text-[#57534e]">{label}</span>
             </label>
           ))}
         </div>
@@ -278,20 +282,22 @@ function UploadPhotosContent() {
             }
           }}
           disabled={savingServices}
-          className="px-4 py-2 rounded-lg border-2 border-slate-700 bg-slate-800 text-white text-sm font-medium hover:bg-slate-900 disabled:opacity-50"
+          className="brand-cta-sm disabled:opacity-50"
         >
           {savingServices ? 'Saving...' : 'Save services'}
         </button>
         {servicesSaved && (
-          <p className="mt-2 text-sm text-green-600">Services saved successfully.</p>
+          <p className="brand-eyebrow mt-3">Services saved</p>
         )}
         {servicesError && (
-          <p className="mt-2 text-sm text-red-600">{servicesError}</p>
+          <p className="brand-note-error mt-3 text-sm" role="alert">
+            {servicesError}
+          </p>
         )}
       </div>
 
       {!servicesSaved && chosenServices.length === 0 && (
-        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-6">
+        <p className="brand-note-strong text-sm mb-6">
           Please select and save at least one service above before uploading photos.
         </p>
       )}
@@ -320,22 +326,23 @@ function UploadPhotosContent() {
         disabled={!servicesSaved || chosenServices.length === 0}
       />
 
-      <p className="text-sm text-[#71717a] mb-4">
+      <p className="text-sm text-[#78716c] mb-5">
         Accepted formats: JPEG, PNG, WebP, HEIC. Max 10MB per image. Up to 3 photos per section.
       </p>
 
       {(booking.inspirationCount > 0 || booking.currentStateCount > 0) && (
-        <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 px-4 py-4 mb-6">
-          <p className="text-base font-semibold text-emerald-800">
-            Thank you! Your details were uploaded successfully.
-          </p>
-          <p className="text-sm text-emerald-700 mt-1">
-            We&apos;ll use these to prepare for your appointment. See you soon!
+        <div className="brand-note mb-6">
+          <p className="font-heading text-lg text-[#1c1917]">Thank you — your details were uploaded.</p>
+          <p className="text-sm mt-1">
+            We&apos;ll use these to prepare for your appointment. See you soon.
           </p>
         </div>
       )}
 
-      <Link href="/" className="inline-block text-slate-700 hover:text-black text-sm underline">
+      <Link
+        href="/"
+        className="brand-eyebrow inline-block underline decoration-[#c4b5a0] underline-offset-4 transition-colors hover:text-[#1c1917]"
+      >
         Return to home
       </Link>
     </Shell>
@@ -347,7 +354,7 @@ export default function UploadPhotosPage() {
     <Suspense
       fallback={
         <Shell title="Upload nail photos">
-          <div className="text-center text-slate-500 py-4">Loading...</div>
+          <p className="brand-eyebrow text-center py-4">Loading</p>
         </Shell>
       }
     >

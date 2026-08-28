@@ -111,6 +111,9 @@ export const viewport: Viewport = {
   userScalable: true,
   themeColor: '#f7f6f4',
   viewportFit: 'cover', // Enables safe-area-inset on notched devices
+  // Lets the on-screen keyboard shrink the layout viewport so dvh-sized modals
+  // keep their pinned footer and the focused field above it.
+  interactiveWidget: 'resizes-content',
 };
 
 export default function RootLayout({

@@ -7,6 +7,8 @@
 
 import { Resend } from 'resend';
 import { createUploadProofToken } from '@/lib/uploadProofToken';
+import { PAYMENT_QR_GCASH, PAYMENT_QR_PNB, PAYMENT_CHANNELS_SENTENCE } from '@/lib/constants/payment';
+import { PROOF_OF_PAYMENT_WINDOW_HOURS } from '@/lib/constants/policy';
 import { getCombinedInvoiceTotal, hasAnyRealInvoice } from '@/lib/utils/bookingInvoice';
 import { getBookingDepositDue } from '@/lib/utils/bookingDeposit';
 import connectDB from '@/lib/mongodb';
@@ -273,10 +275,7 @@ function getUploadProofLink(booking: any): string {
 
 /** QR code URLs for payment - use direct image links (e.g. i.imgur.com/xxx.jpg) for email embedding */
 function getPaymentQrUrls(): { gcash: string; pnb: string } {
-  return {
-    gcash: process.env.PAYMENT_QR_GCASH_URL || 'https://i.imgur.com/kxV0B0P.jpeg',
-    pnb: process.env.PAYMENT_QR_PNB_URL || 'https://i.imgur.com/5MR7dcR.jpeg',
-  };
+  return { gcash: PAYMENT_QR_GCASH, pnb: PAYMENT_QR_PNB };
 }
 
 export async function sendBookingPendingEmail(booking: any, customer: any) {
@@ -300,12 +299,12 @@ export async function sendBookingPendingEmail(booking: any, customer: any) {
     const content = `
       <h1 style="color: #1a1a1a; margin: 0 0 16px; font-size: 24px;">Your Booking is Pending</h1>
       <p style="margin: 0 0 16px;">Hi ${customer.name},</p>
-      <p style="margin: 0 0 16px;">Thank you for booking! Your reservation has been received. <strong>To secure your slot, the required reservation deposit must be paid within 48 hours.</strong></p>
+      <p style="margin: 0 0 16px;">Thank you for booking! Your reservation has been received. <strong>To secure your slot, the required reservation deposit must be paid within ${PROOF_OF_PAYMENT_WINDOW_HOURS} hours.</strong></p>
       
       <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
         <p style="margin: 0 0 8px; font-weight: 600; color: #92400e;">⚠️ Required: Reservation Deposit</p>
         <p style="margin: 0; font-size: 15px; color: #78350f;">Amount due: <strong>PHP ${depositRequired.toLocaleString()}</strong></p>
-        <p style="margin: 8px 0 0; font-size: 13px; color: #78350f;">Non-refundable but deductible from total. Your slot will be automatically cancelled if payment proof is not uploaded within 48 hours.</p>
+        <p style="margin: 8px 0 0; font-size: 13px; color: #78350f;">Non-refundable but deductible from total. Your slot will be automatically cancelled if payment proof is not uploaded within ${PROOF_OF_PAYMENT_WINDOW_HOURS} hours.</p>
       </div>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -330,7 +329,7 @@ export async function sendBookingPendingEmail(booking: any, customer: any) {
             </td>
           </tr>
         </table>
-        <p style="margin: 12px 0 0; font-size: 12px; color: #6b7280;">Transfer fees may apply. Pay via GCash or PNB Bank Transfer.</p>
+        <p style="margin: 12px 0 0; font-size: 12px; color: #6b7280;">Transfer fees may apply. Pay via ${PAYMENT_CHANNELS_SENTENCE}.</p>
       </div>
 
       ${uploadProofLink ? `

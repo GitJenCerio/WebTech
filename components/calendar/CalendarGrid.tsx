@@ -4,6 +4,26 @@ import { useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay } from 'date-fns';
 import type { Slot } from '@/lib/types';
 
+const PEARL = '#fffcfa';
+const ASH = '#f0ebe4';
+const ASH_SOFT = '#f7f6f4';
+const BORDER = '#e7e2db';
+const CHAMPAGNE = '#c4b5a0';
+const INK = '#1c1917';
+const MUTED = '#78716c';
+const FAINT = '#a8a29e';
+
+/**
+ * Slot-count tints. Champagne itself is too light to read at 10px, so the
+ * available count uses a deepened champagne that still clears contrast.
+ */
+const COUNT_AVAILABLE = '#8a7355';
+const COUNT_PENDING = '#78716c';
+const COUNT_BOOKED = '#b5a99a';
+const COUNT_ON_INK_AVAILABLE = 'rgba(255, 252, 250, 0.92)';
+const COUNT_ON_INK_PENDING = 'rgba(255, 252, 250, 0.65)';
+const COUNT_ON_INK_BOOKED = 'rgba(255, 252, 250, 0.45)';
+
 interface CalendarGridProps {
   referenceDate: Date;
   slots: Slot[];
@@ -104,24 +124,22 @@ export function CalendarGrid({
   const todayStr = format(today, 'yyyy-MM-dd');
 
   return (
-    <div className="border border-[#e4e4e7] bg-white p-3 sm:p-4 lg:p-6">
+    <div className="brand-panel p-3 sm:p-4 lg:p-6">
       <div className="mb-3 sm:mb-4 flex items-center justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] sm:text-xs uppercase tracking-[0.15em] mb-1 text-[#a1a1aa]">
-            Calendar
-          </p>
-          <h2 className="text-base sm:text-lg lg:text-xl font-heading text-[#111] break-words">
+          <p className="brand-eyebrow mb-1">Calendar</p>
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-heading text-[#1c1917] break-words">
             {format(referenceDate, 'MMMM yyyy')}
           </h2>
           {nailTechName && (
-            <p className="text-xs sm:text-sm mt-1 break-words text-[#71717a]">{nailTechName}</p>
+            <p className="text-xs sm:text-sm mt-1 break-words text-[#78716c]">{nailTechName}</p>
           )}
         </div>
         <div className="flex gap-1 sm:gap-2 ml-2">
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="p-2 sm:p-2.5 text-xl sm:text-2xl text-[#111] hover:bg-[#f4f4f5] transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-2 sm:p-2.5 text-xl sm:text-2xl text-[#1c1917] border border-transparent hover:border-[#e7e2db] hover:bg-[#f0ebe4] transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Previous month"
           >
             ‹
@@ -129,7 +147,7 @@ export function CalendarGrid({
           <button
             type="button"
             onClick={handleNextMonth}
-            className="p-2 sm:p-2.5 text-xl sm:text-2xl text-[#111] hover:bg-[#f4f4f5] transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-2 sm:p-2.5 text-xl sm:text-2xl text-[#1c1917] border border-transparent hover:border-[#e7e2db] hover:bg-[#f0ebe4] transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Next month"
           >
             ›
@@ -139,7 +157,7 @@ export function CalendarGrid({
 
       <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="text-center text-[10px] sm:text-xs font-medium tracking-wide py-1.5 sm:py-2 text-[#71717a]">
+          <div key={day} className="text-center text-[10px] sm:text-xs uppercase tracking-[0.16em] py-1.5 sm:py-2 text-[#b5a99a]">
             {day}
           </div>
         ))}
@@ -154,41 +172,38 @@ export function CalendarGrid({
           const isPast = disablePastDates && date < today && !isToday;
           const hasNoSlots = noAvailableSlotsDates.includes(dateStr);
 
-          let bgColorStyle = '#ffffff';
-          let textColorStyle = '#52525b';
-          let borderColorStyle = '#e4e4e7';
+          let bgColorStyle = PEARL;
+          let textColorStyle = MUTED;
+          let borderColorStyle = BORDER;
 
           if (!isCurrentMonth) {
-            textColorStyle = '#a1a1aa';
+            textColorStyle = FAINT;
           } else if (isPast) {
-            textColorStyle = '#a1a1aa';
-            bgColorStyle = '#fafafa';
+            textColorStyle = FAINT;
+            bgColorStyle = ASH_SOFT;
           } else if (status === 'blocked') {
-            bgColorStyle = '#fafafa';
-            textColorStyle = '#71717a';
-            borderColorStyle = '#e4e4e7';
+            bgColorStyle = ASH_SOFT;
+            textColorStyle = MUTED;
           } else if (status === 'booked') {
-            bgColorStyle = '#f4f4f5';
-            textColorStyle = '#52525b';
-            borderColorStyle = '#d4d4d8';
+            bgColorStyle = ASH;
+            textColorStyle = MUTED;
           } else if (hasNoSlots) {
-            bgColorStyle = '#fafafa';
-            textColorStyle = '#71717a';
-            borderColorStyle = '#e4e4e7';
+            bgColorStyle = ASH_SOFT;
+            textColorStyle = FAINT;
           } else if (status === 'available') {
-            bgColorStyle = '#ffffff';
-            textColorStyle = '#111111';
-            borderColorStyle = '#d4d4d8';
+            bgColorStyle = PEARL;
+            textColorStyle = INK;
+            borderColorStyle = CHAMPAGNE;
           }
 
           if (isSelected) {
-            borderColorStyle = '#111111';
-            bgColorStyle = '#111111';
-            textColorStyle = '#ffffff';
+            borderColorStyle = INK;
+            bgColorStyle = INK;
+            textColorStyle = PEARL;
           }
 
           if (isToday && !isSelected) {
-            borderColorStyle = '#a1a1aa';
+            borderColorStyle = INK;
           }
 
           return (
@@ -202,7 +217,7 @@ export function CalendarGrid({
                 transition-all active:scale-95 touch-manipulation
                 min-h-[44px] sm:min-h-[48px]
                 ${!isCurrentMonth ? 'opacity-50' : ''}
-                ${isPast && disablePastDates ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-[#111]'}
+                ${isPast && disablePastDates ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-[#1c1917]'}
               `}
               style={{
                 backgroundColor: bgColorStyle,
@@ -212,7 +227,7 @@ export function CalendarGrid({
             >
               <div className="flex flex-col h-full w-full">
                 <div className="flex justify-center items-center shrink-0 pt-0.5">
-                  <span className="font-medium text-center">{format(date, 'd')}</span>
+                  <span className="brand-numeric text-center">{format(date, 'd')}</span>
                 </div>
                 <div className="flex-1 flex items-center justify-center min-h-0">
                   {status === 'blocked' ? (
@@ -221,24 +236,24 @@ export function CalendarGrid({
                     <div className="flex flex-col items-center justify-center gap-0.5">
                       {slotCounts.available > 0 && (
                         <span
-                          className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-medium"
-                          style={{ color: isSelected ? 'rgba(255,255,255,0.85)' : '#111111' }}
+                          className="brand-numeric text-[9px] sm:text-[10px] lg:text-[11px] leading-tight"
+                          style={{ color: isSelected ? COUNT_ON_INK_AVAILABLE : COUNT_AVAILABLE }}
                         >
                           {slotCounts.available}
                         </span>
                       )}
                       {slotCounts.booked > 0 && (
                         <span
-                          className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-medium"
-                          style={{ color: isSelected ? 'rgba(255,255,255,0.55)' : '#a1a1aa' }}
+                          className="brand-numeric text-[9px] sm:text-[10px] lg:text-[11px] leading-tight"
+                          style={{ color: isSelected ? COUNT_ON_INK_BOOKED : COUNT_BOOKED }}
                         >
                           {slotCounts.booked}
                         </span>
                       )}
                       {slotCounts.pending > 0 && (
                         <span
-                          className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight font-medium"
-                          style={{ color: isSelected ? 'rgba(255,255,255,0.55)' : '#71717a' }}
+                          className="brand-numeric text-[9px] sm:text-[10px] lg:text-[11px] leading-tight"
+                          style={{ color: isSelected ? COUNT_ON_INK_PENDING : COUNT_PENDING }}
                         >
                           {slotCounts.pending}
                         </span>

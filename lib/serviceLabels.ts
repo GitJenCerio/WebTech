@@ -5,6 +5,7 @@ export const CHOSEN_SERVICE_LABELS: Record<string, string> = {
   'without-extensions': 'BIAB / Gel Overlay',
   'with-extensions': 'Extensions',
   'russian-pedicure': 'Russian Pedicure Gel Overlay',
+  'nail-reconstruction': 'Nail Reconstruction',
   'minimal-design': '+ Minimal Design',
   'intricate-design': '+ Intricate Design',
 };

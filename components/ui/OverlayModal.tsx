@@ -23,8 +23,12 @@ export interface OverlayModalProps {
 
 /**
  * Consistent overlay + panel for all booking-style dialogs.
- * - Backdrop: fixed inset-0, bg-black/60, p-4, centered
- * - Panel: white bg, border-2 border-gray-300, rounded-xl, shadow-2xl, scrollable
+ * - Backdrop: `brand-modal-backdrop` (ink wash, centered, dvh-capped)
+ * - Panel: `brand-modal brand-modal-panel` (pearl surface, silver border, flex column)
+ * Children are expected to be a `brand-modal-scroll brand-modal-body` region
+ * followed by an optional `brand-modal-footer`, which keeps the action row
+ * visible no matter how tall the content is. The close button floats over the
+ * shell, so headers need their own right clearance (`pr-9`).
  * Use for ClientType, ServiceType, NailTech, SlotConfirm, RecordFound, NoRecordFound, BookingSuccess.
  * BookingFormModal can use size="lg" and keep its own close button.
  */
@@ -43,34 +47,27 @@ export function OverlayModal({
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto"
+      className="brand-modal-backdrop"
       style={{ zIndex }}
       role="dialog"
       aria-modal="true"
     >
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/60"
-        aria-hidden
-        onClick={onClose}
-      />
+      {/* Click-to-dismiss layer. The wash itself lives on brand-modal-backdrop. */}
+      <div className="fixed inset-0" aria-hidden onClick={onClose} />
 
       {/* Panel */}
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className={cn(
-          'relative w-full bg-white border-2 border-gray-400 rounded-xl shadow-2xl my-4 max-h-[90vh] overflow-y-auto',
-          sizeClass,
-          size === 'lg' && 'max-h-[95vh]',
-          className
-        )}
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className={cn('brand-modal brand-modal-panel', sizeClass, className)}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Sits on the shell, not the scroll region, so it stays put. */}
         {closeButton != null ? (
-          <div className="absolute top-4 right-4 z-10">{closeButton}</div>
+          <div className="absolute top-3 right-3 z-30">{closeButton}</div>
         ) : null}
-        <div className={closeButton != null ? 'pr-10' : undefined}>{children}</div>
+        {children}
       </motion.div>
     </div>
   );
