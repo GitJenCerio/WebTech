@@ -496,6 +496,7 @@ export default function BookingPage() {
     email: string;
     contactNumber: string;
     socialMediaName: string;
+    socialMediaPlatform?: 'facebook' | 'instagram';
     howDidYouFindUs: string;
     howDidYouFindUsOther?: string;
     currentNailPictures: File[];
@@ -537,6 +538,7 @@ export default function BookingPage() {
             email: formData.email,
             phone: formData.contactNumber,
             socialMediaName: formData.socialMediaName,
+            socialMediaPlatform: formData.socialMediaPlatform,
             howDidYouFindUs: formData.howDidYouFindUs,
             howDidYouFindUsOther: formData.howDidYouFindUsOther,
             nailHistory: {

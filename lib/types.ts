@@ -73,6 +73,7 @@ export interface Customer {
   email?: string;
   phone?: string;
   socialMediaName?: string; // FB name / Instagram name
+  socialMediaPlatform?: 'facebook' | 'instagram';
   referralSource?: string; // How did you find out about glammednails
   referralSourceOther?: string;
   isRepeatClient?: boolean; // Mark customers imported from old sheets as repeat clients
@@ -98,6 +99,8 @@ export interface Customer {
   waiverAccepted?: boolean;
   isActive?: boolean;
   isVIP?: boolean;
+  bannedAt?: string | null;
+  bannedReason?: string;
   createdAt: string;
   updatedAt: string;
 }

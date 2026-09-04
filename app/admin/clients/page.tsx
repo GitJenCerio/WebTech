@@ -3,12 +3,17 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Search, X, ChevronLeft, ChevronRight, FileText, Plus } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, FileText, Plus, Ban } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Badge } from '@/components/ui/Badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
 import { Card, CardContent } from "@/components/ui/Card";
+import { useSession } from 'next-auth/react';
+import { canManageCustomers } from '@/lib/rbac';
+import BanClientDialog from '@/components/admin/BanClientDialog';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
+import { formatSocialMediaDisplay } from '@/lib/utils/socialMedia';
 
 const PAGE_SIZE = 10;
 
@@ -28,6 +33,17 @@ interface Client {
   isActive?: boolean;
   totalVisits: number;
   hasNotes: boolean;
+  socialMediaName?: string;
+}
+
+interface IdentifierBan {
+  id: string;
+  customerId: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  socialMediaName: string | null;
+  reason: string | null;
 }
 
 interface ApiCustomer {
@@ -35,6 +51,7 @@ interface ApiCustomer {
   name: string;
   email?: string;
   phone?: string;
+  socialMediaName?: string;
   notes?: string;
   clientType?: 'NEW' | 'REPEAT';
   isVIP?: boolean;
@@ -65,13 +82,19 @@ function mapApiToClient(c: ApiCustomer): Client {
     isActive: c.isActive ?? true,
     totalVisits: c.totalVisits ?? 0,
     hasNotes: !!(c.notes && c.notes.trim()),
+    socialMediaName: c.socialMediaName ?? '',
   };
 }
 
 export default function ClientsPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const canBan = canManageCustomers({
+    role: (session?.user as { role?: string } | undefined)?.role,
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'banned'>('all');
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +108,13 @@ export default function ClientsPage() {
   const [showAddClientModal, setShowAddClientModal] = useState(false);
   const [addClientDraft, setAddClientDraft] = useState({ name: '', email: '', phone: '', socialMediaName: '', notes: '', isVIP: false });
   const [addingClient, setAddingClient] = useState(false);
+  const [banDialogOpen, setBanDialogOpen] = useState(false);
+  const [banDialogMode, setBanDialogMode] = useState<'customer' | 'identifiers'>('customer');
+  const [banTarget, setBanTarget] = useState<{ id: string; name?: string; email?: string; phone?: string; socialMediaName?: string } | null>(null);
+  const [unbanTarget, setUnbanTarget] = useState<Client | null>(null);
+  const [unbanning, setUnbanning] = useState(false);
+  const [identifierBans, setIdentifierBans] = useState<IdentifierBan[]>([]);
+  const [unbanIdentifierId, setUnbanIdentifierId] = useState<string | null>(null);
 
   const handleViewClient = useCallback(async (clientId: string, mode: 'view' | 'edit' = 'view') => {
     try {
@@ -179,6 +209,46 @@ export default function ClientsPage() {
     }
   };
 
+  const handleUnbanClient = async () => {
+    if (!unbanTarget) return;
+    try {
+      setUnbanning(true);
+      const res = await fetch(`/api/customers/${unbanTarget.id}/ban`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to unban client');
+      toast.success('Client unbanned');
+      setUnbanTarget(null);
+      if (clientDetails?.customer?.id === unbanTarget.id) {
+        setClientDetails({
+          ...clientDetails,
+          customer: { ...clientDetails.customer, isActive: true, bannedAt: null, bannedReason: undefined },
+        });
+      }
+      await fetchClients();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to unban client');
+    } finally {
+      setUnbanning(false);
+    }
+  };
+
+  const handleUnbanIdentifier = async () => {
+    if (!unbanIdentifierId) return;
+    try {
+      setUnbanning(true);
+      const res = await fetch(`/api/banned-clients/${unbanIdentifierId}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to remove ban');
+      toast.success('Ban removed');
+      setUnbanIdentifierId(null);
+      await fetchClients();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove ban');
+    } finally {
+      setUnbanning(false);
+    }
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
@@ -193,18 +263,26 @@ export default function ClientsPage() {
     setError(null);
     const params = new URLSearchParams();
     if (searchQuery.trim()) params.set('search', searchQuery.trim());
+    if (statusFilter === 'banned') params.set('status', 'banned');
     try {
       const res = await fetch(`/api/customers?${params.toString()}`);
       if (!res.ok) throw new Error(res.statusText || 'Failed to fetch clients');
       const data = await res.json();
       setClients((data.customers ?? []).map(mapApiToClient));
       setCurrentPage(1);
+      if (canBan) {
+        const bansRes = await fetch('/api/banned-clients');
+        if (bansRes.ok) {
+          const bansData = await bansRes.json();
+          setIdentifierBans((bansData.bans ?? []).filter((b: IdentifierBan) => !b.customerId));
+        }
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load clients');
     } finally {
       setLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, statusFilter, canBan]);
 
   useEffect(() => {
     fetchClients();
@@ -247,6 +325,39 @@ export default function ClientsPage() {
               >
                 <X className="h-3.5 w-3.5" />
                 Clear
+              </button>
+            )}
+            <div className="flex items-center gap-1 p-0.5 rounded-lg border border-[#e7e2db] bg-[#f7f6f4]">
+              <button
+                type="button"
+                onClick={() => setStatusFilter('all')}
+                className={`h-8 px-3 text-xs rounded-md transition-all ${
+                  statusFilter === 'all' ? 'bg-[#1c1917] text-white' : 'text-gray-500 hover:text-[#1c1917]'
+                }`}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('banned')}
+                className={`h-8 px-3 text-xs rounded-md transition-all ${
+                  statusFilter === 'banned' ? 'bg-[#1c1917] text-white' : 'text-gray-500 hover:text-[#1c1917]'
+                }`}
+              >
+                Banned
+              </button>
+            </div>
+            {canBan && (
+              <button
+                onClick={() => {
+                  setBanTarget(null);
+                  setBanDialogMode('identifiers');
+                  setBanDialogOpen(true);
+                }}
+                className="h-9 px-3 text-sm font-medium rounded-lg border border-[#e7e2db] bg-white text-[#5a3830] hover:border-[#5a3830] transition-colors flex items-center justify-center gap-2"
+              >
+                <Ban className="h-4 w-4" />
+                Ban details
               </button>
             )}
             <button
@@ -297,10 +408,18 @@ export default function ClientsPage() {
                           <Search className="h-6 w-6 text-gray-300" />
                         </div>
                         <p className="text-sm font-medium text-gray-500">
-                          {searchQuery.trim() ? 'No clients match your search.' : 'No clients yet.'}
+                          {searchQuery.trim()
+                            ? 'No clients match your search.'
+                            : statusFilter === 'banned'
+                              ? 'No banned clients.'
+                              : 'No clients yet.'}
                         </p>
                         <p className="text-xs text-gray-400 max-w-[240px]">
-                          {searchQuery.trim() ? 'Try adjusting your search or clearing the search box.' : 'Clients are added when you create bookings, or you can add one manually.'}
+                          {searchQuery.trim()
+                            ? 'Try adjusting your search or clearing the search box.'
+                            : statusFilter === 'banned'
+                              ? 'Banned clients appear here. You can also ban by name, email, phone, or social details.'
+                              : 'Clients are added when you create bookings, or you can add one manually.'}
                         </p>
                       </div>
                     </td>
@@ -309,7 +428,10 @@ export default function ClientsPage() {
                   paginatedClients.map((item) => (
                     <tr key={item.id} className="hover:bg-[#fffcfa] transition-colors duration-100 group">
                       <td className="px-5 py-3.5">
-                        <span className="font-medium text-[#1c1917]">{item.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-[#1c1917]">{item.name}</span>
+                          {item.isActive === false && <Badge variant="destructive">Banned</Badge>}
+                        </div>
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col">
@@ -356,6 +478,31 @@ export default function ClientsPage() {
                           >
                             Bookings
                           </button>
+                          {canBan && item.isActive === false ? (
+                            <button
+                              onClick={() => setUnbanTarget(item)}
+                              className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
+                            >
+                              Unban
+                            </button>
+                          ) : canBan ? (
+                            <button
+                              onClick={() => {
+                                setBanTarget({
+                                  id: item.id,
+                                  name: item.name,
+                                  email: item.email,
+                                  phone: item.phone,
+                                  socialMediaName: item.socialMediaName,
+                                });
+                                setBanDialogMode('customer');
+                                setBanDialogOpen(true);
+                              }}
+                              className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-[#5a3830] hover:border-[#5a3830] transition-all"
+                            >
+                              Ban
+                            </button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -392,10 +539,18 @@ export default function ClientsPage() {
                   <Search className="h-6 w-6 text-gray-300" />
                 </div>
                 <p className="text-sm font-medium text-gray-500">
-                  {searchQuery.trim() ? 'No clients match your search.' : 'No clients yet.'}
+                  {searchQuery.trim()
+                    ? 'No clients match your search.'
+                    : statusFilter === 'banned'
+                      ? 'No banned clients.'
+                      : 'No clients yet.'}
                 </p>
                 <p className="text-xs text-gray-400 max-w-[240px]">
-                  {searchQuery.trim() ? 'Try adjusting your search or clearing the search box.' : 'Clients are added when you create bookings, or you can add one manually.'}
+                  {searchQuery.trim()
+                    ? 'Try adjusting your search or clearing the search box.'
+                    : statusFilter === 'banned'
+                      ? 'Banned clients appear here. You can also ban by name, email, phone, or social details.'
+                      : 'Clients are added when you create bookings, or you can add one manually.'}
                 </p>
               </div>
             ) : (
@@ -406,11 +561,14 @@ export default function ClientsPage() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-medium text-[#1c1917]">{item.name}</p>
-                    {item.isVIP ? (
-                      <Badge variant="vip">VIP</Badge>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">Regular</span>
-                    )}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {item.isActive === false && <Badge variant="destructive">Banned</Badge>}
+                      {item.isVIP ? (
+                        <Badge variant="vip">VIP</Badge>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">Regular</span>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-1 text-sm">
                     {item.email && <p className="text-gray-600">{item.email}</p>}
@@ -441,6 +599,33 @@ export default function ClientsPage() {
                         Bookings
                       </button>
                     </div>
+                    {canBan && (
+                      item.isActive === false ? (
+                        <button
+                          onClick={() => setUnbanTarget(item)}
+                          className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
+                        >
+                          Unban
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setBanTarget({
+                              id: item.id,
+                              name: item.name,
+                              email: item.email,
+                              phone: item.phone,
+                              socialMediaName: item.socialMediaName,
+                            });
+                            setBanDialogMode('customer');
+                            setBanDialogOpen(true);
+                          }}
+                          className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-[#5a3830] hover:border-[#5a3830] transition-all"
+                        >
+                          Ban
+                        </button>
+                      )
+                    )}
                   </div>
                 </div>
               ))
@@ -577,7 +762,13 @@ export default function ClientsPage() {
                       {clientDetails.customer.email && <div><strong>Email:</strong> {clientDetails.customer.email}</div>}
                       {clientDetails.customer.phone && <div><strong>Phone:</strong> {clientDetails.customer.phone}</div>}
                       {clientDetails.customer.socialMediaName && (
-                        <div><strong>Social:</strong> {clientDetails.customer.socialMediaName}</div>
+                        <div>
+                          <strong>Social:</strong>{' '}
+                          {formatSocialMediaDisplay(
+                            clientDetails.customer.socialMediaName,
+                            clientDetails.customer.socialMediaPlatform
+                          )}
+                        </div>
                       )}
                       {clientDetails.customer.referralSource && (
                         <div><strong>Referral:</strong> {clientDetails.customer.referralSource}</div>
@@ -600,7 +791,10 @@ export default function ClientsPage() {
                       <span><strong>Total Tips:</strong> PHP {(clientDetails.customer.totalTips ?? 0).toLocaleString()}</span>
                       <span><strong>Total Discounts:</strong> PHP {(clientDetails.customer.totalDiscounts ?? 0).toLocaleString()}</span>
                       <span><strong>Client Type:</strong> {clientDetails.customer.clientType || 'NEW'}</span>
-                      <span><strong>Status:</strong> {clientDetails.customer.isActive === false ? 'Inactive' : 'Active'}</span>
+                      <span><strong>Status:</strong> {clientDetails.customer.isActive === false ? 'Banned' : 'Active'}</span>
+                      {clientDetails.customer.isActive === false && clientDetails.customer.bannedReason && (
+                        <span><strong>Ban reason:</strong> {clientDetails.customer.bannedReason}</span>
+                      )}
                       {clientDetails.customer.isVIP && (
                         <Badge variant="vip">VIP</Badge>
                       )}
@@ -673,13 +867,136 @@ export default function ClientsPage() {
                 </Button>
               </>
             ) : (
-              <Button type="button" variant="secondary" onClick={() => setShowClientModal(false)}>
-                Close
-              </Button>
+              <>
+                {canBan && clientDetails?.customer?.isActive === false && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const c = clientDetails?.customer;
+                      if (!c) return;
+                      setUnbanTarget({
+                        id: c.id,
+                        name: c.name,
+                        email: c.email ?? '',
+                        phone: c.phone ?? '',
+                        clientType: c.clientType,
+                        isVIP: c.isVIP,
+                        totalBookings: c.totalBookings ?? 0,
+                        completedBookings: c.completedBookings ?? 0,
+                        totalSpent: c.totalSpent ?? 0,
+                        totalTips: c.totalTips ?? 0,
+                        totalDiscounts: c.totalDiscounts ?? 0,
+                        lastVisit: c.lastVisit,
+                        isActive: false,
+                        totalVisits: c.totalBookings ?? 0,
+                        hasNotes: false,
+                        socialMediaName: c.socialMediaName,
+                      });
+                    }}
+                  >
+                    Unban
+                  </Button>
+                )}
+                {canBan && clientDetails?.customer && clientDetails.customer.isActive !== false && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => {
+                      const c = clientDetails?.customer;
+                      if (!c) return;
+                      setBanTarget({
+                        id: c.id,
+                        name: c.name,
+                        email: c.email,
+                        phone: c.phone,
+                        socialMediaName: c.socialMediaName,
+                      });
+                      setBanDialogMode('customer');
+                      setBanDialogOpen(true);
+                    }}
+                  >
+                    Ban
+                  </Button>
+                )}
+                <Button type="button" variant="secondary" onClick={() => setShowClientModal(false)}>
+                  Close
+                </Button>
+              </>
             )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {identifierBans.length > 0 && (
+        <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl">
+          <CardContent className="p-4 space-y-3">
+            <div>
+              <p className="text-sm font-medium text-[#1c1917]">Banned by details</p>
+              <p className="text-xs text-gray-400">These identifiers are blocked even if there is no client record.</p>
+            </div>
+            <div className="space-y-2">
+              {identifierBans.map((ban) => (
+                <div key={ban.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-[#e7e2db] bg-[#f7f6f4] px-3 py-2">
+                  <div className="text-sm text-[#3d342c] space-y-0.5">
+                    {ban.name && <p><strong>Name:</strong> {ban.name}</p>}
+                    {ban.email && <p><strong>Email:</strong> {ban.email}</p>}
+                    {ban.phone && <p><strong>Phone:</strong> {ban.phone}</p>}
+                    {ban.socialMediaName && <p><strong>Social:</strong> {ban.socialMediaName}</p>}
+                    {ban.reason && <p className="text-xs text-gray-500">{ban.reason}</p>}
+                  </div>
+                  {canBan && (
+                    <button
+                      type="button"
+                      onClick={() => setUnbanIdentifierId(ban.id)}
+                      className="h-8 px-3 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all shrink-0"
+                    >
+                      Unban
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <BanClientDialog
+        open={banDialogOpen}
+        onOpenChange={setBanDialogOpen}
+        mode={banDialogMode}
+        customer={banTarget}
+        onBanned={() => {
+          toast.success('Client banned');
+          fetchClients();
+          if (banTarget?.id && clientDetails?.customer?.id === banTarget.id) {
+            setClientDetails({
+              ...clientDetails,
+              customer: { ...clientDetails.customer, isActive: false },
+            });
+          }
+        }}
+      />
+      <ConfirmDialog
+        open={Boolean(unbanTarget)}
+        onOpenChange={(open) => { if (!open) setUnbanTarget(null); }}
+        title="Unban client"
+        description={`Allow ${unbanTarget?.name || 'this client'} to book again?`}
+        confirmLabel="Unban"
+        variant="default"
+        onConfirm={handleUnbanClient}
+        isLoading={unbanning}
+      />
+      <ConfirmDialog
+        open={Boolean(unbanIdentifierId)}
+        onOpenChange={(open) => { if (!open) setUnbanIdentifierId(null); }}
+        title="Remove ban"
+        description="This name, email, phone, or social media name will be able to book again."
+        confirmLabel="Unban"
+        variant="default"
+        onConfirm={handleUnbanIdentifier}
+        isLoading={unbanning}
+      />
 
       {/* Add Client Dialog */}
       <Dialog open={showAddClientModal} onOpenChange={(open) => !open && setShowAddClientModal(false)}>

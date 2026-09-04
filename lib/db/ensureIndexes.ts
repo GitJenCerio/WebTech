@@ -7,6 +7,7 @@ import Booking from '@/lib/models/Booking';
 import Slot from '@/lib/models/Slot';
 import Customer from '@/lib/models/Customer';
 import AuditLog from '@/lib/models/AuditLog';
+import BannedClient from '@/lib/models/BannedClient';
 
 const NINETY_DAYS_SECONDS = 90 * 24 * 60 * 60; // 7776000
 
@@ -35,6 +36,12 @@ export async function ensureIndexes(): Promise<void> {
       }
     }
     await Customer.collection.createIndex({ isActive: 1 }).catch((e) => console.error('[ensureIndexes] Customer isActive', e));
+
+    await BannedClient.collection.createIndex({ isActive: 1, phoneKey: 1 }).catch((e) => console.error('[ensureIndexes] BannedClient phoneKey', e));
+    await BannedClient.collection.createIndex({ isActive: 1, emailNormalized: 1 }).catch((e) => console.error('[ensureIndexes] BannedClient email', e));
+    await BannedClient.collection.createIndex({ isActive: 1, nameNormalized: 1 }).catch((e) => console.error('[ensureIndexes] BannedClient name', e));
+    await BannedClient.collection.createIndex({ isActive: 1, socialNormalized: 1 }).catch((e) => console.error('[ensureIndexes] BannedClient social', e));
+    await BannedClient.collection.createIndex({ customerId: 1 }).catch((e) => console.error('[ensureIndexes] BannedClient customerId', e));
 
     // AuditLog TTL index (auto-delete after 90 days)
     await AuditLog.collection.createIndex(

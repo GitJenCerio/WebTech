@@ -6,6 +6,7 @@ import { handleApiError, UnauthorizedError } from '@/lib/apiError';
 import connectDB from '@/lib/mongodb';
 import Customer from '@/lib/models/Customer';
 import Booking from '@/lib/models/Booking';
+import { assertNotBanned } from '@/lib/services/clientBanService';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,10 +41,16 @@ export async function GET(request: Request) {
     await connectDB();
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim();
+    const status = searchParams.get('status')?.trim();
 
     const assignedNailTechId = (session.user as any)?.assignedNailTechId;
 
     const query: Record<string, unknown> = {};
+    if (status === 'banned') {
+      query.isActive = false;
+    } else if (status === 'active') {
+      query.isActive = { $ne: false };
+    }
     if (search) {
       const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
       query.$or = [
@@ -75,6 +82,7 @@ export async function GET(request: Request) {
       email: c.email,
       phone: c.phone,
       socialMediaName: c.socialMediaName,
+      socialMediaPlatform: c.socialMediaPlatform,
       referralSource: c.referralSource,
       referralSourceOther: c.referralSourceOther,
       isRepeatClient: c.isRepeatClient,
@@ -92,6 +100,8 @@ export async function GET(request: Request) {
       waiverAccepted: c.waiverAccepted,
       isActive: c.isActive ?? true,
       isVIP: c.isVIP ?? false,
+      bannedAt: c.bannedAt ?? null,
+      bannedReason: c.bannedReason,
       totalVisits: c.totalBookings ?? 0,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
@@ -110,6 +120,7 @@ const createCustomerSchema = z.object({
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional(),
   socialMediaName: z.string().optional(),
+  socialMediaPlatform: z.enum(['facebook', 'instagram']).optional(),
   referralSource: z.string().optional(),
   referralSourceOther: z.string().optional(),
   howDidYouFindUs: z.string().optional(),
@@ -144,6 +155,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
+    await assertNotBanned({
+      name,
+      email: data.email,
+      phone: data.phone,
+      socialMediaName: data.socialMediaName,
+    });
+
     // Check duplicate by phone or email
     if (data.phone) {
       const existing = await Customer.findOne({ phone: data.phone });
@@ -165,6 +183,7 @@ export async function POST(request: Request) {
       email: data.email ? data.email.toLowerCase().trim() : undefined,
       phone: data.phone?.trim(),
       socialMediaName: data.socialMediaName?.trim(),
+      socialMediaPlatform: data.socialMediaPlatform,
       referralSource: (data.referralSource?.trim() || data.howDidYouFindUs?.trim()) || undefined,
       referralSourceOther: (data.referralSourceOther?.trim() || data.howDidYouFindUsOther?.trim()) || undefined,
       clientType: (data.clientType || '').toString().toUpperCase() === 'REPEAT' ? 'REPEAT' : 'NEW',

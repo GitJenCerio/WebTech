@@ -8,6 +8,7 @@ import {
   canDeleteCustomer,
   canManageSettings,
   canViewAuditLog,
+  canManageCustomers,
   type SessionUser,
 } from '@/lib/rbac';
 import { logAuthFailure } from '@/lib/services/auditLog';
@@ -57,6 +58,17 @@ export async function requireCanManageUsers(
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (canManageUsers(toSessionUser(session))) return null;
   return forbidden(session, 'manage_users', 'users', undefined, req);
+}
+
+/** Require ADMIN or above for ban / unban / customer writes. Returns 403 if not allowed. */
+export async function requireCanManageCustomers(
+  session: Session | null,
+  req?: Request,
+  resourceId?: string
+): Promise<NextResponse | null> {
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (canManageCustomers(toSessionUser(session))) return null;
+  return forbidden(session, 'manage_customers', 'customers', resourceId, req);
 }
 
 /** Require SUPER_ADMIN for delete customer. Returns 403 response if not allowed. */

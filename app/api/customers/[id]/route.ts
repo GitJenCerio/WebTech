@@ -18,6 +18,7 @@ const patchCustomerSchema = z.object({
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional(),
   socialMediaName: z.string().optional(),
+  socialMediaPlatform: z.enum(['facebook', 'instagram']).optional(),
   referralSource: z.string().optional(),
   referralSourceOther: z.string().optional(),
   notes: z.string().max(5000).optional(),
@@ -75,6 +76,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         email: customer.email,
         phone: customer.phone,
         socialMediaName: customer.socialMediaName,
+        socialMediaPlatform: customer.socialMediaPlatform,
         referralSource: customer.referralSource,
         referralSourceOther: customer.referralSourceOther,
         isRepeatClient: customer.isRepeatClient,
@@ -92,6 +94,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         waiverAccepted: customer.waiverAccepted,
         isActive: customer.isActive ?? true,
         isVIP: customer.isVIP ?? false,
+        bannedAt: customer.bannedAt ?? null,
+        bannedReason: customer.bannedReason,
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
       },
@@ -162,6 +166,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (data.email !== undefined) updates.email = data.email || undefined;
     if (data.phone !== undefined) updates.phone = data.phone;
     if (data.socialMediaName !== undefined) updates.socialMediaName = data.socialMediaName;
+    if (data.socialMediaPlatform !== undefined) updates.socialMediaPlatform = data.socialMediaPlatform;
     if (data.referralSource !== undefined) updates.referralSource = data.referralSource;
     if (data.referralSourceOther !== undefined) updates.referralSourceOther = data.referralSourceOther;
     if (data.notes !== undefined) updates.notes = data.notes;
@@ -181,6 +186,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found.' }, { status: 404 });
     }
+    if (customer.isActive === false) {
+      const { syncBanSnapshot } = await import('@/lib/services/clientBanService');
+      await syncBanSnapshot(id, {
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        socialMediaName: customer.socialMediaName,
+      });
+    }
     const feedbackLink = await FeedbackLink.findOne({ customerId: id }).lean();
     return NextResponse.json({
       customer: {
@@ -191,6 +205,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         email: customer.email,
         phone: customer.phone,
         socialMediaName: customer.socialMediaName,
+        socialMediaPlatform: customer.socialMediaPlatform,
         referralSource: customer.referralSource,
         referralSourceOther: customer.referralSourceOther,
         isRepeatClient: customer.isRepeatClient,
@@ -208,6 +223,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         waiverAccepted: customer.waiverAccepted,
         isActive: customer.isActive ?? true,
         isVIP: customer.isVIP ?? false,
+        bannedAt: customer.bannedAt ?? null,
+        bannedReason: customer.bannedReason,
         createdAt: customer.createdAt,
         updatedAt: customer.updatedAt,
       }

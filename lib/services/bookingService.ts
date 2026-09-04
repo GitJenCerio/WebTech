@@ -419,6 +419,9 @@ export async function createBooking(input: CreateBookingInput): Promise<IBooking
   if (!customer) {
     throw new Error('Customer not found');
   }
+  if (customer.isActive === false) {
+    throw new Error('This client is banned and cannot be booked. Unban them first if this booking should proceed.');
+  }
 
   const { isExpressManiPediServiceType } = await import('../utils/bookingInvoice');
   if (isExpressManiPediServiceType(input.service.type)) {

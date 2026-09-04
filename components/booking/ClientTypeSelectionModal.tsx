@@ -80,6 +80,11 @@ export default function ClientTypeSelectionModal({
       const response = await fetch(`/api/customers/find?phone=${encodeURIComponent(phone.trim())}`);
       const data = await response.json();
 
+      if (data.banned) {
+        setLookupError("We're unable to continue with this contact number. Please message our Facebook page if you need help.");
+        return;
+      }
+
       if (data.found && data.customer) {
         setLookupResult({
           found: true,

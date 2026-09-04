@@ -8,6 +8,7 @@ export interface ICustomer extends Document {
   email?: string;
   phone?: string;
   socialMediaName?: string;
+  socialMediaPlatform?: 'facebook' | 'instagram';
   referralSource?: string;
   referralSourceOther?: string;
   isRepeatClient?: boolean;
@@ -33,6 +34,8 @@ export interface ICustomer extends Document {
   waiverAccepted?: boolean;
   isActive?: boolean;
   isVIP?: boolean;
+  bannedAt?: Date | null;
+  bannedReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,6 +49,7 @@ const CustomerSchema = new Schema<ICustomer>(
     email: { type: String, lowercase: true, trim: true },
     phone: { type: String },
     socialMediaName: { type: String },
+    socialMediaPlatform: { type: String, enum: ['facebook', 'instagram'] },
     referralSource: { type: String },
     referralSourceOther: { type: String },
     isRepeatClient: { type: Boolean },
@@ -71,6 +75,8 @@ const CustomerSchema = new Schema<ICustomer>(
     waiverAccepted: { type: Boolean },
     isActive: { type: Boolean, default: true },
     isVIP: { type: Boolean, default: false },
+    bannedAt: { type: Date, default: null },
+    bannedReason: { type: String },
   },
   { timestamps: true }
 );

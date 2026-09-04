@@ -61,6 +61,7 @@ interface Customer {
   name: string;
   email?: string;
   phone?: string;
+  isActive?: boolean;
 }
 
 interface AddBookingModalProps {
@@ -476,15 +477,22 @@ export default function AddBookingModal({
                         <button
                           key={c.id}
                           type="button"
+                          disabled={c.isActive === false}
                           onMouseDown={() => {
+                            if (c.isActive === false) return;
                             setCustomerId(c.id);
                             setClientSearch(`${c.name}${c.phone ? ` (${c.phone})` : ''}`);
                             setClientDropdownOpen(false);
                           }}
-                          className="w-full text-left px-3 py-2 text-sm text-[#1c1917] hover:bg-[#f7f6f4] transition-colors"
+                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                            c.isActive === false
+                              ? 'text-muted-foreground cursor-not-allowed bg-[#f7f6f4]'
+                              : 'text-[#1c1917] hover:bg-[#f7f6f4]'
+                          }`}
                         >
                           {c.name}
                           {c.phone && <span className="text-muted-foreground ml-1">{c.phone}</span>}
+                          {c.isActive === false && <span className="ml-2 text-[10px] uppercase tracking-wider text-[#5a3830]">Banned</span>}
                         </button>
                       ))}
                     {customers.filter((c) =>

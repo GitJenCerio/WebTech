@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Customer from '@/lib/models/Customer';
+import { findMatchingBan } from '@/lib/services/clientBanService';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -16,20 +17,39 @@ export async function GET(request: Request) {
     }
 
     await connectDB();
+
+    const ban = await findMatchingBan({ email, phone });
+    if (ban) {
+      return NextResponse.json({ customer: null, found: false, banned: true });
+    }
+
     let customer: any = null;
-    
-    // Try email first if provided
+
     if (email && email.trim()) {
       customer = await Customer.findOne({ email: email.trim().toLowerCase() }).lean();
     }
-    
-    // If no customer found by email and phone is provided, try phone
+
     if (!customer && phone && phone.trim()) {
       customer = await Customer.findOne({ phone: phone.trim() }).lean();
     }
-    
+
     if (!customer) {
       return NextResponse.json({ customer: null, found: false });
+    }
+
+    if (customer.isActive === false) {
+      return NextResponse.json({ customer: null, found: false, banned: true });
+    }
+
+    const identityBan = await findMatchingBan({
+      customerId: String(customer._id),
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      socialMediaName: customer.socialMediaName,
+    });
+    if (identityBan) {
+      return NextResponse.json({ customer: null, found: false, banned: true });
     }
 
     return NextResponse.json({
@@ -66,4 +86,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message ?? 'Unable to find customer.' }, { status: 500 });
   }
 }
-

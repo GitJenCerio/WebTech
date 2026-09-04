@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Phone, Mail, AtSign, Star } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +10,11 @@ import {
 } from '@/components/ui/Dialog';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/Button';
+import { canManageCustomers } from '@/lib/rbac';
+import BanClientDialog from '@/components/admin/BanClientDialog';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
+import { toast } from 'sonner';
+import { formatSocialMediaDisplay } from '@/lib/utils/socialMedia';
 
 interface CustomerData {
   id: string;
@@ -16,6 +22,7 @@ interface CustomerData {
   email?: string;
   phone?: string;
   socialMediaName?: string;
+  socialMediaPlatform?: 'facebook' | 'instagram';
   referralSource?: string;
   clientType?: 'NEW' | 'REPEAT';
   isVIP?: boolean;
@@ -46,8 +53,15 @@ interface ClientProfileModalProps {
 }
 
 export default function ClientProfileModal({ open, onOpenChange, customerId }: ClientProfileModalProps) {
+  const { data: session } = useSession();
+  const canBan = canManageCustomers({
+    role: (session?.user as { role?: string } | undefined)?.role,
+  });
   const [customer, setCustomer] = useState<CustomerData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [banOpen, setBanOpen] = useState(false);
+  const [unbanOpen, setUnbanOpen] = useState(false);
+  const [unbanning, setUnbanning] = useState(false);
 
   useEffect(() => {
     if (!open || !customerId) return;
@@ -97,6 +111,11 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
                       <Star size={10} className="fill-amber-500 text-amber-500" />VIP
                     </span>
                   )}
+                  {customer.isActive === false && (
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-[#f5ebe8] text-[#5a3830] border border-[#e7d4cc]">
+                      Banned
+                    </span>
+                  )}
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                     isRepeat
                       ? 'bg-blue-100 text-blue-700 border border-blue-300'
@@ -121,7 +140,7 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
                   {customer.socialMediaName && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <AtSign size={13} className="text-muted-foreground shrink-0" />
-                      {customer.socialMediaName}
+                      {formatSocialMediaDisplay(customer.socialMediaName, customer.socialMediaPlatform)}
                     </div>
                   )}
                 </div>
@@ -191,12 +210,58 @@ export default function ClientProfileModal({ open, onOpenChange, customerId }: C
           )}
         </div>
 
-        <div className="flex-none px-3 py-2.5 border-t border-[#e7e2db] bg-[#f7f6f4] rounded-none" style={{ paddingBottom: 'max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))' }}>
-          <Button variant="outline" size="sm" className="w-full min-h-10" onClick={() => onOpenChange(false)}>
+        <div className="flex-none px-3 py-2.5 border-t border-[#e7e2db] bg-[#f7f6f4] rounded-none flex gap-2" style={{ paddingBottom: 'max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))' }}>
+          {canBan && customer && customer.isActive === false && (
+            <Button variant="outline" size="sm" className="min-h-10" onClick={() => setUnbanOpen(true)}>
+              Unban
+            </Button>
+          )}
+          {canBan && customer && customer.isActive !== false && (
+            <Button variant="destructive" size="sm" className="min-h-10" onClick={() => setBanOpen(true)}>
+              Ban
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className="flex-1 min-h-10" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </div>
       </DialogContent>
+      {customer && (
+        <BanClientDialog
+          open={banOpen}
+          onOpenChange={setBanOpen}
+          mode="customer"
+          customer={customer}
+          onBanned={() => {
+            toast.success('Client banned');
+            setCustomer({ ...customer, isActive: false });
+          }}
+        />
+      )}
+      <ConfirmDialog
+        open={unbanOpen}
+        onOpenChange={setUnbanOpen}
+        title="Unban client"
+        description={`Allow ${customer?.name || 'this client'} to book again?`}
+        confirmLabel="Unban"
+        variant="default"
+        isLoading={unbanning}
+        onConfirm={async () => {
+          if (!customerId) return;
+          setUnbanning(true);
+          try {
+            const res = await fetch(`/api/customers/${customerId}/ban`, { method: 'DELETE' });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'Failed to unban client');
+            toast.success('Client unbanned');
+            setCustomer((c) => (c ? { ...c, isActive: true } : c));
+          } catch (err: any) {
+            toast.error(err.message || 'Failed to unban client');
+          } finally {
+            setUnbanning(false);
+          }
+        }}
+      />
     </Dialog>
   );
 }

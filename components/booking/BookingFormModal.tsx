@@ -20,6 +20,7 @@ import {
   CalendarCheck,
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import type { SocialMediaPlatform } from '@/lib/utils/socialMedia';
 import {
   DEPOSIT_PER_SLOT,
   LATE_ARRIVAL_CANCEL_MINUTES,
@@ -51,6 +52,7 @@ interface BookingFormModalProps {
     email: string;
     contactNumber: string;
     socialMediaName: string;
+    socialMediaPlatform?: 'facebook' | 'instagram';
     address?: string;
     howDidYouFindUs: string;
     howDidYouFindUsOther?: string;
@@ -89,6 +91,7 @@ export default function BookingFormModal({
   const [email, setEmail] = useState('');
   const [contactNumber, setContactNumber] = useState(clientContactNumber || '');
   const [socialMediaName, setSocialMediaName] = useState(clientSocialMediaName || '');
+  const [socialMediaPlatform, setSocialMediaPlatform] = useState<SocialMediaPlatform | ''>('');
   const [address, setAddress] = useState('');
   const [howDidYouFindUs, setHowDidYouFindUs] = useState('');
   const [howDidYouFindUsOther, setHowDidYouFindUsOther] = useState('');
@@ -116,6 +119,7 @@ export default function BookingFormModal({
       setName(clientName || '');
       setContactNumber(clientContactNumber || '');
       setSocialMediaName(clientSocialMediaName || '');
+      setSocialMediaPlatform('');
       setEmail(clientEmail || '');
       setHowDidYouFindUs('');
       setHowDidYouFindUsOther('');
@@ -208,8 +212,12 @@ export default function BookingFormModal({
           setError('Contact number is required');
           return false;
         }
+        if (!socialMediaPlatform) {
+          setError('Please choose Facebook or Instagram');
+          return false;
+        }
         if (!socialMediaName.trim()) {
-          setError('Facebook or Instagram name is required');
+          setError(socialMediaPlatform === 'instagram' ? 'Instagram name is required' : 'Facebook name is required');
           return false;
         }
         if (serviceLocation === 'home_service' && !address.trim()) {
@@ -310,6 +318,7 @@ export default function BookingFormModal({
         email: email.trim(),
         contactNumber: contactNumber.trim(),
         socialMediaName: socialMediaName.trim(),
+        socialMediaPlatform: isRepeatFound ? undefined : (socialMediaPlatform || undefined),
         ...(serviceLocation === 'home_service' && address.trim() ? { address: address.trim() } : {}),
         howDidYouFindUs: isRepeatFound ? 'repeat' : howDidYouFindUs,
         howDidYouFindUsOther: isRepeatFound ? undefined : (howDidYouFindUs === 'other' ? howDidYouFindUsOther.trim() : undefined),
@@ -463,21 +472,76 @@ export default function BookingFormModal({
               </div>
 
               <div>
-                <label className="brand-label">
-                  Facebook or Instagram Name <span className="text-[#5a3830]">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={socialMediaName}
-                  onChange={(e) => {
-                    setSocialMediaName(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder="e.g., Maria Santos or @maria.nails"
-                  className="brand-field"
-                  disabled={isSubmitting}
-                  required
-                />
+                {isRepeatFound ? (
+                  <>
+                    <label className="brand-label">
+                      Facebook or Instagram Name <span className="text-[#5a3830]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={socialMediaName}
+                      onChange={(e) => {
+                        setSocialMediaName(e.target.value);
+                        setError(null);
+                      }}
+                      placeholder="e.g., Maria Santos or @maria.nails"
+                      className="brand-field"
+                      disabled={isSubmitting}
+                      required
+                    />
+                  </>
+                ) : (
+                  <>
+                    <label className="brand-label">
+                      Social media <span className="text-[#5a3830]">*</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      {([
+                        { value: 'facebook', label: 'Facebook' },
+                        { value: 'instagram', label: 'Instagram' },
+                      ] as const).map((option) => {
+                        const selected = socialMediaPlatform === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => {
+                              setSocialMediaPlatform(option.value);
+                              setError(null);
+                            }}
+                            disabled={isSubmitting}
+                            className={`px-3 py-2.5 text-sm border transition-all duration-300 touch-manipulation ${
+                              selected
+                                ? 'border-[#1c1917] bg-[#1c1917] text-[#fffcfa]'
+                                : 'border-[#e7e2db] bg-[#fffcfa] text-[#1c1917] hover:border-[#c4b5a0]'
+                            }`}
+                            aria-pressed={selected}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <input
+                      type="text"
+                      value={socialMediaName}
+                      onChange={(e) => {
+                        setSocialMediaName(e.target.value);
+                        setError(null);
+                      }}
+                      placeholder={
+                        socialMediaPlatform === 'instagram'
+                          ? 'e.g., @maria.nails'
+                          : socialMediaPlatform === 'facebook'
+                            ? 'e.g., Maria Santos'
+                            : 'Choose Facebook or Instagram first'
+                      }
+                      className="brand-field"
+                      disabled={isSubmitting || !socialMediaPlatform}
+                      required
+                    />
+                  </>
+                )}
               </div>
 
               {serviceLocation === 'home_service' && (

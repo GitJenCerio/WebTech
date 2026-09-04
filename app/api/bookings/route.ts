@@ -18,6 +18,8 @@ import connectDB from '@/lib/mongodb';
 import Booking from '@/lib/models/Booking';
 import { getClientIp, sendMetaCapiEvent } from '@/lib/metaConversions';
 import { metaScheduleEventId } from '@/lib/metaPixel';
+import { assertNotBanned } from '@/lib/services/clientBanService';
+import { ApiError, handleApiError } from '@/lib/apiError';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
@@ -83,12 +85,29 @@ export async function POST(request: Request) {
     const customer = body.customer;
     const customerEmail = body.customerEmail;
 
+    await connectDB();
+
+    let existingCustomer = null;
+    if (customerId) {
+      existingCustomer = await Customer.findById(customerId);
+    }
+
+    await assertNotBanned(
+      {
+        customerId: customerId || undefined,
+        name: customerUpdates?.name ?? customer?.name ?? existingCustomer?.name,
+        email: customerUpdates?.email ?? customer?.email ?? customerEmail ?? existingCustomer?.email,
+        phone: customerUpdates?.phone ?? customer?.phone ?? existingCustomer?.phone,
+        socialMediaName: customerUpdates?.socialMediaName ?? customer?.socialMediaName ?? existingCustomer?.socialMediaName,
+      },
+      { admin: Boolean(session?.user) }
+    );
+
     let resolvedCustomerId = customerId;
     if (!resolvedCustomerId) {
       if (!customer || !customer.name || !String(customer.name).trim()) {
         return NextResponse.json({ error: 'Customer ID or customer details are required' }, { status: 400 });
       }
-      await connectDB();
       const createdCustomer = await Customer.create({
         name: String(customer.name).trim(),
         firstName: customer.firstName?.trim(),
@@ -116,8 +135,6 @@ export async function POST(request: Request) {
       });
       resolvedCustomerId = createdCustomer._id.toString();
     } else if (customerUpdates && Object.keys(customerUpdates).length > 0) {
-      await connectDB();
-      const existingCustomer = await Customer.findById(resolvedCustomerId);
       if (existingCustomer) {
         if (customerUpdates.name !== undefined) existingCustomer.name = String(customerUpdates.name).trim();
         if (customerUpdates.email !== undefined) existingCustomer.email = customerUpdates.email ? String(customerUpdates.email).toLowerCase().trim() : undefined;
@@ -326,6 +343,9 @@ export async function POST(request: Request) {
       photoUploadToken,
     }, { status: 201 });
   } catch (error: any) {
+    if (error instanceof ApiError) {
+      return handleApiError(error, request);
+    }
     console.error('Error creating booking:', error);
     return NextResponse.json({ 
       error: error.message || 'Failed to create booking' 
