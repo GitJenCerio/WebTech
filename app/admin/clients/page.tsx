@@ -15,14 +15,10 @@ import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { formatSocialMediaDisplay } from '@/lib/utils/socialMedia';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
-const tableActionClass =
+const textActionClass =
   'h-8 px-2.5 text-[10px] font-medium uppercase tracking-[0.12em] border border-[#e7e2db] bg-[#fffcfa] text-[#57534e] hover:border-[#1c1917] hover:bg-[#1c1917] hover:text-[#fffcfa] transition-all';
-const tableBanClass =
-  'h-8 px-2.5 text-[10px] font-medium uppercase tracking-[0.12em] border border-[#d8c5bd] bg-[#fffcfa] text-[#5a3830] hover:border-[#5a3830] hover:bg-[#5a3830] hover:text-[#fffcfa] transition-all';
-const mobileActionClass =
-  'w-full min-h-10 flex items-center justify-center text-[11px] font-medium uppercase tracking-[0.12em] border border-[#e7e2db] bg-[#fffcfa] text-[#1c1917] hover:border-[#1c1917] hover:bg-[#1c1917] hover:text-[#fffcfa] transition-all';
 const pagerClass =
   'h-9 min-w-[44px] flex items-center justify-center border border-[#e7e2db] bg-[#fffcfa] text-[#78716c] hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2';
 
@@ -72,6 +68,19 @@ interface ApiCustomer {
   lastVisit?: string | null;
   isActive?: boolean;
   totalVisits: number;
+}
+
+function ClientTags({ item }: { item: Client }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {item.isActive === false && <Badge variant="destructive">Banned</Badge>}
+      {item.isVIP ? (
+        <Badge variant="vip">VIP</Badge>
+      ) : item.isActive !== false ? (
+        <Badge variant="regular">Regular</Badge>
+      ) : null}
+    </div>
+  );
 }
 
 function mapApiToClient(c: ApiCustomer): Client {
@@ -306,10 +315,10 @@ export default function ClientsPage() {
   const totalItems = clients.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-5">
       <PageHeader
         title="Clients"
-        description="Search, view, and manage client records."
+        description="Select a client to view details and manage their record."
       />
 
       {error && (
@@ -379,146 +388,31 @@ export default function ClientsPage() {
       </div>
 
       <div className="brand-panel overflow-hidden">
-          {/* Desktop table */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#e7e2db] bg-[#f7f6f4]">
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Client Name</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Contact</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Total Visits</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Tag</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Notes</th>
-                  <th className="px-5 py-3 text-right text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em]">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#f0ebe4]">
-                {loading ? (
-                  <>
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <tr key={i}>
-                        {Array.from({ length: 6 }).map((_, j) => (
-                          <td key={j} className="px-5 py-3.5">
-                            <div className="h-4 w-20 animate-pulse bg-[#e7e2db]" />
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </>
-                ) : paginatedClients.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-5 py-16 text-center">
-                      <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                        <div className="h-12 w-12 bg-[#f0ebe4] flex items-center justify-center">
-                          <Search className="h-6 w-6 text-[#c4b5a0]" />
-                        </div>
-                        <p className="font-heading text-lg text-[#1c1917]">
-                          {searchQuery.trim()
-                            ? 'No clients match your search.'
-                            : statusFilter === 'banned'
-                              ? 'No banned clients.'
-                              : 'No clients yet.'}
-                        </p>
-                        <p className="text-xs text-[#78716c] max-w-[240px]">
-                          {searchQuery.trim()
-                            ? 'Try adjusting your search or clearing the search box.'
-                            : statusFilter === 'banned'
-                              ? 'Banned clients appear here. You can also ban by name, email, phone, or social details.'
-                              : 'Clients are added when you create bookings, or you can add one manually.'}
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedClients.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#f7f6f4] transition-colors duration-100">
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-[#1c1917]">{item.name}</span>
-                          {item.isActive === false && <Badge variant="destructive">Banned</Badge>}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex flex-col">
-                          <span className="text-[#1c1917]">{item.email || '—'}</span>
-                          <span className="text-xs text-[#78716c] mt-0.5">{item.phone || '—'}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 font-medium text-[#1c1917] tabular-nums brand-numeric">{item.totalVisits}</td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex flex-wrap items-center gap-1">
-                          {item.isVIP ? (
-                            <Badge variant="vip">VIP</Badge>
-                          ) : item.isActive !== false ? (
-                            <Badge variant="regular">Regular</Badge>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {item.hasNotes ? (
-                          <div className="h-6 w-6 bg-[#f0ebe4] flex items-center justify-center" title="Has notes">
-                            <FileText className="h-3.5 w-3.5 text-[#c4b5a0]" />
-                          </div>
-                        ) : (
-                          <span className="text-[#c4b5a0]">—</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button type="button" onClick={() => handleViewClient(item.id, 'view')} className={tableActionClass}>
-                            View
-                          </button>
-                          <button type="button" onClick={() => handleViewClient(item.id, 'edit')} className={tableActionClass}>
-                            Edit
-                          </button>
-                          <button type="button" onClick={() => router.push(`/admin/bookings?customerId=${item.id}`)} className={tableActionClass}>
-                            Bookings
-                          </button>
-                          {canBan && item.isActive === false ? (
-                            <button type="button" onClick={() => setUnbanTarget(item)} className={tableActionClass}>
-                              Unban
-                            </button>
-                          ) : canBan ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setBanTarget({
-                                  id: item.id,
-                                  name: item.name,
-                                  email: item.email,
-                                  phone: item.phone,
-                                  socialMediaName: item.socialMediaName,
-                                });
-                                setBanDialogMode('customer');
-                                setBanDialogOpen(true);
-                              }}
-                              className={tableBanClass}
-                            >
-                              Ban
-                            </button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="sm:hidden p-3 space-y-3">
-            {loading ? (
-              <>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="border border-[#e7e2db] bg-[#fffcfa] p-4 space-y-3">
-                    <div className="h-5 w-32 animate-pulse bg-[#e7e2db]" />
-                    <div className="h-4 w-48 animate-pulse bg-[#e7e2db]" />
-                    <div className="h-4 w-36 animate-pulse bg-[#e7e2db]" />
+          {loading ? (
+            <>
+              <div className="hidden md:block">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="grid grid-cols-[1.4fr_1.6fr_5.5rem_7rem_3.5rem] gap-4 px-5 py-3 border-b border-[#f0ebe4]">
+                    <div className="h-4 w-40 animate-pulse bg-[#e7e2db]" />
+                    <div className="h-4 w-52 animate-pulse bg-[#e7e2db]" />
+                    <div className="h-4 w-10 animate-pulse bg-[#e7e2db]" />
+                    <div className="h-4 w-16 animate-pulse bg-[#e7e2db]" />
+                    <div className="h-4 w-6 animate-pulse bg-[#e7e2db]" />
                   </div>
                 ))}
-              </>
-            ) : paginatedClients.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+              </div>
+              <div className="md:hidden divide-y divide-[#f0ebe4]">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="p-3 space-y-2">
+                    <div className="h-5 w-36 animate-pulse bg-[#e7e2db]" />
+                    <div className="h-4 w-48 animate-pulse bg-[#e7e2db]" />
+                    <div className="h-4 w-24 animate-pulse bg-[#e7e2db]" />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : paginatedClients.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-4">
                 <div className="h-12 w-12 bg-[#f0ebe4] flex items-center justify-center">
                   <Search className="h-6 w-6 text-[#c4b5a0]" />
                 </div>
@@ -537,73 +431,97 @@ export default function ClientsPage() {
                       : 'Clients are added when you create bookings, or you can add one manually.'}
                 </p>
               </div>
-            ) : (
-              paginatedClients.map((item) => (
-                <div
-                  key={item.id}
-                  className="border border-[#e7e2db] bg-[#fffcfa] p-4 space-y-3"
-                >
-                  <div className="space-y-2">
-                    <p className="font-heading text-lg text-[#1c1917] break-words">{item.name}</p>
-                    <div className="flex flex-wrap items-center gap-1">
-                      {item.isActive === false && <Badge variant="destructive">Banned</Badge>}
-                      {item.isVIP ? (
-                        <Badge variant="vip">VIP</Badge>
-                      ) : item.isActive !== false ? (
-                        <Badge variant="regular">Regular</Badge>
-                      ) : null}
+          ) : (
+            <>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead>
+                    <tr className="border-b border-[#e7e2db] bg-[#f7f6f4]">
+                      <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Client</th>
+                      <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Contact</th>
+                      <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Visits</th>
+                      <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Tag</th>
+                      <th className="px-5 py-2.5 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f0ebe4]">
+                    {paginatedClients.map((item) => (
+                      <tr
+                        key={item.id}
+                        tabIndex={0}
+                        onClick={() => handleViewClient(item.id, 'view')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleViewClient(item.id, 'view');
+                          }
+                        }}
+                        className="cursor-pointer hover:bg-[#f7f6f4] focus-visible:outline-none focus-visible:bg-[#f7f6f4] transition-colors duration-100"
+                      >
+                        <td className="px-5 py-2.5 align-middle">
+                          <span className="block font-medium text-[#1c1917] truncate">{item.name}</span>
+                        </td>
+                        <td className="px-5 py-2.5 align-middle min-w-0">
+                          <span className="block text-[#3d342c] truncate">{item.email || '—'}</span>
+                          <span className="block text-xs text-[#78716c] truncate">{item.phone || '—'}</span>
+                        </td>
+                        <td className="px-5 py-2.5 align-middle font-medium text-[#1c1917] brand-numeric">{item.totalVisits}</td>
+                        <td className="px-5 py-2.5 align-middle">
+                          <ClientTags item={item} />
+                        </td>
+                        <td className="px-5 py-2.5 align-middle">
+                          {item.hasNotes ? (
+                            <span title="Has notes" className="inline-flex h-6 w-6 items-center justify-center bg-[#f0ebe4]">
+                              <FileText className="h-3.5 w-3.5 text-[#c4b5a0]" />
+                            </span>
+                          ) : (
+                            <span className="text-[#c4b5a0]">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="md:hidden divide-y divide-[#f0ebe4]">
+                {paginatedClients.map((item) => (
+                  <div
+                    key={item.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleViewClient(item.id, 'view')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleViewClient(item.id, 'view');
+                      }
+                    }}
+                    className="w-full text-left p-3 cursor-pointer hover:bg-[#f7f6f4] focus-visible:outline-none focus-visible:bg-[#f7f6f4] transition-colors duration-100"
+                  >
+                    <div className="space-y-2">
+                      <div className="space-y-1.5">
+                        <span className="block font-heading text-lg text-[#1c1917] break-words leading-tight">{item.name}</span>
+                        <ClientTags item={item} />
+                      </div>
+                      <div className="space-y-0.5 text-sm">
+                        <span className="block text-[#3d342c] break-words">{item.email || '—'}</span>
+                        <span className="block text-xs text-[#78716c]">{item.phone || '—'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-[#78716c]">
+                        <span className="brand-numeric">{item.totalVisits} visits</span>
+                        {item.hasNotes && (
+                          <span title="Has notes" className="inline-flex h-5 w-5 items-center justify-center bg-[#f0ebe4]">
+                            <FileText className="h-3 w-3 text-[#c4b5a0]" />
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-1 text-sm">
-                    {item.email && <p className="text-[#3d342c]">{item.email}</p>}
-                    {item.phone && <p className="text-[#78716c] text-xs">{item.phone}</p>}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-[#78716c]">
-                    <span className="brand-numeric">{item.totalVisits} visits</span>
-                    {item.hasNotes && <FileText className="h-3.5 w-3.5 text-[#c4b5a0]" />}
-                  </div>
-                  <div className="flex flex-col gap-2 pt-1">
-                    <button type="button" onClick={() => handleViewClient(item.id, 'view')} className={mobileActionClass}>
-                      View
-                    </button>
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => handleViewClient(item.id, 'edit')} className={`${mobileActionClass} flex-1`}>
-                        Edit
-                      </button>
-                      <button type="button" onClick={() => router.push(`/admin/bookings?customerId=${item.id}`)} className={`${mobileActionClass} flex-1`}>
-                        Bookings
-                      </button>
-                    </div>
-                    {canBan && (
-                      item.isActive === false ? (
-                        <button type="button" onClick={() => setUnbanTarget(item)} className={mobileActionClass}>
-                          Unban
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBanTarget({
-                              id: item.id,
-                              name: item.name,
-                              email: item.email,
-                              phone: item.phone,
-                              socialMediaName: item.socialMediaName,
-                            });
-                            setBanDialogMode('customer');
-                            setBanDialogOpen(true);
-                          }}
-                          className={`${mobileActionClass} border-[#d8c5bd] text-[#5a3830] hover:border-[#5a3830] hover:bg-[#5a3830] hover:text-[#fffcfa]`}
-                        >
-                          Ban
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))}
+              </div>
+            </>
+          )}
       </div>
 
       {/* Pagination */}
@@ -893,7 +811,7 @@ export default function ClientsPage() {
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className={clientModalMode === 'view' ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2'}>
             {clientModalMode === 'edit' ? (
               <>
                 <Button type="button" variant="secondary" onClick={() => setClientModalMode('view')} disabled={savingClient}>
@@ -905,6 +823,27 @@ export default function ClientsPage() {
               </>
             ) : (
               <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setClientModalMode('edit')}
+                  disabled={!clientDetails?.customer}
+                >
+                  Edit
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const id = clientDetails?.customer?.id;
+                    if (!id) return;
+                    setShowClientModal(false);
+                    router.push(`/admin/bookings?customerId=${id}`);
+                  }}
+                  disabled={!clientDetails?.customer}
+                >
+                  Bookings
+                </Button>
                 {canBan && clientDetails?.customer?.isActive === false && (
                   <Button
                     type="button"
@@ -985,7 +924,7 @@ export default function ClientsPage() {
                     <button
                       type="button"
                       onClick={() => setUnbanIdentifierId(ban.id)}
-                      className={`${tableActionClass} shrink-0`}
+                      className={`${textActionClass} shrink-0`}
                     >
                       Unban
                     </button>
