@@ -43,6 +43,7 @@ interface SlotListProps {
   onView?: (slot: Slot) => void;
   onEdit?: (slot: Slot) => void;
   onCancel?: (slot: Slot) => void;
+  onBulkManage?: () => void;
   /** When true, empty state is due to nail tech filter (e.g. no slots for selected tech on this date). */
   emptyStateFiltered?: boolean;
 }
@@ -56,6 +57,7 @@ export default function SlotList({
   onView,
   onEdit,
   onCancel,
+  onBulkManage,
   emptyStateFiltered = false,
 }: SlotListProps) {
   const [daySlotFilter, setDaySlotFilter] = useState<DaySlotFilter>('all');
@@ -172,6 +174,19 @@ export default function SlotList({
               >
                 Confirmed
               </button>
+              {onBulkManage && (
+                <button
+                  type="button"
+                  className="w-full text-start px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100 mt-1"
+                  onClick={(event) => {
+                    const detailsEl = event.currentTarget.closest('details');
+                    if (detailsEl) detailsEl.removeAttribute('open');
+                    onBulkManage();
+                  }}
+                >
+                  Bulk hide / delete
+                </button>
+              )}
             </div>
           </details>
         </div>

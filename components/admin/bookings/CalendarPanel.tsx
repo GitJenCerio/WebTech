@@ -39,6 +39,7 @@ interface CalendarPanelProps {
   currentMonth?: Date;
   onMonthChange?: (month: Date) => void;
   onAddAvailability?: () => void;
+  onBulkManage?: () => void;
   nailTechs?: NailTech[];
   selectedNailTechId?: string;
   onNailTechChange?: (techId: string) => void;
@@ -55,6 +56,7 @@ export default function CalendarPanel({
   currentMonth: controlledMonth,
   onMonthChange,
   onAddAvailability,
+  onBulkManage,
   nailTechs = [],
   selectedNailTechId = 'all',
   onNailTechChange,
@@ -302,7 +304,7 @@ export default function CalendarPanel({
           {onAddAvailability && (
             <button
               type="button"
-              className="btn btn-sm d-flex align-items-center gap-2 shrink-0 h-9 text-xs sm:hidden"
+              className="btn btn-sm d-flex align-items-center gap-2 shrink-0 h-9 text-xs"
               onClick={onAddAvailability}
               style={{
                 padding: '0 1rem',
@@ -326,7 +328,35 @@ export default function CalendarPanel({
               }}
             >
               <i className="bi bi-plus-lg" style={{ fontSize: '0.75rem' }}></i>
-              <span className="whitespace-nowrap truncate">Add Slot</span>
+              <span className="whitespace-nowrap truncate">Add</span>
+            </button>
+          )}
+          {onBulkManage && (
+            <button
+              type="button"
+              className="btn btn-sm d-flex align-items-center gap-2 shrink-0 h-9 text-xs"
+              onClick={onBulkManage}
+              style={{
+                padding: '0 0.85rem',
+                height: '36px',
+                minHeight: '36px',
+                borderRadius: '20px',
+                fontWeight: 500,
+                background: '#fffcfa',
+                border: '1px solid #c4b5a0',
+                color: '#1c1917',
+                boxShadow: 'none',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#f0ebe4';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#fffcfa';
+              }}
+            >
+              <i className="bi bi-check2-square" style={{ fontSize: '0.75rem' }}></i>
+              <span className="whitespace-nowrap truncate">Bulk</span>
             </button>
           )}
           {/* View toggle: Month / Week / Day — same line on tablet/desktop */}

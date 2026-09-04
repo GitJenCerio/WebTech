@@ -58,7 +58,11 @@ export default function NailTechSelectionModal({
         {availableTechs.length > 0 ? (
           <div className="space-y-3">
             {availableTechs.map((tech) => {
-              const hasDiscount = tech.discount !== undefined && tech.discount !== null && tech.discount > 0;
+              const hasDiscount =
+                serviceLocation !== 'home_service' &&
+                tech.discount !== undefined &&
+                tech.discount !== null &&
+                tech.discount > 0;
               const selected = selectedNailTechId === tech.id;
               return (
                 <OptionCard key={tech.id} selected={selected} onClick={() => onContinue(tech.id)}>

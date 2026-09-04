@@ -720,7 +720,7 @@ export default function NailTechsPage() {
                   disabled={saving || modalMode === 'view'}
                   className="h-9 rounded-xl border-[#e7e2db] bg-[#f7f6f4]"
                 />
-                <small className="text-gray-500 text-xs block mt-1">Optional: Discount percentage for all services</small>
+                <small className="text-gray-500 text-xs block mt-1">Optional: Studio bookings only — not applied to home service</small>
               </div>
               <div>
                 <label>Admin Commission (%)</label>

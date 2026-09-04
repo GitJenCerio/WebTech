@@ -743,14 +743,18 @@ export default function BookingPage() {
                     );
                   }
 
-                  const hasDiscount = selectedTech.discount !== undefined && selectedTech.discount !== null && selectedTech.discount > 0;
+                  const hasDiscount =
+                    clientInfo?.serviceLocation !== 'home_service' &&
+                    selectedTech.discount !== undefined &&
+                    selectedTech.discount !== null &&
+                    selectedTech.discount > 0;
                   return (
                     <div>
                       <p className="brand-eyebrow mb-1.5">Viewing calendar for</p>
                       <p className="font-heading text-lg sm:text-xl text-[#1c1917]">Ms. {selectedTech.name}</p>
                       {hasDiscount && (
                         <p className="mt-2 inline-flex items-center border border-[#c4b5a0] px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[#3d342c]">
-                          Special offer · {selectedTech.discount}% off all services
+                          Special offer · {selectedTech.discount}% off studio services
                         </p>
                       )}
                       <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3">

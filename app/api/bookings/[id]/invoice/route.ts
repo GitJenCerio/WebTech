@@ -80,7 +80,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const nailTech = invoiceNailTechId ? await NailTech.findById(invoiceNailTechId).lean() : null;
+    const isHomeService = booking.service?.location === 'home_service';
     const nailTechDiscountRate =
+      !isHomeService &&
       typeof (nailTech as { discount?: number })?.discount === 'number' &&
       (nailTech as { discount: number }).discount > 0
         ? (nailTech as { discount: number }).discount
@@ -93,9 +95,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         : typeof body.discountRate === 'number' && body.discountRate >= 0
           ? body.discountRate
           : 0;
-    const discountAmount = hasExplicitDiscountAmount
-      ? requestedDiscountAmount!
-      : Math.round(subtotal * (fallbackDiscountRate / 100));
+    const discountAmount = isHomeService
+      ? 0
+      : hasExplicitDiscountAmount
+        ? requestedDiscountAmount!
+        : Math.round(subtotal * (fallbackDiscountRate / 100));
     const discountRate = subtotal > 0 ? Math.round((discountAmount / subtotal) * 10000) / 100 : 0;
     const totalAmount = subtotal - discountAmount + squeezeInFee;
 

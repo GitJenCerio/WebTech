@@ -63,6 +63,7 @@ export default function MediaManager() {
   const [media, setMedia] = useState<MediaAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [alt, setAlt] = useState('');
   const [title, setTitle] = useState('');
@@ -97,33 +98,78 @@ export default function MediaManager() {
   }, [category, loadMedia]);
 
   const uploadFiles = async (files: FileList | File[]) => {
-    const list = Array.from(files).filter((f) => f.type.startsWith('image/'));
+    const list = Array.from(files).filter((f) => {
+      const type = (f.type || '').toLowerCase();
+      const name = f.name.toLowerCase();
+      return type.startsWith('image/') || /\.(jpe?g|png|webp|gif|heic|heif)$/.test(name);
+    });
     if (list.length === 0) {
-      setError('Please select image files (JPEG, PNG, WebP, or GIF)');
+      setError('Please select image files (JPEG, PNG, WebP, GIF, or HEIC)');
       return;
     }
 
     setUploading(true);
+    setUploadProgress({ current: 0, total: list.length });
     setError(null);
+
+    const failures: string[] = [];
+    let uploaded = 0;
+
     try {
-      const formData = new FormData();
-      formData.append('category', category);
-      if (alt.trim()) formData.append('alt', alt.trim());
-      if (title.trim()) formData.append('title', title.trim());
-      if (refKey.trim()) formData.append('refKey', refKey.trim());
-      list.forEach((file) => formData.append('files', file));
+      const { compressImageForUpload } = await import('@/lib/utils/compressImageForUpload');
 
-      const res = await fetch('/api/admin/media', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      for (let i = 0; i < list.length; i++) {
+        const original = list[i];
+        setUploadProgress({ current: i + 1, total: list.length });
 
-      setAlt('');
-      setTitle('');
-      await loadMedia(category);
+        try {
+          const compressed = await compressImageForUpload(original, {
+            maxWidth: 2000,
+            maxBytes: 2 * 1024 * 1024,
+            quality: 0.86,
+          });
+
+          const formData = new FormData();
+          formData.append('category', category);
+          if (alt.trim()) formData.append('alt', alt.trim());
+          if (title.trim()) formData.append('title', title.trim());
+          if (refKey.trim()) formData.append('refKey', refKey.trim());
+          formData.append('files', compressed);
+
+          const res = await fetch('/api/admin/media', { method: 'POST', body: formData });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(
+              data.error ||
+                (res.status === 413
+                  ? 'Photo is too large. Try a smaller image.'
+                  : `Upload failed (${res.status})`)
+            );
+          }
+          uploaded += 1;
+        } catch (err: any) {
+          failures.push(`${original.name}: ${err.message || 'Upload failed'}`);
+        }
+      }
+
+      if (uploaded > 0) {
+        setAlt('');
+        setTitle('');
+        await loadMedia(category);
+      }
+
+      if (failures.length > 0) {
+        setError(
+          uploaded > 0
+            ? `Uploaded ${uploaded} of ${list.length} photos. ${failures.join(' ')}`
+            : failures.join(' ')
+        );
+      }
     } catch (err: any) {
       setError(err.message || 'Upload failed');
     } finally {
       setUploading(false);
+      setUploadProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -291,11 +337,13 @@ export default function MediaManager() {
                   <p className="mb-1 text-sm font-medium text-[#1c1917]">
                     Drag & drop images here, or choose files
                   </p>
-                  <p className="mb-4 text-xs text-gray-500">JPEG, PNG, WebP, GIF · max 8MB each</p>
+                  <p className="mb-4 text-xs text-gray-500">
+                    JPEG, PNG, WebP, GIF, HEIC · you can select several at once
+                  </p>
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
                     multiple
                     className="hidden"
                     onChange={(e) => e.target.files && uploadFiles(e.target.files)}
@@ -308,7 +356,9 @@ export default function MediaManager() {
                     {uploading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Uploading…
+                        {uploadProgress
+                          ? `Uploading ${uploadProgress.current} of ${uploadProgress.total}…`
+                          : 'Uploading…'}
                       </>
                     ) : (
                       <>

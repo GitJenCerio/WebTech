@@ -14,6 +14,13 @@ function hasSecondaryNailTechId(secondaryNailTechId?: string): boolean {
   return typeof secondaryNailTechId === 'string' && secondaryNailTechId.trim().length > 0;
 }
 
+/** Nail tech % discount applies to studio bookings only, not home service. */
+export function discountAppliesToLocation(
+  location?: string | null
+): boolean {
+  return location !== 'home_service';
+}
+
 /**
  * Mani + Pedi Express with two techs: must have a secondary nail tech.
  * Recognizes canonical slug `mani_pedi_simultaneous`, `mode: simultaneous_two_techs`,

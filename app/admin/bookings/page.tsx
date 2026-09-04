@@ -26,6 +26,7 @@ import {
   hasAnyRealInvoice,
   isExpressManiPediServiceType,
   isManiPediExpressDualFromParts,
+  discountAppliesToLocation,
 } from '@/lib/utils/bookingInvoice';
 import {
   buildExpressSegmentInvoiceItems,
@@ -321,13 +322,14 @@ export default function BookingsPage() {
   }, [selectedBooking, invoiceTarget]);
 
   const suggestedDiscountAmount = useMemo(() => {
+    if (!discountAppliesToLocation(selectedBooking?.serviceLocation)) return 0;
     const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
     const rate =
       typeof activeInvoiceTechId === 'string'
         ? (nailTechs.find((t) => t.id === activeInvoiceTechId)?.discount || 0)
         : 0;
     return Math.round(subtotal * (rate / 100));
-  }, [invoiceItems, nailTechs, activeInvoiceTechId]);
+  }, [invoiceItems, nailTechs, activeInvoiceTechId, selectedBooking?.serviceLocation]);
 
   useEffect(() => {
     if (discountManuallySet) return;
@@ -1133,10 +1135,13 @@ export default function BookingsPage() {
           })),
           notes: invoiceNotes,
           discountRate:
+            discountAppliesToLocation(selectedBooking?.serviceLocation) &&
             typeof nailTechIdForSave === 'string'
               ? (nailTechs.find((t) => t.id === nailTechIdForSave)?.discount || 0)
               : 0,
-          discountAmount: invoiceDiscountAmount,
+          discountAmount: discountAppliesToLocation(selectedBooking?.serviceLocation)
+            ? invoiceDiscountAmount
+            : 0,
           squeezeInFee,
         }),
       });

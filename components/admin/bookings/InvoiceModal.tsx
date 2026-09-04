@@ -17,6 +17,7 @@ import { Trash2, ChevronDown, X, Download, Copy, Check } from 'lucide-react';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
 import { getSlotServiceDisplay } from '@/lib/serviceLabels';
+import { discountAppliesToLocation } from '@/lib/utils/bookingInvoice';
 
 export interface InvoiceItem {
   description: string;
@@ -34,6 +35,7 @@ export interface InvoiceModalBooking {
   date?: string;
   time?: string;
   slotTimes?: string[];
+  serviceLocation?: 'homebased_studio' | 'home_service';
 }
 
 interface InvoiceModalProps {
@@ -127,7 +129,8 @@ export default function InvoiceModal({
   if (!booking) return null;
 
   const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
-  const discountAmount = invoiceDiscountAmount;
+  const discountAllowed = discountAppliesToLocation(booking.serviceLocation);
+  const discountAmount = discountAllowed ? invoiceDiscountAmount : 0;
   const squeeze = booking.slotType === 'with_squeeze_fee' ? 500 : 0;
   const total = subtotal - discountAmount + squeeze;
   // Express: deposit is only deducted on the manicure invoice
@@ -413,6 +416,12 @@ export default function InvoiceModal({
 
           <div className="space-y-3 p-3 border border-border rounded-xl bg-ash-soft">
             <Label className="admin-section-label">Discount</Label>
+            {!discountAllowed ? (
+              <p className="text-xs text-muted-foreground">
+                Discount is not available for home service bookings.
+              </p>
+            ) : (
+              <>
             <div className="flex items-center gap-3">
               <Checkbox
                 id="remove-discount"
@@ -459,6 +468,8 @@ export default function InvoiceModal({
                 />
                 <span className="text-xs text-muted-foreground">= PHP {invoiceDiscountAmount.toLocaleString()}</span>
               </div>
+            )}
+              </>
             )}
           </div>
 

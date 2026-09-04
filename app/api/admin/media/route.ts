@@ -11,6 +11,23 @@ import {
 } from '@/lib/services/mediaService';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+const MAX_FILE_SIZE = 8 * 1024 * 1024;
+
+function guessMimeFromName(name: string | undefined): string | null {
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.gif')) return 'image/gif';
+  if (lower.endsWith('.heic')) return 'image/heic';
+  if (lower.endsWith('.heif')) return 'image/heif';
+  return null;
+}
 
 function sessionUser(session: Session | null): SessionUser | null {
   if (!session?.user) return null;
@@ -69,7 +86,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const formData = await request.formData();
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
+      return NextResponse.json(
+        { error: 'This photo is too large to upload. Try a smaller image.' },
+        { status: 413 }
+      );
+    }
     const categoryRaw = String(formData.get('category') || 'gallery');
     if (!isValidCategory(categoryRaw)) {
       return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
@@ -87,18 +112,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    const maxSize = 8 * 1024 * 1024;
     const created = [];
 
     for (const file of files) {
-      if (!allowedTypes.includes(file.type)) {
+      const mime =
+        (file.type && file.type !== 'application/octet-stream' ? file.type : null) ||
+        guessMimeFromName(file.name) ||
+        '';
+      if (mime && !ALLOWED_TYPES.includes(mime)) {
         return NextResponse.json(
-          { error: `Only JPEG, PNG, WebP, and GIF images are allowed (got ${file.type || 'unknown'})` },
+          { error: `Only JPEG, PNG, WebP, GIF, and HEIC images are allowed (got ${mime})` },
           { status: 400 }
         );
       }
-      if (file.size > maxSize) {
+      if (file.size > MAX_FILE_SIZE) {
         return NextResponse.json({ error: 'Each file must be under 8MB' }, { status: 400 });
       }
 

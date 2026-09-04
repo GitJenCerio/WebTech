@@ -18,11 +18,7 @@ const FAINT = '#a8a29e';
  * available count uses a deepened champagne that still clears contrast.
  */
 const COUNT_AVAILABLE = '#8a7355';
-const COUNT_PENDING = '#78716c';
-const COUNT_BOOKED = '#b5a99a';
 const COUNT_ON_INK_AVAILABLE = 'rgba(255, 252, 250, 0.92)';
-const COUNT_ON_INK_PENDING = 'rgba(255, 252, 250, 0.65)';
-const COUNT_ON_INK_BOOKED = 'rgba(255, 252, 250, 0.45)';
 
 interface CalendarGridProps {
   referenceDate: Date;
@@ -155,10 +151,15 @@ export function CalendarGrid({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="text-center text-[10px] sm:text-xs uppercase tracking-[0.16em] py-1.5 sm:py-2 text-[#b5a99a]">
-            {day}
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1.5 min-w-0">
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+          <div
+            key={`${day}-${i}`}
+            className="text-center text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.12em] sm:tracking-[0.16em] py-1 sm:py-2 text-[#b5a99a]"
+            title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i]}
+          >
+            <span className="sm:hidden">{day}</span>
+            <span className="hidden sm:inline">{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]}</span>
           </div>
         ))}
 
@@ -213,9 +214,9 @@ export function CalendarGrid({
               onClick={() => handleDateClick(date)}
               disabled={isPast && disablePastDates}
               className={`
-                aspect-square border p-2 sm:p-2.5 text-[11px] sm:text-xs lg:text-sm font-medium
-                transition-all active:scale-95 touch-manipulation
-                min-h-[44px] sm:min-h-[48px]
+                relative min-w-0 w-full overflow-hidden box-border
+                aspect-square border p-0.5 sm:p-1 text-[11px] sm:text-xs lg:text-sm font-medium
+                transition-colors touch-manipulation
                 ${!isCurrentMonth ? 'opacity-50' : ''}
                 ${isPast && disablePastDates ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-[#1c1917]'}
               `}
@@ -225,43 +226,21 @@ export function CalendarGrid({
                 borderColor: borderColorStyle,
               }}
             >
-              <div className="flex flex-col h-full w-full">
-                <div className="flex justify-center items-center shrink-0 pt-0.5">
-                  <span className="brand-numeric text-center">{format(date, 'd')}</span>
-                </div>
-                <div className="flex-1 flex items-center justify-center min-h-0">
-                  {status === 'blocked' ? (
-                    <span className="text-[8px] sm:text-[9px] lg:text-[10px] leading-tight text-center opacity-70">Blocked</span>
-                  ) : slotCounts.total > 0 && !hasNoSlots ? (
-                    <div className="flex flex-col items-center justify-center gap-0.5">
-                      {slotCounts.available > 0 && (
-                        <span
-                          className="brand-numeric text-[9px] sm:text-[10px] lg:text-[11px] leading-tight"
-                          style={{ color: isSelected ? COUNT_ON_INK_AVAILABLE : COUNT_AVAILABLE }}
-                        >
-                          {slotCounts.available}
-                        </span>
-                      )}
-                      {slotCounts.booked > 0 && (
-                        <span
-                          className="brand-numeric text-[9px] sm:text-[10px] lg:text-[11px] leading-tight"
-                          style={{ color: isSelected ? COUNT_ON_INK_BOOKED : COUNT_BOOKED }}
-                        >
-                          {slotCounts.booked}
-                        </span>
-                      )}
-                      {slotCounts.pending > 0 && (
-                        <span
-                          className="brand-numeric text-[9px] sm:text-[10px] lg:text-[11px] leading-tight"
-                          style={{ color: isSelected ? COUNT_ON_INK_PENDING : COUNT_PENDING }}
-                        >
-                          {slotCounts.pending}
-                        </span>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
+              <span className="flex h-full w-full min-h-0 flex-col items-center justify-center gap-0">
+                <span className="brand-numeric leading-none">{format(date, 'd')}</span>
+                {status === 'blocked' ? (
+                  <span className="mt-0.5 max-w-full truncate px-0.5 text-[7px] sm:text-[9px] leading-none opacity-70">
+                    Blocked
+                  </span>
+                ) : slotCounts.available > 0 && !hasNoSlots ? (
+                  <span
+                    className="brand-numeric mt-0.5 leading-none text-[8px] sm:text-[10px] lg:text-[11px]"
+                    style={{ color: isSelected ? COUNT_ON_INK_AVAILABLE : COUNT_AVAILABLE }}
+                  >
+                    {slotCounts.available}
+                  </span>
+                ) : null}
+              </span>
             </button>
           );
         })}

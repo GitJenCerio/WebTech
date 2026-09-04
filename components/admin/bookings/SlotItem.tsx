@@ -178,8 +178,16 @@ export default function SlotItem({
           <div style={{ flex: 1 }}>
             <div className="d-flex flex-column gap-1">
               <div className="d-flex align-items-center gap-2 flex-wrap">
-                <div className="fw-semibold whitespace-nowrap" style={{ minWidth: '70px', flexShrink: 0 }}>
-                  {formatTime12Hour(time)}
+                <div className="d-flex align-items-center gap-2 flex-nowrap">
+                  <div className="fw-semibold whitespace-nowrap" style={{ minWidth: '70px', flexShrink: 0 }}>
+                    {formatTime12Hour(time)}
+                  </div>
+                  {nailTechName && !isSimultaneous && (
+                    <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
+                  )}
+                  {isSimultaneous && nailTechName && nailTechId && (
+                    <NailTechBadge name={`${nailTechName}${expressTechSuffix}`} nailTechId={nailTechId} />
+                  )}
                 </div>
                 <StatusBadge status={status} className="!text-[10px] !px-2 !py-0.5 sm:!text-xs sm:!px-2.5 sm:!py-0.5" />
                 {serviceBadge && (
@@ -196,14 +204,6 @@ export default function SlotItem({
                     style={{ backgroundColor: '#e7e2db', color: '#78716c' }}
                   >
                     <EyeOff style={{ width: '12px', height: '12px', flexShrink: 0 }} />Hidden from Clients
-                  </span>
-                )}
-                {nailTechName && !isSimultaneous && (
-                  <NailTechBadge name={nailTechName} nailTechId={nailTechId} />
-                )}
-                {isSimultaneous && nailTechName && nailTechId && (
-                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: '#3d342c' }}>
-                    <NailTechBadge name={`${nailTechName}${expressTechSuffix}`} nailTechId={nailTechId} />
                   </span>
                 )}
               </div>

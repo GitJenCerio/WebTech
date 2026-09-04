@@ -10,6 +10,7 @@ import BookingDetailsModal from '@/components/admin/bookings/BookingDetailsModal
 import ClientProfileModal from '@/components/admin/ClientProfileModal';
 import InvoiceModal from '@/components/admin/bookings/InvoiceModal';
 import AddSlotModal from '@/components/admin/bookings/AddSlotModal';
+import BulkManageSlotsModal, { type BulkSlotAction } from '@/components/admin/bookings/BulkManageSlotsModal';
 import EditSlotModal from '@/components/admin/bookings/EditSlotModal';
 import DeleteConfirmationModal from '@/components/admin/DeleteConfirmationModal';
 import ReasonInputDialog from '@/components/admin/ReasonInputDialog';
@@ -27,6 +28,7 @@ import {
   hasAnyRealInvoice,
   isExpressManiPediServiceType,
   isManiPediExpressDualFromParts,
+  discountAppliesToLocation,
 } from '@/lib/utils/bookingInvoice';
 import {
   buildExpressSegmentInvoiceItems,
@@ -61,6 +63,7 @@ interface Slot {
   expressSegment?: 'manicure' | 'pedicure' | null;
   expressGroupId?: string | null;
   isHidden?: boolean;
+  notes?: string;
   booking?: {
     id: string;
     bookingCode: string;
@@ -249,6 +252,10 @@ export default function CalendarPage() {
   const [slotToDelete, setSlotToDelete] = useState<Slot | null>(null);
   const [isDeletingSlot, setIsDeletingSlot] = useState(false);
 
+  const [showBulkManageModal, setShowBulkManageModal] = useState(false);
+  const [bulkSlotsLoading, setBulkSlotsLoading] = useState(false);
+  const [bulkSlotsError, setBulkSlotsError] = useState<string | null>(null);
+
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
 
   const mapSlotStatus = useCallback((slot: any): BookingStatus => {
@@ -301,6 +308,7 @@ export default function CalendarPage() {
       service: slot.booking?.service?.type,
       serviceMode: slot.booking?.service?.mode,
       isHidden: slot.isHidden || false,
+      notes: slot.notes || '',
       booking: slot.booking
         ? {
             id: slot.booking.id,
@@ -513,10 +521,13 @@ export default function CalendarPage() {
   };
 
   const handleEditSlot = async (slotId: string, updates: {
+    date?: string;
+    time?: string;
     status?: BookingStatus;
     slotType?: 'regular' | 'with_squeeze_fee';
     notes?: string;
     isHidden?: boolean;
+    nailTechId?: string;
   }) => {
     try {
       setEditingSlot(true);
@@ -533,15 +544,66 @@ export default function CalendarPage() {
         throw new Error(error.error || 'Failed to update slot');
       }
 
-      await refreshSelectedDateSlots();
-      await refreshMonthlySlots();
+      const dateChanged = Boolean(updates.date && updates.date !== selectedSlot?.date);
+      if (dateChanged && updates.date) {
+        const [year, month, day] = updates.date.split('-').map(Number);
+        const nextDate = new Date(year, month - 1, day);
+        setSelectedDate(nextDate);
+        if (
+          nextDate.getMonth() !== currentMonth.getMonth() ||
+          nextDate.getFullYear() !== currentMonth.getFullYear()
+        ) {
+          setCurrentMonth(new Date(year, month - 1, 1));
+        }
+        await refreshMonthlySlots();
+      } else {
+        await refreshSelectedDateSlots();
+        await refreshMonthlySlots();
+      }
       setShowEditSlotModal(false);
       setSelectedSlot(null);
     } catch (error: any) {
       console.error('Error updating slot:', error);
       setEditSlotError(error.message);
+      throw error;
     } finally {
       setEditingSlot(false);
+    }
+  };
+
+  const handleBulkSlots = async (action: BulkSlotAction, ids: string[]) => {
+    try {
+      setBulkSlotsLoading(true);
+      setBulkSlotsError(null);
+
+      const response = await fetch('/api/slots/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, action }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update slots');
+      }
+
+      await refreshSelectedDateSlots();
+      await refreshMonthlySlots();
+
+      const count = data.deleted ?? data.updated ?? 0;
+      const skipped = data.skipped ?? 0;
+      const verb = action === 'delete' ? 'Deleted' : action === 'hide' ? 'Hidden' : 'Unhid';
+      toast.success(
+        skipped > 0
+          ? `${verb} ${count} slot${count === 1 ? '' : 's'}. Skipped ${skipped}.`
+          : `${verb} ${count} slot${count === 1 ? '' : 's'}.`
+      );
+      return { updated: data.updated, deleted: data.deleted, skipped };
+    } catch (error: any) {
+      console.error('Error applying bulk slot action:', error);
+      setBulkSlotsError(error.message);
+      throw error;
+    } finally {
+      setBulkSlotsLoading(false);
     }
   };
 
@@ -1111,13 +1173,14 @@ export default function CalendarPage() {
   }, [selectedBooking, invoiceTarget]);
 
   const suggestedDiscountAmount = useMemo(() => {
+    if (!discountAppliesToLocation(selectedBooking?.serviceLocation)) return 0;
     const subtotal = invoiceItems.reduce((sum, item) => sum + (item.total || 0), 0);
     const rate =
       typeof activeInvoiceTechId === 'string'
         ? (nailTechs.find((t) => t.id === activeInvoiceTechId)?.discount || 0)
         : 0;
     return Math.round(subtotal * (rate / 100));
-  }, [invoiceItems, nailTechs, activeInvoiceTechId]);
+  }, [invoiceItems, nailTechs, activeInvoiceTechId, selectedBooking?.serviceLocation]);
 
   useEffect(() => {
     if (discountManuallySet) return;
@@ -1401,10 +1464,13 @@ export default function CalendarPage() {
           })),
           notes: invoiceNotes,
           discountRate:
+            discountAppliesToLocation(selectedBooking?.serviceLocation) &&
             typeof nailTechIdForSave === 'string'
               ? (nailTechs.find((t) => t.id === nailTechIdForSave)?.discount || 0)
               : 0,
-          discountAmount: invoiceDiscountAmount,
+          discountAmount: discountAppliesToLocation(selectedBooking?.serviceLocation)
+            ? invoiceDiscountAmount
+            : 0,
           squeezeInFee,
         }),
       });
@@ -1474,10 +1540,23 @@ export default function CalendarPage() {
             onMonthChange={setCurrentMonth}
             slots={monthlySlots}
             daySlots={slots}
-            onSlotClick={(slot) => handleSlotClick(slot as Slot)}
+            onSlotClick={(slot) => {
+              const s = slot as Slot;
+              if (s.booking?.id && s.clientName) {
+                handleSlotClick(s);
+                return;
+              }
+              setSelectedSlot(s);
+              setShowEditSlotModal(true);
+              setEditSlotError(null);
+            }}
             onAddAvailability={() => {
               setAddSlotsError(null);
               setShowAddSlotModal(true);
+            }}
+            onBulkManage={() => {
+              setBulkSlotsError(null);
+              setShowBulkManageModal(true);
             }}
             nailTechs={nailTechs}
             selectedNailTechId={selectedNailTechId}
@@ -1529,6 +1608,10 @@ export default function CalendarPage() {
                 }
 
                 handleDeleteSlot(s);
+              }}
+              onBulkManage={() => {
+                setBulkSlotsError(null);
+                setShowBulkManageModal(true);
               }}
             />
           )}
@@ -1692,6 +1775,22 @@ export default function CalendarPage() {
         onSave={handleSaveInvoice}
       />
 
+      <BulkManageSlotsModal
+        show={showBulkManageModal}
+        onHide={() => {
+          if (!bulkSlotsLoading) {
+            setShowBulkManageModal(false);
+            setBulkSlotsError(null);
+          }
+        }}
+        onApply={handleBulkSlots}
+        selectedDate={selectedDate}
+        nailTechs={userRole.canManageAllTechs ? nailTechs : nailTechs.filter((t) => t.id === userRole.assignedNailTechId)}
+        defaultNailTechId={selectedNailTechId}
+        isLoading={bulkSlotsLoading}
+        error={bulkSlotsError}
+      />
+
       {/* Add Slot Modal */}
       {showAddSlotModal && (
         <>
@@ -1786,9 +1885,10 @@ export default function CalendarPage() {
           type: selectedSlot.type as 'regular' | 'with_squeeze_fee',
           nailTechId: selectedSlot.nailTechId,
           nailTechName: selectedSlot.nailTechName,
-          notes: undefined,
+          notes: selectedSlot.notes,
           isHidden: selectedSlot.isHidden,
         } : undefined}
+        nailTechs={userRole.canManageAllTechs ? nailTechs : nailTechs.filter((t) => t.id === userRole.assignedNailTechId)}
         isLoading={editingSlot}
         error={editSlotError}
       />
