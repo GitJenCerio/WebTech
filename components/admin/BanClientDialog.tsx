@@ -106,13 +106,13 @@ export default function BanClientDialog({
 
         <div className="flex-1 min-h-0 overflow-y-auto py-2 space-y-3">
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+            <div className="brand-note-error text-sm" role="alert">
               {error}
             </div>
           )}
 
           {mode === 'customer' ? (
-            <div className="text-sm text-[#3d342c] space-y-1 rounded-lg border border-[#e7e2db] bg-[#f7f6f4] p-3">
+            <div className="text-sm text-[#3d342c] space-y-1 brand-panel-soft p-3">
               {customer?.name && <p><strong>Name:</strong> {customer.name}</p>}
               {customer?.email && <p><strong>Email:</strong> {customer.email}</p>}
               {customer?.phone && <p><strong>Phone:</strong> {customer.phone}</p>}
@@ -144,7 +144,7 @@ export default function BanClientDialog({
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-[#e7e2db] bg-white focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917]"
+              className="brand-field min-h-[80px]"
               placeholder="Why is this client banned?"
             />
           </div>

@@ -8,14 +8,23 @@ import { Button, Input } from '@/components/ui';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Badge } from '@/components/ui/Badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog';
-import { Card, CardContent } from "@/components/ui/Card";
 import { useSession } from 'next-auth/react';
 import { canManageCustomers } from '@/lib/rbac';
 import BanClientDialog from '@/components/admin/BanClientDialog';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
+import { PageHeader } from '@/components/admin/PageHeader';
 import { formatSocialMediaDisplay } from '@/lib/utils/socialMedia';
 
 const PAGE_SIZE = 10;
+
+const tableActionClass =
+  'h-8 px-2.5 text-[10px] font-medium uppercase tracking-[0.12em] border border-[#e7e2db] bg-[#fffcfa] text-[#57534e] hover:border-[#1c1917] hover:bg-[#1c1917] hover:text-[#fffcfa] transition-all';
+const tableBanClass =
+  'h-8 px-2.5 text-[10px] font-medium uppercase tracking-[0.12em] border border-[#d8c5bd] bg-[#fffcfa] text-[#5a3830] hover:border-[#5a3830] hover:bg-[#5a3830] hover:text-[#fffcfa] transition-all';
+const mobileActionClass =
+  'w-full min-h-10 flex items-center justify-center text-[11px] font-medium uppercase tracking-[0.12em] border border-[#e7e2db] bg-[#fffcfa] text-[#1c1917] hover:border-[#1c1917] hover:bg-[#1c1917] hover:text-[#fffcfa] transition-all';
+const pagerClass =
+  'h-9 min-w-[44px] flex items-center justify-center border border-[#e7e2db] bg-[#fffcfa] text-[#78716c] hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2';
 
 interface Client {
   id: string;
@@ -298,41 +307,41 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        title="Clients"
+        description="Search, view, and manage client records."
+      />
+
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <div className="brand-note-error text-sm" role="alert">
           {error}
         </div>
       )}
 
-      {/* Filter Card */}
-      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl">
-        <CardContent className="p-4">
+      <div className="brand-panel p-4">
           <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
             <div className="relative flex-1 w-full sm:min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#c4b5a0] pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search by name, email, or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 h-9 text-sm rounded-lg border border-[#e7e2db] bg-[#f7f6f4] text-[#1c1917] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917] focus:bg-white transition-all"
+                className="brand-field pl-9 h-10"
               />
             </div>
             {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="h-9 px-3 text-sm rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:text-[#1c1917] hover:border-[#1c1917] transition-all flex items-center gap-1.5"
-              >
-                <X className="h-3.5 w-3.5" />
+              <Button type="button" variant="outline" size="sm" onClick={() => setSearchQuery('')}>
+                <X className="h-3.5 w-3.5 mr-1.5" />
                 Clear
-              </button>
+              </Button>
             )}
-            <div className="flex items-center gap-1 p-0.5 rounded-lg border border-[#e7e2db] bg-[#f7f6f4]">
+            <div className="flex items-center border border-[#e7e2db] bg-[#f7f6f4]">
               <button
                 type="button"
                 onClick={() => setStatusFilter('all')}
-                className={`h-8 px-3 text-xs rounded-md transition-all ${
-                  statusFilter === 'all' ? 'bg-[#1c1917] text-white' : 'text-gray-500 hover:text-[#1c1917]'
+                className={`h-10 px-4 text-[10px] uppercase tracking-[0.14em] transition-all ${
+                  statusFilter === 'all' ? 'bg-[#1c1917] text-[#fffcfa]' : 'text-[#78716c] hover:text-[#1c1917] hover:bg-[#f0ebe4]'
                 }`}
               >
                 All
@@ -340,61 +349,57 @@ export default function ClientsPage() {
               <button
                 type="button"
                 onClick={() => setStatusFilter('banned')}
-                className={`h-8 px-3 text-xs rounded-md transition-all ${
-                  statusFilter === 'banned' ? 'bg-[#1c1917] text-white' : 'text-gray-500 hover:text-[#1c1917]'
+                className={`h-10 px-4 text-[10px] uppercase tracking-[0.14em] transition-all ${
+                  statusFilter === 'banned' ? 'bg-[#1c1917] text-[#fffcfa]' : 'text-[#78716c] hover:text-[#1c1917] hover:bg-[#f0ebe4]'
                 }`}
               >
                 Banned
               </button>
             </div>
             {canBan && (
-              <button
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setBanTarget(null);
                   setBanDialogMode('identifiers');
                   setBanDialogOpen(true);
                 }}
-                className="h-9 px-3 text-sm font-medium rounded-lg border border-[#e7e2db] bg-white text-[#5a3830] hover:border-[#5a3830] transition-colors flex items-center justify-center gap-2"
               >
-                <Ban className="h-4 w-4" />
+                <Ban className="h-3.5 w-3.5 mr-1.5" />
                 Ban details
-              </button>
+              </Button>
             )}
-            <button
-              onClick={() => setShowAddClientModal(true)}
-              className="h-9 px-4 text-sm font-medium rounded-lg bg-[#1c1917] text-white hover:bg-[#2a2522] transition-colors flex items-center justify-center gap-2 ml-auto"
-            >
-              <Plus className="h-4 w-4" />
+            <Button type="button" size="sm" className="sm:ml-auto" onClick={() => setShowAddClientModal(true)}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
               Add Client
-            </button>
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+      </div>
 
-      {/* Table Card */}
-      <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl overflow-hidden">
-        <CardContent className="p-0">
+      <div className="brand-panel overflow-hidden">
           {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#f0ebe4]" style={{ background: 'linear-gradient(to right, #fffcfa, #f7f6f4)' }}>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Client Name</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Contact</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Total Visits</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Tag</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">Notes</th>
-                  <th className="px-5 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+                <tr className="border-b border-[#e7e2db] bg-[#f7f6f4]">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Client Name</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Contact</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Total Visits</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Tag</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em] whitespace-nowrap">Notes</th>
+                  <th className="px-5 py-3 text-right text-[11px] font-semibold text-[#78716c] uppercase tracking-[0.12em]">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f7f6f4]">
+              <tbody className="divide-y divide-[#f0ebe4]">
                 {loading ? (
                   <>
                     {Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
                         {Array.from({ length: 6 }).map((_, j) => (
                           <td key={j} className="px-5 py-3.5">
-                            <div className="h-4 w-20 animate-pulse rounded bg-[#e7e2db]" />
+                            <div className="h-4 w-20 animate-pulse bg-[#e7e2db]" />
                           </td>
                         ))}
                       </tr>
@@ -404,17 +409,17 @@ export default function ClientsPage() {
                   <tr>
                     <td colSpan={6} className="px-5 py-16 text-center">
                       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                        <div className="h-12 w-12 rounded-full bg-[#f7f6f4] flex items-center justify-center">
-                          <Search className="h-6 w-6 text-gray-300" />
+                        <div className="h-12 w-12 bg-[#f0ebe4] flex items-center justify-center">
+                          <Search className="h-6 w-6 text-[#c4b5a0]" />
                         </div>
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="font-heading text-lg text-[#1c1917]">
                           {searchQuery.trim()
                             ? 'No clients match your search.'
                             : statusFilter === 'banned'
                               ? 'No banned clients.'
                               : 'No clients yet.'}
                         </p>
-                        <p className="text-xs text-gray-400 max-w-[240px]">
+                        <p className="text-xs text-[#78716c] max-w-[240px]">
                           {searchQuery.trim()
                             ? 'Try adjusting your search or clearing the search box.'
                             : statusFilter === 'banned'
@@ -426,9 +431,9 @@ export default function ClientsPage() {
                   </tr>
                 ) : (
                   paginatedClients.map((item) => (
-                    <tr key={item.id} className="hover:bg-[#fffcfa] transition-colors duration-100 group">
+                    <tr key={item.id} className="hover:bg-[#f7f6f4] transition-colors duration-100">
                       <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-[#1c1917]">{item.name}</span>
                           {item.isActive === false && <Badge variant="destructive">Banned</Badge>}
                         </div>
@@ -436,57 +441,46 @@ export default function ClientsPage() {
                       <td className="px-5 py-3.5">
                         <div className="flex flex-col">
                           <span className="text-[#1c1917]">{item.email || '—'}</span>
-                          <span className="text-xs text-gray-400 mt-0.5">{item.phone || '—'}</span>
+                          <span className="text-xs text-[#78716c] mt-0.5">{item.phone || '—'}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 font-medium text-[#1c1917] tabular-nums">{item.totalVisits}</td>
+                      <td className="px-5 py-3.5 font-medium text-[#1c1917] tabular-nums brand-numeric">{item.totalVisits}</td>
                       <td className="px-5 py-3.5">
                         <div className="flex flex-wrap items-center gap-1">
                           {item.isVIP ? (
                             <Badge variant="vip">VIP</Badge>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">Regular</span>
-                          )}
+                          ) : item.isActive !== false ? (
+                            <Badge variant="regular">Regular</Badge>
+                          ) : null}
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
                         {item.hasNotes ? (
-                          <div className="h-6 w-6 rounded-full bg-[#f7f6f4] flex items-center justify-center" title="Has notes">
-                            <FileText className="h-3.5 w-3.5 text-gray-400" />
+                          <div className="h-6 w-6 bg-[#f0ebe4] flex items-center justify-center" title="Has notes">
+                            <FileText className="h-3.5 w-3.5 text-[#c4b5a0]" />
                           </div>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-[#c4b5a0]">—</span>
                         )}
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleViewClient(item.id, 'view')}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
-                          >
+                          <button type="button" onClick={() => handleViewClient(item.id, 'view')} className={tableActionClass}>
                             View
                           </button>
-                          <button
-                            onClick={() => handleViewClient(item.id, 'edit')}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
-                          >
+                          <button type="button" onClick={() => handleViewClient(item.id, 'edit')} className={tableActionClass}>
                             Edit
                           </button>
-                          <button
-                            onClick={() => router.push(`/admin/bookings?customerId=${item.id}`)}
-                            className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
-                          >
+                          <button type="button" onClick={() => router.push(`/admin/bookings?customerId=${item.id}`)} className={tableActionClass}>
                             Bookings
                           </button>
                           {canBan && item.isActive === false ? (
-                            <button
-                              onClick={() => setUnbanTarget(item)}
-                              className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
-                            >
+                            <button type="button" onClick={() => setUnbanTarget(item)} className={tableActionClass}>
                               Unban
                             </button>
                           ) : canBan ? (
                             <button
+                              type="button"
                               onClick={() => {
                                 setBanTarget({
                                   id: item.id,
@@ -498,7 +492,7 @@ export default function ClientsPage() {
                                 setBanDialogMode('customer');
                                 setBanDialogOpen(true);
                               }}
-                              className="h-7 px-2.5 text-xs rounded-md border border-[#e7e2db] bg-white text-[#5a3830] hover:border-[#5a3830] transition-all"
+                              className={tableBanClass}
                             >
                               Ban
                             </button>
@@ -512,40 +506,30 @@ export default function ClientsPage() {
             </table>
           </div>
 
-          {/* Mobile card view */}
-          <div className="sm:hidden p-4 space-y-3">
+          <div className="sm:hidden p-3 space-y-3">
             {loading ? (
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3">
-                    <div className="flex justify-between">
-                      <div className="h-5 w-32 animate-pulse rounded bg-[#e7e2db]" />
-                      <div className="h-6 w-16 animate-pulse rounded-full bg-[#e7e2db]" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="h-4 w-48 animate-pulse rounded bg-[#e7e2db]" />
-                      <div className="h-4 w-36 animate-pulse rounded bg-[#e7e2db]" />
-                    </div>
-                    <div className="flex gap-2">
-                      <button className="h-7 w-14 animate-pulse rounded bg-[#e7e2db]" />
-                      <button className="h-7 w-14 animate-pulse rounded bg-[#e7e2db]" />
-                    </div>
+                  <div key={i} className="border border-[#e7e2db] bg-[#fffcfa] p-4 space-y-3">
+                    <div className="h-5 w-32 animate-pulse bg-[#e7e2db]" />
+                    <div className="h-4 w-48 animate-pulse bg-[#e7e2db]" />
+                    <div className="h-4 w-36 animate-pulse bg-[#e7e2db]" />
                   </div>
                 ))}
               </>
             ) : paginatedClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-                <div className="h-12 w-12 rounded-full bg-[#f7f6f4] flex items-center justify-center">
-                  <Search className="h-6 w-6 text-gray-300" />
+                <div className="h-12 w-12 bg-[#f0ebe4] flex items-center justify-center">
+                  <Search className="h-6 w-6 text-[#c4b5a0]" />
                 </div>
-                <p className="text-sm font-medium text-gray-500">
+                <p className="font-heading text-lg text-[#1c1917]">
                   {searchQuery.trim()
                     ? 'No clients match your search.'
                     : statusFilter === 'banned'
                       ? 'No banned clients.'
                       : 'No clients yet.'}
                 </p>
-                <p className="text-xs text-gray-400 max-w-[240px]">
+                <p className="text-xs text-[#78716c] max-w-[240px]">
                   {searchQuery.trim()
                     ? 'Try adjusting your search or clearing the search box.'
                     : statusFilter === 'banned'
@@ -557,58 +541,47 @@ export default function ClientsPage() {
               paginatedClients.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-[#e7e2db] bg-white p-4 shadow-sm space-y-3"
+                  className="border border-[#e7e2db] bg-[#fffcfa] p-4 space-y-3"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-medium text-[#1c1917]">{item.name}</p>
-                    <div className="flex items-center gap-1 shrink-0">
+                  <div className="space-y-2">
+                    <p className="font-heading text-lg text-[#1c1917] break-words">{item.name}</p>
+                    <div className="flex flex-wrap items-center gap-1">
                       {item.isActive === false && <Badge variant="destructive">Banned</Badge>}
                       {item.isVIP ? (
                         <Badge variant="vip">VIP</Badge>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">Regular</span>
-                      )}
+                      ) : item.isActive !== false ? (
+                        <Badge variant="regular">Regular</Badge>
+                      ) : null}
                     </div>
                   </div>
                   <div className="space-y-1 text-sm">
-                    {item.email && <p className="text-gray-600">{item.email}</p>}
-                    {item.phone && <p className="text-gray-500 text-xs">{item.phone}</p>}
+                    {item.email && <p className="text-[#3d342c]">{item.email}</p>}
+                    {item.phone && <p className="text-[#78716c] text-xs">{item.phone}</p>}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <span>{item.totalVisits} visits</span>
-                    {item.hasNotes && <FileText className="h-3.5 w-3.5" />}
+                  <div className="flex items-center gap-2 text-xs text-[#78716c]">
+                    <span className="brand-numeric">{item.totalVisits} visits</span>
+                    {item.hasNotes && <FileText className="h-3.5 w-3.5 text-[#c4b5a0]" />}
                   </div>
                   <div className="flex flex-col gap-2 pt-1">
-                    <button
-                      onClick={() => handleViewClient(item.id, 'view')}
-                      className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-[#1c1917] hover:border-[#1c1917] hover:bg-[#fffcfa] transition-all"
-                    >
+                    <button type="button" onClick={() => handleViewClient(item.id, 'view')} className={mobileActionClass}>
                       View
                     </button>
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => handleViewClient(item.id, 'edit')}
-                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
-                      >
+                      <button type="button" onClick={() => handleViewClient(item.id, 'edit')} className={`${mobileActionClass} flex-1`}>
                         Edit
                       </button>
-                      <button
-                        onClick={() => router.push(`/admin/bookings?customerId=${item.id}`)}
-                        className="flex-1 h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
-                      >
+                      <button type="button" onClick={() => router.push(`/admin/bookings?customerId=${item.id}`)} className={`${mobileActionClass} flex-1`}>
                         Bookings
                       </button>
                     </div>
                     {canBan && (
                       item.isActive === false ? (
-                        <button
-                          onClick={() => setUnbanTarget(item)}
-                          className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all"
-                        >
+                        <button type="button" onClick={() => setUnbanTarget(item)} className={mobileActionClass}>
                           Unban
                         </button>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => {
                             setBanTarget({
                               id: item.id,
@@ -620,7 +593,7 @@ export default function ClientsPage() {
                             setBanDialogMode('customer');
                             setBanDialogOpen(true);
                           }}
-                          className="w-full h-10 flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-sm font-medium text-[#5a3830] hover:border-[#5a3830] transition-all"
+                          className={`${mobileActionClass} border-[#d8c5bd] text-[#5a3830] hover:border-[#5a3830] hover:bg-[#5a3830] hover:text-[#fffcfa]`}
                         >
                           Ban
                         </button>
@@ -631,22 +604,22 @@ export default function ClientsPage() {
               ))
             )}
           </div>
-        </CardContent>
-      </Card>
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
-          <p className="text-xs text-gray-400 order-2 sm:order-1">
+          <p className="text-xs text-[#78716c] order-2 sm:order-1">
             Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalItems)} of {totalItems}
           </p>
           <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
-            <span className="sm:hidden text-xs text-gray-500">Page {currentPage} / {totalPages}</span>
+            <span className="sm:hidden text-xs text-[#78716c]">Page {currentPage} / {totalPages}</span>
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                className={pagerClass}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -655,10 +628,13 @@ export default function ClientsPage() {
                   const page = i + 1;
                   return (
                     <button
+                      type="button"
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`h-9 w-9 flex items-center justify-center rounded-lg border text-xs font-medium transition-all ${
-                        currentPage === page ? 'bg-[#1c1917] border-[#1c1917] text-white shadow-sm' : 'border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917]'
+                      className={`h-9 w-9 flex items-center justify-center border text-[10px] uppercase tracking-[0.08em] font-medium transition-all ${
+                        currentPage === page
+                          ? 'bg-[#1c1917] border-[#1c1917] text-[#fffcfa]'
+                          : 'border-[#e7e2db] bg-[#fffcfa] text-[#78716c] hover:border-[#1c1917] hover:text-[#1c1917]'
                       }`}
                     >
                       {page}
@@ -667,9 +643,10 @@ export default function ClientsPage() {
                 })}
               </div>
               <button
+                type="button"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="h-9 min-w-[44px] flex items-center justify-center rounded-lg border border-[#e7e2db] bg-white text-gray-400 hover:border-[#1c1917] hover:text-[#1c1917] disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm px-2"
+                className={pagerClass}
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -684,24 +661,23 @@ export default function ClientsPage() {
             <DialogTitle>{clientModalMode === 'edit' ? 'Edit Client' : 'Client Details'}</DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 overflow-y-auto py-2 space-y-4 overscroll-contain" style={{ fontSize: '0.92rem' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto py-2 space-y-4 overscroll-contain">
             {clientDetailsLoading ? (
-              <div className="text-gray-600">Loading client details...</div>
+              <div className="text-sm text-[#78716c]">Loading client details...</div>
             ) : clientDetailsError ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+              <div className="brand-note-error text-sm" role="alert">
                 {clientDetailsError}
               </div>
             ) : clientDetails?.customer ? (
               <>
                 {clientModalMode === 'edit' ? (
-                  <Card>
-                    <CardContent className="p-4 space-y-3">
+                  <div className="brand-panel-soft p-4 space-y-3">
                       <div>
                         <label>Name</label>
                         <Input
                           value={editDraft.name}
                           onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
-                          className="h-9"
+                          className="h-10"
                           placeholder="Client name"
                         />
                       </div>
@@ -711,7 +687,7 @@ export default function ClientsPage() {
                           type="email"
                           value={editDraft.email}
                           onChange={(e) => setEditDraft((d) => ({ ...d, email: e.target.value }))}
-                          className="h-9"
+                          className="h-10"
                           placeholder="Email"
                         />
                       </div>
@@ -720,7 +696,7 @@ export default function ClientsPage() {
                         <Input
                           value={editDraft.phone}
                           onChange={(e) => setEditDraft((d) => ({ ...d, phone: e.target.value }))}
-                          className="h-9"
+                          className="h-10"
                           placeholder="Phone"
                         />
                       </div>
@@ -729,7 +705,7 @@ export default function ClientsPage() {
                         <Input
                           value={editDraft.socialMediaName}
                           onChange={(e) => setEditDraft((d) => ({ ...d, socialMediaName: e.target.value }))}
-                          className="h-9"
+                          className="h-10"
                           placeholder="Social media name"
                         />
                       </div>
@@ -738,7 +714,7 @@ export default function ClientsPage() {
                         <textarea
                           value={editDraft.notes}
                           onChange={(e) => setEditDraft((d) => ({ ...d, notes: e.target.value }))}
-                          className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-[#e7e2db] bg-white focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917]"
+                          className="brand-field min-h-[80px]"
                           placeholder="Notes"
                         />
                       </div>
@@ -752,107 +728,168 @@ export default function ClientsPage() {
                           VIP Client
                         </label>
                       </div>
-                    </CardContent>
-                  </Card>
+                  </div>
                 ) : (
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex flex-col gap-2">
-                      <div><strong>Name:</strong> {clientDetails.customer.name}</div>
-                      {clientDetails.customer.email && <div><strong>Email:</strong> {clientDetails.customer.email}</div>}
-                      {clientDetails.customer.phone && <div><strong>Phone:</strong> {clientDetails.customer.phone}</div>}
+                <div className="brand-panel-soft p-4 space-y-3">
+                      <div>
+                        <p className="brand-label">Name</p>
+                        <p className="font-heading text-lg text-[#1c1917]">{clientDetails.customer.name}</p>
+                      </div>
+                      {clientDetails.customer.email && (
+                        <div>
+                          <p className="brand-label">Email</p>
+                          <p className="text-sm text-[#3d342c]">{clientDetails.customer.email}</p>
+                        </div>
+                      )}
+                      {clientDetails.customer.phone && (
+                        <div>
+                          <p className="brand-label">Phone</p>
+                          <p className="text-sm text-[#3d342c]">{clientDetails.customer.phone}</p>
+                        </div>
+                      )}
                       {clientDetails.customer.socialMediaName && (
                         <div>
-                          <strong>Social:</strong>{' '}
-                          {formatSocialMediaDisplay(
-                            clientDetails.customer.socialMediaName,
-                            clientDetails.customer.socialMediaPlatform
-                          )}
+                          <p className="brand-label">Social</p>
+                          <p className="text-sm text-[#3d342c]">
+                            {formatSocialMediaDisplay(
+                              clientDetails.customer.socialMediaName,
+                              clientDetails.customer.socialMediaPlatform
+                            )}
+                          </p>
                         </div>
                       )}
                       {clientDetails.customer.referralSource && (
-                        <div><strong>Referral:</strong> {clientDetails.customer.referralSource}</div>
+                        <div>
+                          <p className="brand-label">Referral</p>
+                          <p className="text-sm text-[#3d342c]">{clientDetails.customer.referralSource}</p>
+                        </div>
                       )}
                       {clientDetails.customer.referralSourceOther && (
-                        <div><strong>Referral (Other):</strong> {clientDetails.customer.referralSourceOther}</div>
+                        <div>
+                          <p className="brand-label">Referral (Other)</p>
+                          <p className="text-sm text-[#3d342c]">{clientDetails.customer.referralSourceOther}</p>
+                        </div>
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
+                </div>
                 )}
 
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex flex-wrap gap-3">
-                      <span><strong>Total Bookings:</strong> {clientDetails.customer.totalBookings ?? 0}</span>
-                      <span><strong>Completed:</strong> {clientDetails.customer.completedBookings ?? 0}</span>
-                      <span><strong>Last Visit:</strong> {clientDetails.customer.lastVisit ? new Date(clientDetails.customer.lastVisit).toLocaleDateString('en-US') : '-'}</span>
-                      <span><strong>Total Spent:</strong> PHP {(clientDetails.customer.totalSpent ?? 0).toLocaleString()}</span>
-                      <span><strong>Total Tips:</strong> PHP {(clientDetails.customer.totalTips ?? 0).toLocaleString()}</span>
-                      <span><strong>Total Discounts:</strong> PHP {(clientDetails.customer.totalDiscounts ?? 0).toLocaleString()}</span>
-                      <span><strong>Client Type:</strong> {clientDetails.customer.clientType || 'NEW'}</span>
-                      <span><strong>Status:</strong> {clientDetails.customer.isActive === false ? 'Banned' : 'Active'}</span>
-                      {clientDetails.customer.isActive === false && clientDetails.customer.bannedReason && (
-                        <span><strong>Ban reason:</strong> {clientDetails.customer.bannedReason}</span>
-                      )}
-                      {clientDetails.customer.isVIP && (
-                        <Badge variant="vip">VIP</Badge>
-                      )}
+                <div className="brand-panel-soft p-4 space-y-3">
+                    <p className="font-heading text-lg text-[#1c1917]">Visit summary</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="brand-label">Total bookings</p>
+                        <p className="text-sm text-[#1c1917] brand-numeric">{clientDetails.customer.totalBookings ?? 0}</p>
+                      </div>
+                      <div>
+                        <p className="brand-label">Completed</p>
+                        <p className="text-sm text-[#1c1917] brand-numeric">{clientDetails.customer.completedBookings ?? 0}</p>
+                      </div>
+                      <div>
+                        <p className="brand-label">Last visit</p>
+                        <p className="text-sm text-[#1c1917]">
+                          {clientDetails.customer.lastVisit
+                            ? new Date(clientDetails.customer.lastVisit).toLocaleDateString('en-US')
+                            : '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="brand-label">Total spent</p>
+                        <p className="text-sm text-[#1c1917] brand-numeric">
+                          PHP {(clientDetails.customer.totalSpent ?? 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="brand-label">Total tips</p>
+                        <p className="text-sm text-[#1c1917] brand-numeric">
+                          PHP {(clientDetails.customer.totalTips ?? 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="brand-label">Total discounts</p>
+                        <p className="text-sm text-[#1c1917] brand-numeric">
+                          PHP {(clientDetails.customer.totalDiscounts ?? 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="brand-label">Client type</p>
+                        <p className="text-sm text-[#1c1917]">{clientDetails.customer.clientType || 'NEW'}</p>
+                      </div>
+                      <div>
+                        <p className="brand-label">Status</p>
+                        <div className="flex flex-wrap items-center gap-1">
+                          {clientDetails.customer.isActive === false ? (
+                            <Badge variant="destructive">Banned</Badge>
+                          ) : (
+                            <Badge variant="success">Active</Badge>
+                          )}
+                          {clientDetails.customer.isVIP && <Badge variant="vip">VIP</Badge>}
+                        </div>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    {clientDetails.customer.isActive === false && clientDetails.customer.bannedReason && (
+                      <div>
+                        <p className="brand-label">Ban reason</p>
+                        <p className="text-sm text-[#5a3830]">{clientDetails.customer.bannedReason}</p>
+                      </div>
+                    )}
+                </div>
 
                 {(clientDetails.customer.nailHistory || clientDetails.customer.healthInfo) && (
-                  <Card>
-                    <CardContent className="p-4">
+                  <div className="brand-panel-soft p-4 space-y-3">
                       {clientDetails.customer.nailHistory && (
-                        <div className="mb-2">
-                          <div className="font-semibold">Nail History</div>
-                          <div className="text-gray-600 text-sm">
-                            Russian Manicure: {clientDetails.customer.nailHistory.hasRussianManicure ? 'Yes' : 'No'} | 
-                            Gel Overlay: {clientDetails.customer.nailHistory.hasGelOverlay ? 'Yes' : 'No'} | 
+                        <div>
+                          <p className="font-heading text-lg text-[#1c1917]">Nail history</p>
+                          <p className="text-sm text-[#57534e]">
+                            Russian Manicure: {clientDetails.customer.nailHistory.hasRussianManicure ? 'Yes' : 'No'}
+                            {' · '}
+                            Gel Overlay: {clientDetails.customer.nailHistory.hasGelOverlay ? 'Yes' : 'No'}
+                            {' · '}
                             Softgel Extensions: {clientDetails.customer.nailHistory.hasSoftgelExtensions ? 'Yes' : 'No'}
-                          </div>
+                          </p>
                         </div>
                       )}
                       {clientDetails.customer.healthInfo && (
-                        <div>
-                          <div className="font-semibold">Health Info</div>
+                        <div className="space-y-2">
+                          <p className="font-heading text-lg text-[#1c1917]">Health info</p>
                           {clientDetails.customer.healthInfo.allergies && (
-                            <div className="text-gray-600 text-sm">Allergies: {clientDetails.customer.healthInfo.allergies}</div>
+                            <div>
+                              <p className="brand-label">Allergies</p>
+                              <p className="text-sm text-[#57534e]">{clientDetails.customer.healthInfo.allergies}</p>
+                            </div>
                           )}
                           {clientDetails.customer.healthInfo.nailConcerns && (
-                            <div className="text-gray-600 text-sm">Nail Concerns: {clientDetails.customer.healthInfo.nailConcerns}</div>
+                            <div>
+                              <p className="brand-label">Nail concerns</p>
+                              <p className="text-sm text-[#57534e]">{clientDetails.customer.healthInfo.nailConcerns}</p>
+                            </div>
                           )}
                           {clientDetails.customer.healthInfo.nailDamageHistory && (
-                            <div className="text-gray-600 text-sm">Damage History: {clientDetails.customer.healthInfo.nailDamageHistory}</div>
+                            <div>
+                              <p className="brand-label">Damage history</p>
+                              <p className="text-sm text-[#57534e]">{clientDetails.customer.healthInfo.nailDamageHistory}</p>
+                            </div>
                           )}
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                  </div>
                 )}
 
                 {clientDetails.customer.inspoDescription && (
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="font-semibold">Inspiration Description</div>
-                      <div className="text-gray-600 text-sm">{clientDetails.customer.inspoDescription}</div>
-                    </CardContent>
-                  </Card>
+                  <div className="brand-panel-soft p-4 space-y-2">
+                      <p className="font-heading text-lg text-[#1c1917]">Inspiration</p>
+                      <p className="text-sm text-[#57534e]">{clientDetails.customer.inspoDescription}</p>
+                  </div>
                 )}
 
                 {clientDetails.customer.notes && (
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="font-semibold">Notes</div>
-                      <div className="text-gray-600 text-sm">{clientDetails.customer.notes}</div>
-                    </CardContent>
-                  </Card>
+                  <div className="brand-panel-soft p-4 space-y-2">
+                      <p className="font-heading text-lg text-[#1c1917]">Notes</p>
+                      <p className="text-sm text-[#57534e]">{clientDetails.customer.notes}</p>
+                  </div>
                 )}
               </>
             ) : (
-              <div className="text-gray-600">No client details available.</div>
+              <div className="text-sm text-[#78716c]">No client details available.</div>
             )}
           </div>
 
@@ -929,27 +966,26 @@ export default function ClientsPage() {
       </Dialog>
 
       {identifierBans.length > 0 && (
-        <Card className="bg-white border border-[#e7e2db] shadow-sm rounded-xl">
-          <CardContent className="p-4 space-y-3">
+        <div className="brand-panel p-4 space-y-3">
             <div>
-              <p className="text-sm font-medium text-[#1c1917]">Banned by details</p>
-              <p className="text-xs text-gray-400">These identifiers are blocked even if there is no client record.</p>
+              <p className="font-heading text-lg text-[#1c1917]">Banned by details</p>
+              <p className="text-xs text-[#78716c]">These identifiers are blocked even if there is no client record.</p>
             </div>
             <div className="space-y-2">
               {identifierBans.map((ban) => (
-                <div key={ban.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-[#e7e2db] bg-[#f7f6f4] px-3 py-2">
+                <div key={ban.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-[#e7e2db] bg-[#f7f6f4] px-3 py-2">
                   <div className="text-sm text-[#3d342c] space-y-0.5">
-                    {ban.name && <p><strong>Name:</strong> {ban.name}</p>}
-                    {ban.email && <p><strong>Email:</strong> {ban.email}</p>}
-                    {ban.phone && <p><strong>Phone:</strong> {ban.phone}</p>}
-                    {ban.socialMediaName && <p><strong>Social:</strong> {ban.socialMediaName}</p>}
-                    {ban.reason && <p className="text-xs text-gray-500">{ban.reason}</p>}
+                    {ban.name && <p><span className="text-[10px] uppercase tracking-[0.12em] text-[#78716c]">Name</span> {ban.name}</p>}
+                    {ban.email && <p><span className="text-[10px] uppercase tracking-[0.12em] text-[#78716c]">Email</span> {ban.email}</p>}
+                    {ban.phone && <p><span className="text-[10px] uppercase tracking-[0.12em] text-[#78716c]">Phone</span> {ban.phone}</p>}
+                    {ban.socialMediaName && <p><span className="text-[10px] uppercase tracking-[0.12em] text-[#78716c]">Social</span> {ban.socialMediaName}</p>}
+                    {ban.reason && <p className="text-xs text-[#78716c]">{ban.reason}</p>}
                   </div>
                   {canBan && (
                     <button
                       type="button"
                       onClick={() => setUnbanIdentifierId(ban.id)}
-                      className="h-8 px-3 text-xs rounded-md border border-[#e7e2db] bg-white text-gray-500 hover:border-[#1c1917] hover:text-[#1c1917] transition-all shrink-0"
+                      className={`${tableActionClass} shrink-0`}
                     >
                       Unban
                     </button>
@@ -957,8 +993,7 @@ export default function ClientsPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+        </div>
       )}
 
       <BanClientDialog
@@ -1006,11 +1041,11 @@ export default function ClientsPage() {
           </DialogHeader>
           <div className="flex-1 min-h-0 overflow-y-auto py-2 space-y-3 overscroll-contain">
             <div>
-              <label>Name <span className="text-red-500">*</span></label>
+              <label>Name <span className="text-[#5a3830]">*</span></label>
               <Input
                 value={addClientDraft.name}
                 onChange={(e) => setAddClientDraft((d) => ({ ...d, name: e.target.value }))}
-                className="h-9"
+                className="h-10"
                 placeholder="Client name"
               />
             </div>
@@ -1020,7 +1055,7 @@ export default function ClientsPage() {
                 type="email"
                 value={addClientDraft.email}
                 onChange={(e) => setAddClientDraft((d) => ({ ...d, email: e.target.value }))}
-                className="h-9"
+                className="h-10"
                 placeholder="Email"
               />
             </div>
@@ -1029,7 +1064,7 @@ export default function ClientsPage() {
               <Input
                 value={addClientDraft.phone}
                 onChange={(e) => setAddClientDraft((d) => ({ ...d, phone: e.target.value }))}
-                className="h-9"
+                className="h-10"
                 placeholder="Phone"
               />
             </div>
@@ -1038,7 +1073,7 @@ export default function ClientsPage() {
               <Input
                 value={addClientDraft.socialMediaName}
                 onChange={(e) => setAddClientDraft((d) => ({ ...d, socialMediaName: e.target.value }))}
-                className="h-9"
+                className="h-10"
                 placeholder="Social media name"
               />
             </div>
@@ -1047,7 +1082,7 @@ export default function ClientsPage() {
               <textarea
                 value={addClientDraft.notes}
                 onChange={(e) => setAddClientDraft((d) => ({ ...d, notes: e.target.value }))}
-                className="w-full min-h-[80px] px-3 py-2 text-sm rounded-lg border border-[#e7e2db] bg-white focus:outline-none focus:ring-2 focus:ring-[#1c1917]/10 focus:border-[#1c1917]"
+                className="brand-field min-h-[80px]"
                 placeholder="Notes"
               />
             </div>

@@ -316,8 +316,16 @@ export async function recomputeCustomerStats(customerId: string): Promise<void> 
   await connectDB();
   const bookings = await Booking.find({ customerId }).lean();
 
-  const totalBookings = bookings.length;
-  const completedBookings = bookings.filter((b: any) => b.completedAt).length;
+  // Mani + Pedi Express stores two booking docs for one visit.
+  const visitKeys = new Set<string>();
+  const completedVisitKeys = new Set<string>();
+  for (const booking of bookings as Array<{ _id: unknown; expressGroupId?: string | null; completedAt?: Date | string | null }>) {
+    const visitKey = booking.expressGroupId ? `express:${booking.expressGroupId}` : `booking:${String(booking._id)}`;
+    visitKeys.add(visitKey);
+    if (booking.completedAt) completedVisitKeys.add(visitKey);
+  }
+  const totalBookings = visitKeys.size;
+  const completedBookings = completedVisitKeys.size;
 
   let totalSpent = 0;
   let totalTips = 0;
