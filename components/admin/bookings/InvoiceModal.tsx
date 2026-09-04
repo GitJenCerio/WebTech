@@ -256,7 +256,7 @@ export default function InvoiceModal({
           <div className="space-y-2.5">
             <Label className="admin-section-label">Invoice Items</Label>
             <div className="space-y-2">
-<div className="relative flex gap-2">
+              <div className="relative flex gap-2">
                 <div className="relative w-full">
                   <Input
                     ref={searchInputRef}
@@ -308,23 +308,34 @@ export default function InvoiceModal({
               {pricingError && <div className="text-red-600 text-sm">{pricingError}</div>}
             </div>
 
-            <div className="space-y-3">
-              {invoiceItems.length === 0 && (
-                <p className="text-sm text-muted-foreground py-2">No items yet. Select a service from the pricing list above or add items manually below.</p>
-              )}
-              {invoiceItems.map((item, idx) => (
+            <div className="space-y-2">
+              {invoiceItems.map((item, idx) => {
+                const isCatalogName = serviceNames().some(
+                  (name) => name.trim().toLowerCase() === item.description.trim().toLowerCase()
+                );
+                return (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-center text-xs">
-                  <div className="col-span-12 md:col-span-4">
-                    <Input
-                      value={item.description}
-                      placeholder="Description"
-                      className="text-xs h-8 border-gray-400" style={{ backgroundColor: '#e5e7eb', backgroundImage: 'none' }}
-                      onChange={(e) => {
-                        const next = [...invoiceItems];
-                        next[idx].description = e.target.value;
-                        onInvoiceItemsChange(next);
-                      }}
-                    />
+                  <div className="col-span-12 md:col-span-4 min-w-0">
+                    {isCatalogName ? (
+                      <div
+                        className="flex h-8 items-center px-2.5 truncate border border-border bg-ash text-[#1c1917]"
+                        title={item.description}
+                      >
+                        {item.description}
+                      </div>
+                    ) : (
+                      <Input
+                        value={item.description}
+                        placeholder="Description"
+                        className="text-xs h-8 border-gray-400"
+                        style={{ backgroundColor: '#e5e7eb', backgroundImage: 'none' }}
+                        onChange={(e) => {
+                          const next = [...invoiceItems];
+                          next[idx] = { ...next[idx], description: e.target.value };
+                          onInvoiceItemsChange(next);
+                        }}
+                      />
+                    )}
                   </div>
                   <div className="col-span-3 md:col-span-2">
                     <Input
@@ -369,12 +380,16 @@ export default function InvoiceModal({
                       min="0"
                       value={item.unitPrice}
                       placeholder="Unit Price"
-                      className="text-xs h-8 border-gray-400" style={{ backgroundColor: '#e5e7eb', backgroundImage: 'none' }}
+                      className="text-xs h-8 border-gray-400"
+                      style={{ backgroundColor: '#e5e7eb', backgroundImage: 'none' }}
                       onChange={(e) => {
                         const price = Math.max(0, Number(e.target.value) || 0);
                         const next = [...invoiceItems];
-                        next[idx].unitPrice = price;
-                        next[idx].total = price * next[idx].quantity;
+                        next[idx] = {
+                          ...next[idx],
+                          unitPrice: price,
+                          total: price * next[idx].quantity,
+                        };
                         onInvoiceItemsChange(next);
                       }}
                     />
@@ -387,12 +402,14 @@ export default function InvoiceModal({
                       type="button"
                       onClick={() => onInvoiceItemsChange(invoiceItems.filter((_, i) => i !== idx))}
                       className="flex items-center justify-center bg-transparent border-none cursor-pointer p-0"
+                      title="Remove item"
                     >
                       <Trash2 className="h-5 w-5 text-black" />
                     </button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             <Button
