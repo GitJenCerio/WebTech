@@ -877,7 +877,7 @@ export default function BookingPage() {
                           key={slot.id}
                           type="button"
                           onClick={() => handleSelectSlotAndOpenForm(slot)}
-                          className="group w-full border border-[#e7e2db] bg-[#fffcfa] px-3 sm:px-4 py-3 text-left transition-all duration-300 active:scale-[0.98] focus:outline-none focus:border-[#c4b5a0] focus:ring-1 focus:ring-[#c4b5a0] touch-manipulation hover:border-[#1c1917] hover:bg-[#faf8f6]"
+                          className="group w-full cursor-pointer border border-[#c4b5a0] bg-[#f0ebe4] px-3 sm:px-4 py-3 text-left transition-all duration-300 active:scale-[0.98] focus:outline-none focus:border-[#1c1917] focus:ring-1 focus:ring-[#c4b5a0] touch-manipulation hover:border-[#1c1917] hover:bg-[#e7e2db]"
                         >
                           {slot.slotType === 'with_squeeze_fee' && (
                             <span className="inline-flex items-center mb-1.5 px-2 py-0.5 text-[9px] sm:text-[10px] uppercase tracking-[0.16em] border border-[#c4b5a0] text-[#3d342c]">
