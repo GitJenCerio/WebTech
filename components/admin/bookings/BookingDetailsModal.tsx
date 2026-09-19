@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { format } from 'date-fns';
 import { sortTimesChronologically, formatTime12Hour } from '@/lib/utils';
 import { getChosenServicesDisplay, getSlotServiceDisplay } from '@/lib/serviceLabels';
-import { expressBrandedLineDescription, getExpressSegmentLabels } from '@/lib/utils/pricing';
+import { getExpressSegmentLabels } from '@/lib/utils/pricing';
 import { isManiPediExpressDualFromParts } from '@/lib/utils/bookingInvoice';
 
 function formatDateYyyyMmDd(dateStr: string): string {
@@ -154,6 +154,7 @@ export default function BookingDetailsModal({
   onLinkGenerated,
 }: BookingDetailsModalProps) {
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [showInvoiceMenu, setShowInvoiceMenu] = useState(false);
   const [showManualConfirmDialog, setShowManualConfirmDialog] = useState(false);
   const [manualAmount, setManualAmount] = useState<number>(0);
   const [showUpdatePaymentDialog, setShowUpdatePaymentDialog] = useState(false);
@@ -188,50 +189,63 @@ export default function BookingDetailsModal({
     ? getExpressSegmentLabels(booking.secondaryServiceType)
     : null;
 
+  const expressInvoiceTrigger =
+    onCreateInvoice && isManiPediExpressDual && expressSeg ? (
+      <Button
+        type="button"
+        variant="outline"
+        aria-expanded={showInvoiceMenu}
+        aria-haspopup="menu"
+        className="w-full min-w-0 bg-gray-700 hover:bg-gray-800 text-white border-gray-700"
+        onClick={() => setShowInvoiceMenu((v) => !v)}
+      >
+        <i className="bi bi-receipt mr-1.5" />
+        {booking.invoice?.quotationId || booking.secondaryInvoice?.quotationId
+          ? 'Invoice'
+          : 'Create invoice'}
+        <i
+          className={`bi ml-1.5 text-[11px] ${showInvoiceMenu ? 'bi-chevron-up' : 'bi-chevron-down'}`}
+          aria-hidden
+        />
+      </Button>
+    ) : null;
+
+  const expressInvoiceOptions =
+    showInvoiceMenu && onCreateInvoice && isManiPediExpressDual && expressSeg ? (
+      <>
+        <button
+          type="button"
+          role="menuitem"
+          title={manicureDisplayName ? `${expressSeg.primary} · Ms. ${manicureDisplayName}` : expressSeg.primary}
+          className="inline-flex h-10 min-w-0 w-full items-center justify-center overflow-hidden border border-champagne bg-pearl px-2 text-xs font-medium uppercase tracking-[0.1em] text-ink hover:bg-ash focus:bg-ash focus:outline-none"
+          onClick={() => {
+            setShowInvoiceMenu(false);
+            onCreateInvoice('primary');
+          }}
+        >
+          <span className="block truncate">{expressSeg.primary}</span>
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          title={pedicureDisplayName ? `${expressSeg.secondary} · Ms. ${pedicureDisplayName}` : expressSeg.secondary}
+          className="inline-flex h-10 min-w-0 w-full items-center justify-center overflow-hidden border border-champagne bg-pearl px-2 text-xs font-medium uppercase tracking-[0.1em] text-ink hover:bg-ash focus:bg-ash focus:outline-none"
+          onClick={() => {
+            setShowInvoiceMenu(false);
+            onCreateInvoice('secondary');
+          }}
+        >
+          <span className="block truncate">{expressSeg.secondary}</span>
+        </button>
+      </>
+    ) : null;
+
   const invoiceFooterActions =
     onCreateInvoice &&
     (isManiPediExpressDual && expressSeg ? (
-      <div className="flex flex-col gap-2 w-full max-w-full">
-        <Button
-          type="button"
-          variant="outline"
-          className="flex-1 min-w-0 h-auto min-h-10 items-start justify-start gap-2 whitespace-normal py-3 px-3 text-left text-sm leading-snug bg-gray-700 hover:bg-gray-800 text-white border-gray-700"
-          onClick={() => onCreateInvoice('primary')}
-        >
-          <i className="bi bi-receipt shrink-0 mt-0.5 text-base leading-none" aria-hidden />
-          <span className="min-w-0 flex-1">
-            <span className="block font-medium">
-              {booking.invoice?.quotationId ? 'View / edit invoice' : 'Create invoice'}
-              <span className="text-gray-300 font-normal">
-                {' '}
-                — {expressBrandedLineDescription(expressSeg.primary)}
-              </span>
-            </span>
-            <span className="mt-1 block text-xs font-normal text-muted-foreground">
-              {manicureDisplayName ? `Ms. ${manicureDisplayName}` : 'Primary tech'}
-            </span>
-          </span>
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="flex-1 min-w-0 h-auto min-h-10 items-start justify-start gap-2 whitespace-normal py-3 px-3 text-left text-sm leading-snug bg-gray-700 hover:bg-gray-800 text-white border-gray-700"
-          onClick={() => onCreateInvoice('secondary')}
-        >
-          <i className="bi bi-receipt shrink-0 mt-0.5 text-base leading-none" aria-hidden />
-          <span className="min-w-0 flex-1">
-            <span className="block font-medium">
-              {booking.secondaryInvoice?.quotationId ? 'View / edit invoice' : 'Create invoice'}
-              <span className="text-gray-300 font-normal">
-                {' '}
-                — {expressBrandedLineDescription(expressSeg.secondary)}
-              </span>
-            </span>
-            <span className="mt-1 block text-xs font-normal text-muted-foreground">
-              {pedicureDisplayName ? `Ms. ${pedicureDisplayName}` : 'Secondary tech'}
-            </span>
-          </span>
-        </Button>
+      <div className="grid w-full min-w-0 grid-cols-2 gap-2 overflow-hidden">
+        <div className="col-span-2 min-w-0">{expressInvoiceTrigger}</div>
+        {expressInvoiceOptions}
       </div>
     ) : (
       <Button type="button" variant="outline" className="w-full bg-gray-700 hover:bg-gray-800 text-white border-gray-700" onClick={() => onCreateInvoice()}>
@@ -340,8 +354,8 @@ export default function BookingDetailsModal({
 
   return (
     <>
-    <Dialog open={show} onOpenChange={(open) => { if (!open) { setShowMoreActions(false); onHide(); } }}>
-      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl flex flex-col overflow-hidden p-0">
+    <Dialog open={show} onOpenChange={(open) => { if (!open) { setShowMoreActions(false); setShowInvoiceMenu(false); onHide(); } }}>
+      <DialogContent className="max-w-[min(100%,40rem)] sm:max-w-2xl min-w-0 w-full flex flex-col overflow-hidden p-0">
         <VisuallyHidden.Root>
           <DialogTitle>Booking Details</DialogTitle>
         </VisuallyHidden.Root>
@@ -679,7 +693,7 @@ export default function BookingDetailsModal({
           </div>
         </div>
 
-        <DialogFooter className="flex-none shrink-0 flex flex-col gap-2 w-full max-w-full px-3 pt-2 border-t border-border bg-ash-soft rounded-none sm:flex-row sm:flex-wrap sm:items-start" style={{ paddingBottom: 'max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))' }}>
+        <div className="flex flex-none shrink-0 flex-col gap-2 w-full min-w-0 overflow-hidden px-3 pt-2 border-t border-border bg-ash-soft" style={{ paddingBottom: 'max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))' }}>
           {isPendingPayment ? (
             <div className="flex flex-col gap-2 w-full">
               <div className="grid grid-cols-2 gap-2 w-full">
@@ -746,19 +760,26 @@ export default function BookingDetailsModal({
             </div>
           ) : (
             ['CONFIRMED', 'confirmed'].includes(booking.status) && (
-              <div className="flex w-full max-w-full flex-col gap-2 sm:flex-1 sm:min-w-0">
+              <div className="flex w-full min-w-0 max-w-full flex-col gap-2 overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => setShowMoreActions((v) => !v)}
+                  onClick={() => {
+                    setShowMoreActions((v) => !v);
+                    setShowInvoiceMenu(false);
+                  }}
                   className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground bg-ash hover:bg-ash transition-colors"
                 >
                   {showMoreActions ? <><i className="bi bi-chevron-up text-[11px]"></i>Hide options</> : <><i className="bi bi-chevron-down text-[11px]"></i>More options</>}
                 </button>
                 {showMoreActions && (
-                  <div className="grid grid-cols-2 gap-2 w-full">
+                  <div className="grid w-full min-w-0 grid-cols-2 gap-2 overflow-hidden">
+                    {expressInvoiceTrigger && (
+                      <div className="col-span-2 min-w-0">{expressInvoiceTrigger}</div>
+                    )}
+                    {expressInvoiceOptions}
                     <Button
                       variant="outline"
-                      className="shrink-0"
+                      className="min-w-0 w-full"
                       onClick={() => {
                         const paid = booking.pricing?.paidAmount ?? booking.amountPaid ?? 0;
                         const tip = booking.pricing?.tipAmount ?? 0;
@@ -770,32 +791,19 @@ export default function BookingDetailsModal({
                     >
                       <i className="bi bi-currency-dollar mr-2"></i>Payment
                     </Button>
-                    <Button variant="outline" className="shrink-0" onClick={onReschedule} disabled={!onReschedule}>
+                    <Button variant="outline" className="min-w-0 w-full" onClick={onReschedule} disabled={!onReschedule}>
                       <i className="bi bi-calendar-event mr-2"></i>Resched
                     </Button>
-                    <Button variant="outline" className="shrink-0" onClick={onChangeService} disabled={!onChangeService}>
+                    <Button variant="outline" className="min-w-0 w-full" onClick={onChangeService} disabled={!onChangeService}>
                       <i className="bi bi-pencil-square mr-2"></i>Modify
                     </Button>
-                    <Button variant="outline" className="shrink-0" onClick={onMarkNoShow} disabled={!onMarkNoShow}>
+                    <Button variant="outline" className="min-w-0 w-full" onClick={onMarkNoShow} disabled={!onMarkNoShow}>
                       <i className="bi bi-person-x mr-2"></i>No Show
                     </Button>
                   </div>
                 )}
-                {isManiPediExpressDual && expressSeg ? (
-                  <>
-                    {invoiceFooterActions}
-                    <div className="grid grid-cols-2 gap-2 w-full">
-                      <Button variant="default" className="shrink-0" onClick={onMarkComplete} disabled={!onMarkComplete}>
-                        <i className="bi bi-check-circle mr-2"></i>Complete
-                      </Button>
-                      <Button variant="destructive" className="shrink-0" onClick={onCancel} disabled={!onCancel}>
-                        <i className="bi bi-x-circle mr-2"></i>Cancel
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2 w-full">
-                    {onCreateInvoice && (
+                <div className={`grid gap-2 w-full ${onCreateInvoice && !isManiPediExpressDual ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                    {onCreateInvoice && !isManiPediExpressDual && (
                       <Button type="button" variant="outline" className="bg-gray-700 hover:bg-gray-800 text-white border-gray-700 w-full" onClick={() => onCreateInvoice()}>
                         <i className="bi bi-receipt mr-1.5" />Invoice
                       </Button>
@@ -806,12 +814,11 @@ export default function BookingDetailsModal({
                     <Button variant="destructive" className="w-full" onClick={onCancel} disabled={!onCancel}>
                       <i className="bi bi-x-circle mr-1.5"></i>Cancel
                     </Button>
-                  </div>
-                )}
+                </div>
               </div>
             )
           )}
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
 

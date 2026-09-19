@@ -3,7 +3,7 @@
 import { ArrowLeft } from 'lucide-react';
 import type { NailTech } from '@/lib/types';
 import { OverlayModal } from '@/components/ui/OverlayModal';
-import { OptionCard, OptionCardTitle, OptionCardDescription } from '@/components/ui/OptionCard';
+import { OptionCard, OptionCardTitle } from '@/components/ui/OptionCard';
 import { Button } from '@/components/ui/Button';
 
 interface DualNailTechSelectionModalProps {
@@ -76,7 +76,6 @@ export default function DualNailTechSelectionModal({
                       disabled={disabled}
                     >
                       <OptionCardTitle>Ms. {tech.name}</OptionCardTitle>
-                      <OptionCardDescription>{tech.role}</OptionCardDescription>
                     </OptionCard>
                   );
                 })}
@@ -97,7 +96,6 @@ export default function DualNailTechSelectionModal({
                       disabled={disabled}
                     >
                       <OptionCardTitle>Ms. {tech.name}</OptionCardTitle>
-                      <OptionCardDescription>{tech.role}</OptionCardDescription>
                     </OptionCard>
                   );
                 })}

@@ -1,3 +1,4 @@
+import { MANI_PEDI_EXPRESS_FEE } from '@/lib/constants/policy';
 import { isExpressManiPediServiceType } from '@/lib/utils/bookingInvoice';
 
 /**
@@ -85,6 +86,22 @@ export type InvoiceLineDraft = {
 
 const MANI_PEDI_EXPRESS_NORM = normalizeServiceName('Mani + Pedi Express');
 
+export const EXPRESS_FEE_LINE_DESCRIPTION = 'Express fee';
+
+export function isExpressFeeLineDescription(description: string): boolean {
+  const n = normalizeServiceName(description);
+  return n === 'expressfee' || n === 'manipediexpressfee';
+}
+
+export function expressFeeInvoiceItem(): InvoiceLineDraft {
+  return {
+    description: EXPRESS_FEE_LINE_DESCRIPTION,
+    quantity: 1,
+    unitPrice: MANI_PEDI_EXPRESS_FEE,
+    total: MANI_PEDI_EXPRESS_FEE,
+  };
+}
+
 /** True when the line is the combo "Mani + Pedi Express" row (not plain Manicure/Pedicure). */
 export function isManiPediExpressComboLineDescription(description: string): boolean {
   const n = normalizeServiceName(description);
@@ -108,6 +125,7 @@ export function buildManiPediExpressInvoiceItems(
   if (mani != null && mani > 0) {
     items.push({ description: 'Manicure', quantity: 1, unitPrice: mani, total: mani });
   }
+  items.push(expressFeeInvoiceItem());
   if (pedi != null && pedi > 0) {
     items.push({ description: 'Pedicure', quantity: 1, unitPrice: pedi, total: pedi });
   }
@@ -165,9 +183,19 @@ export function buildExpressSegmentInvoiceItems(
   const { primary, secondary } = getExpressSegmentLabels(secondaryServiceType);
   const base = segment === 'primary' ? primary : secondary;
   const price = getUnitPriceForService(pricingData, pricingHeaders, base, cleanCurrency);
-  if (price == null || price <= 0) return [];
-  const description = expressBrandedLineDescription(base);
-  return [{ description, quantity: 1, unitPrice: price, total: price }];
+  const items: InvoiceLineDraft[] = [];
+  if (price != null && price > 0) {
+    items.push({
+      description: expressBrandedLineDescription(base),
+      quantity: 1,
+      unitPrice: price,
+      total: price,
+    });
+  }
+  if (base === 'Manicure') {
+    items.push(expressFeeInvoiceItem());
+  }
+  return items;
 }
 
 /** When a saved quotation had both Mani + Pedi lines, keep only the lines for this tech's segment. */
@@ -182,6 +210,7 @@ export function filterInvoiceItemsToExpressSegment(
   const wn = normalizeServiceName(want);
   const wBranded = normalizeServiceName(expressBrandedLineDescription(want));
   const matching = items.filter((i) => {
+    if (isExpressFeeLineDescription(i.description)) return want === 'Manicure';
     const n = normalizeServiceName(i.description);
     return n === wn || n === wBranded;
   });

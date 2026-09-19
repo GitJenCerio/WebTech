@@ -3,7 +3,7 @@
 import { ArrowLeft } from 'lucide-react';
 import type { NailTech } from '@/lib/types';
 import { OverlayModal } from '@/components/ui/OverlayModal';
-import { OptionCard, OptionCardTitle, OptionCardDescription, OptionCardExtra } from '@/components/ui/OptionCard';
+import { OptionCard, OptionCardTitle, OptionCardExtra } from '@/components/ui/OptionCard';
 import { Button } from '@/components/ui/Button';
 
 interface NailTechSelectionModalProps {
@@ -67,7 +67,6 @@ export default function NailTechSelectionModal({
               return (
                 <OptionCard key={tech.id} selected={selected} onClick={() => onContinue(tech.id)}>
                   <OptionCardTitle>Ms. {tech.name}</OptionCardTitle>
-                  <OptionCardDescription>{tech.role}</OptionCardDescription>
                   {hasDiscount && (
                     <OptionCardExtra>
                       <span

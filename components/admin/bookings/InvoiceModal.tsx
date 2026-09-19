@@ -18,6 +18,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { formatTime12Hour, sortTimesChronologically } from '@/lib/utils';
 import { getSlotServiceDisplay } from '@/lib/serviceLabels';
 import { discountAppliesToLocation } from '@/lib/utils/bookingInvoice';
+import { isExpressFeeLineDescription } from '@/lib/utils/pricing';
 
 export interface InvoiceItem {
   description: string;
@@ -313,10 +314,11 @@ export default function InvoiceModal({
                 const isCatalogName = serviceNames().some(
                   (name) => name.trim().toLowerCase() === item.description.trim().toLowerCase()
                 );
+                const isLockedName = isCatalogName || isExpressFeeLineDescription(item.description);
                 return (
                 <div key={idx} className="grid grid-cols-12 gap-2 items-center text-xs">
                   <div className="col-span-12 md:col-span-4 min-w-0">
-                    {isCatalogName ? (
+                    {isLockedName ? (
                       <div
                         className="flex h-8 items-center px-2.5 truncate border border-border bg-ash text-[#1c1917]"
                         title={item.description}

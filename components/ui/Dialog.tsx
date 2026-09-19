@@ -48,7 +48,7 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "relative z-[51] mb-0 sm:my-auto flex w-full max-w-lg flex-col gap-2 rounded-none border border-border bg-pearl p-3 sm:p-3.5 shadow-[0_16px_48px_rgba(28,25,23,0.12)] duration-200",
+          "relative z-[51] mb-0 sm:my-auto flex w-full min-w-0 max-w-lg flex-col gap-2 overflow-x-hidden rounded-none border border-border bg-pearl p-3 sm:p-3.5 shadow-[0_16px_48px_rgba(28,25,23,0.12)] duration-200",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           "overflow-hidden",
           "max-h-[min(88dvh,calc(100svh-1.5rem))] sm:max-h-[min(90dvh,90vh)]",

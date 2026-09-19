@@ -1062,7 +1062,7 @@ export default function BookingsPage() {
       console.error('Failed to load existing quotation:', error);
     }
 
-    if (!loadedQuotation && dualExpress && pricingRows.length > 0) {
+    if (!loadedQuotation && dualExpress) {
       const segItems = buildExpressSegmentInvoiceItems(
         pricingRows,
         pricingHdrs,
