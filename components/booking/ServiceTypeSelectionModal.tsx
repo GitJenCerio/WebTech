@@ -29,14 +29,14 @@ const EXPRESS_DESCRIPTION = `Manicure and pedicure with 2 nail techs at the same
 
 const servicesByLocation: Record<ServiceLocation, ServiceOption[]> = {
   homebased_studio: [
-    { value: 'manicure', label: 'Manicure', description: 'Professional manicure at our studio', slots: 1 },
-    { value: 'pedicure', label: 'Pedicure', description: 'Professional pedicure at our studio', slots: 1 },
+    { value: 'manicure', label: 'Russian Manicure', description: 'Professional Russian manicure at our studio', slots: 1 },
+    { value: 'pedicure', label: 'Russian Pedicure', description: 'Professional Russian pedicure at our studio', slots: 1 },
     { value: 'mani_pedi', label: 'Mani + Pedi Combo', description: 'Manicure and pedicure combo', slots: 2 },
     { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express', description: EXPRESS_DESCRIPTION, slots: 1 },
   ],
   home_service: [
-    { value: 'manicure', label: 'Manicure', description: 'Professional manicure at your home', slots: 1 },
-    { value: 'pedicure', label: 'Pedicure', description: 'Professional pedicure at your home', slots: 1 },
+    { value: 'manicure', label: 'Russian Manicure', description: 'Professional Russian manicure at your home', slots: 1 },
+    { value: 'pedicure', label: 'Russian Pedicure', description: 'Professional Russian pedicure at your home', slots: 1 },
     { value: 'mani_pedi', label: 'Mani + Pedi Combo', description: 'Manicure and pedicure combo', slots: 2 },
     { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express', description: EXPRESS_DESCRIPTION, slots: 1 },
   ],

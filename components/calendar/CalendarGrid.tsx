@@ -7,8 +7,6 @@ import type { Slot } from '@/lib/types';
 const PEARL = '#fffcfa';
 const ASH = '#f0ebe4';
 const ASH_SOFT = '#f7f6f4';
-const BORDER = '#e7e2db';
-const CHAMPAGNE = '#c4b5a0';
 const INK = '#1c1917';
 const MUTED = '#78716c';
 const FAINT = '#a8a29e';
@@ -151,11 +149,11 @@ export function CalendarGrid({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5 sm:gap-1.5 min-w-0">
+      <div className="booking-cal-grid">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
           <div
             key={`${day}-${i}`}
-            className="text-center text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.12em] sm:tracking-[0.16em] py-1 sm:py-2 text-[#b5a99a]"
+            className="bg-[#fffcfa] text-center text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-[0.12em] sm:tracking-[0.16em] py-1 sm:py-2 text-[#b5a99a]"
             title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][i]}
           >
             <span className="sm:hidden">{day}</span>
@@ -175,7 +173,6 @@ export function CalendarGrid({
 
           let bgColorStyle = PEARL;
           let textColorStyle = MUTED;
-          let borderColorStyle = BORDER;
 
           if (!isCurrentMonth) {
             textColorStyle = FAINT;
@@ -194,17 +191,11 @@ export function CalendarGrid({
           } else if (status === 'available') {
             bgColorStyle = PEARL;
             textColorStyle = INK;
-            borderColorStyle = CHAMPAGNE;
           }
 
           if (isSelected) {
-            borderColorStyle = INK;
             bgColorStyle = INK;
             textColorStyle = PEARL;
-          }
-
-          if (isToday && !isSelected) {
-            borderColorStyle = INK;
           }
 
           return (
@@ -214,16 +205,16 @@ export function CalendarGrid({
               onClick={() => handleDateClick(date)}
               disabled={isPast && disablePastDates}
               className={`
-                relative min-w-0 w-full overflow-hidden box-border
-                aspect-square border p-0.5 sm:p-1 text-[11px] sm:text-xs lg:text-sm font-medium
+                booking-cal-day relative p-0.5 sm:p-1 text-[11px] sm:text-xs lg:text-sm font-medium
                 transition-colors touch-manipulation
+                ${isToday && !isSelected ? 'booking-cal-day-today' : ''}
                 ${!isCurrentMonth ? 'opacity-50' : ''}
-                ${isPast && disablePastDates ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-[#1c1917]'}
+                ${isPast && disablePastDates ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
               `}
               style={{
                 backgroundColor: bgColorStyle,
                 color: textColorStyle,
-                borderColor: borderColorStyle,
+                border: 'none',
               }}
             >
               <span className="flex h-full w-full min-h-0 flex-col items-center justify-center gap-0">

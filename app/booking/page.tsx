@@ -31,14 +31,14 @@ import { DEPOSIT_PER_SLOT, SQUEEZE_IN_FEE, formatPeso } from '@/lib/constants/po
 
 const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; label: string }[]> = {
   homebased_studio: [
-    { value: 'manicure', label: 'Manicure (1 slot)' },
-    { value: 'pedicure', label: 'Pedicure (1 slot)' },
+    { value: 'manicure', label: 'Russian Manicure (1 slot)' },
+    { value: 'pedicure', label: 'Russian Pedicure (1 slot)' },
     { value: 'mani_pedi', label: 'Mani + Pedi Combo (2 slots)' },
     { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express (2 techs)' },
   ],
   home_service: [
-    { value: 'manicure', label: 'Manicure' },
-    { value: 'pedicure', label: 'Pedicure' },
+    { value: 'manicure', label: 'Russian Manicure' },
+    { value: 'pedicure', label: 'Russian Pedicure' },
     { value: 'mani_pedi', label: 'Mani + Pedi Combo (2 slots)' },
     { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express (2 techs)' },
   ],
