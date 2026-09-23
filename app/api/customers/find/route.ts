@@ -2,9 +2,17 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Customer from '@/lib/models/Customer';
 import { findMatchingBan } from '@/lib/services/clientBanService';
+import { CLIENT_BAN_PUBLIC_MESSAGE } from '@/lib/utils/clientBan';
 
 // Mark this route as dynamic to prevent static analysis during build
 export const dynamic = 'force-dynamic';
+
+function bannedResponse() {
+  return NextResponse.json(
+    { customer: null, found: false, banned: true, error: CLIENT_BAN_PUBLIC_MESSAGE },
+    { status: 403 }
+  );
+}
 
 export async function GET(request: Request) {
   try {
@@ -20,7 +28,7 @@ export async function GET(request: Request) {
 
     const ban = await findMatchingBan({ email, phone });
     if (ban) {
-      return NextResponse.json({ customer: null, found: false, banned: true });
+      return bannedResponse();
     }
 
     let customer: any = null;
@@ -38,7 +46,7 @@ export async function GET(request: Request) {
     }
 
     if (customer.isActive === false) {
-      return NextResponse.json({ customer: null, found: false, banned: true });
+      return bannedResponse();
     }
 
     const identityBan = await findMatchingBan({
@@ -49,12 +57,13 @@ export async function GET(request: Request) {
       socialMediaName: customer.socialMediaName,
     });
     if (identityBan) {
-      return NextResponse.json({ customer: null, found: false, banned: true });
+      return bannedResponse();
     }
 
     return NextResponse.json({
       customer: {
         id: String(customer._id),
+        _id: String(customer._id),
         name: customer.name,
         firstName: customer.firstName,
         lastName: customer.lastName,

@@ -5,89 +5,91 @@ import { IoClose } from 'react-icons/io5';
 import { OverlayModal } from '@/components/ui/OverlayModal';
 import { OptionCard, OptionCardTitle, OptionCardDescription, OptionCardBadge } from '@/components/ui/OptionCard';
 import { Button } from '@/components/ui/Button';
-import { MANI_PEDI_EXPRESS_FEE, formatPeso } from '@/lib/constants/policy';
+import {
+  BOOKING_PACKAGES,
+  NAIL_TREATMENTS,
+  PEDI_TREATMENTS,
+  buildChosenTreatments,
+  buildServiceLabel,
+  formatStartsAtPrice,
+  type BookingPackageOption,
+  type BookingServiceType,
+  type NailTreatmentId,
+} from '@/lib/bookingTreatments';
 
 type ServiceLocation = 'homebased_studio' | 'home_service';
-type BookingServiceType =
-  | 'manicure'
-  | 'pedicure'
-  | 'mani_pedi'
-  | 'mani_pedi_simultaneous'
-  | 'home_service_2slots'
-  | 'home_service_3slots';
 
-interface ServiceOption {
-  value: BookingServiceType;
-  label: string;
-  description: string;
-  slots: number;
+export interface ServiceSelectionResult {
+  serviceType: BookingServiceType;
+  chosenTreatments: string[];
+  serviceLabel: string;
 }
-
-const EXPRESS_DESCRIPTION = `Manicure and pedicure with 2 nail techs at the same time (+${formatPeso(
-  MANI_PEDI_EXPRESS_FEE
-)} additional fee)`;
-
-const servicesByLocation: Record<ServiceLocation, ServiceOption[]> = {
-  homebased_studio: [
-    { value: 'manicure', label: 'Russian Manicure', description: 'Professional Russian manicure at our studio', slots: 1 },
-    { value: 'pedicure', label: 'Russian Pedicure', description: 'Professional Russian pedicure at our studio', slots: 1 },
-    { value: 'mani_pedi', label: 'Mani + Pedi Combo', description: 'Manicure and pedicure combo', slots: 2 },
-    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express', description: EXPRESS_DESCRIPTION, slots: 1 },
-  ],
-  home_service: [
-    { value: 'manicure', label: 'Russian Manicure', description: 'Professional Russian manicure at your home', slots: 1 },
-    { value: 'pedicure', label: 'Russian Pedicure', description: 'Professional Russian pedicure at your home', slots: 1 },
-    { value: 'mani_pedi', label: 'Mani + Pedi Combo', description: 'Manicure and pedicure combo', slots: 2 },
-    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express', description: EXPRESS_DESCRIPTION, slots: 1 },
-  ],
-};
 
 interface ServiceTypeSelectionModalProps {
   isOpen: boolean;
-  serviceLocation: ServiceLocation;
+  serviceLocation?: ServiceLocation | null;
   selectedService: BookingServiceType | null;
-  onContinue: (serviceType: BookingServiceType) => void;
+  onContinue: (selection: ServiceSelectionResult) => void;
   onBack: () => void;
 }
 
 export default function ServiceTypeSelectionModal({
   isOpen,
-  serviceLocation,
   selectedService,
   onContinue,
   onBack,
 }: ServiceTypeSelectionModalProps) {
-  const services = servicesByLocation[serviceLocation];
-  const [localSelectedService, setLocalSelectedService] = useState<BookingServiceType | null>(selectedService);
+  const [packageId, setPackageId] = useState<string | null>(null);
+  const [maniTreatment, setManiTreatment] = useState<NailTreatmentId | null>(null);
+  const [pediTreatment, setPediTreatment] = useState<string | null>(null);
+  const [step, setStep] = useState<'package' | 'details'>('package');
 
-  const normalizeServiceValue = (value: BookingServiceType | string): BookingServiceType | null => {
-    if (value === 'Russian Manicure') return 'manicure';
-    if (value === 'Russian Manicure w/o Extensions') return 'manicure';
-    if (value === 'Russian Manicure w/ Extensions') return 'manicure';
-    return (value as BookingServiceType) || null;
+  const selectedPackage: BookingPackageOption | undefined = BOOKING_PACKAGES.find((pkg) => pkg.id === packageId);
+  const needsDetails = selectedPackage?.kind === 'combo' || selectedPackage?.kind === 'express';
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setStep('package');
+    const match = BOOKING_PACKAGES.find((pkg) => pkg.serviceType === selectedService);
+    setPackageId(match?.kind === 'single' ? null : match?.id ?? null);
+    setManiTreatment(null);
+    setPediTreatment(null);
+  }, [isOpen, selectedService]);
+
+  const handleBack = () => {
+    if (step === 'details') {
+      setStep('package');
+      return;
+    }
+    onBack();
   };
 
   const handleContinue = () => {
-    if (!localSelectedService) return;
-    onContinue(localSelectedService);
+    if (!selectedPackage) return;
+    if (needsDetails && step === 'package') {
+      setStep('details');
+      return;
+    }
+    if (needsDetails && (!maniTreatment || !pediTreatment)) return;
+    onContinue({
+      serviceType: selectedPackage.serviceType,
+      chosenTreatments: buildChosenTreatments(selectedPackage, maniTreatment, pediTreatment),
+      serviceLabel: buildServiceLabel(selectedPackage, maniTreatment, pediTreatment),
+    });
   };
 
-  // Keep local selection in sync when modal opens or parent value changes.
-  useEffect(() => {
-    if (isOpen) {
-      setLocalSelectedService(selectedService);
-    }
-  }, [isOpen, selectedService]);
+  const canContinue =
+    !!selectedPackage && (step === 'package' || (!!maniTreatment && !!pediTreatment));
 
   return (
     <OverlayModal
       isOpen={isOpen}
-      onClose={onBack}
-      size="md"
+      onClose={handleBack}
+      size="lg"
       zIndex={50}
       closeButton={
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="brand-icon-btn"
           aria-label="Back"
           type="button"
@@ -97,61 +99,100 @@ export default function ServiceTypeSelectionModal({
       }
     >
       <div className="brand-modal-scroll brand-modal-body">
-        <p className="brand-eyebrow mb-1 pr-9">Step 2 of 3</p>
-        <h3 className="font-heading text-xl sm:text-2xl mb-2 text-[#1c1917] pr-9">What Service?</h3>
+        <p className="brand-eyebrow mb-1 pr-9">Step 1 of 3</p>
+        <h3 className="font-heading text-xl sm:text-2xl mb-2 text-[#1c1917] pr-9">
+          {step === 'package' ? 'What Service?' : selectedPackage?.label}
+        </h3>
         <div className="brand-rule w-16 mb-3" aria-hidden />
         <p className="text-sm text-[#78716c] mb-4 leading-relaxed">
-          Select the service you&apos;d like to book — we&apos;ll show only the dates available for it. Booking for more
-          than one client? Please submit a separate booking for each person.
+          {step === 'package'
+            ? 'Select the service you’d like to book — we’ll show only the dates available for it. Booking for more than one client? Please submit a separate booking for each person.'
+            : 'Choose the manicure service and the pedicure service for this booking.'}
         </p>
 
-        <div>
-          {serviceLocation === 'home_service' && (
-            <div className="brand-note mb-4">
-              <p className="brand-eyebrow mb-1.5">Home service fee</p>
-              <p className="text-xs sm:text-sm leading-relaxed">
-                Within Manila City: ₱1,500 · Within Metro Manila: ₱2,000 · Outside Metro Manila or group bookings:
-                starts at ₱3,000 with a minimum of 3 clients. Message us for special arrangements. The fee is on top of
-                the service, and a Grab transport fee applies. Manila &amp; Metro Manila cover 1 client (+₱500 per
-                additional client).
-              </p>
-            </div>
-          )}
-
+        {step === 'package' ? (
           <div className="space-y-3">
-            {services.map((service) => {
-              const normalized = normalizeServiceValue(service.value);
-              const selected = localSelectedService === service.value;
+            {BOOKING_PACKAGES.map((pkg) => {
+              const selected = packageId === pkg.id;
+              const showDescription = pkg.kind === 'combo' || pkg.kind === 'express';
+              const subtitle = [
+                showDescription ? pkg.description : null,
+                pkg.kind === 'combo' ? `${pkg.slots} slots` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ');
               return (
-                <div key={service.value} className="w-full">
-                  <OptionCard
-                    className="w-full"
-                    selected={selected}
-                    onClick={() => {
-                      if (!normalized) return;
-                      setLocalSelectedService(normalized);
-                    }}
-                    right={
-                      <OptionCardBadge selected={selected}>
-                        {service.slots === 1 ? '1 slot' : `${service.slots} slots`}
-                      </OptionCardBadge>
-                    }
-                  >
-                    <OptionCardTitle>{service.label}</OptionCardTitle>
-                    <OptionCardDescription selected={selected}>{service.description}</OptionCardDescription>
-                  </OptionCard>
-                </div>
+                <OptionCard
+                  key={pkg.id}
+                  className="w-full"
+                  selected={selected}
+                  onClick={() => setPackageId(pkg.id)}
+                  right={
+                    <OptionCardBadge selected={selected}>
+                      {formatStartsAtPrice(pkg.price, pkg.exactPrice)}
+                    </OptionCardBadge>
+                  }
+                >
+                  <OptionCardTitle>{pkg.label}</OptionCardTitle>
+                  {subtitle ? (
+                    <OptionCardDescription selected={selected}>{subtitle}</OptionCardDescription>
+                  ) : null}
+                </OptionCard>
               );
             })}
           </div>
-        </div>
+        ) : (
+          <div className="space-y-6">
+            <div>
+              <p className="brand-eyebrow mb-2">Manicure</p>
+              <div className="space-y-2">
+                {NAIL_TREATMENTS.map((treatment) => {
+                  const selected = maniTreatment === treatment.id;
+                  return (
+                    <OptionCard
+                      key={`mani-${treatment.id}`}
+                      className="w-full"
+                      selected={selected}
+                      onClick={() => setManiTreatment(treatment.id)}
+                    >
+                      <OptionCardTitle className="text-base sm:text-lg">{treatment.label}</OptionCardTitle>
+                    </OptionCard>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <p className="brand-eyebrow mb-2">Pedicure</p>
+              <div className="space-y-2">
+                {PEDI_TREATMENTS.map((treatment) => {
+                  const selected = pediTreatment === treatment.id;
+                  return (
+                    <OptionCard
+                      key={`pedi-${treatment.id}`}
+                      className="w-full"
+                      selected={selected}
+                      onClick={() => setPediTreatment(treatment.id)}
+                      right={
+                        <OptionCardBadge selected={selected}>
+                          {formatStartsAtPrice(treatment.price, treatment.exactPrice)}
+                        </OptionCardBadge>
+                      }
+                    >
+                      <OptionCardTitle className="text-base sm:text-lg">{treatment.label}</OptionCardTitle>
+                    </OptionCard>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="brand-modal-footer flex gap-3">
-        <Button variant="secondary" className="flex-1" onClick={onBack}>
+        <Button variant="secondary" className="flex-1" onClick={handleBack}>
           Back
         </Button>
-        <Button variant="default" className="flex-1" onClick={handleContinue} disabled={!localSelectedService}>
+        <Button variant="default" className="flex-1" onClick={handleContinue} disabled={!canContinue}>
           Continue
         </Button>
       </div>

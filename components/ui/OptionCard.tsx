@@ -33,9 +33,16 @@ const OptionCard = React.forwardRef<HTMLButtonElement, OptionCardProps>(
           aria-pressed={selected}
           {...props}
         >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">{children}</div>
-            {right != null ? <div className="flex-shrink-0">{right}</div> : null}
+          <div
+            className={cn(
+              'grid items-start gap-x-3 gap-y-1',
+              right != null ? 'grid-cols-[minmax(0,1fr)_auto]' : 'grid-cols-1'
+            )}
+          >
+            {children}
+            {right != null ? (
+              <div className="col-start-2 row-start-1 shrink-0 justify-self-end">{right}</div>
+            ) : null}
           </div>
         </button>
       </OptionCardSelectedContext.Provider>
@@ -45,7 +52,9 @@ const OptionCard = React.forwardRef<HTMLButtonElement, OptionCardProps>(
 OptionCard.displayName = 'OptionCard';
 
 function OptionCardTitle({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('font-heading text-lg sm:text-xl leading-snug', className)} {...props} />;
+  return (
+    <p className={cn('col-start-1 row-start-1 min-w-0 font-heading text-lg sm:text-xl leading-snug', className)} {...props} />
+  );
 }
 
 function OptionCardDescription({
@@ -58,7 +67,7 @@ function OptionCardDescription({
   return (
     <p
       className={cn(
-        'text-xs sm:text-sm mt-1 leading-relaxed',
+        'col-span-full w-full text-xs sm:text-sm leading-relaxed',
         selected ? 'text-[#fffcfa]/70' : 'text-[#78716c]',
         className
       )}
@@ -89,7 +98,7 @@ function OptionCardBadge({
 }
 
 function OptionCardExtra({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('mt-2', className)} {...props} />;
+  return <div className={cn('col-span-full mt-2', className)} {...props} />;
 }
 
 export {

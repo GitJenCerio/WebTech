@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import ClientTypeSelectionModal from '@/components/booking/ClientTypeSelectionModal';
+import LocationSelectionModal from '@/components/booking/LocationSelectionModal';
 import ServiceTypeSelectionModal from '@/components/booking/ServiceTypeSelectionModal';
 import NailTechSelectionModal from '@/components/booking/NailTechSelectionModal';
 import DualNailTechSelectionModal from '@/components/booking/DualNailTechSelectionModal';
@@ -14,15 +16,10 @@ import BookingFormModal from '@/components/booking/BookingFormModal';
 import SlotConfirmationModal from '@/components/booking/SlotConfirmationModal';
 import BookingSuccessModal from '@/components/booking/BookingSuccessModal';
 import type { Slot, NailTech } from '@/lib/types';
+import { getChosenServicesDisplay } from '@/lib/serviceLabels';
+import type { BookingServiceType } from '@/lib/bookingTreatments';
 
 type ServiceLocation = 'homebased_studio' | 'home_service';
-type BookingServiceType =
-  | 'manicure'
-  | 'pedicure'
-  | 'mani_pedi'
-  | 'mani_pedi_simultaneous'
-  | 'home_service_2slots'
-  | 'home_service_3slots';
 import { normalizeSlotTime } from '@/lib/constants/slots';
 import { findConsecutiveAvailableSlots } from '@/lib/utils/consecutiveSlots';
 import { formatTime12Hour } from '@/lib/utils';
@@ -31,16 +28,16 @@ import { DEPOSIT_PER_SLOT, SQUEEZE_IN_FEE, formatPeso } from '@/lib/constants/po
 
 const SERVICE_OPTIONS: Record<ServiceLocation, { value: BookingServiceType; label: string }[]> = {
   homebased_studio: [
-    { value: 'manicure', label: 'Russian Manicure (1 slot)' },
-    { value: 'pedicure', label: 'Russian Pedicure (1 slot)' },
-    { value: 'mani_pedi', label: 'Mani + Pedi Combo (2 slots)' },
-    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express (2 techs)' },
+    { value: 'manicure', label: 'Manicure' },
+    { value: 'pedicure', label: 'Pedicure' },
+    { value: 'mani_pedi', label: 'Mani + Pedi Combo' },
+    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express' },
   ],
   home_service: [
-    { value: 'manicure', label: 'Russian Manicure' },
-    { value: 'pedicure', label: 'Russian Pedicure' },
-    { value: 'mani_pedi', label: 'Mani + Pedi Combo (2 slots)' },
-    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express (2 techs)' },
+    { value: 'manicure', label: 'Manicure' },
+    { value: 'pedicure', label: 'Pedicure' },
+    { value: 'mani_pedi', label: 'Mani + Pedi Combo' },
+    { value: 'mani_pedi_simultaneous', label: 'Mani + Pedi Express' },
   ],
 };
 
@@ -87,11 +84,14 @@ function canSlotAccommodateService(
 type ClientType = 'new' | 'repeat';
 
 export default function BookingPage() {
+  const router = useRouter();
   // Booking flow state
-  const [showClientTypeModal, setShowClientTypeModal] = useState(true);
-  const [showServiceTypeModal, setShowServiceTypeModal] = useState(false);
+  const [showServiceTypeModal, setShowServiceTypeModal] = useState(true);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const [showNailTechModal, setShowNailTechModal] = useState(false);
+  const [showClientTypeModal, setShowClientTypeModal] = useState(false);
   const [serviceChangeMode, setServiceChangeMode] = useState(false);
+  const [serviceLocation, setServiceLocation] = useState<ServiceLocation | null>(null);
   const [clientInfo, setClientInfo] = useState<{
     clientType: ClientType;
     serviceLocation: ServiceLocation;
@@ -115,6 +115,8 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [selectedService, setSelectedService] = useState<BookingServiceType | null>(null);
+  const [chosenTreatments, setChosenTreatments] = useState<string[]>([]);
+  const [serviceLabel, setServiceLabel] = useState<string>('');
   const [linkedSlots, setLinkedSlots] = useState<Slot[]>([]);
   const [serviceMessage, setServiceMessage] = useState<string | null>(null);
   const [squeezeFeeAcknowledged, setSqueezeFeeAcknowledged] = useState(false);
@@ -125,18 +127,20 @@ export default function BookingPage() {
   const [latestDepositDue, setLatestDepositDue] = useState<number | null>(null);
   const [latestUploadProofLink, setLatestUploadProofLink] = useState<string | null>(null);
   const [bookingSuccessNote, setBookingSuccessNote] = useState<string | null>(null);
-  const serviceOptions = clientInfo ? SERVICE_OPTIONS[clientInfo.serviceLocation] : SERVICE_OPTIONS.homebased_studio;
+  const serviceOptions = serviceLocation
+    ? SERVICE_OPTIONS[serviceLocation]
+    : SERVICE_OPTIONS.homebased_studio;
   const isSimultaneous = selectedService === 'mani_pedi_simultaneous';
   const secondarySlotIdByDateTimeRef = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
-    if (clientInfo && selectedService !== null) {
-      const options = SERVICE_OPTIONS[clientInfo.serviceLocation];
+    if (serviceLocation && selectedService !== null) {
+      const options = SERVICE_OPTIONS[serviceLocation];
       if (!options.some((option) => option.value === selectedService)) {
         setSelectedService(options[0].value);
       }
     }
-  }, [clientInfo, selectedService]);
+  }, [serviceLocation, selectedService]);
 
   useEffect(() => {
     loadNailTechs();
@@ -274,7 +278,7 @@ export default function BookingPage() {
       return;
     }
 
-    const requiredSlots = getRequiredSlotCount(selectedService, clientInfo?.serviceLocation);
+    const requiredSlots = getRequiredSlotCount(selectedService, serviceLocation ?? undefined);
     if (requiredSlots === 1) {
       setLinkedSlots([]);
       setServiceMessage(null);
@@ -338,7 +342,7 @@ export default function BookingPage() {
         `This booking will use the time slot at ${formatTime12Hour(selectedSlot.time)}.`
       );
     }
-  }, [selectedSlot, selectedService, slots, serviceOptions, isSimultaneous, clientInfo?.serviceLocation]);
+  }, [selectedSlot, selectedService, slots, serviceOptions, isSimultaneous, serviceLocation]);
 
   const availableSlotsForDate = useMemo(
     () => {
@@ -355,14 +359,14 @@ export default function BookingPage() {
   // Filter slots that can accommodate the selected service
   const compatibleSlotsForDate = useMemo(
     () => {
-      if (!selectedService || getRequiredSlotCount(selectedService, clientInfo?.serviceLocation) === 1) {
+      if (!selectedService || getRequiredSlotCount(selectedService, serviceLocation ?? undefined) === 1) {
         return availableSlotsForDate;
       }
       return availableSlotsForDate.filter((slot) =>
-        canSlotAccommodateService(slot, selectedService, slots, clientInfo?.serviceLocation)
+        canSlotAccommodateService(slot, selectedService, slots, serviceLocation ?? undefined)
       );
     },
-    [availableSlotsForDate, selectedService, slots, clientInfo?.serviceLocation],
+    [availableSlotsForDate, selectedService, slots, serviceLocation],
   );
 
 
@@ -379,11 +383,11 @@ export default function BookingPage() {
   // Removed auto-select behavior - users must manually click on a time slot to open the modal
 
   // Determine available days based on required consecutive slots for selected service
-  const requiredSlots = getRequiredSlotCount(selectedService, clientInfo?.serviceLocation);
+  const requiredSlots = getRequiredSlotCount(selectedService, serviceLocation ?? undefined);
   
   // Filter calendar dates to show only those with enough consecutive available slots
   const availableDatesForService = useMemo(() => {
-    if (!clientInfo || selectedService === null) return new Set<string>();
+    if (!serviceLocation || selectedService === null) return new Set<string>();
     
     const available = new Set<string>();
     const dateGroups: Record<string, Slot[]> = {};
@@ -401,7 +405,7 @@ export default function BookingPage() {
     Object.entries(dateGroups).forEach(([dateKey, dateSlots]) => {
       if (
         dateSlots.some((slot) =>
-          canSlotAccommodateService(slot, selectedService, slots, clientInfo?.serviceLocation)
+          canSlotAccommodateService(slot, selectedService, slots, serviceLocation)
         )
       ) {
         available.add(dateKey);
@@ -409,11 +413,11 @@ export default function BookingPage() {
     });
     
     return available;
-  }, [slots, selectedService, clientInfo]);
+  }, [slots, selectedService, serviceLocation]);
 
   // Dates that don't have enough consecutive slots for the selected service
   const noAvailableSlotsDates = useMemo(() => {
-    if (!clientInfo) return [];
+    if (!serviceLocation) return [];
     
     const allDates = new Set<string>();
     slots.forEach((slot) => {
@@ -421,16 +425,15 @@ export default function BookingPage() {
     });
     
     return Array.from(allDates).filter((date) => !availableDatesForService.has(date));
-  }, [slots, availableDatesForService, clientInfo]);
+  }, [slots, availableDatesForService, serviceLocation]);
 
   const hasSqueezeFee = selectedSlot?.slotType === 'with_squeeze_fee';
   const missingLinkedSlots = requiredSlots > 1 && linkedSlots.length !== requiredSlots - 1;
   const disableProceed =
     !selectedSlot ||
-    !clientInfo ||
+    !serviceLocation ||
     !selectedNailTechId ||
     !selectedService ||
-    !clientInfo.serviceLocation ||
     missingLinkedSlots ||
     (hasSqueezeFee && !squeezeFeeAcknowledged) ||
     isBooking;
@@ -513,11 +516,11 @@ export default function BookingPage() {
     rulesAccepted: boolean;
     address?: string;
   }) {
-    if (!selectedSlot || isBooking || !clientInfo) return;
+    if (!selectedSlot || isBooking || !clientInfo || !serviceLocation) return;
     
     setIsBooking(true);
     try {
-      const requiredSlots = getRequiredSlotCount(selectedService, clientInfo.serviceLocation);
+      const requiredSlots = getRequiredSlotCount(selectedService, serviceLocation);
       const linkedSlotIds = linkedSlots.map((slot) => slot.id);
 
       if (requiredSlots > 1 && linkedSlotIds.length !== requiredSlots - 1) {
@@ -526,6 +529,19 @@ export default function BookingPage() {
       }
 
       let customerId = clientInfo.customerId;
+      const phoneDigits = formData.contactNumber.replace(/\D/g, '');
+
+      if (!customerId && phoneDigits.length >= 10) {
+        const findResponse = await fetch(`/api/customers/find?phone=${encodeURIComponent(phoneDigits)}`);
+        const findData = await findResponse.json().catch(() => ({}));
+        if (findData?.banned) {
+          throw new Error(findData.error || 'Unable to complete this booking with these details.');
+        }
+        if (findData?.found && findData.customer) {
+          customerId = findData.customer.id || findData.customer._id;
+        }
+      }
+
       const isExistingCustomer = Boolean(customerId);
 
       // Create customer if no existing customer ID (new client or repeat-not-found)
@@ -577,7 +593,7 @@ export default function BookingPage() {
       const slotCount = slotIds.length;
       const basePrice = 1500;
       const depositRequired = DEPOSIT_PER_SLOT * slotCount;
-      const total = basePrice + (clientInfo.serviceLocation === 'home_service' ? 1000 : 0);
+      const total = basePrice + (serviceLocation === 'home_service' ? 1000 : 0);
 
       const payloadServiceType = (() => {
         if (isSimultaneous) return 'Manicure + Pedicure';
@@ -600,10 +616,14 @@ export default function BookingPage() {
           nailTechId: selectedNailTechId || '',
           service: {
             type: payloadServiceType,
-            location: clientInfo.serviceLocation,
+            location: serviceLocation,
             clientType: clientInfo.clientType,
-            chosenServices: formData.services?.length ? formData.services : undefined,
-            ...(clientInfo.serviceLocation === 'home_service' && formData.address ? { address: formData.address } : {}),
+            chosenServices: (() => {
+              const fromForm = formData.services ?? [];
+              const merged = [...new Set([...chosenTreatments, ...fromForm])];
+              return merged.length ? merged : undefined;
+            })(),
+            ...(serviceLocation === 'home_service' && formData.address ? { address: formData.address } : {}),
             ...(isSimultaneous && selectedSecondaryNailTechId ? { mode: 'simultaneous_two_techs', secondaryNailTechId: selectedSecondaryNailTechId, secondaryServiceType: 'Pedicure' } : {}),
           },
           pricing: {
@@ -650,11 +670,19 @@ export default function BookingPage() {
       // Reset and reload
       setShowBookingFormModal(false);
       setShowSlotConfirmModal(false);
+      setShowClientTypeModal(false);
+      setShowLocationModal(false);
+      setShowNailTechModal(false);
       setSelectedSlot(null);
       setLinkedSlots([]);
       setSelectedNailTechId(null);
+      setSelectedSecondaryNailTechId(null);
       setClientInfo(null);
-      setShowClientTypeModal(true);
+      setServiceLocation(null);
+      setSelectedService(null);
+      setChosenTreatments([]);
+      setServiceLabel('');
+      setShowServiceTypeModal(true);
       
       setLatestBookingCode(
         data.partnerBooking?.bookingCode
@@ -705,6 +733,9 @@ export default function BookingPage() {
                     return (
                       <div>
                         <p className="brand-eyebrow mb-1.5">Mani + Pedi Express</p>
+                        {serviceLabel && (
+                          <p className="text-xs text-[#78716c] mb-1.5">{serviceLabel}</p>
+                        )}
                         <p className="text-sm text-[#1c1917]">
                           Ms. {selectedTech.name}
                           <span className="ml-1.5 text-xs text-[#78716c]">Manicure</span>
@@ -733,6 +764,8 @@ export default function BookingPage() {
                           <button
                             onClick={() => {
                               setSelectedService(null);
+                              setChosenTreatments([]);
+                              setServiceLabel('');
                               setServiceChangeMode(true);
                               setShowServiceTypeModal(true);
                             }}
@@ -740,13 +773,20 @@ export default function BookingPage() {
                           >
                             Change service
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowLocationModal(true)}
+                            className="brand-eyebrow underline decoration-[#c4b5a0] underline-offset-4 transition-colors hover:text-[#1c1917]"
+                          >
+                            Change location
+                          </button>
                         </div>
                       </div>
                     );
                   }
 
                   const hasDiscount =
-                    clientInfo?.serviceLocation !== 'home_service' &&
+                    serviceLocation !== 'home_service' &&
                     selectedTech.discount !== undefined &&
                     selectedTech.discount !== null &&
                     selectedTech.discount > 0;
@@ -754,6 +794,9 @@ export default function BookingPage() {
                     <div>
                       <p className="brand-eyebrow mb-1.5">Viewing calendar for</p>
                       <p className="font-heading text-lg sm:text-xl text-[#1c1917]">Ms. {selectedTech.name}</p>
+                      {serviceLabel && (
+                        <p className="text-xs sm:text-sm text-[#78716c] mt-1">{serviceLabel}</p>
+                      )}
                       {hasDiscount && (
                         <p className="mt-2 inline-flex items-center border border-[#c4b5a0] px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[#3d342c]">
                           Special offer · {selectedTech.discount}% off studio services
@@ -776,6 +819,8 @@ export default function BookingPage() {
                         <button
                           onClick={() => {
                             setSelectedService(null);
+                            setChosenTreatments([]);
+                            setServiceLabel('');
                             // Open service modal as a "change" modal.
                             // If user presses Back/Close, we should return to calendar.
                             setServiceChangeMode(true);
@@ -784,6 +829,13 @@ export default function BookingPage() {
                           className="brand-eyebrow underline decoration-[#c4b5a0] underline-offset-4 transition-colors hover:text-[#1c1917]"
                         >
                           Change service
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowLocationModal(true)}
+                          className="brand-eyebrow underline decoration-[#c4b5a0] underline-offset-4 transition-colors hover:text-[#1c1917]"
+                        >
+                          Change location
                         </button>
                       </div>
                     </div>
@@ -850,9 +902,9 @@ export default function BookingPage() {
                     <p className="text-xs sm:text-sm text-[#78716c] mt-0.5">
                       Tap a time to reserve it.
                     </p>
-                    {clientInfo && selectedService && getRequiredSlotCount(selectedService, clientInfo.serviceLocation) > 1 && (
+                    {serviceLocation && selectedService && getRequiredSlotCount(selectedService, serviceLocation) > 1 && (
                       <p className="brand-note mt-3 text-xs leading-relaxed">
-                        Select the <span className="text-[#1c1917]">first</span> slot for {getRequiredSlotCount(selectedService, clientInfo.serviceLocation)}-slot services.
+                        Select the <span className="text-[#1c1917]">first</span> slot for {getRequiredSlotCount(selectedService, serviceLocation)}-slot services.
                       </p>
                     )}
                   </header>
@@ -908,58 +960,70 @@ export default function BookingPage() {
         </motion.div>
       </section>
 
-      {/* Client Type Selection Modal - Shows first */}
-      <ClientTypeSelectionModal
-        isOpen={showClientTypeModal}
-        onClose={() => {
-          // Don't allow closing - user must complete the flow
-        }}
-        onContinue={(data) => {
-          setClientInfo(data);
-          setSelectedService(null);
-          setSelectedNailTechId(null);
-          setSelectedSecondaryNailTechId(null);
-          setShowClientTypeModal(false);
-          setShowServiceTypeModal(true);
-        }}
-      />
-
-      {/* Service Type Selection Modal - Shows after client type */}
+      {/* Service first */}
       <ServiceTypeSelectionModal
         isOpen={showServiceTypeModal}
-        serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
+        serviceLocation={serviceLocation}
         selectedService={selectedService}
-        onContinue={(serviceType) => {
-          setSelectedService(serviceType);
+        onContinue={(selection) => {
+          setSelectedService(selection.serviceType);
+          setChosenTreatments(selection.chosenTreatments);
+          setServiceLabel(selection.serviceLabel);
           setShowServiceTypeModal(false);
-          setShowNailTechModal(true);
           setServiceChangeMode(false);
-          // Changing service should invalidate previously-selected tech/slots.
           setSelectedNailTechId(null);
           setSelectedSecondaryNailTechId(null);
           setSelectedSlot(null);
           setLinkedSlots([]);
           setServiceMessage(null);
+          if (serviceLocation) {
+            setShowNailTechModal(true);
+          } else {
+            setShowLocationModal(true);
+          }
         }}
         onBack={() => {
           if (serviceChangeMode) {
             setShowServiceTypeModal(false);
             setServiceChangeMode(false);
-            // Keep existing calendar context (tech/service selection) and just return.
             return;
           }
           setShowServiceTypeModal(false);
-          setShowClientTypeModal(true);
-          setClientInfo(null);
+          router.push('/');
         }}
       />
 
-      {/* Nail Tech Selection Modal - Shows after service type is selected */}
+      <LocationSelectionModal
+        isOpen={showLocationModal}
+        onContinue={(location) => {
+          const locationChanged = serviceLocation !== location;
+          setServiceLocation(location);
+          setShowLocationModal(false);
+          if (locationChanged) {
+            setSelectedNailTechId(null);
+            setSelectedSecondaryNailTechId(null);
+            setSelectedSlot(null);
+            setLinkedSlots([]);
+            setServiceMessage(null);
+            setShowNailTechModal(true);
+            return;
+          }
+          if (!selectedNailTechId) {
+            setShowNailTechModal(true);
+          }
+        }}
+        onBack={() => {
+          setShowLocationModal(false);
+          if (selectedNailTechId) return;
+          setShowServiceTypeModal(true);
+        }}
+      />
+
       {isSimultaneous ? (
         <DualNailTechSelectionModal
           isOpen={showNailTechModal}
           nailTechs={nailTechs}
-          serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
+          serviceLocation={serviceLocation || 'homebased_studio'}
           manicureTechId={selectedNailTechId}
           pedicureTechId={selectedSecondaryNailTechId}
           onSelectManicure={(techId) => {
@@ -982,7 +1046,7 @@ export default function BookingPage() {
           }}
           onBack={() => {
             setShowNailTechModal(false);
-            setShowServiceTypeModal(true);
+            setShowLocationModal(true);
           }}
         />
       ) : (
@@ -990,7 +1054,7 @@ export default function BookingPage() {
           isOpen={showNailTechModal}
           nailTechs={nailTechs}
           selectedNailTechId={selectedNailTechId}
-          serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
+          serviceLocation={serviceLocation || 'homebased_studio'}
           onContinue={(techId) => {
             setSelectedNailTechId(techId);
             setSelectedSecondaryNailTechId(null);
@@ -1001,12 +1065,11 @@ export default function BookingPage() {
           }}
           onBack={() => {
             setShowNailTechModal(false);
-            setShowServiceTypeModal(true);
+            setShowLocationModal(true);
           }}
         />
       )}
 
-      {/* Slot Confirmation Modal - Shows after slot selection */}
       <SlotConfirmationModal
         isOpen={showSlotConfirmModal}
         slotDate={selectedSlot?.date || ''}
@@ -1014,10 +1077,14 @@ export default function BookingPage() {
         slotType={selectedSlot?.slotType}
         linkedSlotTimes={linkedSlots.map(s => s.time)}
         slotCount={selectedSlot ? (isSimultaneous ? 2 : 1 + linkedSlots.length) : 0}
-        serviceName={serviceOptions.find(o => o.value === selectedService)?.label}
+        serviceName={
+          serviceLabel
+          || (chosenTreatments.length ? getChosenServicesDisplay(chosenTreatments) : undefined)
+          || serviceOptions.find(o => o.value === selectedService)?.label
+        }
         onConfirm={() => {
           setShowSlotConfirmModal(false);
-          setShowBookingFormModal(true);
+          setShowClientTypeModal(true);
         }}
         onBack={() => {
           setShowSlotConfirmModal(false);
@@ -1026,18 +1093,35 @@ export default function BookingPage() {
         }}
       />
 
-      {/* Booking Form Modal - Collect customer info */}
+      <ClientTypeSelectionModal
+        isOpen={showClientTypeModal}
+        onClose={() => {
+          setShowClientTypeModal(false);
+          setShowSlotConfirmModal(true);
+        }}
+        onContinue={(data) => {
+          if (!serviceLocation) return;
+          setClientInfo({ ...data, serviceLocation });
+          setShowClientTypeModal(false);
+          setShowBookingFormModal(true);
+        }}
+      />
+
       <BookingFormModal
         isOpen={showBookingFormModal}
         slotCount={selectedSlot ? (isSimultaneous ? 2 : 1 + linkedSlots.length) : 0}
         isManiPediExpress={isSimultaneous}
         clientType={clientInfo?.clientType || 'new'}
-        serviceLocation={clientInfo?.serviceLocation || 'homebased_studio'}
+        serviceLocation={serviceLocation || 'homebased_studio'}
         clientName={clientInfo?.customerName}
         clientEmail={clientInfo?.customerEmail}
         clientContactNumber={clientInfo?.contactNumber}
         clientSocialMediaName={clientInfo?.socialMediaName}
-        onClose={() => setShowBookingFormModal(false)}
+        initialChosenServices={chosenTreatments}
+        onClose={() => {
+          setShowBookingFormModal(false);
+          setShowClientTypeModal(true);
+        }}
         onSubmit={handleCompleteBooking}
         isSubmitting={isBooking}
       />

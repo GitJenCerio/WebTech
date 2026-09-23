@@ -1,11 +1,15 @@
 /** Map form service slugs to display labels (e.g. BIAB, Extensions) */
 export const CHOSEN_SERVICE_LABELS: Record<string, string> = {
   removal: 'Removal',
-  cleaning: 'Cleaning Only',
-  'without-extensions': 'BIAB / Gel Overlay',
-  'with-extensions': 'Extensions',
-  'russian-pedicure': 'Russian Pedicure Gel Overlay',
+  cleaning: 'Russian Manicure (Cleaning only)',
+  'without-extensions': 'BIAB/Gel/Hardgel Overlay',
+  'with-extensions': 'BIAB/Gel/Hardgel Overlay (With Extensions)',
+  'russian-pedicure': 'Russian Pedicure with Gel Overlay',
   'nail-reconstruction': 'Nail Reconstruction',
+  'pedi-cleaning': 'Russian Pedicure (Cleaning only)',
+  'pedi-without-extensions': 'BIAB/Gel/Hardgel Overlay (Pedi)',
+  'pedi-with-extensions': 'BIAB/Gel/Hardgel Overlay (With Extensions, Pedi)',
+  'pedi-nail-reconstruction': 'Nail Reconstruction (Pedi)',
   'minimal-design': '+ Minimal Design',
   'intricate-design': '+ Intricate Design',
 };

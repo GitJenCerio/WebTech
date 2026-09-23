@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getChosenServicesDisplay } from '@/lib/serviceLabels';
+import { PRIMARY_TREATMENT_SLUGS } from '@/lib/bookingTreatments';
 import {
   X,
   Phone,
@@ -46,6 +47,7 @@ interface BookingFormModalProps {
   clientEmail?: string;
   clientContactNumber?: string;
   clientSocialMediaName?: string;
+  initialChosenServices?: string[];
   onClose: () => void;
   onSubmit: (data: {
     name: string;
@@ -82,6 +84,7 @@ export default function BookingFormModal({
   clientEmail,
   clientContactNumber,
   clientSocialMediaName,
+  initialChosenServices = [],
   onClose,
   onSubmit,
   isSubmitting = false,
@@ -131,7 +134,7 @@ export default function BookingFormModal({
       setAllergies('');
       setNailConcerns('');
       setNailDamageHistory('');
-      setServices([]);
+      setServices(initialChosenServices);
       setInspoDescription('');
       setWaiverAccepted('');
       setRulesAccepted(false);
@@ -139,7 +142,7 @@ export default function BookingFormModal({
       setError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, clientName, clientEmail, clientContactNumber, clientSocialMediaName]);
+  }, [isOpen, clientName, clientEmail, clientContactNumber, clientSocialMediaName, initialChosenServices]);
 
   if (!isOpen) return null;
 
@@ -158,8 +161,11 @@ export default function BookingFormModal({
   };
 
   const handleServiceToggle = (service: string) => {
-    setServices(prev => 
-      prev.includes(service) 
+    if (PRIMARY_TREATMENT_SLUGS.has(service) && initialChosenServices.includes(service)) {
+      return;
+    }
+    setServices(prev =>
+      prev.includes(service)
         ? prev.filter(s => s !== service)
         : [...prev, service]
     );
@@ -876,6 +882,94 @@ export default function BookingFormModal({
               </div>
 
               <div className="space-y-1.5 sm:space-y-2">
+                {initialChosenServices.filter((id) => PRIMARY_TREATMENT_SLUGS.has(id)).length > 0 ? (
+                  <>
+                    {initialChosenServices
+                      .filter((id) => PRIMARY_TREATMENT_SLUGS.has(id))
+                      .map((id) => (
+                        <label
+                          key={id}
+                          className="flex items-start gap-3 border border-[#1c1917] bg-[#f7f6f4] px-3 py-2.5"
+                        >
+                          <input
+                            type="checkbox"
+                            checked
+                            readOnly
+                            className="brand-check mt-0.5 sm:mt-1"
+                            disabled
+                          />
+                          <span className="text-xs sm:text-sm text-[#57534e]">
+                            <strong>{getChosenServicesDisplay([id])}</strong>
+                          </span>
+                        </label>
+                      ))}
+                    <p className="brand-eyebrow pt-2">Add-ons</p>
+                  </>
+                ) : (
+                  <>
+                    <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
+                      <input
+                        type="checkbox"
+                        checked={services.includes('cleaning')}
+                        onChange={() => handleServiceToggle('cleaning')}
+                        className="brand-check mt-0.5 sm:mt-1"
+                        disabled={isSubmitting}
+                      />
+                      <span className="text-xs sm:text-sm text-[#57534e]">
+                        <strong>Cleaning Only</strong> (Russian Technique)
+                      </span>
+                    </label>
+                    <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
+                      <input
+                        type="checkbox"
+                        checked={services.includes('without-extensions')}
+                        onChange={() => handleServiceToggle('without-extensions')}
+                        className="brand-check mt-0.5 sm:mt-1"
+                        disabled={isSubmitting}
+                      />
+                      <span className="text-xs sm:text-sm text-[#57534e]">
+                        <strong>WITHOUT EXTENSIONS</strong> - BIAB/Gel Overlay w/ Russian Manicure (2 hours)
+                      </span>
+                    </label>
+                    <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
+                      <input
+                        type="checkbox"
+                        checked={services.includes('with-extensions')}
+                        onChange={() => handleServiceToggle('with-extensions')}
+                        className="brand-check mt-0.5 sm:mt-1"
+                        disabled={isSubmitting}
+                      />
+                      <span className="text-xs sm:text-sm text-[#57534e]">
+                        <strong>WITH EXTENSIONS</strong> - Softgel Nail Extensions w/ Russian Manicure (3 hours)
+                      </span>
+                    </label>
+                    <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
+                      <input
+                        type="checkbox"
+                        checked={services.includes('russian-pedicure')}
+                        onChange={() => handleServiceToggle('russian-pedicure')}
+                        className="brand-check mt-0.5 sm:mt-1"
+                        disabled={isSubmitting}
+                      />
+                      <span className="text-xs sm:text-sm text-[#57534e]">
+                        <strong>RUSSIAN PEDICURE GEL OVERLAY</strong> (1-2 hours)
+                      </span>
+                    </label>
+                    <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
+                      <input
+                        type="checkbox"
+                        checked={services.includes('nail-reconstruction')}
+                        onChange={() => handleServiceToggle('nail-reconstruction')}
+                        className="brand-check mt-0.5 sm:mt-1"
+                        disabled={isSubmitting}
+                      />
+                      <span className="text-xs sm:text-sm text-[#57534e]">
+                        <strong>NAIL RECONSTRUCTION</strong> (for bitten or damaged nails)
+                      </span>
+                    </label>
+                  </>
+                )}
+
                 <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
                   <input
                     type="checkbox"
@@ -886,71 +980,6 @@ export default function BookingFormModal({
                   />
                   <span className="text-xs sm:text-sm text-[#57534e]">
                     <strong>REMOVAL</strong> (30mins - 1hr)
-                  </span>
-                </label>
-
-                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
-                  <input
-                    type="checkbox"
-                    checked={services.includes('cleaning')}
-                    onChange={() => handleServiceToggle('cleaning')}
-                    className="brand-check mt-0.5 sm:mt-1"
-                    disabled={isSubmitting}
-                  />
-                  <span className="text-xs sm:text-sm text-[#57534e]">
-                    <strong>Cleaning Only</strong> (Russian Technique)
-                  </span>
-                </label>
-
-                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
-                  <input
-                    type="checkbox"
-                    checked={services.includes('without-extensions')}
-                    onChange={() => handleServiceToggle('without-extensions')}
-                    className="brand-check mt-0.5 sm:mt-1"
-                    disabled={isSubmitting}
-                  />
-                  <span className="text-xs sm:text-sm text-[#57534e]">
-                    <strong>WITHOUT EXTENSIONS</strong> - BIAB/Gel Overlay w/ Russian Manicure (2 hours)
-                  </span>
-                </label>
-
-                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
-                  <input
-                    type="checkbox"
-                    checked={services.includes('with-extensions')}
-                    onChange={() => handleServiceToggle('with-extensions')}
-                    className="brand-check mt-0.5 sm:mt-1"
-                    disabled={isSubmitting}
-                  />
-                  <span className="text-xs sm:text-sm text-[#57534e]">
-                    <strong>WITH EXTENSIONS</strong> - Softgel Nail Extensions w/ Russian Manicure (3 hours)
-                  </span>
-                </label>
-
-                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
-                  <input
-                    type="checkbox"
-                    checked={services.includes('russian-pedicure')}
-                    onChange={() => handleServiceToggle('russian-pedicure')}
-                    className="brand-check mt-0.5 sm:mt-1"
-                    disabled={isSubmitting}
-                  />
-                  <span className="text-xs sm:text-sm text-[#57534e]">
-                    <strong>RUSSIAN PEDICURE GEL OVERLAY</strong> (1-2 hours)
-                  </span>
-                </label>
-
-                <label className="flex items-start gap-3 cursor-pointer border border-[#e7e2db] bg-[#fffcfa] px-3 py-2.5 transition-colors hover:border-[#c4b5a0] hover:bg-[#faf8f6] touch-manipulation">
-                  <input
-                    type="checkbox"
-                    checked={services.includes('nail-reconstruction')}
-                    onChange={() => handleServiceToggle('nail-reconstruction')}
-                    className="brand-check mt-0.5 sm:mt-1"
-                    disabled={isSubmitting}
-                  />
-                  <span className="text-xs sm:text-sm text-[#57534e]">
-                    <strong>NAIL RECONSTRUCTION</strong> (for bitten or damaged nails)
                   </span>
                 </label>
 

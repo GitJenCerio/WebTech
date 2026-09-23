@@ -60,8 +60,10 @@ export default function BookingSuccessModal({
           </div>
 
           <div className="brand-note-strong mb-3">
-            <p className="brand-eyebrow mb-1.5">Pay within {PROOF_OF_PAYMENT_WINDOW_HOURS} hours</p>
-            <p className="text-xs sm:text-sm">
+            <p className="mb-1.5 text-xs sm:text-sm uppercase tracking-[0.18em] text-red-700">
+              Pay within {PROOF_OF_PAYMENT_WINDOW_HOURS} hours
+            </p>
+            <p className="text-sm sm:text-base leading-relaxed text-[#1c1917]">
               Your slot is released automatically if we do not receive your proof of payment in time. The deposit is
               non-refundable but fully deductible from your total.
             </p>
