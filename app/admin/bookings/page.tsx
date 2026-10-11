@@ -139,6 +139,7 @@ export default function BookingsPage() {
     serviceMode?: 'single_tech' | 'simultaneous_two_techs';
     chosenServices?: string[];
     serviceLocation?: 'homebased_studio' | 'home_service';
+    serviceAddress?: string;
     status: BookingStatus;
     notes?: string;
     adminNotes?: string;
