@@ -9,6 +9,7 @@ import {
   canManageSettings,
   canViewAuditLog,
   canManageCustomers,
+  canManageSlots,
   type SessionUser,
 } from '@/lib/rbac';
 import { logAuthFailure } from '@/lib/services/auditLog';
@@ -101,4 +102,15 @@ export async function requireCanViewAudit(
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (canViewAuditLog(toSessionUser(session))) return null;
   return forbidden(session, 'view_audit', 'audit', undefined, req);
+}
+
+/** Require ADMIN or above to add or delete slots. Returns 403 if not allowed. */
+export async function requireCanManageSlots(
+  session: Session | null,
+  req?: Request,
+  resourceId?: string
+): Promise<NextResponse | null> {
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (canManageSlots(toSessionUser(session))) return null;
+  return forbidden(session, 'manage_slots', 'slots', resourceId, req);
 }

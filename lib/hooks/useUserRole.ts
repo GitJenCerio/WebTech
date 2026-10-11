@@ -8,6 +8,7 @@ import {
   canViewAuditLog,
   canManageSettings,
   canDeleteCustomer,
+  canManageSlots,
   isAdminOrAbove,
   type RbacRole,
 } from '@/lib/rbac';
@@ -27,6 +28,8 @@ interface UserRoleData {
   canManageSettings: boolean;
   /** SUPER_ADMIN only: delete customers */
   canDeleteCustomer: boolean;
+  /** ADMIN and above: add or delete time slots */
+  canManageSlots: boolean;
 }
 
 export function useUserRole(): UserRoleData {
@@ -47,6 +50,7 @@ export function useUserRole(): UserRoleData {
       canViewAudit: canViewAuditLog(user),
       canManageSettings: canManageSettings(user),
       canDeleteCustomer: canDeleteCustomer(user),
+      canManageSlots: canManageSlots(user),
     };
   }, [
     session?.user?.role,

@@ -6,6 +6,7 @@ import Slot from '@/lib/models/Slot';
 import Booking from '@/lib/models/Booking';
 import NailTech from '@/lib/models/NailTech';
 import { normalizeSlotTime } from '@/lib/constants/slots';
+import { requireCanManageSlots } from '@/lib/api-rbac';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
@@ -150,6 +151,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
 
     const session = await getServerSession(authOptions);
+    const denied = await requireCanManageSlots(session, request, id);
+    if (denied) return denied;
     const assignedNailTechId = session?.user?.assignedNailTechId;
     if (assignedNailTechId && String(slot.nailTechId) !== assignedNailTechId) {
       return NextResponse.json({ error: 'You can only delete slots for your assigned nail tech' }, { status: 403 });

@@ -20,6 +20,7 @@ import { sortTimesChronologically, formatTime12Hour } from '@/lib/utils';
 import { getChosenServicesDisplay, getSlotServiceDisplay } from '@/lib/serviceLabels';
 import { getExpressSegmentLabels } from '@/lib/utils/pricing';
 import { isManiPediExpressDualFromParts } from '@/lib/utils/bookingInvoice';
+import { copyElementAsImage } from '@/lib/utils/copyElementImage';
 
 function formatDateYyyyMmDd(dateStr: string): string {
   try {
@@ -45,7 +46,6 @@ const UNIFORM_BADGE_CLASS =
   'inline-flex min-h-5 items-center justify-center rounded-md px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide leading-tight whitespace-nowrap';
 const UNIFORM_PILL_BADGE_CLASS =
   'inline-flex min-h-5 items-center justify-center rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide leading-tight whitespace-nowrap';
-const BADGE_LABEL_NUDGE_CLASS = 'relative -top-[4px]';
 
 interface BookingDetailsModalProps {
   show: boolean;
@@ -277,37 +277,21 @@ export default function BookingDetailsModal({
   const isConfirmed = ['CONFIRMED', 'confirmed'].includes(booking.status);
   const isCompletedStatus = ['COMPLETED', 'completed'].includes(booking.status);
 
-  const handleCopy = async () => {
+  const handleCopy = () => {
     if (!bookingCardRef.current) return;
-    try {
-      const html2canvas = (await import('html2canvas')).default;
-      const el = bookingCardRef.current;
-      const prevBorder = el.style.border;
-      const prevBoxShadow = el.style.boxShadow;
-      el.style.border = 'none';
-      el.style.boxShadow = 'none';
-      const canvas = await html2canvas(el, {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        onclone: (_clonedDoc, clonedEl) => {
-          clonedEl.style.background = '#ffffff';
-          clonedEl.style.border = 'none';
-          clonedEl.style.boxShadow = 'none';
-          clonedEl.style.outline = 'none';
-        },
+    const filename = `Booking_${(booking.clientName || 'details').replace(/\s+/g, '_')}.png`;
+    void copyElementAsImage(bookingCardRef.current, filename)
+      .then((result) => {
+        if (result === 'copied') {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          return;
+        }
+        if (result === 'downloaded') toast.message('Booking image downloaded');
+      })
+      .catch(() => {
+        toast.error('Could not copy booking details');
       });
-      el.style.border = prevBorder;
-      el.style.boxShadow = prevBoxShadow;
-      const blob = await new Promise<Blob>((resolve, reject) =>
-        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Failed to create blob'))), 'image/png')
-      );
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard not supported
-    }
   };
 
   const getStatusBadge = () => {
@@ -319,36 +303,26 @@ export default function BookingDetailsModal({
       : String(booking.status).toUpperCase().replace(/-/g, ' ');
     if (isConfirmed) {
       return (
-        <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-white bg-emerald-600`}>
-          <span className={BADGE_LABEL_NUDGE_CLASS}>CONFIRMED</span>
-        </span>
+        <span className={`${UNIFORM_BADGE_CLASS} text-white bg-emerald-600`}>CONFIRMED</span>
       );
     }
     if (isCompletedStatus) {
       return (
-        <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-white bg-gray-700`}>
-          <span className={BADGE_LABEL_NUDGE_CLASS}>COMPLETED</span>
-        </span>
+        <span className={`${UNIFORM_BADGE_CLASS} text-white bg-gray-700`}>COMPLETED</span>
       );
     }
     if (label === 'PENDING') {
       return (
-        <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-blue-800 bg-blue-100`}>
-          <span className={BADGE_LABEL_NUDGE_CLASS}>{label}</span>
-        </span>
+        <span className={`${UNIFORM_BADGE_CLASS} text-blue-800 bg-blue-100`}>{label}</span>
       );
     }
     if (label === 'CANCELLED' || label === 'NO SHOW') {
       return (
-        <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-red-600 bg-red-50`}>
-          <span className={BADGE_LABEL_NUDGE_CLASS}>{label}</span>
-        </span>
+        <span className={`${UNIFORM_BADGE_CLASS} text-red-600 bg-red-50`}>{label}</span>
       );
     }
     return (
-      <span data-copy-badge="true" className={`${UNIFORM_BADGE_CLASS} text-gray-700 bg-ash`}>
-        <span className={BADGE_LABEL_NUDGE_CLASS}>{label}</span>
-      </span>
+      <span className={`${UNIFORM_BADGE_CLASS} text-gray-700 bg-ash`}>{label}</span>
     );
   };
 
@@ -365,26 +339,23 @@ export default function BookingDetailsModal({
               <span className="text-[9px] sm:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">BOOKING</span>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {booking.slotType === 'with_squeeze_fee' && (
-                  <span data-copy-badge="true" className={`${UNIFORM_PILL_BADGE_CLASS} ${
+                  <span className={`${UNIFORM_PILL_BADGE_CLASS} ${
                     booking.serviceLocation === 'home_service'
                       ? 'bg-amber-100 text-amber-800 border border-amber-300'
                       : 'bg-ash text-ink border border-champagne'
-                  }`}>
-                    <span className={BADGE_LABEL_NUDGE_CLASS}>SQ</span>
-                  </span>
+                  }`}>SQ</span>
                 )}
                 {booking.serviceClientType && (
-                  <span data-copy-badge="true" className={`${UNIFORM_PILL_BADGE_CLASS} ${
+                  <span className={`${UNIFORM_PILL_BADGE_CLASS} ${
                     booking.serviceClientType === 'new'
                       ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
                       : 'bg-ash text-[#57534e] border border-border'
-                  }`}>
-                    <span className={BADGE_LABEL_NUDGE_CLASS}>{booking.serviceClientType === 'new' ? 'New' : 'Repeat'}</span>
-                  </span>
+                  }`}>{booking.serviceClientType === 'new' ? 'New' : 'Repeat'}</span>
                 )}
                 {getStatusBadge()}
                 <button
                   type="button"
+                  data-html2canvas-ignore="true"
                   onClick={handleCopy}
                   className="inline-flex items-center justify-center rounded-lg p-1 text-muted-foreground hover:text-muted-foreground hover:bg-ash transition-colors"
                   title="Copy booking details as image"
@@ -468,7 +439,6 @@ export default function BookingDetailsModal({
               <div className="flex items-start gap-2">
                 <CreditCard size={iconSize} className="text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
                 <span
-                    data-copy-badge="true"
                     className={`inline-flex min-h-5 items-center justify-center rounded-md px-2 py-0.5 text-[10px] font-medium leading-tight whitespace-nowrap ${
                     paymentStatusLabel === 'Paid'
                       ? 'bg-emerald-600 text-white'
@@ -477,7 +447,7 @@ export default function BookingDetailsModal({
                         : 'bg-ash text-muted-foreground'
                   }`}
                 >
-                  <span className={BADGE_LABEL_NUDGE_CLASS}>{paymentStatusLabel}</span>
+                  {paymentStatusLabel}
                 </span>
               </div>
             </div>

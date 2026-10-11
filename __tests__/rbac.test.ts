@@ -1,4 +1,4 @@
-import { assignableRoleFromStored, hasMinimumRole, normalizeRole } from '@/lib/rbac';
+import { assignableRoleFromStored, canManageSlots, hasMinimumRole, normalizeRole } from '@/lib/rbac';
 
 describe('rbac', () => {
   describe('normalizeRole', () => {
@@ -43,6 +43,15 @@ describe('rbac', () => {
       expect(hasMinimumRole({ role: 'ADMIN' }, 'STAFF')).toBe(true);
       expect(hasMinimumRole({ role: 'ADMIN' }, 'ADMIN')).toBe(true);
       expect(hasMinimumRole({ role: 'ADMIN' }, 'SUPER_ADMIN')).toBe(false);
+    });
+  });
+
+  describe('canManageSlots', () => {
+    it('allows admin and super admin only', () => {
+      expect(canManageSlots({ role: 'STAFF' })).toBe(false);
+      expect(canManageSlots({ role: 'MANAGER' })).toBe(false);
+      expect(canManageSlots({ role: 'ADMIN' })).toBe(true);
+      expect(canManageSlots({ role: 'SUPER_ADMIN' })).toBe(true);
     });
   });
 });

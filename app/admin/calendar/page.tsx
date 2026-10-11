@@ -1550,14 +1550,14 @@ export default function CalendarPage() {
               setShowEditSlotModal(true);
               setEditSlotError(null);
             }}
-            onAddAvailability={() => {
+            onAddAvailability={userRole.canManageSlots ? () => {
               setAddSlotsError(null);
               setShowAddSlotModal(true);
-            }}
-            onBulkManage={() => {
+            } : undefined}
+            onBulkManage={userRole.canManageSlots ? () => {
               setBulkSlotsError(null);
               setShowBulkManageModal(true);
-            }}
+            } : undefined}
             nailTechs={nailTechs}
             selectedNailTechId={selectedNailTechId}
             onNailTechChange={setSelectedNailTechId}
@@ -1594,7 +1594,7 @@ export default function CalendarPage() {
                 setShowEditSlotModal(true);
                 setEditSlotError(null);
               }}
-              onCancel={(slot) => {
+              onCancel={userRole.canManageSlots ? (slot) => {
                 const s = slot as Slot;
                 const bookingStatus = s.booking?.status;
                 if (s.booking?.id && (bookingStatus === 'pending' || bookingStatus === 'confirmed')) {
@@ -1608,11 +1608,11 @@ export default function CalendarPage() {
                 }
 
                 handleDeleteSlot(s);
-              }}
-              onBulkManage={() => {
+              } : undefined}
+              onBulkManage={userRole.canManageSlots ? () => {
                 setBulkSlotsError(null);
                 setShowBulkManageModal(true);
-              }}
+              } : undefined}
             />
           )}
           </div>
@@ -1869,14 +1869,14 @@ export default function CalendarPage() {
           }
         }}
         onUpdate={handleEditSlot}
-        onDelete={async () => {
+        onDelete={userRole.canManageSlots ? async () => {
           if (!selectedSlot) return;
           if (selectedSlot.status !== 'available') {
             setEditSlotError('Only available slots can be deleted. Use booking actions for active bookings.');
             return;
           }
           handleDeleteSlot(selectedSlot);
-        }}
+        } : undefined}
         slot={selectedSlot ? {
           id: selectedSlot.id,
           date: selectedSlot.date || format(selectedDate, 'yyyy-MM-dd'),

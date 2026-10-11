@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import html2canvas from 'html2canvas';
+import { toast } from 'sonner';
+import { renderElementToCanvas, copyElementAsImage } from '@/lib/utils/copyElementImage';
 import {
   Dialog,
   DialogContent,
@@ -140,18 +141,13 @@ export default function InvoiceModal({
 
   const handleDownload = async () => {
     if (!quotationRef.current) return;
-    const canvas = await html2canvas(quotationRef.current, {
-      scale: 3,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      logging: false,
-      onclone: (_clonedDoc, clonedRoot) => {
-        clonedRoot.style.background = '#ffffff';
-        clonedRoot.style.border = 'none';
-        clonedRoot.style.borderRadius = '0';
-        clonedRoot.style.boxShadow = 'none';
-      },
-    });
+    let canvas: HTMLCanvasElement;
+    try {
+      canvas = await renderElementToCanvas(quotationRef.current);
+    } catch {
+      toast.error('Could not save image');
+      return;
+    }
 
     const ts = new Date().toISOString().split('T')[0];
     const filename = `Invoice_${booking.clientName.replace(/\s+/g, '_')}_${ts}.jpg`;
@@ -199,32 +195,21 @@ export default function InvoiceModal({
     URL.revokeObjectURL(url);
   };
 
-  const handleCopy = async () => {
+  const handleCopy = () => {
     if (!quotationRef.current) return;
-    const canvas = await html2canvas(quotationRef.current, {
-      scale: 3,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      logging: false,
-      onclone: (_clonedDoc, clonedRoot) => {
-        clonedRoot.style.background = '#ffffff';
-        clonedRoot.style.border = 'none';
-        clonedRoot.style.borderRadius = '0';
-        clonedRoot.style.boxShadow = 'none';
-      },
-    });
-
-    // Clipboard API only accepts PNG
-    const blob = await new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
-    );
-    try {
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      alert('Copy not supported in this browser. Try the Save button instead.');
-    }
+    const filename = `Invoice_${booking.clientName.replace(/\s+/g, '_')}.png`;
+    void copyElementAsImage(quotationRef.current, filename)
+      .then((result) => {
+        if (result === 'copied') {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          return;
+        }
+        if (result === 'downloaded') toast.message('Invoice image downloaded');
+      })
+      .catch(() => {
+        toast.error('Could not copy invoice');
+      });
   };
 
   return (

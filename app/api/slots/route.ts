@@ -11,6 +11,7 @@ import Customer from '@/lib/models/Customer';
 import { cleanupPastSlotsIfDue } from '@/lib/services/cleanupPastSlots';
 import { resolveExpressTechPair } from '@/lib/utils/bookingInvoice';
 import { getSlotIdsHeldByBooking } from '@/lib/utils/bookingSlotOwnership';
+import { requireCanManageSlots } from '@/lib/api-rbac';
 
 const createSlotsSchema = z.object({
   nailTechId: z.string().min(1),
@@ -35,6 +36,8 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const session = await getServerSession(authOptions);
+    const denied = await requireCanManageSlots(session, request);
+    if (denied) return denied;
     const assignedNailTechId = session?.user?.assignedNailTechId;
 
     const body = await request.json();

@@ -54,7 +54,7 @@ interface EditSlotModalProps {
     isHidden?: boolean;
     nailTechId?: string;
   }) => Promise<void>;
-  onDelete: (slotId: string) => Promise<void>;
+  onDelete?: (slotId: string) => Promise<void>;
   slot?: {
     id: string;
     date: string;
@@ -190,6 +190,7 @@ export default function EditSlotModal({
   };
 
   const handleConfirmDelete = async () => {
+    if (!onDelete || !slot?.id) return;
     setError(null);
     setIsDeleting(true);
 
@@ -361,6 +362,7 @@ export default function EditSlotModal({
             )}
           </div>
           <DialogFooter className="flex-wrap gap-2 shrink-0 border-t border-border pt-2 mt-2">
+            {onDelete ? (
             <Button
               type="button"
               variant="outline"
@@ -381,6 +383,7 @@ export default function EditSlotModal({
                 </>
               )}
             </Button>
+            ) : null}
             <Button
               type="button"
               variant="secondary"

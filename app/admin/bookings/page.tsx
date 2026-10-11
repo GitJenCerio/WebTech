@@ -84,6 +84,8 @@ interface Booking {
   clientNotes?: string;
   adminNotes?: string;
   socialName?: string;
+  clientPhone?: string;
+  clientEmail?: string;
   amountPaid?: number;
   clientPhotos?: {
     inspiration: ClientPhoto[];
@@ -226,6 +228,8 @@ export default function BookingsPage() {
       time: apptTime,
       clientName: booking.customerName || 'Unknown Client',
       socialName: booking.customerSocialMediaName || '',
+      clientPhone: booking.customerPhone || '',
+      clientEmail: booking.customerEmail || '',
             service: booking.service?.type || 'Nail Service',
             chosenServices: booking.service?.chosenServices,
             serviceLocation: booking.service?.location,
@@ -372,6 +376,8 @@ export default function BookingsPage() {
           time: apptTime,
           clientName: booking.customerName || 'Unknown Client',
           socialName: booking.customerSocialMediaName || '',
+          clientPhone: booking.customerPhone || '',
+          clientEmail: booking.customerEmail || '',
           service: booking.service?.type || 'Nail Service',
           chosenServices: booking.service?.chosenServices,
           serviceLocation: booking.service?.location,
@@ -562,6 +568,8 @@ export default function BookingsPage() {
             time: apptTime,
             clientName: booking.customerName || 'Unknown Client',
             socialName: booking.customerSocialMediaName || '',
+            clientPhone: booking.customerPhone || '',
+            clientEmail: booking.customerEmail || '',
             service: booking.service?.type || 'Nail Service',
             serviceLocation: booking.service?.location,
             serviceAddress: booking.service?.address,
@@ -678,6 +686,8 @@ export default function BookingsPage() {
             time: apptTime,
             clientName: booking.customerName || 'Unknown Client',
             socialName: booking.customerSocialMediaName || '',
+            clientPhone: booking.customerPhone || '',
+            clientEmail: booking.customerEmail || '',
             service: booking.service?.type || 'Nail Service',
             serviceLocation: booking.service?.location,
             serviceAddress: booking.service?.address,
@@ -1233,12 +1243,15 @@ export default function BookingsPage() {
       date: item.date,
       time: item.time,
       clientName: item.clientName,
+      clientPhone: item.clientPhone,
+      clientEmail: item.clientEmail,
       clientSocialMediaName: item.socialName,
       service: item.service,
       secondaryServiceType: item.secondaryServiceType,
       serviceMode: item.serviceMode,
       chosenServices: item.chosenServices ?? [],
       serviceLocation: item.serviceLocation,
+      serviceAddress: item.serviceAddress,
       slotType: item.slotType,
       status: item.status,
       slotCount: item.slotTimes?.length || 1,

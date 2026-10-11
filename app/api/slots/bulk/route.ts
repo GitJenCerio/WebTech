@@ -6,6 +6,7 @@ import { authOptions } from '@/lib/auth-options';
 import connectDB from '@/lib/mongodb';
 import Slot from '@/lib/models/Slot';
 import Booking from '@/lib/models/Booking';
+import { requireCanManageSlots } from '@/lib/api-rbac';
 
 const bulkActionSchema = z.object({
   ids: z.array(z.string().min(1)).min(1).max(500),
@@ -22,6 +23,8 @@ export async function POST(request: Request) {
   try {
     await connectDB();
     const session = await getServerSession(authOptions);
+    const denied = await requireCanManageSlots(session, request);
+    if (denied) return denied;
     const assignedNailTechId = session?.user?.assignedNailTechId;
 
     const body = await request.json();
